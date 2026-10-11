@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 database/*.sqlite
 database/*.sqlite-*
+database/asset-report.json
+*.download

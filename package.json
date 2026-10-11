@@ -10,6 +10,8 @@
     "db:seed": "node database/seeds/catalog.js",
     "db:inspect": "node tools/inspect-db.js",
     "db:reset": "node tools/reset-db.js",
+    "assets:repair": "node tools/download-assets.js --existing",
+    "assets:download": "node tools/download-assets.js",
     "test": "node --test test/*.test.js"
   }
 }

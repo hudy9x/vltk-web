@@ -89,3 +89,26 @@ API: `GET /api/health`, `GET /api/storage`, `POST /api/storage/init`,
 `POST /api/storage`, `GET /api/catalog`, `GET /api/catalog/entry?section=maps&key=0`.
 Server chỉ phục vụ các file frontend/tài nguyên được phép; không phục vụ database,
 source server hoặc thư mục .git. Test dùng database tạm, không đụng save test đang chơi.
+
+## Sửa và kiểm tra asset
+
+```sh
+npm run assets:repair      # sửa base64 và tải lại file rỗng/hỏng đã có
+npm run assets:download    # tải trước asset tham chiếu trực tiếp trong JS/CSS
+# Tùy chọn tải toàn bộ 9.613 sprite JXLOOK, dung lượng lớn:
+node tools/download-assets.js --all-sprites
+```
+
+Công cụ Node quét theo cách các downloader Python trong tools/ đang làm, lưu
+trực tiếp vào repo root để server phục vụ đúng đường dẫn. Nó kiểm tra chữ ký
+PNG/WebP/JPEG/font/audio, giải mã base64 nếu cần, tải lại file hỏng và ghi atomically.
+Các script Python cũ mặc định lưu vào assets/ và chỉ kiểm tra file tồn tại;
+không dùng thư mục assets/ làm dấu hiệu game đã tải đủ tài nguyên.
+
+Báo cáo lần quét: `database/asset-report.json`. Báo cáo các request asset thực tế
+kể từ lúc server khởi động: `GET /api/assets` (gồm repaired/downloaded/failures).
+Asset sinh đường dẫn động, như sprite nhân vật JXLOOK, vẫn được tải theo nhu cầu
+và kiểm tra byte trước khi trả về. Server phục vụ cả thư mục music/.
+
+Nút Chợ hiện trong bản local; bấm nút sẽ giải thích backend giao dịch online
+chưa được triển khai. Không kết nối tới Supabase production để mở Chợ.

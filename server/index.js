@@ -4,11 +4,9 @@ const path = require('node:path');
 const { pipeline } = require('node:stream/promises');
 const { ROOT, openDatabase, snapshot, initialize, applyBatch } = require('./database');
 const { seedCatalog } = require('../database/seeds/catalog');
-const ORIGIN = 'https://volamidle.pages.dev/';
-const ASSET = /^(img|fx|snd|fonts|ui)\/[a-zA-Z0-9_./-]+\.(png|jpe?g|webp|gif|mp3|ogg|wav|m4a|woff2?|ttf|svg)$/i;
+const { isAssetPath, createAssetCache } = require('./assets');
 const TYPES = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json; charset=utf-8', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.webp':'image/webp', '.gif':'image/gif', '.svg':'image/svg+xml', '.woff2':'font/woff2', '.mp3':'audio/mpeg', '.ogg':'audio/ogg', '.wav':'audio/wav', '.m4a':'audio/mp4' };
 const STATIC = new Set(['index.html','app.js','data.js','setvi.js','jxlook.js','style.css','jx1ui.css','jx1ui2.css','ui20.css','manifest.json','sw.js','client/bootstrap.js','fonts/ibm-plex-mono.css']);
-const downloads = new Map();
 function json(res, status, body) {
   res.writeHead(status, { 'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff' });
   res.end(JSON.stringify(body));
@@ -23,20 +21,9 @@ async function body(req) {
   try { return JSON.parse(Buffer.concat(chunks).toString()); }
   catch { throw Object.assign(new Error('Invalid JSON'), { status: 400 }); }
 }
-async function cacheAsset(relative, filename) {
-  if (!downloads.has(relative)) downloads.set(relative, (async () => {
-    const response = await fetch(new URL(relative, ORIGIN), { signal: AbortSignal.timeout(20000) });
-    if (!response.ok || /text\/html/.test(response.headers.get('content-type') || '')) throw Object.assign(new Error('Asset unavailable'), { status: 404 });
-    const bytes = Buffer.from(await response.arrayBuffer());
-    if (!bytes.length) throw Object.assign(new Error('Empty asset'), { status: 404 });
-    await fs.promises.mkdir(path.dirname(filename), { recursive: true });
-    await fs.promises.writeFile(filename + '.download', bytes);
-    await fs.promises.rename(filename + '.download', filename);
-  })().finally(() => downloads.delete(relative)));
-  return downloads.get(relative);
-}
 function createServer({ db = openDatabase(), downloadAssets = true } = {}) {
   seedCatalog(db);
+  const assets = createAssetCache({ root:ROOT });
   const server = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
@@ -45,6 +32,7 @@ function createServer({ db = openDatabase(), downloadAssets = true } = {}) {
       if (req.headers['sec-fetch-site'] === 'cross-site') return json(res, 403, { error:'Cross-site request rejected' });
       if (url.pathname.startsWith('/api/')) {
         if (url.pathname === '/api/health' && req.method === 'GET') return json(res, 200, { ok:true, database:'sqlite', mode:'local' });
+        if (url.pathname === '/api/assets' && req.method === 'GET') return json(res, 200, assets.report());
         if (url.pathname === '/api/storage' && req.method === 'GET') return json(res, 200, snapshot(db));
         if (url.pathname === '/api/storage/init' && req.method === 'POST') return json(res, 200, initialize(db, (await body(req)).entries));
         if (url.pathname === '/api/storage' && req.method === 'POST') {
@@ -62,10 +50,9 @@ function createServer({ db = openDatabase(), downloadAssets = true } = {}) {
       let relative;
       try { relative = decodeURIComponent(url.pathname).replace(/^\//,'') || 'index.html'; }
       catch { return json(res, 400, { error:'Invalid path' }); }
-      if (relative.split('/').some(p => p === '..' || p.startsWith('.')) || relative.includes('\\') || !(STATIC.has(relative) || ASSET.test(relative))) return json(res, 404, { error:'Not found' });
+      if (relative.split('/').some(p => p === '..' || p.startsWith('.')) || relative.includes('\\') || !(STATIC.has(relative) || isAssetPath(relative))) return json(res, 404, { error:'Not found' });
       const filename = path.join(ROOT, relative);
-      const stat = await fs.promises.stat(filename).catch(() => null);
-      if ((!stat || !stat.size) && ASSET.test(relative) && downloadAssets) await cacheAsset(relative, filename);
+      if (isAssetPath(relative)) await assets.ensure(relative, { download:downloadAssets });
       const info = await fs.promises.stat(filename).catch(() => null);
       if (!info?.isFile() || !info.size) return json(res, 404, { error:'Not found' });
       res.writeHead(200, { 'Content-Type':TYPES[path.extname(filename)] || 'application/octet-stream', 'Content-Length': info.size, 'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff' });
