@@ -1,0 +1,15 @@
+{
+  "name": "volamidle-local",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local Võ Lâm Idle server with SQLite persistence",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "dev": "node --watch server/index.js",
+    "start": "node server/index.js",
+    "db:seed": "node database/seeds/catalog.js",
+    "db:inspect": "node tools/inspect-db.js",
+    "db:reset": "node tools/reset-db.js",
+    "test": "node --test test/*.test.js"
+  }
+}
