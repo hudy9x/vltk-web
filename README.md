@@ -8,7 +8,7 @@ npm start
 # http://127.0.0.1:3000
 ```
 
-`npm run dev` chạy cùng server với Node watch. `PORT=3001 npm start` đổi port.
+`npm run dev` bật môi trường development và Node watch. `PORT=3001 npm start` đổi port.
 `DB_PATH=/absolute/path/test.sqlite npm start` dùng database riêng.
 
 ## Kiến trúc
@@ -31,8 +31,9 @@ của một bản source khác và có thể làm hỏng bundle hiện tại.
 
 ## Chỉnh sửa game
 
-Source đã format và chia thành 123 file trong `app/`, theo nhóm data, core, combat,
-gameplay, render, UI, systems và online. Xem [app/README.md](app/README.md) để tìm đúng nhóm.
+Source đã format và chia thành 123 file gốc và 1 file GM trong `app/`, theo nhóm
+data, core, combat, gameplay, render, UI, systems, online và dev.
+Xem [app/README.md](app/README.md) để tìm đúng nhóm.
 `app/modules.json` giữ thứ tự ghép và danh sách symbol từng file.
 
 ```sh
@@ -133,3 +134,29 @@ và kiểm tra byte trước khi trả về. Server phục vụ cả thư mục 
 
 Nút Chợ hiện trong bản local; bấm nút sẽ giải thích backend giao dịch online
 chưa được triển khai. Không kết nối tới Supabase production để mở Chợ.
+
+## GameMaster (GM)
+
+Chạy `npm run dev`, vào nhân vật rồi bấm **GM** ở góc trên trái. `npm start`
+không hiển thị nút GM (trừ khi bạn chủ động đặt `NODE_ENV=development`).
+Môi trường được bootstrap đọc từ `GET /api/config`, không bật bằng query trên URL.
+
+- Vàng: +100 triệu vạn lượng = **1.000.000.000.000 lượng**.
+- Kim Nguyên Bảo: +10 vạn = **100.000 KNB**.
+- Kinh nghiệm: +**100.000.000 XP**, qua logic lên cấp hiện có, không nhân bonus XP.
+  Nếu đã đạt giới hạn cấp, nút báo lỗi và không thêm XP.
+- Rương: +**100 rương Hoàng Kim môn phái** xếp chồng trong hành trang. Dùng từng
+  rương để nhận 1 món Hoàng Kim đúng phái lúc nhận; trang bị được tự khóa. Khi
+  hành trang đầy, không thêm hoặc tiêu hao rương. Rương còn mở được khi chạy lại
+  bằng `npm start`.
+- Nhẫn: +**2 Càn Khôn Giới Chỉ** bản gốc (Hoàng Kim, cấp đồ 10, hệ Kim, yêu cầu
+  cấp nhân vật 60, tất cả kỹ năng +2). Hai chiếc có UID riêng, được khóa sẵn và lưu
+  vào Hành trang; cần 2 ô trống. Không tự trang bị.
+
+Các lệnh dùng luồng save hiện tại và được đồng bộ sang SQLite. Source GM nằm ở
+`app/dev/game-master-01.js`; `app.js` backup giữ nguyên, không có tính năng GM.
+
+Nút **Bán nhanh** cạnh GM cũng chỉ hiện trong development. Bấm để bật, sau đó bấm
+từng món trong Hành trang để bán ngay toàn bộ món/chồng, không hỏi xác nhận.
+Giá bán theo game hiện tại; món đang khóa được tự mở khóa rồi bán. Nhấn **Esc** hoặc bấm lại
+nút Bán nhanh để kết thúc. Chế độ không tự bật lại sau reload.

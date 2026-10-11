@@ -11,6 +11,7 @@ render/     Canvas, sprite và hiệu ứng hiển thị
 ui/         panel, nút bấm, màn hình nhân vật và thế giới
 systems/    hệ thống bổ trợ, âm thanh và điều khiển
 online/     tài khoản, chat, Chợ và tổ đội
+dev/        bảng GM trong môi trường development, định nghĩa rương GM
     |
     v
 modules.json (thứ tự ghép) -> npm run build -> game.js + game.js.map
@@ -30,10 +31,11 @@ Server tự build khi reload. Có thể chạy `npm run build` thủ công; outp
 map không đưa vào Git. DevTools Sources hiển thị file nguồn qua source map.
 Builder không cần package ngoài ở runtime.
 
-`npm test` so sánh AST sau chuẩn hóa với backup, xác nhận không mất logic/dữ liệu
+`npm test` so sánh AST của 123 module gốc sau chuẩn hóa với backup, xác nhận không mất logic/dữ liệu
 hoặc đổi thứ tự khởi tạo. Hai điều chỉnh có chủ đích nhận diện đường dẫn script mới.
 Khi sửa hành vi game trong tương lai, cần cập nhật kiểm tra tương đương thành kiểm
 tra cho hành vi mới; không sửa backup để làm test qua.
+Module GM có test hành vi riêng; không nằm trong kiểm tra tương đương backup.
 
 `tools/split-app.js` là công cụ trích xuất một lần, không dùng như lệnh build.
 Nó từ chối chạy nếu thư mục `app/` đã tồn tại để tránh ghi đè chỉnh sửa.

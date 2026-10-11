@@ -22,7 +22,7 @@ async function body(req) {
   try { return JSON.parse(Buffer.concat(chunks).toString()); }
   catch { throw Object.assign(new Error('Invalid JSON'), { status: 400 }); }
 }
-function createServer({ db = openDatabase(), downloadAssets = true } = {}) {
+function createServer({ db = openDatabase(), downloadAssets = true, development = process.env.NODE_ENV === 'development' } = {}) {
   buildApp();
   const moduleFiles = new Set(require('../app/modules.json').modules.map(module => 'app/' + module.file));
   seedCatalog(db);
@@ -34,6 +34,7 @@ function createServer({ db = openDatabase(), downloadAssets = true } = {}) {
       if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) return json(res, 403, { error:'Origin rejected' });
       if (req.headers['sec-fetch-site'] === 'cross-site') return json(res, 403, { error:'Cross-site request rejected' });
       if (url.pathname.startsWith('/api/')) {
+        if (url.pathname === '/api/config' && req.method === 'GET') return json(res, 200, { development });
         if (url.pathname === '/api/health' && req.method === 'GET') return json(res, 200, { ok:true, database:'sqlite', mode:'local' });
         if (url.pathname === '/api/assets' && req.method === 'GET') return json(res, 200, assets.report());
         if (url.pathname === '/api/storage' && req.method === 'GET') return json(res, 200, snapshot(db));

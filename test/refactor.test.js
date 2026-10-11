@@ -48,7 +48,9 @@ test('refactored modules preserve the backup logic and data in execution order',
   assert.equal(createHash('sha256').update(backup).digest('hex'),manifest.backupSha256,'The preserved backup must not be edited by build/refactor tools');
   // The only deliberate behavior adaptations recognize the new script path.
   const expected=backup.replace('/\\/app\\.js(\\?|$)/','/\\/(?:app\\/game|app)\\.js(\\?|$)/').replace('script[src*="app.js"]','script[src*="app/game.js"]');
-  const before=normalize(expected),after=normalize(assemble().code);
+  // New GM module has separate behavior tests; the 123 original modules stay unchanged.
+  const originalModules = assemble().modules.filter(module => module.file !== 'dev/game-master-01.js');
+  const before=normalize(expected),after=normalize('(function(){\n'+originalModules.map(module=>module.source).join('\n')+'\n})();');
   assert.equal(after.length,before.length,'No initialization/declaration may be lost');
   for(let i=0;i<before.length;i++) {
     const original=JSON.stringify(before[i]),extracted=JSON.stringify(after[i]);

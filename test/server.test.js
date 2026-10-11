@@ -33,11 +33,12 @@ test('save, shared stash and backup survive reopening SQLite; retries cannot ove
 
 test('HTTP API persists changes and rejects invalid writes; private server/database files are not served', async () => {
   const db = openDatabase(':memory:');
-  const { server } = createServer({ db, downloadAssets:false });
+  const { server } = createServer({ db, downloadAssets:false, development:false });
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   const post = value => ({ method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(value) });
   try {
+    assert.deepEqual(await (await fetch(base+'/api/config?development=true')).json(), { development:false });
     const initial = await (await fetch(base+'/api/storage/init',post({ entries:{} }))).json();
     const batch = { id:'http-test', generation:initial.generation, operations:[{ key:'jxidle_2',value:'{"name":"Second","lvl":2,"fac":"vo1"}' }] };
     assert.equal((await fetch(base+'/api/storage',post(batch))).status,200);
