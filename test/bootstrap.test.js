@@ -8,7 +8,7 @@ const { openDatabase, snapshot, reset } = require('../server/database');
 const { createServer } = require('../server');
 const source = fs.readFileSync(path.join(__dirname,'../client/bootstrap.js'),'utf8');
 const OUTBOX = '__volam_sqlite_outbox';
-async function boot(base, values, { failWrites = false } = {}) {
+async function boot(base, values, { failWrites = false, search = '' } = {}) {
   class Storage {
     getItem(key) { return values.get(String(key)) ?? null; }
     setItem(key,value) { values.set(String(key),String(value)); }
@@ -18,6 +18,7 @@ async function boot(base, values, { failWrites = false } = {}) {
   const storage = new Proxy(new Storage(), { ownKeys:() => [...values.keys()], getOwnPropertyDescriptor:() => ({ enumerable:true,configurable:true }) });
   const sandbox = {
     Storage, localStorage:storage, crypto:{ randomUUID }, AbortSignal,
+    location:{ search }, URLSearchParams, loadedScripts:[],
     setInterval:() => {}, console:{ error:() => {} }, addEventListener:() => {},
     fetch:(url,options) => {
       if (failWrites && url === '/api/storage' && options?.method === 'POST') return Promise.reject(new Error('Network disconnected'));
@@ -25,7 +26,7 @@ async function boot(base, values, { failWrites = false } = {}) {
     },
     document:{
       createElement:() => ({ style:{}, hidden:false }),
-      body:{ appendChild:element => { if (element.src) queueMicrotask(() => element.onload()); } },
+      body:{ appendChild:element => { if (element.src) { sandbox.loadedScripts.push(element.src); queueMicrotask(() => element.onload()); } } },
       addEventListener:() => {}
     }
   };
@@ -48,6 +49,7 @@ test('browser outbox survives interrupted writes and reload; SQLite reset reject
     assert.equal(JSON.parse(values.get(OUTBOX)).queue.length,2);
     assert.equal(snapshot(db).entries.jxidle,'{"name":"Imported"}');
     const reloaded = await boot(base,values);
+    assert.deepEqual(Array.from(reloaded.loadedScripts),['data.js?v=622','setvi.js?v=622','app/game.js?v=622']);
     assert.equal(snapshot(db).entries.jxidle,'{"name":"Updated"}');
     assert.equal(snapshot(db).entries.jxidle_bak,'{"name":"Imported"}');
     assert.equal(reloaded.localStorage.getItem('jxidle'),' {"name":"Updated"}'.trim());
@@ -60,5 +62,7 @@ test('browser outbox survives interrupted writes and reload; SQLite reset reject
     assert.equal(clean.localStorage.getItem('jxidle'),null);
     assert.equal(values.get('unrelated'),'keep');
     assert.deepEqual(snapshot(db).entries,{});
+    const backup = await boot(base,values,{ search:'?backup=1' });
+    assert.deepEqual(Array.from(backup.loadedScripts),['data.js?v=622','setvi.js?v=622','app.js?v=622']);
   } finally { await new Promise(resolve => server.close(resolve)); db.close(); }
 });

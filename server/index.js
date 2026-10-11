@@ -5,6 +5,7 @@ const { pipeline } = require('node:stream/promises');
 const { ROOT, openDatabase, snapshot, initialize, applyBatch } = require('./database');
 const { seedCatalog } = require('../database/seeds/catalog');
 const { isAssetPath, createAssetCache } = require('./assets');
+const { buildApp } = require('../tools/build-app');
 const TYPES = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json; charset=utf-8', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.webp':'image/webp', '.gif':'image/gif', '.svg':'image/svg+xml', '.woff2':'font/woff2', '.mp3':'audio/mpeg', '.ogg':'audio/ogg', '.wav':'audio/wav', '.m4a':'audio/mp4' };
 const STATIC = new Set(['index.html','app.js','data.js','setvi.js','jxlook.js','style.css','jx1ui.css','jx1ui2.css','ui20.css','manifest.json','sw.js','client/bootstrap.js','fonts/ibm-plex-mono.css']);
 function json(res, status, body) {
@@ -22,6 +23,8 @@ async function body(req) {
   catch { throw Object.assign(new Error('Invalid JSON'), { status: 400 }); }
 }
 function createServer({ db = openDatabase(), downloadAssets = true } = {}) {
+  buildApp();
+  const moduleFiles = new Set(require('../app/modules.json').modules.map(module => 'app/' + module.file));
   seedCatalog(db);
   const assets = createAssetCache({ root:ROOT });
   const server = http.createServer(async (req, res) => {
@@ -50,7 +53,10 @@ function createServer({ db = openDatabase(), downloadAssets = true } = {}) {
       let relative;
       try { relative = decodeURIComponent(url.pathname).replace(/^\//,'') || 'index.html'; }
       catch { return json(res, 400, { error:'Invalid path' }); }
-      if (relative.split('/').some(p => p === '..' || p.startsWith('.')) || relative.includes('\\') || !(STATIC.has(relative) || isAssetPath(relative))) return json(res, 404, { error:'Not found' });
+      const appFile = ['app/game.js', 'app/game.js.map', 'app/modules.json'].includes(relative) || moduleFiles.has(relative);
+      if (relative.split('/').some(p => p === '..' || p.startsWith('.')) || relative.includes('\\') || !(STATIC.has(relative) || appFile || isAssetPath(relative))) return json(res, 404, { error:'Not found' });
+      // Rebuild on reload after edits, so local development never serves a stale bundle.
+      if (relative === 'app/game.js') buildApp();
       const filename = path.join(ROOT, relative);
       if (isAssetPath(relative)) await assets.ensure(relative, { download:downloadAssets });
       const info = await fs.promises.stat(filename).catch(() => null);

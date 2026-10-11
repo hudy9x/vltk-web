@@ -46,6 +46,16 @@ test('HTTP API persists changes and rejects invalid writes; private server/datab
     assert.equal((await fetch(base+'/api/storage', { ...post(batch),headers:{ 'Content-Type':'application/json',Origin:'https://example.org' } })).status,403);
     for (const file of ['database/game.sqlite','server/database.js','.git/config','tools/reset-db.js']) assert.equal((await fetch(base+'/'+file)).status,404);
     assert.match(await (await fetch(base+'/')).text(), /client\/bootstrap.js/);
+    const bundle = await fetch(base+'/app/game.js?v=622');
+    assert.equal(bundle.status,200);
+    assert.match(await bundle.text(), /sourceMappingURL=game.js.map/);
+    const sourceMap = await (await fetch(base+'/app/game.js.map')).json();
+    assert.equal(sourceMap.version,3);
+    for (const file of ['app/'+sourceMap.sources[0], 'app.js']) {
+      const response = await fetch(base+'/'+file);
+      assert.equal(response.status,200);
+      assert.ok((await response.text()).length > 0);
+    }
     assert.equal((await fetch(base+'/img/missing-for-test.png')).status,404);
     assert.ok((await (await fetch(base+'/api/catalog')).json()).some(row => row.section === 'maps' && row.entries > 900));
     assert.equal((await fetch(base+'/api/storage',post({ ...batch,id:'remove',operations:[{ key:'jxidle_2',value:null }] }))).status,200);

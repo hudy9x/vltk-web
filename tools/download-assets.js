@@ -5,6 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { ROOT } = require('../server/database');
 const { createAssetCache, isAssetPath } = require('../server/assets');
+const { assemble } = require('./build-app');
 async function walk(directory) {
   const entries = await fs.readdir(directory,{ withFileTypes:true }).catch(() => []);
   const nested = await Promise.all(entries.map(entry => entry.isDirectory() ? walk(path.join(directory,entry.name)) : [path.join(directory,entry.name)]));
@@ -19,8 +20,9 @@ async function collectAssets({ allSprites = false, existingOnly = false } = {}) 
     }
   }
   if (existingOnly) return [...assets].sort();
-  for (const file of ['app.js','data.js','sw.js','manifest.json']) {
-    const text = await fs.readFile(path.join(ROOT,file),'utf8');
+  const sources = [assemble().code];
+  for (const file of ['data.js','sw.js','manifest.json']) sources.push(await fs.readFile(path.join(ROOT,file),'utf8'));
+  for (const text of sources) {
     for (const match of text.matchAll(/["']([A-Za-z0-9_./-]+\.(?:png|jpe?g|webp|gif|mp3|ogg|wav|m4a|woff2?|ttf|svg))["']/gi)) {
       let relative = match[1];
       if (!relative.includes('/')) relative = 'img/a/'+relative;

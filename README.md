@@ -1,6 +1,7 @@
 # Võ Lâm Idle — local Node.js + SQLite
 
-Yêu cầu Node.js 24 trở lên. Server không có dependency npm bên ngoài.
+Yêu cầu Node.js 24 trở lên. Server không có dependency npm bên ngoài ở runtime.
+`npm ci` cài công cụ dev dùng cho kiểm tra AST và format source.
 
 ```sh
 npm start
@@ -13,18 +14,38 @@ npm start
 ## Kiến trúc
 
 ```text
-index.html -> client/bootstrap.js -> data.js + setvi.js -> app.js
-                                                        |
-                                              combat + UI + Canvas
-                                                        |
-                                                 jxlook.js / assets
+app/*/*.js -> tools/build-app.js -> app/game.js
+                                     ^
+index.html -> client/bootstrap.js ---+ (sau data.js + setvi.js)
+                                     |
+                           combat + UI + Canvas -> jxlook.js / assets
+
+app.js = backup nguyên bản, chỉ dùng khi mở /?backup=1
 ```
 
 Đây là game web idle lấy cảm hứng từ JX1/VLTK. Combat, AI, loot, inventory,
-forge và nhiệm vụ chạy ở trình duyệt trong app.js. Repo ban đầu có các file JS/CSS
+forge và nhiệm vụ chạy ở trình duyệt từ source trong `app/`. Repo ban đầu có các file JS/CSS
 rỗng; chúng được khôi phục từ https://volamidle.pages.dev/ (bản v622, ngày 11/10/2026).
 Không chạy tools/split_src.js hoặc tools/split_clean.js: chúng dùng số dòng cố định
 của một bản source khác và có thể làm hỏng bundle hiện tại.
+
+## Chỉnh sửa game
+
+Source đã format và chia thành 123 file trong `app/`, theo nhóm data, core, combat,
+gameplay, render, UI, systems và online. Xem [app/README.md](app/README.md) để tìm đúng nhóm.
+`app/modules.json` giữ thứ tự ghép và danh sách symbol từng file.
+
+```sh
+npm run build   # tạo app/game.js + source map, giữ nguyên app.js
+npm test       # kiểm tra logic tương đương bản backup và luồng SQLite/HTTP
+npm start      # tự build lúc khởi động và mỗi lần browser tải app/game.js
+```
+
+Chỉnh file source rồi reload trình duyệt. DevTools dùng source map để hiển thị
+file trong `app/`. Không sửa `app/game.js`: đây là output được tạo lại tự động.
+Mở `http://127.0.0.1:3000/?backup=1` để chạy backup với cùng SQLite/save.
+Các file chia nhỏ vẫn dùng chung scope và tên biến từ bản gốc; builder ghép chúng
+trong cùng IIFE để giữ hành vi. Chưa chuyển sang các ES module độc lập.
 
 ```text
 Game -> localStorage + outbox -> POST /api/storage -> Node HTTP -> SQLite
