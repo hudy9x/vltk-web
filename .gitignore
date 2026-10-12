@@ -8,3 +8,4 @@ database/asset-report.json
 *.download
 app/game.js
 app/game.js.map
+.gitnexus
