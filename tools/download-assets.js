@@ -1,5 +1,4 @@
-// Node counterpart of the scanners in download_css_assets.py, download_data_assets.py,
-// and download_volamidle_snd.py, with binary validation, repair and bounded concurrency.
+// Project asset downloader with binary validation, repair and bounded concurrency.
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const vm = require('node:vm');

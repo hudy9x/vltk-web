@@ -43,5 +43,5 @@ function buildApp() {
   previousHash=result.hash;
   return result;
 }
-if(require.main===module){const result=buildApp();console.log(`Built app/game.js from ${result.modules.length} modules (${Buffer.byteLength(result.code)} bytes). Backup app.js was not touched.`);}
+if(require.main===module){const result=buildApp();console.log(`Built app/game.js from ${result.modules.length} modules (${Buffer.byteLength(result.code)} bytes).`);}
 module.exports={ assemble,buildApp };

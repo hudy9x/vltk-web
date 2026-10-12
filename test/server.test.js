@@ -45,14 +45,14 @@ test('HTTP API persists changes and rejects invalid writes; private server/datab
     assert.equal((await (await fetch(base+'/api/storage')).json()).entries.jxidle_2, batch.operations[0].value);
     assert.equal((await fetch(base+'/api/storage',post({ ...batch,id:'invalid',operations:[{ key:'jxidle_auth',value:'token' }] }))).status,400);
     assert.equal((await fetch(base+'/api/storage', { ...post(batch),headers:{ 'Content-Type':'application/json',Origin:'https://example.org' } })).status,403);
-    for (const file of ['database/game.sqlite','server/database.js','.git/config','tools/reset-db.js']) assert.equal((await fetch(base+'/'+file)).status,404);
+    for (const file of ['database/game.sqlite','server/database.js','.git/config','tools/reset-db.js','app.js']) assert.equal((await fetch(base+'/'+file)).status,404);
     assert.match(await (await fetch(base+'/')).text(), /client\/bootstrap.js/);
     const bundle = await fetch(base+'/app/game.js?v=622');
     assert.equal(bundle.status,200);
     assert.match(await bundle.text(), /sourceMappingURL=game.js.map/);
     const sourceMap = await (await fetch(base+'/app/game.js.map')).json();
     assert.equal(sourceMap.version,3);
-    for (const file of ['app/'+sourceMap.sources[0], 'app.js']) {
+    for (const file of ['app/'+sourceMap.sources[0]]) {
       const response = await fetch(base+'/'+file);
       assert.equal(response.status,200);
       assert.ok((await response.text()).length > 0);

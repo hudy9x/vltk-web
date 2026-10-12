@@ -1,6 +1,6 @@
 # Source game
 
-Chỉnh source tại đây; `../app.js` được giữ nguyên làm backup.
+Chỉnh source tại đây; game được build từ các module trong `modules.json`.
 
 ```text
 data/       cấu hình skill, map, monster, equipment, hiệu ứng
@@ -31,11 +31,6 @@ Server tự build khi reload. Có thể chạy `npm run build` thủ công; outp
 map không đưa vào Git. DevTools Sources hiển thị file nguồn qua source map.
 Builder không cần package ngoài ở runtime.
 
-`npm test` so sánh AST của 123 module gốc sau chuẩn hóa với backup, xác nhận không mất logic/dữ liệu
-hoặc đổi thứ tự khởi tạo. Hai điều chỉnh có chủ đích nhận diện đường dẫn script mới.
-Khi sửa hành vi game trong tương lai, cần cập nhật kiểm tra tương đương thành kiểm
-tra cho hành vi mới; không sửa backup để làm test qua.
-Module GM có test hành vi riêng; không nằm trong kiểm tra tương đương backup.
-
-`tools/split-app.js` là công cụ trích xuất một lần, không dùng như lệnh build.
-Nó từ chối chạy nếu thư mục `app/` đã tồn tại để tránh ghi đè chỉnh sửa.
+`npm test` kiểm tra các module được liệt kê đầy đủ, phân tích cú pháp từng file và
+kiểm tra source map của bundle. Module GM có test hành vi riêng.
+Các test SQLite/HTTP và bootstrap kiểm tra đồng bộ save và cách tải bundle hiện tại.

@@ -62,7 +62,7 @@ test('browser outbox survives interrupted writes and reload; SQLite reset reject
     assert.equal(clean.localStorage.getItem('jxidle'),null);
     assert.equal(values.get('unrelated'),'keep');
     assert.deepEqual(snapshot(db).entries,{});
-    const backup = await boot(base,values,{ search:'?backup=1' });
-    assert.deepEqual(Array.from(backup.loadedScripts),['data.js?v=622','setvi.js?v=622','app.js?v=622']);
+    const legacyUrl = await boot(base,values,{ search:'?backup=1' });
+    assert.deepEqual(Array.from(legacyUrl.loadedScripts),['data.js?v=622','setvi.js?v=622','app/game.js?v=622']);
   } finally { await new Promise(resolve => server.close(resolve)); db.close(); }
 });

@@ -7,7 +7,7 @@ const { seedCatalog } = require('../database/seeds/catalog');
 const { isAssetPath, createAssetCache } = require('./assets');
 const { buildApp } = require('../tools/build-app');
 const TYPES = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json; charset=utf-8', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.webp':'image/webp', '.gif':'image/gif', '.svg':'image/svg+xml', '.woff2':'font/woff2', '.mp3':'audio/mpeg', '.ogg':'audio/ogg', '.wav':'audio/wav', '.m4a':'audio/mp4' };
-const STATIC = new Set(['index.html','app.js','data.js','setvi.js','jxlook.js','style.css','jx1ui.css','jx1ui2.css','ui20.css','manifest.json','sw.js','client/bootstrap.js','fonts/ibm-plex-mono.css']);
+const STATIC = new Set(['index.html','data.js','setvi.js','jxlook.js','style.css','jx1ui.css','jx1ui2.css','ui20.css','manifest.json','sw.js','client/bootstrap.js','fonts/ibm-plex-mono.css']);
 function json(res, status, body) {
   res.writeHead(status, { 'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff' });
   res.end(JSON.stringify(body));

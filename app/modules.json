@@ -1,6 +1,4 @@
 {
-  "backup": "../app.js",
-  "backupSha256": "c7be7cc457700130e15d13f4ced4ea1e439c774611cb3edfa3a312f6608c063f",
   "modules": [
     {
       "file": "core/item-sets-01.js",

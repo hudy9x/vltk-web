@@ -1,7 +1,7 @@
 # Võ Lâm Idle — local Node.js + SQLite
 
 Yêu cầu Node.js 24 trở lên. Server không có dependency npm bên ngoài ở runtime.
-`npm ci` cài công cụ dev dùng cho kiểm tra AST và format source.
+`npm ci` cài công cụ dev dùng cho kiểm tra AST.
 
 ```sh
 npm start
@@ -19,15 +19,11 @@ app/*/*.js -> tools/build-app.js -> app/game.js
 index.html -> client/bootstrap.js ---+ (sau data.js + setvi.js)
                                      |
                            combat + UI + Canvas -> jxlook.js / assets
-
-app.js = backup nguyên bản, chỉ dùng khi mở /?backup=1
 ```
 
 Đây là game web idle lấy cảm hứng từ JX1/VLTK. Combat, AI, loot, inventory,
 forge và nhiệm vụ chạy ở trình duyệt từ source trong `app/`. Repo ban đầu có các file JS/CSS
 rỗng; chúng được khôi phục từ https://volamidle.pages.dev/ (bản v622, ngày 11/10/2026).
-Không chạy tools/split_src.js hoặc tools/split_clean.js: chúng dùng số dòng cố định
-của một bản source khác và có thể làm hỏng bundle hiện tại.
 
 ## Chỉnh sửa game
 
@@ -37,14 +33,13 @@ Xem [app/README.md](app/README.md) để tìm đúng nhóm.
 `app/modules.json` giữ thứ tự ghép và danh sách symbol từng file.
 
 ```sh
-npm run build   # tạo app/game.js + source map, giữ nguyên app.js
-npm test       # kiểm tra logic tương đương bản backup và luồng SQLite/HTTP
+npm run build   # tạo app/game.js + source map từ source trong app/
+npm test       # kiểm tra module/source map, GM và luồng SQLite/HTTP
 npm start      # tự build lúc khởi động và mỗi lần browser tải app/game.js
 ```
 
 Chỉnh file source rồi reload trình duyệt. DevTools dùng source map để hiển thị
 file trong `app/`. Không sửa `app/game.js`: đây là output được tạo lại tự động.
-Mở `http://127.0.0.1:3000/?backup=1` để chạy backup với cùng SQLite/save.
 Các file chia nhỏ vẫn dùng chung scope và tên biến từ bản gốc; builder ghép chúng
 trong cùng IIFE để giữ hành vi. Chưa chuyển sang các ES module độc lập.
 
@@ -121,11 +116,9 @@ npm run assets:download    # tải trước asset tham chiếu trực tiếp tro
 node tools/download-assets.js --all-sprites
 ```
 
-Công cụ Node quét theo cách các downloader Python trong tools/ đang làm, lưu
-trực tiếp vào repo root để server phục vụ đúng đường dẫn. Nó kiểm tra chữ ký
+Công cụ Node quét source game, data, CSS và manifest, lưu trực tiếp vào repo root
+để server phục vụ đúng đường dẫn. Nó kiểm tra chữ ký
 PNG/WebP/JPEG/font/audio, giải mã base64 nếu cần, tải lại file hỏng và ghi atomically.
-Các script Python cũ mặc định lưu vào assets/ và chỉ kiểm tra file tồn tại;
-không dùng thư mục assets/ làm dấu hiệu game đã tải đủ tài nguyên.
 
 Báo cáo lần quét: `database/asset-report.json`. Báo cáo các request asset thực tế
 kể từ lúc server khởi động: `GET /api/assets` (gồm repaired/downloaded/failures).
@@ -154,7 +147,7 @@ Môi trường được bootstrap đọc từ `GET /api/config`, không bật b�
   vào Hành trang; cần 2 ô trống. Không tự trang bị.
 
 Các lệnh dùng luồng save hiện tại và được đồng bộ sang SQLite. Source GM nằm ở
-`app/dev/game-master-01.js`; `app.js` backup giữ nguyên, không có tính năng GM.
+`app/dev/game-master-01.js`.
 
 Nút **Bán nhanh** cạnh GM cũng chỉ hiện trong development. Bấm để bật, sau đó bấm
 từng món trong Hành trang để bán ngay toàn bộ món/chồng, không hỏi xác nhận.

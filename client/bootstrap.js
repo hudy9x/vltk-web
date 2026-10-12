@@ -77,10 +77,7 @@
     };
     document.addEventListener('visibilitychange', () => { if (document.hidden) sendPending(); });
     window.addEventListener('pagehide', sendPending);
-    const gameScript = new URLSearchParams(location.search).get('backup') === '1'
-      ? 'app.js?v=622'
-      : 'app/game.js?v=622';
-    for (const src of ['data.js?v=622','setvi.js?v=622',gameScript]) {
+    for (const src of ['data.js?v=622','setvi.js?v=622','app/game.js?v=622']) {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script'); script.src = src;
         script.onload = resolve; script.onerror = () => reject(new Error(`Không tải được ${src}`));
