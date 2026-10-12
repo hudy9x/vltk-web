@@ -11,6 +11,32 @@ npm start
 `npm run dev` bật môi trường development và Node watch. `PORT=3001 npm start` đổi port.
 `DB_PATH=/absolute/path/test.sqlite npm start` dùng database riêng.
 
+## Tạo nhân vật local để test combat
+
+```sh
+npm run dev:combat
+# http://127.0.0.1:3001
+```
+
+Lệnh này bật development (có nút **GM**) và Node watch, dùng database riêng
+`database/combat-test.sqlite`. Nhân vật test được lưu qua các lần khởi động;
+save chính trong `database/game.sqlite` không bị thay đổi. Không cần tài khoản
+hoặc mật khẩu. Dừng server bằng `Ctrl+C`.
+
+1. Mở địa chỉ trên, chọn ô trống → **Tạo Nhân Vật**. Có tối đa 3 ô.
+2. Nhập tên, chọn giới tính **Nam** và hệ theo bảng dưới.
+3. Vào game, bấm **GM** ở góc trên trái → **+100 triệu điểm kinh nghiệm**.
+4. Đạt cấp 10, gia nhập môn phái tương ứng. Tiếp tục tăng cấp bằng GM,
+   rồi học và chọn chiêu cần test trong thẻ **Võ công**.
+
+| Tên gợi ý | Hệ | Môn phái | Chiêu cấp 90 cần test |
+|---|---|---|---|
+| Combat-WuDang | Thổ | Võ Đang | Thiên Địa Vô Cực |
+| Combat-CaiBang | Hỏa | Cái Bang | Phi Long Tại Thiên / Thiên Hạ Vô Cẩu |
+| Combat-ThienNhan | Hỏa | Thiên Nhẫn | Thiên Ngoại Lưu Tinh |
+
+Lệnh chỉ khởi động môi trường test; bạn tạo nhân vật và học chiêu qua giao diện.
+
 ## Kiến trúc
 
 ```text
@@ -27,7 +53,7 @@ rỗng; chúng được khôi phục từ https://volamidle.pages.dev/ (bản v6
 
 ## Chỉnh sửa game
 
-Source đã format và chia thành 123 file gốc và 1 file GM trong `app/`, theo nhóm
+Source gồm 123 file gốc, 1 file GM và 1 module va chạm trong `app/`, theo nhóm
 data, core, combat, gameplay, render, UI, systems, online và dev.
 Xem [app/README.md](app/README.md) để tìm đúng nhóm.
 `app/modules.json` giữ thứ tự ghép và danh sách symbol từng file.
@@ -42,6 +68,39 @@ Chỉnh file source rồi reload trình duyệt. DevTools dùng source map để
 file trong `app/`. Không sửa `app/game.js`: đây là output được tạo lại tự động.
 Các file chia nhỏ vẫn dùng chung scope và tên biến từ bản gốc; builder ghép chúng
 trong cùng IIFE để giữ hành vi. Chưa chuyển sang các ES module độc lập.
+
+## Va chạm và thời điểm gây sát thương
+
+Click quái ưu tiên chọn mục tiêu trước đồ rơi, đổi sang điều khiển manual và
+nhấp nháy vòng vàng dưới chân trong 1 giây. Rê chuột lên vùng chọn quái
+hiện con trỏ dao nền trong suốt (`img/ui/attack-dagger.svg`), điểm click ở đầu
+dao; vùng chọn bao phủ thân và đầu, riêng với hitbox sát thương.
+Nếu ngoài tầm, nhân vật tiến vào tầm để ra đòn đầu tiên. Sau khi xuất chiêu,
+nhân vật giữ vị trí và tiếp tục đánh nếu mục tiêu còn trong tầm; không tự đuổi
+khi mục tiêu chạy ra xa. Click một mục tiêu hoặc vị trí mới để ra lệnh tiếp.
+Thời gian giữa các đòn vẫn được giữ, nhưng bộ đếm tiếp tục giảm khi đứng chờ
+trong manual để không phát sinh độ trễ do bộ đếm bị đóng băng.
+
+`app/combat/hit-resolution-01.js` cập nhật đạn và vùng đánh trong vòng mô phỏng.
+Đạn phải cắt hitbox mục tiêu; đạn và cận chiến có 0,12 giây ra đòn. Đạn thẳng giữ
+hướng ban đầu; đạn truy đuổi bẻ hướng theo dữ liệu chuyển động của từng chiêu.
+Vùng skill đứng yên xuất hiện tại tọa độ khởi tạo, không chạy theo người tung
+chiêu hoặc mục tiêu. Mục tiêu di chuyển ra khỏi đường đạn/vùng đánh có thể né.
+Thiên Ngoại Lưu Tinh, Thiên Địa Vô Cực, Phong Sương Toái Ảnh và Lôi Động Cửu Thiên bỏ qua vật cản
+khi xuất chiêu và xử lý hiệu ứng (kể cả hiệu ứng phụ). Vẫn phải đủ tầm đánh
+và chạm hitbox/nằm trong vùng ảnh hưởng đang hoạt động mới nhận sát thương.
+Va chạm quét cả đoạn chuyển động của đạn
+để tránh bỏ sót mục tiêu khi đạn chạy nhanh.
+
+Hiệu ứng hình ảnh dùng cùng vị trí mô phỏng; giới hạn số FX, tùy chọn giảm hiệu
+ứng và mô phỏng offline không quyết định damage. Chiêu phụ gây damage và debuff
+cũng chờ va chạm. Độc đã trúng tiếp tục tick; aura và bẫy kiểm tra vùng tác động.
+Hitbox dùng hình học của cơ thể và vùng skill, không kiểm tra từng pixel sprite.
+
+Test combat dùng dữ liệu Thiếu Lâm, Võ Đang, Cái Bang và Thiên Nhẫn để kiểm tra
+Vô Tướng Trảm, Thiên Địa Vô Cực, Phi Long Tại Thiên, Thiên Hạ Vô Cẩu và vùng nổ
+Thiên Ngoại Lưu Tinh: thời điểm damage, né đạn, truy đuổi, tâm cố định, phạm vi,
+thời hạn hiệu lực, xuyên mục tiêu, địa hình và tính độc lập với việc vẽ hình.
 
 ```text
 Game -> localStorage + outbox -> POST /api/storage -> Node HTTP -> SQLite
@@ -135,6 +194,20 @@ không hiển thị nút GM (trừ khi bạn chủ động đặt `NODE_ENV=deve
 Môi trường được bootstrap đọc từ `GET /api/config`, không bật bằng query trên URL.
 
 - Vàng: +100 triệu vạn lượng = **1.000.000.000.000 lượng**.
+- Cấp 150: tăng trực tiếp lên cấp 150, nhận điểm tiềm năng/kỹ năng tương ứng
+  số cấp tăng và đặt XP về 0. Không hạ cấp nhân vật đã đạt cấp 150 trở lên.
+- Học chiêu 90: tự tìm tất cả chiêu cấp 90 theo môn phái hiện tại, mở quyền bí kíp
+  và học cấp 1 (giữ cấp chiêu đã luyện). Không tốn bí kíp hay điểm kỹ năng;
+  vẫn cần đủ cấp học và đã gia nhập môn phái.
+- Nâng tối đa chiêu 90: nâng các chiêu cấp 90 đã học của phái hiện tại lên
+  giới hạn trong dữ liệu từng chiêu, đồng bộ tiến độ luyện và đặt XP chiêu về 0.
+- Tiềm năng: thêm **3.000 điểm chưa phân bổ** vào thẻ Nhân vật mỗi lần bấm.
+- Checkbox **Hiển thị phạm vi chiêu thức**: vẽ một vòng quanh nhân vật theo
+  tầm đánh của chiêu chính hiện tại; đổi chiêu thì vòng cập nhật theo. Vòng tròn
+  trong tọa độ game hiện thành ellipse theo góc nhìn bản đồ, dùng cùng cách tính
+  khoảng cách với tầm xuất chiêu. Bán kính Bắc–Nam bằng 60% Đông–Tây (trước đây
+  là 50%); Đông–Tây giữ nguyên. Chiêu đánh quanh người dùng bán kính vùng ảnh hưởng.
+  Mặc định tắt mỗi lần reload; đóng bảng GM vẫn giữ vòng khi checkbox đang bật.
 - Kim Nguyên Bảo: +10 vạn = **100.000 KNB**.
 - Kinh nghiệm: +**100.000.000 XP**, qua logic lên cấp hiện có, không nhân bonus XP.
   Nếu đã đạt giới hạn cấp, nút báo lỗi và không thêm XP.

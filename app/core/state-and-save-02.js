@@ -13,6 +13,7 @@ var Td = function (A) {
       mg()),
     l.dirty && D0());
   const n = l.P;
+  advanceSkillContacts(A);
   if (l.deadT > 0) {
     ((l.deadT -= A),
       l.deadT <= 0 && ((l.life = n.life), (l.mana = n.mana), (o.wave = 1), Ga() || o8()));
@@ -77,11 +78,12 @@ var Td = function (A) {
     Cd();
     return;
   }
+  l.atkT = Math.max(0, (l.atkT || 0) - A * (l.slowT > 0 ? Qa : 1));
   ($1() && Ah(A),
     (t && l.pickTarget) ||
       (hA() && !(l.manTgt && !l.manTgt.dead && l.manTgt.hp > 0)
         ? (l.manTgt = null)
-        : ($1() && !(hA() && l.manTgt)) ||
+        : (hA() && l.clickHold) || ($1() && !(hA() && l.manTgt)) ||
           (hA() && l.manTgt && l.moveTo === l.manTgt && !Y.target && !Y.active
             ? l.stunT > 0 || wa(v, l.manTgt.x, l.manTgt.y, 150 * Ra() * (l.slowT > 0 ? Qa : 1) * A)
             : l.moveTo &&
@@ -91,7 +93,7 @@ var Td = function (A) {
                 wa(v, l.moveTo.x, l.moveTo.y, 150 * Ra() * (l.slowT > 0 ? Qa : 1) * A))),
       !(l.stunT > 0) &&
         !(hA() && !l.manTgt) &&
-        ((l.atkT -= A * (l.slowT > 0 ? Qa : 1)), l.atkT <= 0 && (l.atkT = oD()))));
+        (l.atkT <= 0 && (l.atkT = oD()))));
   for (const e of _1()) $d(e, A);
   (Cd(), (l.stall += A), l.stall > 45 && rD(), l.life <= 0 && dD());
 };

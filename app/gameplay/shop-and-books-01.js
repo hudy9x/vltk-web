@@ -151,13 +151,12 @@ var A6 = function (A) {
         )
           continue;
         w();
-        const P = p.curse || (p.curse = {});
-        ((P[i] = n + Math.min(g, 60)), typeof Ya == "function" && Ya({ id: +i }));
-        for (const _ of l.enemies)
-          _ !== p &&
-            !_.dead &&
-            q0(p, _) < 120 &&
-            ((_.curse || (_.curse = {}))[i] = n + Math.min(g, 60));
+        queueSkillContact(v, p, {
+          id: +i, L: f, parts: {}, melee: false, rad: 420,
+          geo: { k: "spot", r: 120, pierce: true },
+        }, target => {
+          (target.curse || (target.curse = {}))[i] = ya() + Math.min(g, 60);
+        }, { maxTargets: Infinity });
       }
     }
   }

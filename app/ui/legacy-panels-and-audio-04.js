@@ -19,23 +19,28 @@ var Rv = function () {
           moved: !1,
           x: r,
           y: c,
+          selected: !1,
         }),
         lA.setPointerCapture && lA.setPointerCapture(e.pointerId),
-        d)
+        !eh(r + B0.x, c + B0.y) && d)
       ) {
+        Y.releaseTarget();
+        l.clickedTarget = d;
+        l.clickedUntil = (l.clock || 0) + 1;
         ((l.pickTarget = l.pickTarget === d ? null : d),
           l.pickTarget && k(`Đi nhặt: ${d.it.n}`),
           (Y.mouse = !1));
         return;
       }
-      if (hA()) {
+      {
         const g = eh(r + B0.x, c + B0.y);
         if (g) {
-          ((l.manTgt = g), (Y.mouse = !1), (Y.target = null), k("Tấn công: " + g.n));
+          Y.selectTarget(g);
           return;
         }
       }
       hA() || (Y.tmp = !0);
+      Y.releaseTarget();
       const [f, h] = X0(r + B0.x, c + B0.y);
       ((Y.target = { x: f, y: h }), (l.pickTarget = null));
       return;
@@ -50,14 +55,21 @@ var Rv = function () {
       x: a,
       y: i,
       moved: !1,
+      selected: !1,
     }),
       lA.setPointerCapture && lA.setPointerCapture(e.pointerId));
   }),
     lA.addEventListener("pointermove", (e) => {
+      if (Hs() && e.pointerType !== "touch") {
+        const [x, y] = A(e);
+        lA.style.cursor = eh(x + B0.x, y + B0.y) ? 'url("img/ui/attack-dagger.svg") 2 2, pointer' : "default";
+      }
       if (!Y.active || e.pointerId !== Y.id) return;
+      if (Y.selected) return;
       const [a, i] = A(e);
       if (((Y.x = a), (Y.y = i), Y.mouse)) {
         const [r, c] = X0(a + B0.x, i + B0.y);
+        Y.releaseTarget();
         Y.target = { x: r, y: c };
         return;
       }
@@ -65,6 +77,7 @@ var Rv = function () {
         if (Y.moved || Math.hypot(a - Y.ox, i - Y.oy) > sh) {
           ((Y.moved = !0), hA() || (Y.tmp = !0));
           const [r, c] = X0(a + B0.x, i + B0.y);
+          Y.releaseTarget();
           Y.target = { x: r, y: c };
         }
         return;
@@ -76,17 +89,20 @@ var Rv = function () {
   const n = (e) => {
     if (e.pointerId !== Y.id) return;
     const [a, i] = A(e),
-      r = !Y.moved && !Y.mouse;
+      r = !Y.moved && !Y.mouse && !Y.selected;
     if (((Y.mouse = !1), (Y.active = !1), (Y.id = null), (Y.moved = !1), !r)) return;
-    if (hA()) {
+    {
       const d = eh(a + B0.x, i + B0.y);
       if (d) {
-        ((l.manTgt = d), (Y.target = null), k("Tấn công: " + d.n));
+        Y.selectTarget(d);
         return;
       }
     }
     const c = $6(a + B0.x, i + B0.y);
+    Y.releaseTarget();
     if (c) {
+      l.clickedTarget = c;
+      l.clickedUntil = (l.clock || 0) + 1;
       ((l.pickTarget = l.pickTarget === c ? null : c), l.pickTarget && k(`Đi nhặt: ${c.it.n}`));
       return;
     }
@@ -185,6 +201,33 @@ var Rv = function () {
 var ah = function (A) {};
 
 var Y = {
+  selectTarget(target) {
+    if (!hA()) Wa("manual", !0);
+    l.manTgt = target;
+    l.clickedTarget = target;
+    l.clickedUntil = (l.clock || 0) + 1;
+    l.clickHold = false;
+    l.moveTo = null;
+    l.pickTarget = null;
+    Y.target = null;
+    Y.mouse = false;
+    Y.selected = true;
+    k("Tấn công: " + target.n);
+  },
+  releaseTarget() {
+    l.manTgt = null;
+    l.moveTo = null;
+    l.pickTarget = null;
+    l.clickHold = false;
+  },
+  stopAfterCast() {
+    if (!hA() || !l.manTgt) return;
+    l.clickHold = true;
+    l.moveTo = null;
+    l.pickTarget = null;
+    Y.target = null;
+    Y.mouse = false;
+  },
   active: !1,
   id: null,
   fromJoy: !1,

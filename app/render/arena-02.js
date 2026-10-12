@@ -7,6 +7,19 @@ var NP = function (A) {
     n.setTransform(H1, 0, 0, H1, -Math.round(B0.x) * H1, -Math.round(B0.y) * H1));
   const t = l.bgImg;
   (EP(n, t), (n.textAlign = "center"));
+  if (typeof gameMaster !== "undefined" && gameMaster) gameMaster.drawSkillRange(n);
+  const clicked = l.clickedTarget;
+  const clickTime = (l.clickedUntil || 0) - (l.clock || 0);
+  if (clicked && clickTime > 0 && !clicked.dead && !(clicked.hp <= 0)) {
+    n.save();
+    n.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(clickTime * Math.PI * 5));
+    n.strokeStyle = "#fff18a";
+    n.lineWidth = 3;
+    n.beginPath();
+    n.ellipse(clicked.x, clicked.y, (clicked.r || 17) + 9, ((clicked.r || 17) + 9) / 2, 0, 0, Math.PI * 2);
+    n.stroke();
+    n.restore();
+  } else if (clicked) l.clickedTarget = null;
   for (const a of l.town ? [] : l.ground) {
     const i = a.it.ic ? bA(a.it.ic) : null,
       r = mA(a.it),
@@ -200,23 +213,13 @@ var NP = function (A) {
       w0[a.series],
     );
   }
-  if (
-    ((l.fx = l.fx.filter((a) => {
-      if (a.k === "jm") {
-        const r = RP(a, A);
-        return (r && YP(a), r);
-      }
-      if (a.k !== "mis" && a.k !== "boom") return !0;
-      const i = TP(a, A);
-      return (i && CP(a), i);
-    })),
-    l.fxQ && l.fxQ.length)
-  ) {
-    for (const a of l.fxQ) l.fx.push(a);
-    l.fxQ.length = 0;
+  for (const effect of l.fx) {
+    if (effect.k === "jm") YP(effect);
+    else if (effect.k === "mis" || effect.k === "boom") CP(effect);
+    else if (effect.k === "contact") drawContactProjectile(effect);
   }
   for (const a of l.fx) {
-    if (a.k === "mis" || a.k === "boom" || a.k === "jm") continue;
+    if (a.k === "mis" || a.k === "boom" || a.k === "jm" || a.k === "contact") continue;
     a.life -= A;
     const i = E(a.life / a.max, 0, 1);
     ((n.globalAlpha = i),

@@ -85,16 +85,17 @@ var uf = function (A, n, t) {
 
 var Wn = function (A, n, t, e, a, i, r) {
   const c = A0.m[A];
-  if (!c || l.quiet || l.fx.length > mf) return null;
+  if (!c || (!activeCombatCast && (l.quiet || l.fx.length > mf))) return null;
+  const movement = activeCombatCast && typeof t7 !== "undefined" && t7[A];
   const d = R3(A) || [
-    c.fly ? 1 : 0,
-    16,
+    movement ? movement[0] : c.fly ? 1 : 0,
+    movement && movement[0] === 0 && c.fly ? Math.ceil(c.fly.n * c.fly.ms * K3 / 1000) : 16,
     Math.round((c.spd || 360) / K3),
     10,
     0,
     0,
     1,
-    1,
+    movement ? !!movement[2] : 1,
     0,
     1,
     0,
@@ -102,6 +103,9 @@ var Wn = function (A, n, t, e, a, i, r) {
   ];
   let [f, h, g, u, w, x, p, P, _, y] = d;
   (c.fly || ((f = 0), (h = 1)), u1 && (u1.life && (h = u1.life), u1.spd && (g = u1.spd)));
+  const travelLimit = movement && movement[0] && movement[0] !== 3 && movement[0] !== 4
+    ? Math.max(movement[1] || 0, activeCombatCast.skill.rad || 0) * QA : 0;
+  if (travelLimit && g > 0 && !(u1 && u1.life) && !R3(A)) h = Math.ceil(travelLimit / g);
   const M = !!(u1 && u1.still);
   (M && ((g = 0), (h = Math.min(h || 12, 14)), (t += 14)), (h = E(h || 12, 1, 72)));
   const B = {
@@ -122,7 +126,7 @@ var Wn = function (A, n, t, e, a, i, r) {
     cv: !!P,
     ae: !!_,
     cr: 10 + (y || 1) * 14,
-    age: -(i || 0),
+    age: i ? -i : 0,
     ang: e,
     tgt: a || null,
     hit: !1,
@@ -133,18 +137,22 @@ var Wn = function (A, n, t, e, a, i, r) {
     spin: (r && r.spin) || 1,
     sh: (u1 && u1.sh) || 0,
     tr: [],
+    travelLimit,
+    traveled: 0,
   };
   return (
     (f === 3 || f === 4) &&
       ((B.cx = B.cx != null ? B.cx : v.x),
       (B.cy = B.cy != null ? B.cy : v.y),
       (B.rad = B.rad || Math.max(30, Math.hypot(n - B.cx, (t - B.cy) * 2)))),
-    l.fx.push(B),
+    registerCombatMissile(B),
+    !l.quiet && l.fx.length <= mf && l.fx.push(B),
     B
   );
 };
 
 var gf = function (A, n, t) {
+  if (l.quiet) return;
   const e = A.m.hit;
   !e ||
     l.fx.length > mf ||
@@ -169,8 +177,8 @@ var KP = function (A) {
       A.ang += E(e, -0.45, 0.45);
     }
   }
-  (A.kind === 0 && UP.has(A.mid) && A.tgt && !A.tgt.dead && ((A.x = A.tgt.x), (A.y = A.tgt.y - 14)),
-    A.still && A.tgt && !A.tgt.dead && ((A.x = A.tgt.x), (A.y = A.tgt.y)),
+  (!A.combat && A.kind === 0 && UP.has(A.mid) && A.tgt && !A.tgt.dead && ((A.x = A.tgt.x), (A.y = A.tgt.y - 14)),
+    !A.combat && A.still && A.tgt && !A.tgt.dead && ((A.x = A.tgt.x), (A.y = A.tgt.y)),
     A.sh && (A.tr.push([A.x, A.y]), A.tr.length > A.sh && A.tr.shift()));
   const n = (t, e) => {
     ((A.x += Math.cos(t) * e), (A.y += (Math.sin(t) * e) / 2));
@@ -183,11 +191,14 @@ var KP = function (A) {
       n(A.ang, A.spd);
       break;
     case 5:
-      (A.tgt &&
-        !A.tgt.dead &&
-        Math.floor(A.age) % 8 === 0 &&
-        (A.ang = Y3(A.tgt.x - A.x, A.tgt.y - 14 - A.y)),
-        n(A.ang, A.spd));
+      if (A.tgt && !A.tgt.dead) {
+        const direction = Y3(A.tgt.x - A.x, A.tgt.y - 14 - A.y);
+        if (A.combat) {
+          const turn = ((direction - A.ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+          A.ang += E(turn, -0.35, 0.35);
+        } else if (Math.floor(A.age) % 8 === 0) A.ang = direction;
+      }
+      n(A.ang, A.spd);
       break;
     case 2:
       ((A.ang += (Math.random() - 0.5) * 0.9), n(A.ang, A.spd));
@@ -195,8 +206,8 @@ var KP = function (A) {
     case 3:
     case 4: {
       ((A.ang += T8 * A.spin), A.kind === 4 && (A.rad += (A.spd + 50) * T8));
-      const t = A.kind === 3 ? v.x : A.cx,
-        e = A.kind === 3 ? v.y : A.cy;
+      const t = A.kind === 3 && !A.combat ? v.x : A.cx,
+        e = A.kind === 3 && !A.combat ? v.y : A.cy;
       ((A.x = t + Math.cos(A.ang) * A.rad), (A.y = e - 14 + (Math.sin(A.ang) * A.rad) / 2));
       break;
     }
@@ -264,7 +275,7 @@ var bs = function (A, n, t, e, a, i, r) {
     u = e ? e[1] : 0,
     w = e ? e[2] : 0,
     x = R3(A),
-    p = x ? x[0] !== 0 : !!(A0.m[A] || {}).fly,
+    p = x ? x[0] !== 0 : activeCombatCast && typeof t7 !== "undefined" && t7[A] ? t7[A][0] !== 0 : !!(A0.m[A] || {}).fly,
     P = (y) => uf(e, y, t),
     _ = (y, M, B, O) => [y + Math.cos(B) * O, M + (Math.sin(B) * O) / 2];
   if (n === 8 && p) {
@@ -292,7 +303,7 @@ var bs = function (A, n, t, e, a, i, r) {
       for (let G = 0; G < t; G++) {
         const j = (G - (t - 1) / 2) * y,
           [X, $0] = _(B, O, M, j);
-        Wn(A, X, $0, w ? g : M, r, P(G));
+        Wn(A, X, $0, activeCombatCast ? g : w ? g : M, r, P(G));
       }
       return;
     }
@@ -364,7 +375,7 @@ var G3 = function (A, n, t) {
     ((e = Object.assign({}, A0.f[r], { pre: e.pre })), (a = c), (d = !0));
   const f = e.c || A0.s[t.id],
     h = t.id && A0.m[f];
-  if ((Ya(t), !h || l.quiet)) {
+  if ((Ya(t), !h || (l.quiet && !activeCombatCast))) {
     x8(A, n, t);
     return;
   }
@@ -391,7 +402,7 @@ var G3 = function (A, n, t) {
   const P = VP[t.id],
     _ = u1 && u1.life;
   try {
-    bs(f, g, o.lowFx ? Math.min(u, 3) : u, a, A, n, n);
+    bs(f, g, o.lowFx && !activeCombatCast ? Math.min(u, 3) : u, a, A, n, n);
   } finally {
     u1 = null;
   }

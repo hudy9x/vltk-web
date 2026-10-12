@@ -102,6 +102,7 @@ function game(development = true) {
     af() {},
   };
   vm.createContext(s);
+  vm.runInContext(declaration("app/combat/hit-resolution-01.js", "SKILL_RANGE_Y_RATIO"), s);
   for (const [file, name] of [
     ["app/gameplay/shop-and-books-01.js", "se"],
     ["app/gameplay/shop-and-books-01.js", "B4"],
@@ -155,6 +156,73 @@ test("GM chests stack, preserve the rewarded faction, and never consume a chest 
   assert.equal(s.c6(chest), true);
   assert.equal(s.o.inv.length, 3);
 });
+test("GM level 150 awards level points once, preserves higher levels, and saves potential separately", () => {
+  const s = game();
+  s.G2 = () => 200;
+  s.o.lvl = 20;
+  s.o.xp = 123;
+  s.gameMaster.grant("level150");
+  assert.equal(s.o.lvl, 150);
+  assert.equal(s.o.xp, 0);
+  assert.equal(s.o.attrPts, 130 * s.z2);
+  assert.equal(s.o.skPts, 130 * s.x5);
+  s.gameMaster.grant("level150");
+  assert.equal(s.o.attrPts, 130 * s.z2);
+  s.o.lvl = 152;
+  s.o.xp = 123;
+  s.gameMaster.grant("level150");
+  assert.equal(s.o.lvl, 152);
+  assert.equal(s.o.xp, 123);
+  s.gameMaster.grant("potential");
+  assert.equal(s.saved.at(-1).attrPts, 130 * s.z2 + 3000);
+  s.o.attrPts = Number.MAX_SAFE_INTEGER;
+  assert.throws(() => s.gameMaster.grant("potential"), /an toàn/);
+  s.o.lvl = 10;
+  s.G2 = () => 100;
+  assert.throws(() => s.gameMaster.grant("level150"), /Giới hạn cấp/);
+  assert.equal(s.o.lvl, 10);
+});
+test("GM finds real level 90 skills for every faction, preserves learning progress, and maxes only learned skills", () => {
+  const s = game();
+  const catalog = {};
+  catalog.window = catalog;
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT, "data.js"), "utf8"), catalog);
+  s.T = catalog.JX.skills;
+  for (const skill of Object.values(s.T)) {
+    if (skill.learn === "90") Object.assign(skill, { tier: 90, req: 80, book: "bk90" });
+  }
+  s.I = Object.fromEntries(catalog.JX.factions.filter(faction => faction.skills?.length).map(faction => [faction.key, faction]));
+  vm.runInContext(declaration("app/gameplay/shop-and-books-01.js", "va"), s);
+  vm.runInContext(declaration("app/combat/skills-01.js", "W2"), s);
+  for (const faction of Object.values(s.I)) {
+    const ids = faction.skills.filter(id => s.T[id]?.tier === 90);
+    assert.ok(ids.length, faction.key);
+    Object.assign(s.o, { fac: faction.key, lvl: 150, sk: {}, skL: {}, bkOk: {} });
+    assert.throws(() => s.gameMaster.grant("max90"), /Hãy học/);
+    const first = ids[0];
+    s.o.sk[first] = 5;
+    s.o.skL[first] = { lv: 5, xp: 42 };
+    s.gameMaster.grant("learn90");
+    assert.deepEqual(Object.keys(s.o.sk).sort(), Array.from(ids, String).sort());
+    assert.equal(s.o.sk[first], 5);
+    assert.equal(s.o.skL[first].xp, 42);
+    assert.ok(ids.every(id => s.o.bkOk[id]));
+    assert.equal(s.o.skPts, 0);
+    if (ids.length > 1) delete s.o.sk[ids[1]];
+    s.gameMaster.grant("max90");
+    for (const id of ids.filter(id => id !== ids[1])) {
+      assert.equal(s.saved.at(-1).sk[id], s.T[id].max);
+      assert.equal(s.saved.at(-1).skL[id].lv, s.T[id].max);
+      assert.equal(s.saved.at(-1).skL[id].xp, 0);
+    }
+    if (ids.length > 1) assert.equal(s.o.sk[ids[1]], undefined);
+  }
+  Object.assign(s.o, { fac: "wudang", lvl: 1, sk: {}, skL: {}, bkOk: {} });
+  assert.throws(() => s.gameMaster.grant("learn90"), /Chưa đủ cấp/);
+  assert.deepEqual(Object.keys(s.o.sk), []);
+  s.o.fac = "vo0";
+  assert.throws(() => s.gameMaster.grant("learn90"), /gia nhập/);
+});
 test("GM grants two independent original Can Khon rings with +2 all skills and rejects insufficient inventory space", () => {
   const s = game();
   const catalog = {};
@@ -191,6 +259,39 @@ test("production has no GM controls or grants, while previously earned chests re
   s.B4("gm_hk_shaolin", 1);
   assert.equal(s.c6(s.o.inv[0]), true);
   assert.equal(s.o.inv[0].n, "Đồ Thiếu Lâm");
+});
+test("GM range checkbox draws only the current skill at the moving hero, updates on skill change, and restores canvas state", () => {
+  const s = game();
+  s.QA = 0.81;
+  s.v = { x: 120, y: 200 };
+  s.l.P.main = { rad: 300 };
+  const calls = [];
+  const context = {
+    save: () => calls.push("save"), restore: () => calls.push("restore"),
+    setLineDash() {}, beginPath() {}, fill() {}, stroke() {},
+    ellipse: (...args) => calls.push(args),
+  };
+  const panel = s.nodes.find(node => node.id === "gm-panel");
+  assert.match(panel.innerHTML, /type="checkbox" id="gm-show-range"/);
+  s.gameMaster.drawSkillRange(context);
+  assert.equal(calls.length, 0);
+  panel.onchange({ target: { id: "gm-show-range", checked: true } });
+  s.gameMaster.drawSkillRange(context);
+  assert.deepEqual(calls[1].slice(0, 2), [120, 200]);
+  assert.ok(Math.abs(calls[1][2] - 243) < 1e-9);
+  assert.ok(Math.abs(calls[1][3] - 145.8) < 1e-9);
+  assert.equal(calls[0], "save");
+  assert.equal(calls[2], "restore");
+  calls.length = 0;
+  s.v.x = 160;
+  s.l.P.main = { rad: 600, geo: { k: "self", r: 96 } };
+  s.gameMaster.drawSkillRange(context);
+  assert.equal(calls.filter(Array.isArray).length, 1);
+  assert.deepEqual(calls[1].slice(0, 4), [160, 200, 96 * 0.81, 96 * 0.81 * 0.6]);
+  calls.length = 0;
+  panel.onchange({ target: { id: "gm-show-range", checked: false } });
+  s.gameMaster.drawSkillRange(context);
+  assert.equal(calls.length, 0);
 });
 test("quick sale sells clicked inventory items without confirmation, unlocks locked items, saves, and stops on Escape", () => {
   const s = game();

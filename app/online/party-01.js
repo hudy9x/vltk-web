@@ -413,33 +413,32 @@ var Am = function (A) {
         )),
         (e.atT = e.atD),
         (e.hurtT = 0));
-      let w = e.dps * u * Z(0.85, 1.15),
-        x = 0;
-      const p = Object.keys(e.pf).length ? e.pf : { [e.el]: 1 };
-      for (const P in p) {
-        let _ = w * p[P];
-        if (P === "poison") {
-          dB(r, ja(_, "poison", e.se, r.series, r.res, 75, 0));
-          continue;
+      const parts = Object.keys(e.pf).length ? e.pf : { [e.el]: 1 };
+      const attack = { id: e.id, L: e.L, nMis: e.nm, parts, melee: e.mel, rad: h, ox: e.x, oy: e.y };
+      queueSkillContact(e, r, attack, (r) => {
+        let w = e.dps * u * Z(0.85, 1.15),
+          x = 0;
+        const p = Object.keys(e.pf).length ? e.pf : { [e.el]: 1 };
+        for (const P in p) {
+          let _ = w * p[P];
+          if (P === "poison") {
+            dB(r, ja(_, "poison", e.se, r.series, r.res, 75, 0));
+            continue;
+          }
+          x += ja(_, P, e.se, r.series, r.res, 75, 0);
         }
-        x += ja(_, P, e.se, r.series, r.res, 75, 0);
-      }
-      if (
         (y1(e.se, r.series) ? (x *= 1 + Ct) : y1(r.series, e.se) && (x *= 1 - Ct),
-        (x = Math.max(1, x)),
-        (r.hp -= x),
-        (r.hitT = 0.1),
-        (r.aggro = !0),
-        (!r.tgtA || Math.random() < 0.35) && (r.tgtA = e),
-        p.cold && !(r.slowT > 0) && (r.slowT = e.ct || f8),
-        p.light && Math.random() < Od && (r.stun = Math.max(r.stun || 0, Ed)),
-        e.stn && Math.random() * 100 < e.stn && (r.stun = Math.max(r.stun || 0, 0.8)),
-        e.id && typeof E8 == "function" && E8({ id: e.id }, r),
-        !l.quiet && ($A(r.x, r.y - r.r - 6, F(x), "#8fe36a", 11), e.id && typeof G3 == "function"))
-      )
-        try {
-          G3(e, r, { id: e.id, L: e.L, nMis: e.nm, parts: p, ox: e.x, oy: e.y });
-        } catch {}
+          (x = Math.max(1, x)),
+          (r.hp -= x),
+          (r.hitT = 0.1),
+          (r.aggro = !0),
+          (!r.tgtA || Math.random() < 0.35) && (r.tgtA = e),
+          p.cold && !(r.slowT > 0) && (r.slowT = e.ct || f8),
+          p.light && Math.random() < Od && (r.stun = Math.max(r.stun || 0, Ed)),
+          e.stn && Math.random() * 100 < e.stn && (r.stun = Math.max(r.stun || 0, 0.8)),
+          e.id && typeof E8 == "function" && E8({ id: e.id }, r),
+          !l.quiet && $A(r.x, r.y - r.r - 6, F(x), "#8fe36a", 11));
+      }, { maxTargets: 1 });
     }
     (e.atT > 0 && (e.atT -= A), e.hurtT > 0 && (e.hurtT -= A));
   });
@@ -481,12 +480,15 @@ var fB = function (A, n, t) {
       if (!f || Math.hypot(f.x - A.x, f.y - A.y) > 420 || (f.cls === "normal" && n.length < 3))
         continue;
       const h = (g) => {
-        (((g.curse || (g.curse = {}))[i] = e + Math.max(3, c || 10)),
+        (((g.curse || (g.curse = {}))[i] = ya() + Math.max(3, c || 10)),
           ((g.curseL || (g.curseL = {}))[i] = r));
       };
-      h(f);
-      for (const g of n) g !== f && Math.hypot(g.x - f.x, g.y - f.y) < 120 && h(g);
-      !l.quiet && typeof Ya == "function" && Ya({ id: i, ox: A.x, oy: A.y });
+      queueSkillContact(A, f, {
+        id: i, L: r, parts: {}, melee: false, rad: 420,
+        geo: { k: "spot", r: 120, pierce: true }, ox: A.x, oy: A.y,
+      }, target => {
+        h(target);
+      }, { maxTargets: Infinity });
       break;
     }
 };

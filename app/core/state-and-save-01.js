@@ -511,7 +511,8 @@ var l8 = function (A, n, t, e) {
 };
 
 var nD = function (A, n, t) {
-  const e = (O) => ({ x: O.x / QA, y: (O.y * 2) / QA }),
+  const verticalRatio = A.geo.k === "self" ? SKILL_RANGE_Y_RATIO : 0.5;
+  const e = (O) => ({ x: O.x / QA, y: O.y / verticalRatio / QA }),
     a = (O) => (O.r || 12) / QA,
     i = e(v),
     r = e(n),
@@ -522,7 +523,7 @@ var nD = function (A, n, t) {
     g = d / h,
     u = f / h,
     w = t.filter((O) => O !== n && !O.dead).map((O) => ({ e: O, p: e(O), r: a(O) })),
-    x = (O, G, j) => mt(O * QA, (G * QA) / 2, j.e.x, j.e.y),
+    x = (O, G, j) => skillIgnoresTerrain(A) || mt(O * QA, G * QA * verticalRatio, j.e.x, j.e.y),
     p = (O, G, j) => w.filter((X) => Math.hypot(X.p.x - O, X.p.y - G) <= j + X.r && x(O, G, X)),
     P = (O, G, j) =>
       O.sort((X, $0) => Math.hypot(X.p.x - G, X.p.y - j) - Math.hypot($0.p.x - G, $0.p.y - j)),
@@ -586,35 +587,36 @@ var eD = function (A, n, t, e, a) {
       a.col && e
         ? e.filter((h) => !h.dead && h.hp > 0).slice(0, Qi(A, a))
         : t
-            .filter((h) => !h.dead && q0(r, h) < c && mt(r.x, r.y, h.x, h.y))
+            .filter((h) => !h.dead && q0(r, h) < c && (skillIgnoresTerrain(A) || mt(r.x, r.y, h.x, h.y)))
             .sort((h, g) => q0(r, h) - q0(r, g))
             .slice(0, Qi(A, a));
-  let f = !1;
-  (a.self && i && (a.noFx || Be(v, A, a.n, null, a), (f = !0)),
-    a.rays && i && ((l.ev2Tg = d), Be(n, A, null, v, a), (l.ev2Tg = null)),
-    a.castFx && i && Be(v, A, null, null, { self: !0, fx: a.castFx }));
-  for (const h of d) {
-    if (a.fxOnly) {
-      i && !f && (Be(h, A, a.n, null, a), (f = !0));
-      continue;
-    }
-    if (a.chance && Math.random() >= a.chance) continue;
-    const g = S5(A, a),
-      u = Object.assign({}, A, {
-        parts: g,
-        stun: a.stun || 0,
-        useAR: !1,
-        ev2: !0,
-        crit: a.el === "phys" ? A.crit : 0,
-      });
-    (Ls(hs(u, h), u),
-      i && !a.self && !f && Be(h, A, a.rays ? `${a.n} ×${Qi(A, a)}` : a.n, a.rays ? v : null, a),
-      (f = !0));
+  if (a.castFx && i) Be(v, A, null, null, { self: !0, fx: a.castFx });
+  if (a.fxOnly) {
+    if (i) Be(a.self ? v : n, A, a.n, a.rays ? v : null, a);
+    return;
   }
-  !f && !a.chance && !a.rays && i && Be(n, A, a.n, null, a);
+  const eligible = d;
+  const u = Object.assign({}, A, {
+    parts: S5(A, a), stun: a.stun || 0, useAR: !1, ev2: !0,
+    crit: a.el === "phys" ? A.crit : 0,
+    geo: a.self ? { k: "self", r: c, pierce: true } : a.rays ? { k: "fan", n: Qi(A, a) } : { k: "spot", r: c, pierce: true },
+  });
+  queueSkillContact(v, a.self ? v : n, u, target => {
+    if (!a.chance || Math.random() < a.chance) Ls(hs(u, target), u);
+  }, {
+    maxTargets: Qi(A, a),
+    targets: () => _1(),
+    visual: () => {
+      if (!i || a.noFx) return;
+      l.ev2Tg = eligible;
+      try { Be(a.self ? v : n, A, a.n, a.rays ? v : null, a); }
+      finally { l.ev2Tg = null; }
+    },
+  });
 };
 
 var aD = function (A, n, t) {
+  if (hA() && l.clickHold) return 0;
   if (!o.sk[gs] || l.dash || l.town) return 0;
   const e = A.actives.find((d) => d.id === gs);
   if (
@@ -626,7 +628,7 @@ var aD = function (A, n, t) {
     !mt(v.x, v.y, n.x, n.y)
   )
     return 0;
-  (o4(e), ((l.skCd = l.skCd || {})[gs] = (l.clock || 0) + (e.cd || 2)));
+  (o4(e), typeof Y !== "undefined" && Y.stopAfterCast(), ((l.skCd = l.skCd || {})[gs] = (l.clock || 0) + (e.cd || 2)));
   const a = n.x - v.x,
     i = n.y - v.y,
     r = Math.hypot(a, i) || 1,
@@ -663,7 +665,7 @@ var sD = function (A) {
   ) {
     l.dash = null;
     const e = n.tg;
-    (e && !e.dead && e.hp > 0 && Ls(hs(n.a, e), n.a),
+    (e && !e.dead && e.hp > 0 && q0(v, e) <= ((e.r || 12) + 24) / QA && mt(v.x, v.y, e.x, e.y) && Ls(hs(n.a, e), n.a),
       (v.act = "at"),
       (v.actT = 0),
       n.a.id && G8(n.a.id));
@@ -728,9 +730,9 @@ var oD = function () {
     const h = typeof jm == "function" && jm(e, t);
     if (h) return h;
   }
-  const a = q0(v, t) - t.r / QA;
+  const a = skillCastDistance(v, t) - t.r / QA;
   {
-    const h = aD(A, t, a);
+    const h = aD(A, t, q0(v, t) - t.r / QA);
     if (h) return h;
   }
   if (a > e.rad + 300 && S3()) Ka(!0, !0);
@@ -739,13 +741,15 @@ var oD = function () {
     if (h === !0) return 0.25;
     h === null && (e = A.basic);
   }
-  const i = o.closeAtk && !$1() ? Math.min(e.rad, 70) : e.rad;
-  if (a > i || !mt(v.x, v.y, t.x, t.y))
-    return ((l.moveTo = $1() && !(hA() && l.manTgt === t) ? null : t), 0.05);
+  const reach = e.geo && e.geo.k === "self" ? e.geo.r || e.rad : e.rad;
+  const i = o.closeAtk && !$1() ? Math.min(reach, 70) : reach;
+  if (a > i || (!skillIgnoresTerrain(e) && !mt(v.x, v.y, t.x, t.y)))
+    return ((l.moveTo = (hA() && l.clickHold) || ($1() && !(hA() && l.manTgt === t)) ? null : t), 0.05);
   ((l.moveTo = null),
     (l.tgtHitT = l.clock || 0),
     (l.tgtD = 0),
     o4(e),
+    typeof Y !== "undefined" && Y.stopAfterCast(),
     e.cd && ((l.skCd = l.skCd || {})[e.id] = (l.clock || 0) + e.cd),
     l.rotNext != null && ((l.rotI = l.rotNext), (l.rotNext = null)));
   const r = e.around ? v : t,
@@ -753,18 +757,23 @@ var oD = function () {
     d = e.geo
       ? nD(e, t, n)
       : n
-          .filter((h) => h !== t && q0(r, h) < (e.targets > 1 ? c : 0) && mt(r.x, r.y, h.x, h.y))
+          .filter((h) => h !== t && q0(r, h) < (e.targets > 1 ? c : 0) && (skillIgnoresTerrain(e) || mt(r.x, r.y, h.x, h.y)))
           .slice(0, e.targets - 1);
   d.unshift(t);
-  const f = typeof A0 < "u" && A0.f[e.id] && A0.f[e.id].meleeFly;
-  for (const h of d) Ls(hs(e, h), e);
-  {
-    const h = l8(e, t, a, d.length);
-    for (let g = 0; g < h && !t.dead && t.hp > 0; g++) Ls(hs(e, t), e);
-  }
+  const extraHits = l8(e, t, a, d.length);
+  let triggered = false;
+  queueSkillContact(v, t, e, (target) => {
+    Ls(hs(e, target), e);
+    if (e.ev && !triggered) {
+      triggered = true;
+      const live = _1();
+      tD(e, target, live, [target].concat(e.geo ? nD(e, target, live) : []));
+    }
+  }, {
+    maxTargets: e.geo && (e.geo.pierce || e.geo.k === "self" || e.geo.k === "spot") ? Infinity : Math.max(1, (e.geo && e.geo.n) || e.targets || d.length),
+    maxHits: target => target === t ? 1 + extraHits : 1,
+  });
   return (
-    G3(v, t, e),
-    e.ev && tD(e, t, n, d),
     (v.face = t.x >= v.x ? 1 : -1),
     (v.dir = kn(t.x - v.x, t.y - v.y)),
     (v.act = "at"),
@@ -814,9 +823,10 @@ var $d = function (A, n) {
       A.atkCd <= 0 &&
       ((A.atkCd =
         A.cd * (A.curse && typeof Rn == "function" ? 1 + ((Rn(A) || {}).slow || 0) / 100 : 1)),
-      e === v ? U9(A) : hB(e, A),
+      queueSkillContact(A, e, { melee: !A.ranged, rad: A.reach || 90, parts: { phys: 1 } },
+        target => target === v ? U9(A) : hB(target, A),
+        { maxTargets: 1, targets: () => [e].filter(target => target === v || (l.allies || []).includes(target)), visual: () => {} }),
       (A.act = "at"),
       (A.actT = 0),
-      W3(A.animKey || r0[A.tid].anim, "at", 0.35),
-      A.ranged && x8(A, e, { parts: { phys: 1 } })));
+      W3(A.animKey || r0[A.tid].anim, "at", 0.35)));
 };

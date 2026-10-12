@@ -72,6 +72,7 @@ var Ya = function (A) {
       t: 0,
       life: yn(t),
       dir: 0,
+      cosmetic: true,
     });
 };
 
@@ -248,9 +249,9 @@ var B8 = function (A, n, t) {
     f = (i && A === v && (l.enemies || []).find((u) => !u.dead)) || A,
     h = t.rays ? (l.ev2Tg || []).filter((u) => u && !u.dead).slice(0, r) : null,
     g = () => {
-      if (!l.quiet) {
+      if (!l.quiet || activeCombatCast) {
         if (h) {
-          const u = o.lowFx ? Math.min(r, 3) : r,
+          const u = o.lowFx && !activeCombatCast ? Math.min(r, 3) : r,
             w = h[0] ? Y3(h[0].x - d.x, h[0].y - d.y) : 0;
           for (let x = 0; x < u; x++) {
             const p = w + (x * Math.PI * 2) / u,
@@ -272,19 +273,19 @@ var B8 = function (A, n, t) {
           }
           return;
         }
-        bs(a[0], a[1], o.lowFx ? Math.min(r, 3) : r, c, d, f, f);
+        bs(a[0], a[1], o.lowFx && !activeCombatCast ? Math.min(r, 3) : r, c, d, f, f);
       }
     };
-  return (i ? g() : setTimeout(g, $P(n, A)), !0);
+  return (i || activeCombatCast ? g() : setTimeout(g, $P(n, A)), !0);
 };
 
 var Be = function (A, n, t, e, a) {
-  if (l.quiet || (a && !a.evm && B8(A, n, a))) return;
+  if ((l.quiet && !activeCombatCast) || (a && !a.evm && B8(A, n, a))) return;
   const i = (n.id && A0.f && A0.f[n.id]) || {},
     r = n.id && (((!a || !a.evm) && A0.m[(a && a.fx) || i.ev2c]) || A0.m[i.c || A0.s[n.id]]),
     c =
       r && (r.fly && r.fly.d === 1 && !e ? r.fly : r.hit && r.hit.ax >= 0 ? r.hit : r.fly || r.hit);
-  if (!(!c || l.fx.length > j3)) {
+  if (!(!c || (!activeCombatCast && l.fx.length > j3))) {
     if (e && r.fly) {
       l.fx.push({
         k: "mis",

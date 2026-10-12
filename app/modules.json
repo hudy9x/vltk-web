@@ -751,7 +751,7 @@
         "iA",
         "As"
       ],
-      "lines": 852
+      "lines": 851
     },
     {
       "file": "gameplay/shop-and-books-02.js",
@@ -1185,7 +1185,7 @@
         "oD",
         "$d"
       ],
-      "lines": 822
+      "lines": 829
     },
     {
       "file": "core/state-and-save-02.js",
@@ -1296,7 +1296,7 @@
         "tP",
         "O3"
       ],
-      "lines": 869
+      "lines": 870
     },
     {
       "file": "core/state-and-save-03.js",
@@ -1403,7 +1403,7 @@
         "IP",
         "rM"
       ],
-      "lines": 667
+      "lines": 668
     },
     {
       "file": "render/arena-02.js",
@@ -1424,7 +1424,7 @@
         "yn",
         "z3"
       ],
-      "lines": 319
+      "lines": 309
     },
     {
       "file": "render/projectiles-01.js",
@@ -1472,7 +1472,26 @@
         "XP",
         "O8"
       ],
-      "lines": 479
+      "lines": 490
+    },
+    {
+      "file": "combat/hit-resolution-01.js",
+      "symbols": [
+        "activeCombatCast",
+        "SKILL_RANGE_Y_RATIO",
+        "skillCastDistance",
+        "skillIgnoresTerrain",
+        "queueSkillContact",
+        "registerCombatMissile",
+        "contactFraction",
+        "applyContactHit",
+        "collideCombatEffect",
+        "advanceCombatMissile",
+        "advanceContactEffect",
+        "advanceSkillContacts",
+        "drawContactProjectile"
+      ],
+      "lines": 235
     },
     {
       "file": "data/status-effects-01.js",
@@ -1773,7 +1792,7 @@
         "vh",
         "hb"
       ],
-      "lines": 899
+      "lines": 901
     },
     {
       "file": "systems/rewards-02.js",
@@ -2544,7 +2563,7 @@
         "sa",
         "$M"
       ],
-      "lines": 899
+      "lines": 901
     },
     {
       "file": "online/party-02.js",

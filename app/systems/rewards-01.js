@@ -689,13 +689,15 @@ var cb = function (A) {
     e && !t.moving && t.t <= 0)
   ) {
     t.t = 1.2;
-    const c = Ph(n);
-    ((e.hp -= c),
-      (e.hitT = 0.1),
-      (t.act = "at"),
+    queueSkillContact(t, e, { melee: true, rad: r / QA, parts: { phys: 1 } }, target => {
+      const damage = Ph(n);
+      target.hp -= damage;
+      target.hitT = 0.1;
+      $A(target.x, target.y - 30, F(damage), "#9fe36a", 11);
+    }, { maxTargets: 1, visual: () => {} });
+    ((t.act = "at"),
       (t.actT = 0),
-      (t.dir = kn(e.x - t.x, e.y - t.y)),
-      $A(e.x, e.y - 30, F(c), "#9fe36a", 11));
+      (t.dir = kn(e.x - t.x, e.y - t.y)));
   }
 };
 

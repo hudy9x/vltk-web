@@ -492,6 +492,7 @@ var Qv = function () {
 };
 
 var Ah = function (A) {
+  if (hA() && l.clickHold) return !1;
   const [n, t] = Qv();
   if (!n && !t) return (Y.tmp && !Y.active && (Y.tmp = !1), !1);
   const e = 150 * Ra(),
@@ -501,6 +502,8 @@ var Ah = function (A) {
 
 var Wa = function (A, n) {
   ((o.ctrl = A),
+    (l.clickHold = false),
+    (l.moveTo = null),
     (Y.target = null),
     (Y.tmp = !1),
     qA(),
@@ -599,13 +602,14 @@ var Z8 = function (A) {
 };
 
 var eh = function (A, n) {
-  let t = null,
-    e = 40;
-  for (const a of typeof _1 == "function" ? _1() : []) {
-    const i = Math.hypot(a.x - A, a.y - 20 - n);
-    i < e + (a.r || 17) && ((e = i - (a.r || 17)), (t = a));
+  let target = null, nearest = Infinity;
+  for (const actor of typeof _1 === "function" ? _1() : []) {
+    const height = actor.cls === "boss" ? 150 : 100;
+    const width = Math.max(38, (actor.r || 17) + 28);
+    const distance = Math.hypot((actor.x - A) / width, (actor.y - height / 2 - n) / (height / 2 + 18));
+    if (distance <= 1 && distance < nearest) { nearest = distance; target = actor; }
   }
-  return t;
+  return target;
 };
 
 var Ac = function (A) {
