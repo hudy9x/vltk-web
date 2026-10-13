@@ -214,8 +214,11 @@ var NP = function (A) {
     );
   }
   for (const effect of l.fx) {
-    if (effect.k === "jm") YP(effect);
-    else if (effect.k === "mis" || effect.k === "boom") CP(effect);
+    const cast = effect.combat;
+    const repeating = cast && cast.interval && cast.pulse >= 0;
+    const phase = repeating ? Math.max(0, cast.elapsed - (cast.nextPulse - cast.interval)) : 0;
+    if (effect.k === "jm") YP(repeating && effect.age >= 0 ? Object.assign({}, effect, { age: phase * K3 }) : effect);
+    else if (effect.k === "mis" || effect.k === "boom") CP(repeating && effect.t >= 0 ? Object.assign({}, effect, { t: phase }) : effect);
     else if (effect.k === "contact") drawContactProjectile(effect);
   }
   for (const a of l.fx) {

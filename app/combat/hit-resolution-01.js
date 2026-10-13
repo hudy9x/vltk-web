@@ -10,6 +10,10 @@ var skillIgnoresTerrain = (skill) => !!skill &&
   (skill.ignoreTerrain === true || [362, 365, 375, 380].includes(+skill.id));
 
 var queueSkillContact = function (actor, target, skill, onHit, options = {}) {
+  const narrow = [361, 368].includes(+skill.id);
+  if (narrow) skill = Object.assign({}, skill, { geo: Object.assign({}, skill.geo, {
+    k: "line", shape: "rect", width: 24, len: (skill.geo && skill.geo.len) || skill.rad || 100, pierce: true, area: 0,
+  }) });
   const previous = activeCombatCast;
   const cast = {
     actor,
@@ -23,7 +27,17 @@ var queueSkillContact = function (actor, target, skill, onHit, options = {}) {
     zone: l.zoneShown,
     windup: options.windup == null ? 0.12 : options.windup,
     emitted: 0,
+    origin: { x: actor.x, y: actor.y - 14 },
+    direction: Math.atan2((target.y - actor.y) * 2, target.x - actor.x),
+    elapsed: 0, pulse: -1, nextPulse: 0, pulseFrame: -1, targetPulses: new Map(),
+    interval: +skill.id === 362 ? 0.3 : 0,
   };
+  if (skill.geo || narrow || cast.interval) cast.maxTargets = Infinity;
+  if (cast.interval) {
+    const spriteId = A0.f && A0.f[skill.id] && A0.f[skill.id].c || A0.s && A0.s[skill.id];
+    const sprite = A0.m[spriteId] && A0.m[spriteId].fly;
+    cast.duration = Math.max(cast.interval, sprite && sprite.n * sprite.ms / 1000 || 1);
+  }
   const start = l.fx.length;
   activeCombatCast = cast;
   try {
@@ -35,6 +49,7 @@ var queueSkillContact = function (actor, target, skill, onHit, options = {}) {
         effect.combat = cast;
         effect.contactHits = new Set();
         effect.t -= cast.windup;
+        if (cast.interval) effect.life = Math.max(effect.life, cast.duration);
         (l.combatProjectiles || (l.combatProjectiles = [])).push(effect);
         cast.emitted++;
       }
@@ -49,7 +64,7 @@ var queueSkillContact = function (actor, target, skill, onHit, options = {}) {
         x: melee || area ? target.x : actor.x,
         y: (melee || area ? target.y : actor.y) - 14,
         x2: target.x, y2: target.y - 14,
-        age: area ? 0 : -cast.windup, life: area ? 0.3 : melee ? 0.1 : 2,
+        age: area ? 0 : -cast.windup, life: area ? cast.duration || 0.3 : melee ? 0.1 : 2,
         melee, speed: 360, color: Hi[Object.keys(skill.parts || {})[0]] || "#ffd24a",
         ang: Y3(target.x - actor.x, target.y - actor.y),
         staticArea: !!area,
@@ -69,6 +84,7 @@ var registerCombatMissile = function (missile) {
   missile.contactHits = new Set();
   if (missile.kind && !missile.still) missile.age -= activeCombatCast.windup * K3;
   missile.lf = Math.max(missile.lf, 2);
+  if (activeCombatCast.interval) missile.lf = Math.max(missile.lf, Math.ceil(activeCombatCast.duration * K3));
   (l.combatProjectiles || (l.combatProjectiles = [])).push(missile);
   activeCombatCast.emitted++;
 };
@@ -92,7 +108,13 @@ var contactFraction = function (x0, y0, x1, y1, target, radius, yScale = 2) {
 
 var applyContactHit = function (effect, target) {
   const cast = effect.combat;
-  if (effect.contactHits.has(target) || target.dead || (target === v ? l.life <= 0 : target.hp <= 0)) return false;
+  if ((!cast.interval && effect.contactHits.has(target)) || target.dead || (target === v ? l.life <= 0 : target.hp <= 0)) return false;
+  if (cast.interval) {
+    if (cast.targetPulses.get(target) === cast.pulse) return false;
+    cast.targetPulses.set(target, cast.pulse);
+    cast.onHit(target);
+    return true;
+  }
   effect.contactHits.add(target);
   const count = cast.hits.get(target) || 0;
   if ((!count && cast.hits.size >= cast.maxTargets) || count >= cast.maxHits(target)) return false;
@@ -101,16 +123,42 @@ var applyContactHit = function (effect, target) {
   return true;
 };
 
+var rectangleContactFraction = function (x0, y0, x1, y1, target, halfWidth, direction) {
+  const dx = x1 - x0, dy = (y1 - y0) * 2;
+  const length = Math.hypot(dx, dy);
+  const ux = length ? dx / length : Math.cos(direction), uy = length ? dy / length : Math.sin(direction);
+  const px = target.x - x0, py = (target.y - 14 - y0) * 2;
+  const along = px * ux + py * uy, across = Math.abs(px * uy - py * ux);
+  const body = Math.max(8, target.r || 12);
+  const endGap = Math.max(0, -along, along - length), sideGap = Math.max(0, across - halfWidth);
+  if (Math.hypot(endGap, sideGap) > body) return null;
+  return length ? E((along - body) / length, 0, 1) : 0;
+};
+
 var collideCombatEffect = function (effect, x0, y0, x1, y1) {
   const cast = effect.combat;
   const staticArea = effect.staticArea || effect.k === "boom" || (effect.k === "jm" && (!effect.kind || effect.still));
   const geo = cast.skill.geo || {};
+  if (cast.interval) {
+    if (cast.elapsed + 1e-9 >= cast.nextPulse) {
+      cast.pulse++;
+      cast.nextPulse = cast.pulse === 0 ? cast.elapsed + cast.interval : cast.nextPulse + cast.interval;
+      cast.pulseFrame = cast.elapsed;
+    } else if (cast.pulseFrame !== cast.elapsed) return false;
+  }
+  if (staticArea && geo.shape === "rect") {
+    x0 = cast.origin.x; y0 = cast.origin.y;
+    x1 = x0 + Math.cos(cast.direction) * geo.len * QA;
+    y1 = y0 + Math.sin(cast.direction) * geo.len * QA / 2;
+  }
   const radius = staticArea
     ? Math.max(8, (geo.r || geo.area || 12) * QA)
     : 8;
   const contacts = cast.targets()
-    .filter(target => target && !target.dead && (target === v ? l.life > 0 : target.hp > 0) && !effect.contactHits.has(target))
-    .map(target => ({ target, fraction: contactFraction(x0, y0, x1, y1, target, radius, staticArea && geo.k === "self" ? 1 / SKILL_RANGE_Y_RATIO : 2) }))
+    .filter(target => target && !target.dead && (target === v ? l.life > 0 : target.hp > 0) && (cast.interval || !effect.contactHits.has(target)))
+    .map(target => ({ target, fraction: geo.shape === "rect"
+      ? rectangleContactFraction(x0, y0, x1, y1, target, geo.width * QA / 2, cast.direction)
+      : contactFraction(x0, y0, x1, y1, target, radius, staticArea && geo.k === "self" ? 1 / SKILL_RANGE_Y_RATIO : 2) }))
     .filter(contact => contact.fraction != null)
     .sort((a, b) => a.fraction - b.fraction);
   for (const { target, fraction } of contacts) {
@@ -130,8 +178,15 @@ var collideCombatEffect = function (effect, x0, y0, x1, y1) {
         }
       }
     }
-    const stops = (!staticArea && (effect.k === "contact" || effect.k === "mis")) || (!staticArea && !geo.pierce && effect.cv);
+    const stops = !geo.pierce && ((!staticArea && (effect.k === "contact" || effect.k === "mis")) || (!staticArea && effect.cv));
     if (stops) {
+      // A projectile stops at the impact, but every body overlapping that
+      // same narrow impact receives the hit, including tightly stacked mobs.
+      for (const contact of contacts) {
+        const other = contact.target;
+        if (other !== target && contactFraction(x, y, x, y, other, radius) != null &&
+          (cast.ignoreTerrain || mt(x, y + 14, other.x, other.y))) applyContactHit(effect, other);
+      }
       effect.x = x; effect.y = y;
       return true;
     }
@@ -205,6 +260,7 @@ var advanceContactEffect = function (effect, dt) {
 
 var advanceSkillContacts = function (dt) {
   const pending = l.combatProjectiles || [];
+  for (const cast of new Set(pending.map(effect => effect.combat))) cast.elapsed += dt;
   l.combatProjectiles = [];
   for (const effect of pending) {
     effect.contactAlive = !l.town && !(l.deadT > 0) && effect.combat.zone === l.zoneShown && advanceContactEffect(effect, dt);

@@ -36,7 +36,7 @@
   }
   try {
     const config = await request('/api/config');
-    Object.defineProperty(window, 'localGameConfig', { value:Object.freeze({ development:config.development === true }), writable:false, configurable:false });
+    Object.defineProperty(window, 'localGameConfig', { value:Object.freeze({ development:config.development === true, combatSandbox:config.development === true && config.combatSandbox === true }), writable:false, configurable:false });
     let state = await request('/api/storage'); generation = state.generation;
     if (!state.initialized) state = await request('/api/storage/init', post({ entries:entries() }));
     let previous;

@@ -328,7 +328,7 @@ test('the terrain-independent spells cast and contact through obstacles but stil
     assert.ok(s.l.combatProjectiles.length > 0, `skill ${id} emitted`);
     assert.ok(s.l.combatProjectiles.every(effect => effect.combat.ignoreTerrain));
     run(s, 2);
-    assert.equal(target.hp, 90, `skill ${id} must contact through terrain`);
+    assert.ok(target.hp <= 90, `skill ${id} must contact through terrain`);
     const far = world(), outside = enemy(far, 2000);
     far.skill = standardSkill(far, id);
     far.Z0.g = true; far.mt = () => false; far.R2 = () => false;
@@ -378,4 +378,58 @@ test('self-centered skill field covers its widened north/south ellipse but exclu
   s.queueSkillContact(s.v, s.v, skill, hit => s.hs(skill, hit), { visual: () => {}, maxTargets: Infinity });
   run(s, 0.1);
   assert.equal(north.hp, 90); assert.equal(south.hp, 90); assert.equal(outside.hp, 100);
+});
+
+test('Van Long Kich uses a forward narrow rectangle and hits every stacked body without circular side splash', () => {
+  const s=world(), target=enemy(s,100), packed=Array.from({length:25},()=>enemy(s,100)),side=enemy(s,100,45),behind=enemy(s,-60);
+  const skill=standardSkill(s,361);
+  s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit),{maxTargets:1});
+  run(s,.2);
+  assert.equal(target.hp,90);assert.ok(packed.every(e=>e.hp===90));assert.equal(side.hp,100);assert.equal(behind.hp,100);
+});
+test('Nhan Kiem Hop Nhat sweeps narrow piercing rectangles through all packed bodies and misses off-path bodies', () => {
+  const s=world(),target=enemy(s,80),packed=Array.from({length:25},()=>enemy(s,80)),side=enemy(s,80,70);
+  const skill=standardSkill(s,368);
+  s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit),{maxTargets:1});
+  run(s,1);
+  assert.equal(target.hp,90);assert.ok(packed.every(e=>e.hp===90));assert.equal(side.hp,100);
+});
+test('the Van Long rectangle keeps its initial heading when the caster and target move after casting',()=>{
+  const s=world(),target=enemy(s,0,-60),onPath=enemy(s,0,-80),side=enemy(s,80,-80);
+  const skill=standardSkill(s,361);
+  s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
+  s.v.x=500;target.x=500;
+  run(s,.2);
+  assert.equal(onPath.hp,90);assert.equal(side.hp,100);assert.equal(target.hp,100);
+});
+test('Thien Ngoai fields pulse every 300ms, deduplicate visual effects, and inspect live occupants on each pulse',()=>{
+  const s=world(),target=enemy(s,200),packed=Array.from({length:25},()=>enemy(s,200)),entering=enemy(s,500);
+  const skill={id:362,parts:{fire:10},melee:false,geo:{k:'spot',r:60,pierce:true}};
+  s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit),{
+    maxTargets:1,visual:()=>{
+      for(let i=0;i<3;i++)s.l.fx.push({k:'boom',x:200,y:-14,t:0,life:1});
+    },windup:0,
+  });
+  run(s,.02);assert.equal(target.hp,90);assert.ok(packed.every(e=>e.hp===90));
+  run(s,.2);assert.equal(target.hp,90);
+  entering.x=200;target.x=500;
+  run(s,.05);assert.equal(entering.hp,100);
+  run(s,.05);assert.equal(entering.hp,90);assert.equal(target.hp,90);assert.ok(packed.every(e=>e.hp===80));
+  run(s,.3);assert.equal(entering.hp,80);assert.ok(packed.every(e=>e.hp===70));
+  run(s,1);const hp=entering.hp;run(s,1);assert.equal(entering.hp,hp);
+});
+test('Thien Ngoai logical pulses remain active with quiet or missing visual effects',()=>{
+  for(const quiet of [true,false]){
+    const s=world(),target=enemy(s,200);s.l.quiet=quiet;
+    const skill={id:362,parts:{fire:10},melee:false,geo:{k:'spot',r:60,pierce:true}};
+    s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit),{visual:()=>{}});
+    run(s,.7);assert.equal(target.hp,70);
+  }
+});
+
+test('a non-piercing narrow impact hits all overlapping bodies but stops before a separate farther pack',()=>{
+  const s=world(),target=enemy(s,80),packed=Array.from({length:25},()=>enemy(s,80)),farther=enemy(s,180);
+  ray(s,target,{geo:{k:'line',pierce:false}});
+  run(s,1);
+  assert.equal(target.hp,90);assert.ok(packed.every(e=>e.hp===90));assert.equal(farther.hp,100);
 });

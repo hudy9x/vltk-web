@@ -1485,6 +1485,7 @@
         "registerCombatMissile",
         "contactFraction",
         "applyContactHit",
+        "rectangleContactFraction",
         "collideCombatEffect",
         "advanceCombatMissile",
         "advanceContactEffect",
@@ -2805,6 +2806,11 @@
         "gameMaster"
       ],
       "lines": 237
+    },
+    {
+      "file": "dev/combat-sandbox-01.js",
+      "symbols": ["combatSandbox"],
+      "lines": 1
     }
   ]
 }

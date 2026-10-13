@@ -11,6 +11,33 @@ npm start
 `npm run dev` bật môi trường development và Node watch. `PORT=3001 npm start` đổi port.
 `DB_PATH=/absolute/path/test.sqlite npm start` dùng database riêng.
 
+## Phòng test 10 môn phái
+
+```sh
+npm run dev:arena
+# http://127.0.0.1:3002
+```
+
+Phòng test tự tạo 10 nhân vật độc lập, mỗi phái một nhân vật **cấp 150**,
+**500 điểm kỹ năng chưa phân bổ**. Dùng database riêng
+`database/combat-arena.sqlite`, không thay đổi save game chính. Không cần đăng nhập.
+
+- Bấm nút tên phái trong bảng **Phòng test** ở góc trên trái để đổi ngay;
+  điểm đã phân bổ, trang bị và tiến độ từng nhân vật được giữ khi đổi phái/reload.
+- Chiêu 90 luôn được nâng tối đa theo dữ liệu từng chiêu, kể cả nhân vật test
+  đã lưu trước đây; không tiêu hao 500 điểm kỹ năng. Chiêu tổng hợp vẫn theo điều kiện kỹ năng nền
+  của game. Bấm nút chiêu để chọn và tự trang bị đúng loại vũ khí; dùng GM để
+  nâng chiêu lên tối đa hoặc nhận thêm điểm.
+- Lọc quái theo tên/ID, chọn loại và số lượng **1–20**, rồi bấm **Tạo lại quái**.
+  Mỗi con có **100.000 HP**; mỗi đòn chạm nhân vật gây đúng **1 sát thương**.
+- Có checkbox **Quái đứng yên**, nút **Xóa quái**, và có thể thu gọn bảng bằng
+  cách bấm tiêu đề. Đổi phái tạo lại loại quái đã chọn và xóa hiệu ứng cũ.
+- Phòng test dùng combat, va chạm và vật cản hiện tại; không tự sinh đợt quái,
+  nhận XP hay loot khi giết quái. Tạo lại quái cũng hồi đầy sinh lực/nội lực.
+
+Chế độ này chỉ được bật bởi `COMBAT_SANDBOX=1` cùng môi trường development;
+`npm start` và `npm run dev:combat` giữ luồng chơi thông thường.
+
 ## Tạo nhân vật local để test combat
 
 ```sh
@@ -53,7 +80,7 @@ rỗng; chúng được khôi phục từ https://volamidle.pages.dev/ (bản v6
 
 ## Chỉnh sửa game
 
-Source gồm 123 file gốc, 1 file GM và 1 module va chạm trong `app/`, theo nhóm
+Source gồm 123 file gốc, 2 file công cụ dev và 1 module va chạm trong `app/`, theo nhóm
 data, core, combat, gameplay, render, UI, systems, online và dev.
 Xem [app/README.md](app/README.md) để tìm đúng nhóm.
 `app/modules.json` giữ thứ tự ghép và danh sách symbol từng file.
@@ -89,6 +116,13 @@ chiêu hoặc mục tiêu. Mục tiêu di chuyển ra khỏi đường đạn/v�
 Thiên Ngoại Lưu Tinh, Thiên Địa Vô Cực, Phong Sương Toái Ảnh và Lôi Động Cửu Thiên bỏ qua vật cản
 khi xuất chiêu và xử lý hiệu ứng (kể cả hiệu ứng phụ). Vẫn phải đủ tầm đánh
 và chạm hitbox/nằm trong vùng ảnh hưởng đang hoạt động mới nhận sát thương.
+Vân Long Kích và Nhân Kiếm Hợp Nhất dùng vùng chữ nhật hẹp theo hướng chiêu,
+không tạo sát thương tròn quanh mục tiêu. Mọi quái có hitbox giao vùng đều bị
+đánh, kể cả nhiều quái chồng cùng tọa độ; đạn không xuyên vẫn dừng tại điểm
+va chạm đầu tiên và chỉ đánh các hitbox cùng giao điểm đó.
+Thiên Ngoại Lưu Tinh và Nghiệp Hỏa gây sát thương theo nhịp **300 ms** trong
+thời gian hiệu ứng còn tồn tại. Vùng giữ tọa độ ban đầu, kiểm tra quái đang ở
+trong vùng tại mỗi nhịp; nhiều lớp hình ảnh không nhân đôi sát thương cùng nhịp.
 Va chạm quét cả đoạn chuyển động của đạn
 để tránh bỏ sót mục tiêu khi đạn chạy nhanh.
 

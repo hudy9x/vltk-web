@@ -10,6 +10,7 @@
     "build": "node tools/build-app.js",
     "dev": "NODE_ENV=development node --watch server/index.js",
     "dev:combat": "DB_PATH=database/combat-test.sqlite PORT=3001 NODE_ENV=development node --watch server/index.js",
+    "dev:arena": "DB_PATH=database/combat-arena.sqlite PORT=3002 COMBAT_SANDBOX=1 NODE_ENV=development node --watch server/index.js",
     "start": "node server/index.js",
     "db:seed": "node database/seeds/catalog.js",
     "db:inspect": "node tools/inspect-db.js",
