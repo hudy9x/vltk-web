@@ -52,7 +52,7 @@ test('HTTP API persists changes and rejects invalid writes; private server/datab
     assert.match(await bundle.text(), /sourceMappingURL=game.js.map/);
     const sourceMap = await (await fetch(base+'/app/game.js.map')).json();
     assert.equal(sourceMap.version,3);
-    for (const file of ['app/'+sourceMap.sources[0]]) {
+    for (const file of ['app/'+sourceMap.sources[0], 'app/combat/index.ts', 'app/combat/simulation.ts', 'app/combat/collision.ts']) {
       const response = await fetch(base+'/'+file);
       assert.equal(response.status,200);
       assert.ok((await response.text()).length > 0);

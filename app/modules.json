@@ -1475,7 +1475,14 @@
       "lines": 490
     },
     {
-      "file": "combat/hit-resolution-01.js",
+      "file": "combat/index.ts",
+      "global": "CombatEngine",
+      "symbols": [
+        "CombatEngine"
+      ]
+    },
+    {
+      "file": "combat/legacy-bridge.js",
       "symbols": [
         "activeCombatCast",
         "SKILL_RANGE_Y_RATIO",
@@ -1491,8 +1498,7 @@
         "advanceContactEffect",
         "advanceSkillContacts",
         "drawContactProjectile"
-      ],
-      "lines": 235
+      ]
     },
     {
       "file": "data/status-effects-01.js",

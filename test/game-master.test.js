@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const path = require("node:path");
 const acorn = require("acorn");
+const { loadCombatEngine } = require('./helpers/combat-engine');
 const { createServer } = require("../server");
 const { openDatabase } = require("../server/database");
 const ROOT = path.resolve(__dirname, "..");
@@ -102,7 +103,7 @@ function game(development = true) {
     af() {},
   };
   vm.createContext(s);
-  vm.runInContext(declaration("app/combat/hit-resolution-01.js", "SKILL_RANGE_Y_RATIO"), s);
+  s.SKILL_RANGE_Y_RATIO = loadCombatEngine(s, { bridge: false }).SKILL_RANGE_Y_RATIO;
   for (const [file, name] of [
     ["app/gameplay/shop-and-books-01.js", "se"],
     ["app/gameplay/shop-and-books-01.js", "B4"],

@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const acorn = require('acorn');
+const { loadCombatEngine } = require('./helpers/combat-engine');
 const ROOT = path.resolve(__dirname, '..');
 function load(sandbox, file) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), sandbox, { filename: file });
@@ -43,7 +44,7 @@ function world(options = {}) {
   s.A0 = s.JFX; s.T = s.JX.skills;
   for (const name of ['t7', 'U2', 'r4', 'Y5', 'e7', 'a7']) declaration(s, 'app/combat/skills-01.js', name);
   declaration(s, 'app/core/attributes-01.js', 'N5');
-  load(s, 'app/combat/hit-resolution-01.js');
+  loadCombatEngine(s);
   load(s, 'app/render/projectiles-01.js');
   for (const name of ['TP', 'Ya', 'x8']) declaration(s, 'app/render/arena-01.js', name);
   declaration(s, 'app/core/state-and-save-01.js', 'oD');

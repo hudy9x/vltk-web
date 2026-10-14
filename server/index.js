@@ -23,8 +23,9 @@ async function body(req) {
   catch { throw Object.assign(new Error('Invalid JSON'), { status: 400 }); }
 }
 function createServer({ db = openDatabase(), downloadAssets = true, development = process.env.NODE_ENV === 'development', combatSandbox = process.env.COMBAT_SANDBOX === '1' } = {}) {
-  buildApp();
-  const moduleFiles = new Set(require('../app/modules.json').modules.map(module => 'app/' + module.file));
+  const bundle = buildApp();
+  // Imported TS modules must also be readable by DevTools through the source map.
+  const moduleFiles = new Set(bundle.map.sources.map(file => 'app/' + file));
   seedCatalog(db);
   const assets = createAssetCache({ root:ROOT });
   const server = http.createServer(async (req, res) => {

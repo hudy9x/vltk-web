@@ -129,21 +129,88 @@ rỗng; chúng được khôi phục từ https://volamidle.pages.dev/ (bản v6
 
 ## Chỉnh sửa game
 
-Source gồm 123 file gốc, 2 file công cụ dev, 1 module va chạm và 1 module log sát thương trong `app/`, theo nhóm
+Source trong `app/` được tổ chức theo nhóm
 data, core, combat, gameplay, render, UI, systems, online và dev.
 Xem [app/README.md](app/README.md) để tìm đúng nhóm.
 `app/modules.json` giữ thứ tự ghép và danh sách symbol từng file.
 
 ```sh
-npm run build   # tạo app/game.js + source map từ source trong app/
+npm run typecheck # kiểm tra kiểu TS, không sinh file
+npm run build   # kiểm tra kiểu, build cả JS + TS thành app/game.js + source map
 npm test       # kiểm tra module/source map, GM và luồng SQLite/HTTP
 npm start      # tự build lúc khởi động và mỗi lần browser tải app/game.js
 ```
 
 Chỉnh file source rồi reload trình duyệt. DevTools dùng source map để hiển thị
 file trong `app/`. Không sửa `app/game.js`: đây là output được tạo lại tự động.
-Các file chia nhỏ vẫn dùng chung scope và tên biến từ bản gốc; builder ghép chúng
-trong cùng IIFE để giữ hành vi. Chưa chuyển sang các ES module độc lập.
+Các module JS cũ vẫn dùng chung scope và tên biến từ bản gốc; builder ghép chúng
+trong cùng IIFE để giữ hành vi. Phần va chạm combat đã dùng các ES module TypeScript.
+
+### Đọc combat từ `index.ts`
+
+Bắt đầu tại [app/combat/index.ts](app/combat/index.ts). File này mô tả luồng và
+export API dễ đọc: `castSkill`, `updateCombat`, `drawFallbackProjectile`.
+
+```text
+JS chọn skill / mana / cooldown (oD, eD)
+    |
+    v
+index.ts -> castSkill -> casting.ts (tạo cast + gắn đạn/vùng)
+    |
+Game loop Td -> updateCombat(dt) -> simulation.ts
+                                    |
+                                    v
+                              collision.ts -> geometry.ts
+                                    |
+                                    v
+                               damage.ts (chống hit trùng / chia pulse)
+                                    |
+                                    v
+                         onHit JS cũ -> damage / HP / debuff / log
+
+Canvas -> drawFallbackProjectile -> render.ts (chỉ vẽ)
+```
+
+| File | Đọc/chỉnh gì |
+| --- | --- |
+| `app/combat/index.ts` | Điểm bắt đầu, API và thứ tự xử lý |
+| `app/combat/types.ts` | Kiểu skill, mục tiêu, cast, đạn/vùng chiêu và callback |
+| `app/combat/config.ts` | Phạm vi xuất chiêu elip và skill bỏ qua vật cản |
+| `app/combat/casting.ts` | Vùng chữ nhật hẹp, hệ số thu nhỏ vùng nổ, số hit, windup, nhịp và thời hạn |
+| `app/combat/simulation.ts` | Cập nhật chuyển động, thời gian tồn tại, cleanup và hàng đợi FX |
+| `app/combat/geometry.ts` | Quét đường đạn qua hình tròn/chữ nhật |
+| `app/combat/collision.ts` | Lọc/sắp xếp va chạm, vùng nổ và các quái chồng nhau |
+| `app/combat/damage.ts` | Giới hạn số hit và một lượt damage mỗi pulse trước khi gọi `onHit` |
+| `app/combat/render.ts` | Vẽ đạn/vùng thay thế khi thiếu sprite |
+| `app/combat/legacy-bridge.js` | Nối tên hàm JS hiện có sang API TS, dùng chung state |
+| `app/combat/legacy-globals.d.ts` | Khai báo kiểu tại biên TS/JS, không tạo state mới |
+
+Lần chuyển này giữ nguyên công thức va chạm, phạm vi, tốc độ, nhịp damage và thứ
+tự tick. Các công thức chỉ số/sát thương trong `core/`, dữ liệu skill và render
+sprite trong JS tiếp tục chạy qua callback/bridge hiện tại; **chưa chuyển toàn bộ
+game sang TS**. Không đổi tên các API mà JS đang gọi để tránh ảnh hưởng code cũ.
+Trong TS, import từ `index.ts` khi cần API công khai; các file nội bộ import trực
+tiếp từ module phụ thuộc để dễ lần theo luồng.
+
+### Build khi JS và TS cùng tồn tại
+
+```text
+tsc --noEmit (strict) -> kiểm tra kiểu TS
+JS trong modules.json ------------------+
+TS index.ts -> esbuild + các import -----+-> IIFE game.js + game.js.map
+```
+
+TypeScript, esbuild và sourcemap-codec là công cụ build; trình duyệt chỉ tải JS.
+Không cần sinh thêm một bộ `.js` cạnh source `.ts`. Thêm một TS entry vào
+`modules.json` cùng tên `global`; những file mà entry import được bundler tự tìm.
+Giữ entry ở đúng vị trí khởi tạo của module JS được thay thế. Sửa cả file TS
+được import rồi reload đều sẽ build lại; source map trỏ về dòng/cột TS gốc.
+Server tự build để tiện dev; chạy `npm run build` trước khi phát hành để kiểm tra
+kiểu, vì lần build tự động khi reload chỉ biên dịch nhanh.
+
+`npm test` chạy tuần tự vì các test HTTP cùng dùng output `app/game.js`. Các test
+combat dùng đúng entry TS đã bundle, kiểm tra cả hành vi cũ và bridge. Test build
+kiểm tra source map và việc cập nhật file TS được import.
 
 ## Va chạm và thời điểm gây sát thương
 
@@ -157,7 +224,7 @@ khi mục tiêu chạy ra xa. Click một mục tiêu hoặc vị trí mới đ�
 Thời gian giữa các đòn vẫn được giữ, nhưng bộ đếm tiếp tục giảm khi đứng chờ
 trong manual để không phát sinh độ trễ do bộ đếm bị đóng băng.
 
-`app/combat/hit-resolution-01.js` cập nhật đạn và vùng đánh trong vòng mô phỏng.
+`app/combat/index.ts` dẫn đến các module cập nhật đạn và vùng đánh trong vòng mô phỏng.
 Đạn phải cắt hitbox mục tiêu; đạn và cận chiến có 0,12 giây ra đòn. Đạn thẳng giữ
 hướng ban đầu; đạn truy đuổi bẻ hướng theo dữ liệu chuyển động của từng chiêu.
 Vùng skill đứng yên xuất hiện tại tọa độ khởi tạo, không chạy theo người tung

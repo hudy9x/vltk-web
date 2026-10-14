@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const acorn = require('acorn');
+const { loadCombatEngine } = require('./helpers/combat-engine');
 const ROOT = path.resolve(__dirname, '..');
 function declaration(s, file, name) {
   const text = fs.readFileSync(path.join(ROOT, file), 'utf8');
@@ -35,9 +36,9 @@ function game() {
   s.q0 = (a,b) => Math.hypot(a.x-b.x, (a.y-b.y)*2)/s.QA;
   s.skill = { id: 10, rad: 300, rate: 2, targets: 1 };
   vm.createContext(s);
-  declaration(s, 'app/combat/hit-resolution-01.js', 'skillIgnoresTerrain');
-  declaration(s, 'app/combat/hit-resolution-01.js', 'SKILL_RANGE_Y_RATIO');
-  declaration(s, 'app/combat/hit-resolution-01.js', 'skillCastDistance');
+  const combat = loadCombatEngine(s, { bridge: false });
+  // Keep the cast/tick spies; use the real migrated range/terrain functions.
+  for (const name of ['skillIgnoresTerrain', 'SKILL_RANGE_Y_RATIO', 'skillCastDistance']) s[name] = combat[name];
   const ui = 'app/ui/legacy-panels-and-audio-04.js';
   for (const name of ['Y','$1','hA','Rv']) declaration(s, ui, name);
   for (const name of ['eh','Wa','Qv','Ah']) declaration(s, 'app/ui/legacy-panels-and-audio-03.js', name);
