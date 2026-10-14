@@ -728,3 +728,14 @@ body.u20[data-u2t=char] #panel{width:min(690px,96vw)}
 .c2kv{grid-template-columns:auto minmax(0,1fr)}.c2kv b{overflow:hidden;text-overflow:ellipsis}
 .c2kv b small{font-size:10px}
 @media (max-width:700px){.c2.u2char{grid-template-columns:minmax(0,1fr)}}
+ .combat-log-filter{position:sticky;top:0;background:#142019;padding:4px 6px;border-bottom:1px solid #758064;color:#e5dba9;z-index:1}
+ .combat-log-filter select{background:#0c1711;color:#e5dba9;border:1px solid #758064;padding:3px;margin-left:5px;font:inherit}
+ #u20lines .combat-out{color:#b6e59b}
+ #u20lines .combat-in{color:#ffb29a}
+ .combat-empty{color:#a8aea7;padding:6px}
+ #u20ct button[data-lt="combat"].on{background:linear-gradient(#bde4ae,#456b3c);border-color:#d5f5c8;color:#10280e}
+
+.combat-log-filter{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.combat-log-filter button{background:#253b2b;color:#e5dba9;border:1px solid #758064;border-radius:3px;padding:3px 7px;font:inherit;cursor:pointer}
+.combat-log-filter button:hover{background:#3c5740}
+.combat-log-status{color:#b6e59b;font-size:.9em}

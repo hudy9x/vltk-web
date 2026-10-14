@@ -114,6 +114,34 @@ var Kf = function (A, n, t, e, a, i) {
     <div class="sl jxsk">${g.map(([p, P]) => (p === "sep" ? '<div class="sep"></div>' : `<div class="${p}">${Ev(D(P))}</div>`)).join("")}</div>`;
 };
 
+var bulkSkillPoints = function (id, action) {
+  const skill = T[id];
+  if (!skill || !I[o.fac] || !I[o.fac].skills.includes(+id)) return 0;
+  if (typeof combatSandbox !== "undefined" && combatSandbox && skill.tier === 90 && !SA(id)) {
+    k("Chiêu 90 trong phòng test luôn ở cấp tối đa.");
+    return 0;
+  }
+  let count = 0;
+  if (action === "max") {
+    for (let step = 0; step < skill.max && Q1(skill); step++) {
+      if (!Yi(id)) break;
+      count++;
+    }
+    if (count) {
+      l.dirty = true; D0(); tn(); Zn(); qA(); _s(); $();
+      l.life = Math.min(l.life, l.P.life); l.mana = Math.min(l.mana, l.P.mana);
+    }
+  } else if (action === "clear") {
+    const points = o.sk[id] || 0;
+    for (let step = 0; step < points; step++) {
+      if (!qf(id)) break;
+      count++;
+    }
+  }
+  if (count) k(`${action === "max" ? "Cộng tối đa" : "Xóa hết điểm"}: ${skill.n} ${o.sk[id] || 0}/${skill.max}`);
+  return count;
+};
+
 var R8 = function s(A) {
   const n = T[A];
   if (!n) return;
@@ -122,11 +150,13 @@ var R8 = function s(A) {
     a = t + e,
     i = UA(n),
     r = Math.max(1, a),
-    c = t < n.max ? a + 1 : 0;
+    c = t < n.max ? a + 1 : 0,
+    locked90 = typeof combatSandbox !== "undefined" && combatSandbox && n.tier === 90 && !SA(A);
   J(
     Kf(A, t, e, a, r, c) +
       `
-    <div class="btnrow">${i && a ? '<button class="btn" id="skMain">Chọn làm chiêu chính</button>' : ""}<button class="btn" id="skPlus" ${Q1(n) ? "" : "disabled"}>+ Cộng điểm</button><button class="btn red" id="skMinus" ${a ? "" : "disabled"}>− Rút điểm</button></div>`,
+    <div class="btnrow">${i && a ? '<button class="btn" id="skMain">Chọn làm chiêu chính</button>' : ""}<button class="btn" id="skPlus" ${Q1(n) && !locked90 ? "" : "disabled"}>+ Cộng điểm</button><button class="btn red" id="skMinus" ${t && !locked90 ? "" : "disabled"}>− Rút điểm</button></div>
+    <div class="btnrow"><button class="btn" id="skMax" ${Q1(n) && !locked90 ? "" : "disabled"}>Cộng tối đa</button><button class="btn red" id="skClear" ${t && !locked90 ? "" : "disabled"}>Xóa hết điểm</button></div>`,
     () => {
       n6(m("#mBody"));
       const d = m("#skMain");
@@ -145,6 +175,12 @@ var R8 = function s(A) {
         }),
         (m("#skMinus").onclick = () => {
           qf(A) && s(A);
+        }),
+        (m("#skMax").onclick = () => {
+          bulkSkillPoints(A, "max"); s(A);
+        }),
+        (m("#skClear").onclick = () => {
+          bulkSkillPoints(A, "clear"); s(A);
         }));
     },
   );

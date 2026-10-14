@@ -27,13 +27,25 @@ Phòng test tự tạo 10 nhân vật độc lập, mỗi phái một nhân vậ
 - Chiêu 90 luôn được nâng tối đa theo dữ liệu từng chiêu, kể cả nhân vật test
   đã lưu trước đây; không tiêu hao 500 điểm kỹ năng. Chiêu tổng hợp vẫn theo điều kiện kỹ năng nền
   của game. Bấm nút chiêu để chọn và tự trang bị đúng loại vũ khí; dùng GM để
-  nâng chiêu lên tối đa hoặc nhận thêm điểm.
-- Lọc quái theo tên/ID, chọn loại và số lượng **1–20**, rồi bấm **Tạo lại quái**.
+  nhận thêm điểm nếu cần.
+- Lọc quái theo tên/ID, **cấp** và **độ hiếm: Thường / Boss / Hoàng Kim**.
+  Cấp lọc theo khoảng xuất hiện gốc trong dữ liệu bản đồ; bỏ trống để xem tất cả.
+  Chọn loại và số lượng **1–20**, rồi bấm **Tạo lại quái**. Quái được tạo ở cấp
+  đã lọc, hoặc cấp thấp nhất trong khoảng xuất hiện nếu không lọc cấp.
+  Quái chưa có thông tin cấp trong bản đồ chỉ xuất hiện khi không lọc cấp và
+  dùng cấp 150 khi tạo trong phòng test.
   Mỗi con có **100.000 HP**; mỗi đòn chạm nhân vật gây đúng **1 sát thương**.
 - Có checkbox **Quái đứng yên**, nút **Xóa quái**, và có thể thu gọn bảng bằng
   cách bấm tiêu đề. Đổi phái tạo lại loại quái đã chọn và xóa hiệu ứng cũ.
+- Checkbox **Hiển thị HP cạnh tên quái** hiện sinh lực hiện tại/tối đa và được
+  lưu lại. Quái chết tự hồi sinh sau **3 giây** tại vị trí tạo ban đầu, đúng
+  loại/cấp/độ hiếm và số lượng đã chọn. Xóa quái, tạo lại hoặc đổi phái hủy lịch cũ.
+- Trong chi tiết kỹ năng có **Cộng tối đa** (dùng điểm còn lại, theo giới hạn
+  cấp học) và **Xóa hết điểm** (hoàn lại điểm kỹ năng đã cộng). Chiêu 90 luôn
+  tối đa trong phòng test nên các nút thay đổi điểm của chiêu 90 được khóa.
 - Phòng test dùng combat, va chạm và vật cản hiện tại; không tự sinh đợt quái,
-  nhận XP hay loot khi giết quái. Tạo lại quái cũng hồi đầy sinh lực/nội lực.
+  nhận XP hay loot khi giết quái. Sinh lực tối đa nhân vật tính theo chỉ số gốc
+  của game; tạo lại quái giữ nguyên sinh lực/nội lực đang có, không tự hồi đầy.
 
 Chế độ này chỉ được bật bởi `COMBAT_SANDBOX=1` cùng môi trường development;
 `npm start` và `npm run dev:combat` giữ luồng chơi thông thường.
@@ -64,7 +76,40 @@ hoặc mật khẩu. Dừng server bằng `Ctrl+C`.
 
 Lệnh chỉ khởi động môi trường test; bạn tạo nhân vật và học chiêu qua giao diện.
 
+Các chiêu 90 trong phòng test có quy tắc riêng: Phong Sương Toái Ảnh tính
+va chạm từng tia; Nhân Kiếm Hợp Nhất tính ba kiếm và một đòn phụ; Lôi Động
+Cửu Thiên gây một đòn mỗi 300ms trong 3 giây cho quái còn trong vùng.
+Phi Long Tại Thiên và Thiên Hạ Vô Cẩu không gây sát thương quanh người tung
+chiêu. Phạm vi nổ của Phi Long và ba chiêu 90 Đường Môn giảm còn 1/3.
+Nhiếp Hồn Nguyệt Ảnh hiện hiệu ứng tại từng quái bị đạn xuyên hoặc vùng phụ
+đánh trúng, tối đa một hiệu ứng mỗi quái trong một lần tung chiêu; hiệu ứng
+này chỉ để hiển thị, không gây thêm sát thương.
+Âm Phong Thực Cốt và Huyền Âm Trảm giảm phạm vi sát thương va chạm còn 2/3
+(150 còn 100 đơn vị), giữ nguyên tầm xuất chiêu.
+Vô Tướng Trảm và Đạt Ma Độ Giang giảm vùng sát thương va chạm còn 1/3;
+Hoành Tảo Thiên Quân dùng vùng sát thương quanh người tung chiêu. Hai chiêu
+Thiên Vương Phá Thiên Trảm và Truy Tinh Trục Nguyệt dùng sprite bay của
+chiêu chính để kiểm tra va chạm, thay cho sprite phụ chỉ có hiệu ứng trúng đòn.
+Thiên Ngoại Lưu Tinh giữ cố định hiệu ứng; Thiên Địa Vô Cực chạy animation
+nhanh gấp đôi, không thay đổi nhịp tính sát thương.
+
 ## Kiến trúc
+
+Nút **Xóa log** xóa toàn bộ log của nhân vật hiện tại; **Copy log** sao chép
+các sự kiện phù hợp bộ lọc (tối đa 300 dòng), không kèm tên chiêu thức. Bộ lọc
+và các nút vẫn thao tác được khi sát thương liên tục cập nhật.
+
+Tab **Log** cạnh Thế giới/Hệ thống ở góc dưới trái ghi sát thương thực tế của
+nhân vật đang chơi: gây lên quái, nhận từ quái, độc/hiệu ứng duy trì và phản đòn.
+Chọn **Cả hai / Gây sát thương / Nhận sát thương** để lọc; lựa chọn được lưu
+theo nhân vật. Log ghi HP thực tế bị mất và đòn trượt/né theo chiều gây hoặc
+nhận; không ghi hồi máu hoặc mô phỏng offline. Khi vượt HP còn lại, số ghi là HP thực tế đã mất.
+Giữ tối đa 300 sự kiện trong phiên, hiển thị 100 dòng mới nhất phù hợp bộ lọc;
+đổi nhân vật hoặc reload bắt đầu log mới. Thu gọn bảng Phòng test nếu nó che log.
+Dòng log có dạng `<số thứ tự> - hh:ss`, với `hh` là giờ và `ss` là giây,
+cùng ⚔️ thay cho chữ sát thương. Số thứ tự có tối thiểu 3 chữ số
+(`001`, `002`, … `999`, `1000`). Số thứ tự giữ nguyên khi lọc, bắt đầu lại từ
+1 khi xóa log hoặc đổi nhân vật.
 
 ```text
 app/*/*.js -> tools/build-app.js -> app/game.js
@@ -80,7 +125,7 @@ rỗng; chúng được khôi phục từ https://volamidle.pages.dev/ (bản v6
 
 ## Chỉnh sửa game
 
-Source gồm 123 file gốc, 2 file công cụ dev và 1 module va chạm trong `app/`, theo nhóm
+Source gồm 123 file gốc, 2 file công cụ dev, 1 module va chạm và 1 module log sát thương trong `app/`, theo nhóm
 data, core, combat, gameplay, render, UI, systems, online và dev.
 Xem [app/README.md](app/README.md) để tìm đúng nhóm.
 `app/modules.json` giữ thứ tự ghép và danh sách symbol từng file.

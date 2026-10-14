@@ -9,7 +9,7 @@ var combatSandbox = (function () {
   const profiles = {};
   let activeFaction = null;
   let stored = {};
-  let options = { monster: 0, count: 3, stationary: false };
+  let options = { monster: 0, count: 3, stationary: false, level: null, rarity: "all", monsterRarity: "normal", showHealth: false };
   try { stored = JSON.parse(localStorage.getItem(key) || "{}"); } catch {}
   try { Object.assign(options, JSON.parse(localStorage.getItem(optionsKey) || "{}")); } catch {}
   function createProfile(faction) {
@@ -49,26 +49,56 @@ var combatSandbox = (function () {
     if (activeFaction && o && o.arenaFaction === activeFaction && profiles[activeFaction]) {
       profiles[o.arenaFaction] = JSON.parse(JSON.stringify(o));
       persistProfiles();
+      refreshPanel();
     }
   };
   // Keep the real movement, obstacle, projectile and collision simulation.
   window.NO_FIELD = true;
+  let arenaTime = 0;
+  let spawnPlans = [];
+  const pendingRespawns = new Map();
   o8 = function () {};
-  cD = function () {};
+  cD = function (monster) {
+    if (monster && monster.hp <= 0 && monster.arenaMonster && spawnPlans[monster.arenaSlot] && !pendingRespawns.has(monster.arenaSlot))
+      pendingRespawns.set(monster.arenaSlot, arenaTime + 3);
+  };
   lD = function () {};
   rD = function () { l.stall = 0; };
   const originalDamage = U9;
   U9 = function (attacker) {
     if (!attacker.arenaMonster) return originalDamage(attacker);
+    const before = l.life;
     l.life = Math.max(0, l.life - 1);
+    if (typeof combatLog !== "undefined" && combatLog) combatLog.record("in", attacker, before - l.life, "Đòn đánh");
     l.hurtT = 0.15;
     $A(v.x, v.y - 30, "1", "#ffab8a", 11);
   };
   function clearCombat() {
+    pendingRespawns.clear(); spawnPlans = [];
     for (const field of ["enemies", "corpses", "ground", "fx", "fxQ", "combatProjectiles", "traps", "allies"]) l[field] = [];
     for (const field of ["manTgt", "tgt", "moveTo", "pickTarget", "clickedTarget", "dash", "dashTrail"]) l[field] = null;
     for (const field of ["atkT", "deadT", "stunT", "slowT", "hpDotT", "hpDot", "hurtT", "stall", "spawnT"]) l[field] = 0;
     l.skCd = {}; l.clickHold = false; Y.target = null; Y.active = false; Y.keys = {};
+  }
+  function createMonster(plan, slot) {
+    const monster = n1(plan.id, plan.level, plan.rarity === "normal" ? "normal" : "boss", plan.x, plan.y);
+    if (plan.rarity === "gold") { monster.goldBoss = true; monster.n = "Trùm Hoàng Kim · " + r0[plan.id].n; }
+    Object.assign(monster, { hp: 100_000, max: 100_000, dmg: 1, arenaMonster: true, arenaSlot: slot, spd: plan.stationary ? 0 : monster.spd });
+    return monster;
+  }
+  function tick(dt) {
+    arenaTime += dt;
+    l.enemies = l.enemies.filter(monster => !monster.arenaMonster || !monster.dead);
+    if (l.town) return;
+    for (const [slot, due] of pendingRespawns) {
+      if (arenaTime + 1e-9 < due) continue;
+      if (spawnPlans[slot] && !l.enemies.some(monster => monster.arenaMonster && monster.arenaSlot === slot && monster.hp > 0))
+        l.enemies.push(createMonster(spawnPlans[slot], slot));
+      pendingRespawns.delete(slot);
+    }
+  }
+  function healthLabel(monster) {
+    return options.showHealth && monster.arenaMonster ? ` · HP ${Math.max(0, Math.ceil(monster.hp)).toLocaleString("vi-VN")}/${monster.max.toLocaleString("vi-VN")}` : "";
   }
   function selectSkill(id) {
     maxLevel90Skills(o);
@@ -112,23 +142,29 @@ var combatSandbox = (function () {
     pi(); n0(true); M1(); uo(); tt(); fA("log");
     localStorage.setItem(selectionKey, faction);
     selectSkill(o.main);
-    spawnMonsters(options.monster, options.count, options.stationary);
+    const matching = filterMonsters(options.level, options.rarity);
+    const selectedMonster = matching.find(entry => entry.id === options.monster && entry.rarity === options.monsterRarity) || matching[0];
+    if (selectedMonster) spawnMonsters(selectedMonster.id, options.count, options.stationary, options.level, selectedMonster.rarity);
   }
-  function spawnMonsters(id, count, stationary) {
+  function spawnMonsters(id, count, stationary, level = options.level, rarity = options.monsterRarity) {
     if (!r0[id]) throw new Error("Quái không hợp lệ.");
     count = Math.max(1, Math.min(20, Math.floor(+count) || 1));
-    options = { monster: +id, count, stationary: !!stationary };
+    rarity = ["normal", "boss", "gold"].includes(rarity) ? rarity : "normal";
+    const entry = monsterCatalog.find(entry => entry.id === +id && entry.rarity === rarity);
+    if (!entry) throw new Error("Loại quái không có trong dữ liệu.");
+    const spawnLevel = level == null || level === "" ? (entry.ranges[0]?.[0] || 150) : Math.max(1, Math.min(200, Math.floor(+level) || 1));
+    if (level != null && level !== "" && !entry.ranges.some(([lo, hi]) => spawnLevel >= lo && spawnLevel <= hi)) throw new Error("Quái không có ở cấp đã chọn.");
+    options = Object.assign({}, options, { monster: +id, count, stationary: !!stationary, level: level == null || level === "" ? null : spawnLevel, monsterRarity: rarity });
     localStorage.setItem(optionsKey, JSON.stringify(options));
     clearCombat();
     l.town = false;
     for (let index = 0; index < count; index++) {
       const angle = index * Math.PI * 2 / count;
       const [x, y] = X0(v.x + Math.cos(angle) * 160, v.y + Math.sin(angle) * 100);
-      const monster = n1(+id, 150, "normal", x, y);
-      Object.assign(monster, { hp: 100_000, max: 100_000, dmg: 1, arenaMonster: true, spd: stationary ? 0 : monster.spd });
-      l.enemies.push(monster);
+      const plan = { id: +id, level: spawnLevel, rarity, x, y, stationary: !!stationary };
+      spawnPlans.push(plan);
+      l.enemies.push(createMonster(plan, index));
     }
-    l.life = l.P.life; l.mana = l.P.mana;
     refreshPanel();
   }
   const panel = document.createElement("details");
@@ -136,9 +172,28 @@ var combatSandbox = (function () {
   const style = document.createElement("style");
   style.textContent = `#combat-sandbox{position:fixed;top:50px;left:8px;z-index:89990;width:min(400px,calc(100vw - 16px));max-height:calc(100dvh - 70px);overflow:auto;background:#17201bee;color:#efdfb0;border:1px solid #9f8c51;padding:10px;font:13px inherit}#combat-sandbox summary{cursor:pointer;font-weight:bold;padding-bottom:8px}#combat-sandbox .arena-factions{display:grid;grid-template-columns:1fr 1fr;gap:4px}#combat-sandbox button{cursor:pointer;background:#34462c;color:#f4e7ba;border:1px solid #78825a;padding:6px}#combat-sandbox button.on{background:#806529;border-color:#f2d17b}#combat-sandbox .arena-skills{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}#combat-sandbox input,#combat-sandbox select{max-width:100%;background:#101a14;color:#efdfb0;border:1px solid #78825a;padding:5px}#combat-sandbox label{display:block;margin:7px 0}#arena-info{margin:6px 0;color:#cdd1bc}`;
   document.head.appendChild(style);
-  const monsterOptions = Object.entries(r0).filter(([, info]) => info && info.n);
-  if (!r0[options.monster]) options.monster = +monsterOptions[0][0];
-  panel.innerHTML = `<summary>Phòng test · 10 môn phái</summary><div class="arena-factions">${factions.map(faction => `<button type="button" data-faction="${faction.key}">${D(faction.n)}</button>`).join("")}</div><p id="arena-info"></p><div class="arena-skills"></div><label>Lọc quái <input id="arena-filter" placeholder="Tên hoặc ID quái"></label><label>Quái <select id="arena-monster">${monsterOptions.map(([id, info]) => `<option value="${id}" ${+id === +options.monster ? "selected" : ""}>${id} · ${D(info.n)}</option>`).join("")}</select></label><label>Số lượng <input id="arena-count" type="number" min="1" max="20" value="${options.count}" style="width:65px"></label><label><input id="arena-still" type="checkbox" ${options.stationary ? "checked" : ""}> Quái đứng yên</label><button type="button" data-spawn>Tạo lại quái · 100k HP / 1 sát thương</button> <button type="button" data-clear>Xóa quái</button>`;
+  const monsterCatalog = [];
+  function addMonster(id, rarity, lo, hi) {
+    if (!r0[id] || !r0[id].n) return;
+    let entry = monsterCatalog.find(entry => entry.id === +id && entry.rarity === rarity);
+    if (!entry) { entry = { id: +id, name: r0[id].n, rarity, ranges: [] }; monsterCatalog.push(entry); }
+    if (Number.isFinite(lo) && Number.isFinite(hi) && !entry.ranges.some(range => range[0] === lo && range[1] === hi)) entry.ranges.push([lo, hi]);
+  }
+  for (const zone of k0) {
+    for (const id of zone.m || []) addMonster(id, "normal", zone.lo, zone.hi);
+    addMonster(zone.boss, "boss", zone.lo + 1, zone.hi + 1);
+    addMonster(zone.boss, "gold", Math.min(zone.lo, 150) + 2, Math.min(zone.hi, 150) + 2);
+  }
+  for (const id of Object.keys(r0)) if (!monsterCatalog.some(entry => entry.id === +id)) addMonster(id, "normal");
+  monsterCatalog.sort((a, b) => a.id - b.id || a.rarity.localeCompare(b.rarity));
+  const rarityNames = { normal: "Thường", boss: "Boss", gold: "Hoàng Kim" };
+  function filterMonsters(level, rarity, text = "") {
+    const query = text.toLocaleLowerCase("vi");
+    return monsterCatalog.filter(entry => (rarity === "all" || entry.rarity === rarity) &&
+      (level == null || level === "" || entry.ranges.some(([lo, hi]) => +level >= lo && +level <= hi)) &&
+      `${entry.id} ${entry.name}`.toLocaleLowerCase("vi").includes(query));
+  }
+  panel.innerHTML = `<summary>Phòng test · 10 môn phái</summary><div class="arena-factions">${factions.map(faction => `<button type="button" data-faction="${faction.key}">${D(faction.n)}</button>`).join("")}</div><p id="arena-info"></p><div class="arena-skills"></div><label>Lọc quái <input id="arena-filter" placeholder="Tên hoặc ID quái"></label><label>Cấp quái <input id="arena-level" type="number" min="1" max="200" placeholder="Tất cả" value="${options.level || ""}" style="width:90px"></label><label>Độ hiếm <select id="arena-rarity"><option value="all">Tất cả</option><option value="normal">Thường</option><option value="boss">Boss</option><option value="gold">Hoàng Kim</option></select></label><label>Quái <select id="arena-monster"></select></label><label>Số lượng <input id="arena-count" type="number" min="1" max="20" value="${options.count}" style="width:65px"></label><label><input id="arena-still" type="checkbox" ${options.stationary ? "checked" : ""}> Quái đứng yên</label><button type="button" data-spawn>Tạo lại quái · 100k HP / 1 sát thương</button> <button type="button" data-clear>Xóa quái</button>`;
   function refreshPanel() {
     if (!panel || !o || !I[o.fac]) return;
     panel.querySelectorAll("[data-faction]").forEach(button => button.classList.toggle("on", button.dataset.faction === o.fac));
@@ -151,17 +206,51 @@ var combatSandbox = (function () {
     try {
       if (button.dataset.faction) switchFaction(button.dataset.faction);
       else if (button.dataset.skill) selectSkill(button.dataset.skill);
-      else if (button.hasAttribute("data-spawn")) spawnMonsters(panel.querySelector("#arena-monster").value, panel.querySelector("#arena-count").value, panel.querySelector("#arena-still").checked);
+      else if (button.hasAttribute("data-spawn")) {
+        const [id, rarity] = panel.querySelector("#arena-monster").value.split(":");
+        if (!id) throw new Error("Không có quái phù hợp với bộ lọc.");
+        spawnMonsters(id, panel.querySelector("#arena-count").value, panel.querySelector("#arena-still").checked, panel.querySelector("#arena-level").value, rarity);
+      }
       else if (button.hasAttribute("data-clear")) clearCombat();
     } catch (error) { k(error.message); }
   };
-  panel.querySelector("#arena-filter").oninput = event => {
-    const text = event.target.value.toLocaleLowerCase("vi");
-    for (const option of panel.querySelector("#arena-monster").options) option.hidden = !option.textContent.toLocaleLowerCase("vi").includes(text);
+  function updateMonsterFilter() {
+    options.level = panel.querySelector("#arena-level").value || null;
+    options.rarity = panel.querySelector("#arena-rarity").value || "all";
+    const select = panel.querySelector("#arena-monster");
+    const previous = select.value || `${options.monster}:${options.monsterRarity}`;
+    const entries = filterMonsters(options.level, options.rarity, panel.querySelector("#arena-filter").value);
+    select.innerHTML = entries.length ? entries.map(entry => {
+      const value = `${entry.id}:${entry.rarity}`;
+      const ranges = entry.ranges.length ? entry.ranges.map(([lo, hi]) => lo === hi ? lo : `${lo}–${hi}`).join(", ") : "chưa có cấp";
+      return `<option value="${value}" ${value === previous ? "selected" : ""}>${entry.id} · ${D(entry.name)} · ${rarityNames[entry.rarity]} · Cấp ${ranges}</option>`;
+    }).join("") : '<option value="">Không có quái phù hợp</option>';
+    if (entries.length && !entries.some(entry => `${entry.id}:${entry.rarity}` === previous)) select.value = `${entries[0].id}:${entries[0].rarity}`;
+    const selectedEntry = entries.find(entry => `${entry.id}:${entry.rarity}` === select.value) || entries[0];
+    if (selectedEntry) { options.monster = selectedEntry.id; options.monsterRarity = selectedEntry.rarity; }
+    panel.querySelector("[data-spawn]").disabled = !entries.length;
+    localStorage.setItem(optionsKey, JSON.stringify(options));
+  }
+  panel.querySelector("#arena-rarity").value = options.rarity;
+  const hpLabel = document.createElement("label");
+  hpLabel.innerHTML = `<input id="arena-show-health" type="checkbox" ${options.showHealth ? "checked" : ""}> Hiển thị HP cạnh tên quái`;
+  panel.appendChild(hpLabel);
+  panel.querySelector("#arena-show-health").onchange = event => {
+    options.showHealth = event.target.checked;
+    localStorage.setItem(optionsKey, JSON.stringify(options));
   };
+  panel.querySelector("#arena-level").value = options.level || "";
+  panel.querySelector("#arena-filter").oninput = updateMonsterFilter;
+  panel.querySelector("#arena-level").oninput = updateMonsterFilter;
+  panel.querySelector("#arena-rarity").onchange = updateMonsterFilter;
+  panel.querySelector("#arena-monster").onchange = () => {
+    const [id, rarity] = panel.querySelector("#arena-monster").value.split(":");
+    if (id) { options.monster = +id; options.monsterRarity = rarity; localStorage.setItem(optionsKey, JSON.stringify(options)); }
+  };
+  updateMonsterFilter();
   document.body.appendChild(panel);
   let selected;
   try { selected = localStorage.getItem(selectionKey); } catch {}
   switchFaction(profiles[selected] ? selected : factions[0].key);
-  return { switchFaction, selectSkill, spawnMonsters, clearCombat, createProfile };
+  return { switchFaction, selectSkill, spawnMonsters, clearCombat, createProfile, filterMonsters, tick, healthLabel };
 })();

@@ -106,6 +106,8 @@ var Wn = function (A, n, t, e, a, i, r) {
   const travelLimit = movement && movement[0] && movement[0] !== 3 && movement[0] !== 4
     ? Math.max(movement[1] || 0, activeCombatCast.skill.rad || 0) * QA : 0;
   if (travelLimit && g > 0 && !(u1 && u1.life) && !R3(A)) h = Math.ceil(travelLimit / g);
+  const fixedField = activeCombatCast && [362, 375].includes(+activeCombatCast.skill.id);
+  if (fixedField) { f = 0; g = 0; }
   const M = !!(u1 && u1.still);
   (M && ((g = 0), (h = Math.min(h || 12, 14)), (t += 14)), (h = E(h || 12, 1, 72)));
   const B = {
@@ -252,7 +254,7 @@ var YP = function (A) {
   if (!n) return;
   const t = n.n,
     e = Math.max(1, Math.round(n.ms / (1e3 / K3))),
-    a = A.loop ? Math.floor(A.age / e) % t : Math.min(t - 1, Math.floor((t * A.age) / A.lf)),
+    a = A.loop ? Math.floor(A.age * (A.combat && +A.combat.skill.id === 365 ? 2 : 1) / e) % t : Math.min(t - 1, Math.floor((t * A.age * (A.combat && +A.combat.skill.id === 365 ? 2 : 1)) / A.lf)),
     i = n.d > 1 ? Ds(Math.cos(A.ang), Math.sin(A.ang) / 2) : 0;
   if (A.sh && A.tr.length) {
     const r = W,
@@ -373,7 +375,11 @@ var G3 = function (A, n, t) {
     A0.f[r] &&
     A0.f[r].c &&
     ((e = Object.assign({}, A0.f[r], { pre: e.pre })), (a = c), (d = !0));
-  const f = e.c || A0.s[t.id],
+  // These parent missiles have their own fly sprites; their children only
+  // describe impact FX, which must not turn a traveling attack into a static one.
+  const parentMissileId = ({ 322: 326, 323: 327, 326: 326, 327: 327 })[+t.id];
+  const parentMissile = parentMissileId && A0.m[parentMissileId] && A0.m[parentMissileId].fly;
+  const f = parentMissile ? parentMissileId : e.c || A0.s[t.id],
     h = t.id && A0.m[f];
   if ((Ya(t), !h || (l.quiet && !activeCombatCast))) {
     x8(A, n, t);
@@ -416,7 +422,7 @@ var G3 = function (A, n, t) {
         (M / K3) * 1e3,
       );
   }
-  (Df[t.id] && typeof B8 == "function" && n && n.x != null && B8(n, t, { sid: Df[t.id] }),
+  (Df[t.id] && !activeCombatCast && typeof B8 == "function" && n && n.x != null && B8(n, t, { sid: Df[t.id] }),
     e.sub &&
       !C8.has(+t.id) &&
       String(e.sub.c) !== String(f) &&

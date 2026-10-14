@@ -14,6 +14,10 @@ var queueSkillContact = function (actor, target, skill, onHit, options = {}) {
   if (narrow) skill = Object.assign({}, skill, { geo: Object.assign({}, skill.geo, {
     k: "line", shape: "rect", width: 24, len: (skill.geo && skill.geo.len) || skill.rad || 100, pierce: true, area: 0,
   }) });
+  const impactScale = [353, 355].includes(+skill.id) ? 2 / 3 : [302, 339, 342, 357, 318, 321].includes(+skill.id) ? 1 / 3 : 1;
+  if (impactScale !== 1 && skill.geo && skill.geo.area) {
+    skill = Object.assign({}, skill, { geo: Object.assign({}, skill.geo, { area: skill.geo.area * impactScale }) });
+  }
   const previous = activeCombatCast;
   const cast = {
     actor,
@@ -22,7 +26,7 @@ var queueSkillContact = function (actor, target, skill, onHit, options = {}) {
     onHit,
     targets: options.targets || (() => _1()),
     maxTargets: options.maxTargets || (skill.geo && skill.geo.pierce ? Infinity : Math.max(1, skill.targets || (skill.geo && skill.geo.n) || 1)),
-    maxHits: options.maxHits || (() => 1),
+    maxHits: options.maxHits || (() => +skill.id === 368 && !skill.ev2 ? 3 : 1),
     hits: new Map(),
     zone: l.zoneShown,
     windup: options.windup == null ? 0.12 : options.windup,
@@ -30,13 +34,13 @@ var queueSkillContact = function (actor, target, skill, onHit, options = {}) {
     origin: { x: actor.x, y: actor.y - 14 },
     direction: Math.atan2((target.y - actor.y) * 2, target.x - actor.x),
     elapsed: 0, pulse: -1, nextPulse: 0, pulseFrame: -1, targetPulses: new Map(),
-    interval: +skill.id === 362 ? 0.3 : 0,
+    interval: [362, 375].includes(+skill.id) ? 0.3 : 0,
   };
   if (skill.geo || narrow || cast.interval) cast.maxTargets = Infinity;
   if (cast.interval) {
     const spriteId = A0.f && A0.f[skill.id] && A0.f[skill.id].c || A0.s && A0.s[skill.id];
     const sprite = A0.m[spriteId] && A0.m[spriteId].fly;
-    cast.duration = Math.max(cast.interval, sprite && sprite.n * sprite.ms / 1000 || 1);
+    cast.duration = +skill.id === 375 ? 3 : Math.max(cast.interval, sprite && sprite.n * sprite.ms / 1000 || 1);
   }
   const start = l.fx.length;
   activeCombatCast = cast;
@@ -70,7 +74,7 @@ var queueSkillContact = function (actor, target, skill, onHit, options = {}) {
         staticArea: !!area,
       };
       (l.combatProjectiles || (l.combatProjectiles = [])).push(effect);
-      if (!l.quiet) l.fx.push(effect);
+      if (!l.quiet && !options.hideFallbackVisual) l.fx.push(effect);
     }
   } finally {
     activeCombatCast = previous;
@@ -140,6 +144,7 @@ var collideCombatEffect = function (effect, x0, y0, x1, y1) {
   const staticArea = effect.staticArea || effect.k === "boom" || (effect.k === "jm" && (!effect.kind || effect.still));
   const geo = cast.skill.geo || {};
   if (cast.interval) {
+    if (cast.elapsed >= cast.duration - 1e-9) return false;
     if (cast.elapsed + 1e-9 >= cast.nextPulse) {
       cast.pulse++;
       cast.nextPulse = cast.pulse === 0 ? cast.elapsed + cast.interval : cast.nextPulse + cast.interval;
@@ -174,7 +179,9 @@ var collideCombatEffect = function (effect, x0, y0, x1, y1) {
       // An explosion splashes only after its projectile actually collides.
       if (geo.area) {
         for (const other of cast.targets()) {
-          if (other !== target && contactFraction(x, y, x, y, other, geo.area * QA) != null && (cast.ignoreTerrain || mt(x, y + 14, other.x, other.y))) applyContactHit(effect, other);
+          if (other !== target && contactFraction(x, y, x, y, other, geo.area * QA) != null && (cast.ignoreTerrain || mt(x, y + 14, other.x, other.y))) {
+            if (applyContactHit(effect, other) && effect.k === "jm") gf(effect, other.x, other.y - 14);
+          }
         }
       }
     }

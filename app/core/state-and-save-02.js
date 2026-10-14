@@ -13,6 +13,7 @@ var Td = function (A) {
       mg()),
     l.dirty && D0());
   const n = l.P;
+  if (typeof combatSandbox !== "undefined" && combatSandbox) combatSandbox.tick(A);
   advanceSkillContacts(A);
   if (l.deadT > 0) {
     ((l.deadT -= A),
@@ -27,7 +28,9 @@ var Td = function (A) {
     l.hpDotT > 0)
   ) {
     const e = Math.min(A, l.hpDotT) / l.hpDotT;
-    ((l.life -= l.hpDot * e), (l.hpDot -= l.hpDot * e), (l.hpDotT -= A));
+    const damage = l.hpDot * e, before = l.life;
+    ((l.life -= damage), (l.hpDot -= damage), (l.hpDotT -= A));
+    if (typeof combatLog !== "undefined" && combatLog) combatLog.record("in", "Hiệu ứng độc", Math.min(Math.max(0, before), damage), "Hiệu ứng duy trì");
   }
   if (
     (l.slowT > 0 && (l.slowT -= A),

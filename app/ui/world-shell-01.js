@@ -138,6 +138,7 @@ var dm = function () {
       (a) =>
         (a.onclick = () => {
           ((uA = a.dataset.lt),
+            uA === "combat" && o && ((o.u20logOff = false), $2()),
             uA === "party" ? Br("p") : (uA === "chat" || uA === "all") && Br("w"),
             document
               .querySelectorAll("#u20ct button[data-lt]")
@@ -563,6 +564,7 @@ var Jl = function s() {
 };
 
 var yB = function (A) {
+  if (uA === "combat" && typeof combatLog !== "undefined" && combatLog) { combatLog.render(A); return; }
   if (uA === "party") {
     const t = typeof s0 < "u" ? s0.msgs.slice(-40).map(lm) : [];
     A.innerHTML = t.length
@@ -613,7 +615,7 @@ var kB = function () {
     const a = document.getElementById("tabRide");
     a && a.classList.toggle("on", typeof L < "u" && !!L.pid);
     const i =
-      (l.logs || []).length + "|" + (l.logs || [])[0] + "|" + (typeof H < "u" ? H.msgs.length : 0);
+      (l.logs || []).length + "|" + (l.logs || [])[0] + "|" + (typeof H < "u" ? H.msgs.length : 0) + "|" + (uA === "combat" && typeof combatLog !== "undefined" && combatLog ? combatLog.revision : 0);
     i !== Mr && ((Mr = i), T2());
     return;
   }
@@ -633,7 +635,7 @@ var kB = function () {
   for (const a of document.querySelectorAll('#u20menu [data-u="ride"], #tabRide'))
     (a.classList.toggle("on", !!l.mounted), a.classList.toggle("off", !xe()));
   const n =
-    (l.logs || []).length + "|" + (l.logs || [])[0] + "|" + (typeof H < "u" ? H.msgs.length : 0);
+    (l.logs || []).length + "|" + (l.logs || [])[0] + "|" + (typeof H < "u" ? H.msgs.length : 0) + "|" + (uA === "combat" && typeof combatLog !== "undefined" && combatLog ? combatLog.revision : 0);
   (n !== Mr && ((Mr = n), T2()),
     (m("#u20g").textContent = q(o.gold)),
     (m("#u20knb").textContent = F(o.knb || 0)));
@@ -677,6 +679,7 @@ var xB = [
   ["chat", "Thế giới"],
   ["party", "Tổ đội"],
   ["sys", "Hệ thống"],
+  ["combat", "Log"],
 ];
 
 var uA = "chat";

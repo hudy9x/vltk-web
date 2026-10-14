@@ -31,10 +31,32 @@ var bA = function (A) {
 };
 
 var $A = function (A, n, t, e, a = 12) {
-  const i = o.lowFx ? 20 : 60;
-  l.quiet ||
-    l.txt.length > i ||
-    l.txt.push({ x: A, y: n, t, color: e, size: a, life: o.lowFx ? 0.6 : 0.9 });
+  const limit = o.lowFx ? 20 : 60;
+  if (l.quiet) return;
+  // Conservative glyph bounds include the shield/lightning/poison icons.
+  const width = Array.from(String(t)).reduce((sum, char) => sum + a * (char.codePointAt(0) > 255 ? 1.1 : 0.7), 0) + 8;
+  const height = a + 8;
+  let x = A, y = n, placed = false;
+  // All labels rise at the same speed, so free slots remain separated as they animate.
+  for (let column = 0; column < 11 && !placed; column++) {
+    const side = column === 0 ? 0 : Math.ceil(column / 2) * (column % 2 ? -1 : 1);
+    for (let row = 0; row < 6 && !placed; row++) {
+      const candidateX = A + side * (width + 16), candidateY = n - row * height;
+      const overlaps = l.txt.some(label => label.life > 0 &&
+        Math.abs(candidateX - label.x) < (width + (label.width || String(label.t).length * label.size + 8)) / 2 &&
+        candidateY > label.y - (label.height || label.size + 8) && candidateY - height < label.y);
+      if (!overlaps) { x = candidateX; y = candidateY; placed = true; }
+    }
+  }
+  if (!placed) {
+    // A dense cluster can fill every nearby slot; place above it rather than overlap.
+    x = A;
+    y = l.txt.reduce((top, label) => label.life > 0 &&
+      Math.abs(x - label.x) < (width + (label.width || String(label.t).length * label.size + 8)) / 2
+      ? Math.min(top, label.y - (label.height || label.size + 8) - 2) : top, n);
+  }
+  if (l.txt.length >= limit) l.txt.shift();
+  l.txt.push({ x, y, t, color: e, size: a, width, height, life: o.lowFx ? 0.6 : 1.1 });
 };
 
 var MP = function (A, n, t) {
@@ -224,6 +246,16 @@ var HP = function (A, n, t) {
     });
 };
 
+// Cosmetic impact only: every struck body gets its own Ngân Đao Xạ Nguyệt sprite.
+var showNhiepHonImpact = function (target, skill) {
+  if (l.quiet || !target || skill.impactVisualTargets && skill.impactVisualTargets.has(target)) return;
+  const sprite = A0.m[150] && (A0.m[150].fly || A0.m[150].hit);
+  if (!sprite) return;
+  if (skill.impactVisualTargets) skill.impactVisualTargets.add(target);
+  (l.fxQ || (l.fxQ = [])).push({ k: "boom", s: sprite, x: target.x, y: target.y - 14,
+    t: 0, life: yn(sprite), dir: 0, cosmetic: true });
+};
+
 var $P = function (A, n) {
   const t = (A.id && A0.f && A0.f[A.id]) || {},
     e = t.c || A0.s[A.id],
@@ -240,7 +272,7 @@ var B8 = function (A, n, t) {
   const i = t.self || t.rays || a[1] === 3;
   if (i) {
     const u = performance.now();
-    if (l.ev2Last === n && u - (l.ev2LastT || 0) < 60) return !0;
+    if (!activeCombatCast && l.ev2Last === n && u - (l.ev2LastT || 0) < 60) return !0;
     ((l.ev2Last = n), (l.ev2LastT = u));
   }
   const r = t.rays ? t.rays(n.L || 1) : a[2],

@@ -194,7 +194,10 @@ var hs = function (A, n) {
     A.useAR &&
     Math.random() * 100 >= Pe(A.ar || l.P.ar, Math.max(0, n.def + (t ? t.def : 0)), A.ignore)
   )
+  {
+    if (typeof combatLog !== "undefined" && combatLog) combatLog.miss("out", n);
     return ($A(n.x, n.y - n.r - 8, "Trượt", "#aaa", 11), 0);
+  }
   A.ev2 || E8(A, n);
   const e = Math.random() * 100 < A.crit,
     a =
@@ -297,6 +300,7 @@ var Tt = function () {};
 var U9 = function (A) {
   const n = typeof Rn == "function" ? Rn(A) : null;
   if (Math.random() * 100 >= Pe(A.ar * (n ? Math.max(0.1, 1 + n.ar / 100) : 1), l.P.def)) {
+    if (typeof combatLog !== "undefined" && combatLog) combatLog.miss("in", A);
     $A(v.x, v.y - 30, "Né", "#9cf", 11);
     return;
   }
@@ -580,9 +584,13 @@ var tD = function (A, n, t, e) {
 };
 
 var eD = function (A, n, t, e, a) {
+  if (+A.id === 339 && !A.impactVisualTargets) A = Object.assign({}, A, { impactVisualTargets: new Set() });
+  if (+A.id === 319 && !a.self) a = Object.assign({}, a, { self: true, col: false });
+  // Beggar skills only damage at projectile impact; lightning uses one timed field.
+  if (([357, 359].includes(+A.id) && a.self) || +A.id === 375) return;
   const i = !a.noVis && typeof Be == "function",
     r = a.rays || a.self ? v : n,
-    c = a.rays ? Math.max(280, (A.rad || 0) + 40) : a.self ? 170 : 150,
+    c = a.rays ? Math.max(280, (A.rad || 0) + 40) : a.self ? 170 : [302, 339, 342, 357, 318, 321].includes(+A.id) ? 50 : [353, 355].includes(+A.id) ? 100 : 150,
     d =
       a.col && e
         ? e.filter((h) => !h.dead && h.hp > 0).slice(0, Qi(A, a))
@@ -602,12 +610,18 @@ var eD = function (A, n, t, e, a) {
     geo: a.self ? { k: "self", r: c, pierce: true } : a.rays ? { k: "fan", n: Qi(A, a) } : { k: "spot", r: c, pierce: true },
   });
   queueSkillContact(v, a.self ? v : n, u, target => {
-    if (!a.chance || Math.random() < a.chance) Ls(hs(u, target), u);
+    if (!a.chance || Math.random() < a.chance) {
+      const damage = hs(u, target);
+      Ls(damage, u);
+      if (+A.id === 339 && damage > 0 && !a.noFx) showNhiepHonImpact(target, A);
+    }
   }, {
+    hideFallbackVisual: +A.id === 339,
     maxTargets: Qi(A, a),
+    maxHits: () => a.rays ? Qi(A, a) : 1,
     targets: () => _1(),
     visual: () => {
-      if (!i || a.noFx) return;
+      if (+A.id === 339 || !i || a.noFx) return;
       l.ev2Tg = eligible;
       try { Be(a.self ? v : n, A, a.n, a.rays ? v : null, a); }
       finally { l.ev2Tg = null; }
@@ -762,8 +776,11 @@ var oD = function () {
   d.unshift(t);
   const extraHits = l8(e, t, a, d.length);
   let triggered = false;
+  if (+e.id === 339) e = Object.assign({}, e, { impactVisualTargets: new Set() });
   queueSkillContact(v, t, e, (target) => {
-    Ls(hs(e, target), e);
+    const damage = hs(e, target);
+    Ls(damage, e);
+    if (+e.id === 339 && damage > 0) showNhiepHonImpact(target, e);
     if (e.ev && !triggered) {
       triggered = true;
       const live = _1();
@@ -771,7 +788,7 @@ var oD = function () {
     }
   }, {
     maxTargets: e.geo && (e.geo.pierce || e.geo.k === "self" || e.geo.k === "spot") ? Infinity : Math.max(1, (e.geo && e.geo.n) || e.targets || d.length),
-    maxHits: target => target === t ? 1 + extraHits : 1,
+    maxHits: target => +e.id === 368 ? 3 : target === t ? 1 + extraHits : 1,
   });
   return (
     (v.face = t.x >= v.x ? 1 : -1),

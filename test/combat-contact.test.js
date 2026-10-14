@@ -392,7 +392,7 @@ test('Nhan Kiem Hop Nhat sweeps narrow piercing rectangles through all packed bo
   const skill=standardSkill(s,368);
   s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit),{maxTargets:1});
   run(s,1);
-  assert.equal(target.hp,90);assert.ok(packed.every(e=>e.hp===90));assert.equal(side.hp,100);
+  assert.equal(target.hp,70);assert.ok(packed.every(e=>e.hp===70));assert.equal(side.hp,100);
 });
 test('the Van Long rectangle keeps its initial heading when the caster and target move after casting',()=>{
   const s=world(),target=enemy(s,0,-60),onPath=enemy(s,0,-80),side=enemy(s,80,-80);
@@ -432,4 +432,116 @@ test('a non-piercing narrow impact hits all overlapping bodies but stops before 
   ray(s,target,{geo:{k:'line',pierce:false}});
   run(s,1);
   assert.equal(target.hp,90);assert.ok(packed.every(e=>e.hp===90));assert.equal(farther.hp,100);
+});
+
+test('the player combat log is written only after physical skill contact',()=>{
+  const s=world(),target=enemy(s,180);s.m0=0;Object.assign(s.o,{fac:'shaolin',name:'Tester'});s.U9=()=>{};s.$d=()=>{};
+  load(s,'app/ui/combat-log-01.js');shaolin(s);s.oD();
+  assert.equal(s.combatLog.entries().length,0);run(s,.1);assert.equal(s.combatLog.entries().length,0);
+  run(s,1);assert.equal(s.combatLog.entries('out').length,1);assert.equal(s.combatLog.entries()[0].amount,10);
+});
+
+function secondaryWorld(s) {
+ load(s,'app/data/status-effects-01.js');
+ for(const name of ['LP','qP','Ds'])declaration(s,'app/render/arena-02.js',name);
+ for(const name of ['$P','B8','Be','showNhiepHonImpact'])declaration(s,'app/render/arena-01.js',name);
+ declaration(s,'app/core/state-and-save-01.js','eD');
+ s.Qi=(skill,event)=>event.rays?event.rays(skill.L):event.max;s.S5=()=>({phys:10});
+}
+test('Phong Suong primary contact then four real homing rays each damage the same monster once',()=>{
+ const s=world(),target=enemy(s,100);secondaryWorld(s);
+ const skill=standardSkill(s,380);skill.ev=true;s.skill=skill;
+ s.tD=(skill,target,live,hit)=>s.eD(skill,target,live,hit,{rays:()=>4,sid:331,max:4});
+ s.oD();assert.equal(s.l.combatProjectiles.length,1);run(s,5);
+ assert.equal(target.hp,50);
+});
+test('Beggar skills suppress self damage while Phi Long impact field and Tang skills shrink to one third',()=>{
+ for(const id of [357,359,302,339,342]){
+  const s=world(),target=enemy(s,200),near=enemy(s,220),far=enemy(s,300),casterNear=enemy(s,-20);secondaryWorld(s);
+  const skill=standardSkill(s,id);
+  if([357,359].includes(id)){s.eD(skill,target,s.l.enemies,[target],{self:true,max:3,noFx:true});assert.equal((s.l.combatProjectiles||[]).length,0);}
+  s.eD(skill,target,s.l.enemies,[target],{col:true,max:5,noFx:true});run(s,.2);
+  assert.equal(target.hp,90);assert.equal(near.hp,90);assert.equal(far.hp,id===359?90:100);assert.equal(casterNear.hp,100);
+ }
+});
+test('Thien Ngoai secondary sprite stays at its original coordinate throughout its duration',()=>{
+ const s=world(),target=enemy(s,100);secondaryWorld(s);const skill=standardSkill(s,362);
+ s.eD(skill,target,s.l.enemies,[target],{sid:363,max:5});
+ const positions=s.l.combatProjectiles.map(e=>[e,e.x,e.y]);assert.ok(positions.length);
+ run(s,.5);for(const [effect,x,y]of positions){assert.equal(effect.x,x);assert.equal(effect.y,y);}
+});
+test('Loi Dong field lasts three seconds with one hit every 300ms and checks live occupants',()=>{
+ const s=world(),target=enemy(s,200),entering=enemy(s,1000),skill=standardSkill(s,375);
+ s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
+ run(s,.05);assert.equal(target.hp,90);run(s,.1);assert.equal(target.hp,90);
+ run(s,.1);assert.equal(target.hp,90);run(s,.1);assert.equal(target.hp,80);
+ entering.x=200;target.x=1000;run(s,.3);assert.equal(entering.hp,90);assert.equal(target.hp,80);
+ run(s,3);assert.equal(entering.hp,20);const hp=entering.hp;run(s,1);assert.equal(entering.hp,hp);
+});
+test('Thien Dia animation advances twice as fast without changing simulation age',()=>{
+ const s=world();declaration(s,'app/render/projectiles-01.js','YP');s.Ds=()=>0;
+ let time;s.Fa=(sprite,dir,t)=>{time=t;};
+ const effect={age:2,lf:18,loop:true,m:{fly:{n:10,ms:100,d:1}},combat:{skill:{id:365}},x:0,y:0,z:0,hz:0};
+ s.YP(effect);assert.equal(time,.25);assert.equal(effect.age,2);
+ effect.combat.skill.id=380;s.YP(effect);assert.equal(time,.15);
+});
+test('Nhan Kiem registers three sword contacts plus its existing secondary hit, with no duplicated secondary',()=>{
+ const s=world(),target=enemy(s,80);secondaryWorld(s);const skill=standardSkill(s,368);skill.ev=true;s.skill=skill;
+ s.tD=(skill,target,live,hit)=>s.eD(skill,target,live,hit,{sid:162,col:true,max:3,castFx:'176'});
+ s.oD();run(s,2);assert.equal(target.hp,60);
+});
+test('Nhiep Hon secondary shows an actual cosmetic sprite at each damaged body, excluding targets outside its area',()=>{
+ const s=world(),target=enemy(s,200),near=enemy(s,220),far=enemy(s,300);secondaryWorld(s);const skill=standardSkill(s,339);
+ const emitted=[];s.l.fxQ=[];s.l.fxQ.push=function(...effects){emitted.push(...effects);return Array.prototype.push.apply(this,effects);};
+ s.eD(skill,target,s.l.enemies,[target],{sid:340,col:true,max:3});run(s,1);
+ assert.equal(target.hp,90);assert.equal(near.hp,90);assert.equal(far.hp,100);
+ const impacts=emitted.filter(e=>e.cosmetic&&e.s===s.A0.m[150].fly);
+ assert.equal(impacts.length,2);assert.ok(impacts.some(e=>e.x===target.x));assert.ok(impacts.some(e=>e.x===near.x));assert.ok(!impacts.some(e=>e.x===far.x));
+});
+test('Ngu Doc level 90 impact fields shrink from 150 to 100 without changing cast range or missing packed mobs',()=>{
+ for(const id of [353,355]){
+  const s=world(),target=enemy(s,200),near=enemy(s,280),far=enemy(s,310),packed=Array.from({length:20},()=>enemy(s,200));secondaryWorld(s);
+  const skill=standardSkill(s,id),range=skill.rad;
+  s.eD(skill,target,s.l.enemies,[target],{col:true,max:3,noFx:true});
+  assert.equal(s.l.combatProjectiles[0].combat.skill.geo.r,100);assert.equal(s.l.combatProjectiles[0].combat.skill.rad,range);
+  run(s,.2);assert.equal(target.hp,90);assert.equal(near.hp,90);assert.equal(far.hp,100);assert.ok(packed.every(mob=>mob.hp===90));
+  const splash=s.queueSkillContact(s.v,target,{...skill,geo:{...skill.geo,area:150}},()=>{}, {visual:()=>{}});
+  assert.equal(splash.skill.geo.area,100);assert.equal(splash.skill.rad,range);assert.equal(skill.geo.area||0,0);
+ }
+});
+test('Vo Tuong and Dat Ma impact fields shrink to one third and exclude distant mobs',()=>{
+ for(const id of [318,321]){
+  const s=world(),target=enemy(s,200),near=enemy(s,220),far=enemy(s,300);secondaryWorld(s);
+  const skill=standardSkill(s,id);s.eD(skill,target,s.l.enemies,[target],{col:true,max:3,noFx:true});
+  assert.equal(s.l.combatProjectiles[0].combat.skill.geo.r,50);run(s,.2);
+  assert.equal(target.hp,90);assert.equal(near.hp,90);assert.equal(far.hp,100);
+ }
+});
+test('Hoanh Tao secondary damage is centered on the caster rather than its distant impact target',()=>{
+ const s=world(),target=enemy(s,250),casterNear=enemy(s,-70),impactNear=enemy(s,290);secondaryWorld(s);
+ const skill=standardSkill(s,319);
+ s.eD(skill,target,s.l.enemies,[target],{col:true,max:3,noFx:true});
+ assert.equal(s.l.combatProjectiles[0].combat.skill.geo.k,'self');run(s,.2);
+ assert.equal(casterNear.hp,90);assert.equal(target.hp,100);assert.equal(impactNear.hp,100);
+});
+test('all three Thien Vuong level 90 missiles hit in eight directions, after real contact and never beyond range',()=>{
+ for(const id of [322,323,325,326,327,408])for(let dir=0;dir<8;dir++){
+  const s=world();load(s,'app/data/status-effects-01.js');
+  const angle=dir*Math.PI/4,target=enemy(s,Math.cos(angle)*65,Math.sin(angle)*65/2),far=enemy(s,Math.cos(angle)*1000,Math.sin(angle)*1000/2);
+  const skill=standardSkill(s,id);s.queueSkillContact(s.v,target,skill,h=>s.hs(skill,h));
+  assert.equal(target.hp,100);if(![325,408].includes(id))assert.ok(s.l.combatProjectiles.every(e=>e.mid===({322:326,323:327}[id]||id)&&e.kind===1));
+  run(s,2);assert.equal(target.hp,90,`${id} direction ${dir}`);assert.equal(far.hp,100);
+ }
+});
+
+test('Nhiep Hon piercing contacts display one impact on every hit monster beyond the first splash, without extra damage',()=>{
+ const s=world(),first=enemy(s,80),second=enemy(s,170),third=enemy(s,240),side=enemy(s,170,120);secondaryWorld(s);
+ const emitted=[];s.l.fxQ=[];s.l.fxQ.push=function(...effects){emitted.push(...effects);return Array.prototype.push.apply(this,effects);};
+ const skill=standardSkill(s,339);skill.ev=true;s.skill=skill;
+ s.tD=(skill,target,live,hit)=>s.eD(skill,target,live,hit,{sid:340,col:true,max:3});
+ s.oD();assert.equal(s.l.fx.filter(e=>e.cosmetic).length,0);run(s,1.5);
+ assert.equal(first.hp,80);assert.equal(second.hp,90);assert.equal(third.hp,90);assert.equal(side.hp,100);
+ const impacts=emitted.filter(e=>e.cosmetic&&e.s===s.A0.m[150].fly);
+ assert.equal(impacts.length,3);
+ for(const target of [first,second,third])assert.equal(impacts.filter(e=>e.x===target.x&&e.y===target.y-14).length,1);
 });

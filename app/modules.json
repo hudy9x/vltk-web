@@ -1614,6 +1614,7 @@
         "Gf",
         "Kf",
         "R8",
+        "bulkSkillPoints",
         "lM",
         "Zn",
         "_v",
@@ -2808,8 +2809,17 @@
       "lines": 237
     },
     {
+      "file": "ui/combat-log-01.js",
+      "symbols": [
+        "combatLog"
+      ],
+      "lines": 61
+    },
+    {
       "file": "dev/combat-sandbox-01.js",
-      "symbols": ["combatSandbox"],
+      "symbols": [
+        "combatSandbox"
+      ],
       "lines": 1
     }
   ]

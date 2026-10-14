@@ -203,7 +203,7 @@ var NP = function (A) {
     L3(
       a.x,
       d,
-      GP(a),
+      GP(a) + (typeof combatSandbox !== "undefined" && combatSandbox ? combatSandbox.healthLabel(a) : ""),
       a.goldBoss ? Ps.gold : Ps[a.cls] || Ps.normal,
       a.cls === "boss" ? 12 : 11,
       a.hp / a.max,
@@ -215,7 +215,7 @@ var NP = function (A) {
   }
   for (const effect of l.fx) {
     const cast = effect.combat;
-    const repeating = cast && cast.interval && cast.pulse >= 0;
+    const repeating = cast && +cast.skill.id !== 375 && cast.interval && cast.pulse >= 0;
     const phase = repeating ? Math.max(0, cast.elapsed - (cast.nextPulse - cast.interval)) : 0;
     if (effect.k === "jm") YP(repeating && effect.age >= 0 ? Object.assign({}, effect, { age: phase * K3 }) : effect);
     else if (effect.k === "mis" || effect.k === "boom") CP(repeating && effect.t >= 0 ? Object.assign({}, effect, { t: phase }) : effect);
@@ -240,8 +240,10 @@ var NP = function (A) {
       (a.y -= 32 * A),
       (n.globalAlpha = E(a.life / 0.5, 0, 1)),
       (n.font = `${a.size}px "IBM Plex Mono", monospace`),
-      (n.fillStyle = "#000"),
-      n.fillText(a.t, a.x + 1, a.y + 1),
+      (n.strokeStyle = "#111"),
+      (n.lineWidth = 3),
+      (n.lineJoin = "round"),
+      n.strokeText(a.t, a.x, a.y),
       (n.fillStyle = a.color),
       n.fillText(a.t, a.x, a.y));
   ((n.globalAlpha = 1),
