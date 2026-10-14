@@ -545,3 +545,44 @@ test('Nhiep Hon piercing contacts display one impact on every hit monster beyond
  assert.equal(impacts.length,3);
  for(const target of [first,second,third])assert.equal(impacts.filter(e=>e.x===target.x&&e.y===target.y-14).length,1);
 });
+
+test('Thien Dia one-shot stops drawing after its accelerated final frame instead of freezing until contact expiry',()=>{
+ const s=world();load(s,'app/data/status-effects-01.js');declaration(s,'app/render/projectiles-01.js','YP');s.Ds=()=>0;
+ const skill=standardSkill(s,365),target=enemy(s,100);s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
+ const effect=s.l.combatProjectiles.find(e=>e.k==='jm');assert.ok(effect);assert.equal(effect.loop,false);
+ const frames=[];s.Fa=(sprite,dir,time)=>frames.push(Math.floor(time*1000/sprite.ms));
+ effect.age=0;s.YP(effect);assert.equal(frames.at(-1),0);
+ effect.age=effect.lf/2-effect.lf/(effect.m.fly.n*4);s.YP(effect);assert.equal(frames.at(-1),effect.m.fly.n-1);
+ const count=frames.length,life=effect.lf;
+ for(const age of [life/2,life*.6,life*.9]){effect.age=age;s.YP(effect);assert.equal(effect.age,age);}
+ assert.equal(frames.length,count);assert.equal(effect.lf,life);
+ effect.combat.skill.id=380;s.YP(effect);assert.equal(frames.length,count+1);
+});
+
+test('Thien Vuong hit sheets animate once at a fixed impact point instead of scattering frames along missile paths',()=>{
+ for(const [id,spriteId,legacyId]of [[322,326,138],[326,326,138],[323,327,139],[327,327,139]]){
+  for(const quiet of [false,true]){
+   const s=world();load(s,'app/data/status-effects-01.js');s.l.quiet=quiet;
+   const originalFly=s.A0.m[spriteId].fly,legacy=s.A0.m[legacyId].hit,target=enemy(s,65),skill=standardSkill(s,id);
+   const packed=Array.from({length:8},()=>enemy(s,65));
+   s.queueSkillContact(s.v,target,skill,h=>s.hs(skill,h));
+   const missiles=s.l.combatProjectiles;assert.ok(missiles.length);assert.ok(missiles.every(e=>e.mid===spriteId&&e.kind===1&&e.m.fly===null&&e.m.hit===null));
+   assert.equal(s.A0.m[spriteId].fly,originalFly);
+   declaration(s,'app/render/projectiles-01.js','YP');s.Ds=()=>0;const draws=[];s.Fa=(sprite,dir,t,x,y)=>draws.push({file:sprite.f,t,x,y});
+   for(const missile of missiles)s.YP({...missile,age:0});assert.equal(draws.length,0);
+   const emitted=[];s.l.fxQ=[];s.l.fxQ.push=function(...effects){emitted.push(...effects);return Array.prototype.push.apply(this,effects);};
+   assert.equal(target.hp,100);assert.equal(emitted.length,0);run(s,1);assert.equal(target.hp,90);assert.ok(packed.every(mob=>mob.hp===90));
+   const animations=emitted.filter(e=>e.s===legacy);
+   assert.equal(animations.length,quiet?0:1);
+   if(!quiet){
+    const effect=animations[0];assert.equal(effect.x,65);assert.equal(effect.y,-14);assert.equal(effect.k,'boom');
+    target.x=200;target.y=100;
+    declaration(s,'app/render/arena-01.js','CP');declaration(s,'app/render/arena-01.js','TP');
+    for(const t of [0,legacy.ms/1000,legacy.ms*(legacy.n-1)/1000])s.CP({...effect,t});
+    assert.equal(draws.length,3);assert.ok(draws.every(draw=>draw.file===`fx/m${legacyId}_hit.webp`&&draw.x===65&&draw.y===-14));
+    assert.ok(draws[0].t<draws[1].t&&draws[1].t<draws[2].t);
+    assert.equal(s.TP({...effect,t:effect.life},.01),false);
+   }
+  }
+ }
+});

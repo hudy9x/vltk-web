@@ -254,7 +254,12 @@ var YP = function (A) {
   if (!n) return;
   const t = n.n,
     e = Math.max(1, Math.round(n.ms / (1e3 / K3))),
-    a = A.loop ? Math.floor(A.age * (A.combat && +A.combat.skill.id === 365 ? 2 : 1) / e) % t : Math.min(t - 1, Math.floor((t * A.age * (A.combat && +A.combat.skill.id === 365 ? 2 : 1)) / A.lf)),
+    speed = A.combat && +A.combat.skill.id === 365 ? 2 : 1,
+    frame = A.loop ? Math.floor(A.age * speed / e) : Math.floor(t * A.age * speed / A.lf);
+  // The accelerated one-shot ends visually when its frames finish. The
+  // contact lifetime remains independent; never pin its last frame until expiry.
+  if (speed === 2 && !A.loop && frame >= t) return;
+  const a = A.loop ? frame % t : Math.min(t - 1, frame),
     i = n.d > 1 ? Ds(Math.cos(A.ang), Math.sin(A.ang) / 2) : 0;
   if (A.sh && A.tr.length) {
     const r = W,
@@ -408,7 +413,33 @@ var G3 = function (A, n, t) {
   const P = VP[t.id],
     _ = u1 && u1.life;
   try {
+    const visualStart = l.fx.length, contactStart = (l.combatProjectiles || []).length;
     bs(f, g, o.lowFx && !activeCombatCast ? Math.min(u, 3) : u, a, A, n, n);
+    const legacyId = ({ 322: 138, 326: 138, 323: 139, 327: 139 })[+t.id];
+    const legacySprite = legacyId && A0.m[legacyId] && A0.m[legacyId].hit;
+    if (legacySprite) {
+      // These hit sheets are one stationary animation, not traveling sprites.
+      // The hidden missiles keep their existing contact timing and damage rules.
+      const emitted = new Set(l.fx.slice(visualStart).concat((l.combatProjectiles || []).slice(contactStart)));
+      for (const missile of emitted) if (missile.k === "jm" && missile.mid === f)
+        missile.m = Object.assign({}, missile.m, { fly: null, hit: null });
+      const cast = activeCombatCast;
+      if (cast) {
+        const onHit = cast.onHit;
+        let shown = false;
+        cast.onHit = target => {
+          const x = target.x, y = target.y - 14;
+          const result = onHit(target);
+          if (!shown) {
+            shown = true;
+            if (!l.quiet) (l.fxQ || (l.fxQ = [])).push({
+              k: "boom", s: legacySprite, x, y, t: 0, life: yn(legacySprite), dir: 0, cosmetic: true,
+            });
+          }
+          return result;
+        };
+      }
+    }
   } finally {
     u1 = null;
   }

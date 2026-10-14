@@ -90,6 +90,10 @@ Vô Tướng Trảm và Đạt Ma Độ Giang giảm vùng sát thương va ch�
 Hoành Tảo Thiên Quân dùng vùng sát thương quanh người tung chiêu. Hai chiêu
 Thiên Vương Phá Thiên Trảm và Truy Tinh Trục Nguyệt dùng sprite bay của
 chiêu chính để kiểm tra va chạm, thay cho sprite phụ chỉ có hiệu ứng trúng đòn.
+Hình hiển thị của Phá Thiên Trảm là `fx/m138_hit.webp`, Truy Tinh Trục Nguyệt
+là `fx/m139_hit.webp`; mỗi lần tung chiêu chỉ chạy một sprite sheet màu vàng
+tại điểm trúng đầu tiên, giữ nguyên tọa độ cho đến khi hết animation. Đường
+bay dùng để kiểm tra va chạm được ẩn, cách tính sát thương giữ nguyên.
 Thiên Ngoại Lưu Tinh giữ cố định hiệu ứng; Thiên Địa Vô Cực chạy animation
 nhanh gấp đôi, không thay đổi nhịp tính sát thương.
 
