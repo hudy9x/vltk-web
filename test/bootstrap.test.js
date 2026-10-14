@@ -4,8 +4,8 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
-const { openDatabase, snapshot, reset } = require('../server/database');
-const { createServer } = require('../server');
+const { openDatabase, snapshot, reset } = require('../server/database.ts');
+const { createServer } = require('../server/index.ts');
 const source = fs.readFileSync(path.join(__dirname,'../client/bootstrap.js'),'utf8');
 const OUTBOX = '__volam_sqlite_outbox';
 async function boot(base, values, { failWrites = false, search = '' } = {}) {
@@ -37,7 +37,8 @@ async function boot(base, values, { failWrites = false, search = '' } = {}) {
 }
 test('browser outbox survives interrupted writes and reload; SQLite reset rejects old browser saves', async () => {
   const db = openDatabase(':memory:');
-  const { server } = createServer({ db, downloadAssets:false });
+  const { app, server } = createServer({ db, downloadAssets:false });
+  await app.ready();
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   const values = new Map([['jxidle','{"name":"Imported"}'],['unrelated','keep']]);
@@ -64,5 +65,5 @@ test('browser outbox survives interrupted writes and reload; SQLite reset reject
     assert.deepEqual(snapshot(db).entries,{});
     const legacyUrl = await boot(base,values,{ search:'?backup=1' });
     assert.deepEqual(Array.from(legacyUrl.loadedScripts),['data.js?v=622','setvi.js?v=622','app/game.js?v=622']);
-  } finally { await new Promise(resolve => server.close(resolve)); db.close(); }
+  } finally { await app.close(); db.close(); }
 });

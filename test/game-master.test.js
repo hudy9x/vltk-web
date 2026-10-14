@@ -5,8 +5,8 @@ const vm = require("node:vm");
 const path = require("node:path");
 const acorn = require("acorn");
 const { loadCombatEngine } = require('./helpers/combat-engine');
-const { createServer } = require("../server");
-const { openDatabase } = require("../server/database");
+const { createServer } = require("../server/index.ts");
+const { openDatabase } = require("../server/database.ts");
 const ROOT = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(ROOT, "app/dev/game-master-01.js"), "utf8");
 function declaration(file, name) {
@@ -328,7 +328,8 @@ test("quick sale sells clicked inventory items without confirmation, unlocks loc
 });
 test("development is explicitly advertised by the development server", async () => {
   const db = openDatabase(":memory:");
-  const { server } = createServer({ db, development: true, downloadAssets: false });
+  const { app, server } = createServer({ db, development: true, downloadAssets: false });
+  await app.ready();
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   try {
     assert.deepEqual(
@@ -336,7 +337,7 @@ test("development is explicitly advertised by the development server", async () 
       { development: true },
     );
   } finally {
-    await new Promise((resolve) => server.close(resolve));
+    await app.close();
     db.close();
   }
 });

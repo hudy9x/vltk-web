@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const { mkdtempSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
-const { openDatabase, snapshot, initialize, applyBatch, reset } = require('../server/database');
-const { createServer } = require('../server');
+const { openDatabase, snapshot, initialize, applyBatch, reset } = require('../server/database.ts');
+const { createServer } = require('../server/index.ts');
 
 test('save, shared stash and backup survive reopening SQLite; retries cannot overwrite newer saves', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'volam-sqlite-'));
@@ -33,7 +33,8 @@ test('save, shared stash and backup survive reopening SQLite; retries cannot ove
 
 test('HTTP API persists changes and rejects invalid writes; private server/database files are not served', async () => {
   const db = openDatabase(':memory:');
-  const { server } = createServer({ db, downloadAssets:false, development:false });
+  const { app, server } = createServer({ db, downloadAssets:false, development:false });
+  await app.ready();
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   const post = value => ({ method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(value) });
@@ -45,7 +46,7 @@ test('HTTP API persists changes and rejects invalid writes; private server/datab
     assert.equal((await (await fetch(base+'/api/storage')).json()).entries.jxidle_2, batch.operations[0].value);
     assert.equal((await fetch(base+'/api/storage',post({ ...batch,id:'invalid',operations:[{ key:'jxidle_auth',value:'token' }] }))).status,400);
     assert.equal((await fetch(base+'/api/storage', { ...post(batch),headers:{ 'Content-Type':'application/json',Origin:'https://example.org' } })).status,403);
-    for (const file of ['database/game.sqlite','server/database.js','.git/config','tools/reset-db.js','app.js']) assert.equal((await fetch(base+'/'+file)).status,404);
+    for (const file of ['database/game.sqlite','server/database.ts','server/index.ts','.git/config','tools/reset-db.js','app.js']) assert.equal((await fetch(base+'/'+file)).status,404);
     assert.match(await (await fetch(base+'/')).text(), /client\/bootstrap.js/);
     const bundle = await fetch(base+'/app/game.js?v=622');
     assert.equal(bundle.status,200);
@@ -62,5 +63,5 @@ test('HTTP API persists changes and rejects invalid writes; private server/datab
     assert.equal((await fetch(base+'/api/storage',post({ ...batch,id:'remove',operations:[{ key:'jxidle_2',value:null }] }))).status,200);
     assert.equal((await (await fetch(base+'/api/storage')).json()).entries.jxidle_2,undefined);
     assert.equal((await fetch(base+'/api/storage',{ method:'POST',body:'{' })).status,400);
-  } finally { await new Promise(resolve => server.close(resolve)); db.close(); }
+  } finally { await app.close(); db.close(); }
 });

@@ -2,8 +2,8 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const vm = require('node:vm');
-const { ROOT } = require('../server/database');
-const { createAssetCache, isAssetPath } = require('../server/assets');
+const { ROOT } = require('../server/database.ts');
+const { createAssetCache, isAssetPath } = require('../server/assets.ts');
 const { assemble } = require('./build-app');
 async function walk(directory) {
   const entries = await fs.readdir(directory,{ withFileTypes:true }).catch(() => []);

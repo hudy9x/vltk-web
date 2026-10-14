@@ -1,15 +1,69 @@
-# Võ Lâm Idle — local Node.js + SQLite
+# Võ Lâm Idle — local TypeScript + Fastify + SQLite
 
-Yêu cầu Node.js 24 trở lên. Server không có dependency npm bên ngoài ở runtime.
-`npm ci` cài công cụ dev dùng cho kiểm tra AST.
+Yêu cầu Node.js 24 trở lên. `npm ci` cài Fastify và các công cụ build/type-check.
+Server dùng Fastify, source TypeScript chạy trực tiếp bằng hỗ trợ type stripping
+của Node.js 24; không cần `tsx`, `ts-node` hay output JS riêng cho server.
 
 ```sh
+npm ci
+npm run build
 npm start
 # http://127.0.0.1:3000
 ```
 
 `npm run dev` bật môi trường development và Node watch. `PORT=3001 npm start` đổi port.
 `DB_PATH=/absolute/path/test.sqlite npm start` dùng database riêng.
+
+## Đọc và chỉnh sửa server
+
+Bắt đầu tại [server/index.ts](server/index.ts). `createServer()` tạo app nhưng
+không mở port; `startServer()` mới listen ở `127.0.0.1`. Import factory từ test
+không tự khởi động server. Luồng khởi tạo:
+
+```text
+index.ts -> mở SQLite -> build game -> seed catalog -> tạo Fastify
+                                                    |
+                             headers / origin / parser / error handler
+                                                    |
+                              routes/api.ts + routes/static.ts
+                                                    |
+                     startServer() -> listen -> SIGINT/SIGTERM -> close
+```
+
+| File | Trách nhiệm |
+| --- | --- |
+| `server/index.ts` | Factory, cấu hình Fastify, khởi động/dừng server |
+| `server/routes/api.ts` | Config, health, storage, catalog và báo cáo tài nguyên |
+| `server/routes/static.ts` | Phục vụ file theo whitelist, stream tài nguyên, rebuild game khi reload |
+| `server/database.ts` | SQLite, kiểm tra dữ liệu save, transaction, retry batch và reset |
+| `server/assets.ts` | Kiểm tra byte ảnh/audio/font, sửa base64, tải/cache tài nguyên |
+| `server/http.ts` | JSON response, parse body, kiểu lỗi HTTP |
+| `server/paths.ts` | Root của dự án và kiểm tra file đang được chạy trực tiếp |
+| `server/types.ts` | Kiểu services, cấu hình server và payload storage |
+| `database/seeds/catalog.ts` | Nhập catalog từ dữ liệu game vào SQLite |
+
+Server giữ URL/payload/status API, SQL schema, transaction và database hiện có.
+Giới hạn body vẫn là **8.000.000 byte**, mỗi giá trị save tối đa **2.000.000 ký tự**.
+Fastify chỉ dùng ở backend; không đưa framework vào bundle game.
+Không dùng static plugin mở toàn bộ repo: chỉ các file trong whitelist được đọc
+qua HTTP, vì cùng repo còn chứa SQLite, source server và `.git`.
+
+```sh
+npm run typecheck # kiểm tra combat TS + server TS bằng hai tsconfig riêng
+npm run build     # type-check cả hai, sinh bundle JS của game + source map
+npm run dev       # Node watch chạy server/index.ts trực tiếp
+npm start         # chạy server/index.ts trực tiếp
+npm test          # integration HTTP/SQLite, Fastify và các test game
+```
+
+`tsconfig.server.json` dùng NodeNext, strict và chỉ cho phép cú pháp TS có thể
+xóa kiểu. `tsconfig.json` dành cho combat trên trình duyệt. `server/package.json`
+và `database/package.json` xác định ESM cho hai nhóm này; tools/test JS hiện có
+tiếp tục dùng CommonJS và import TS qua Node.js 24.
+Factory trả `{ app, server, db }`: `app` là Fastify instance (dùng `inject`,
+`ready`, `listen`, `close`), `server` là Node HTTP handle. Khi dùng handle trực
+tiếp, gọi `await app.ready()` trước `server.listen`; sau đó `await app.close()`
+và đóng `db` do caller quản lý.
 
 ## Phòng test 10 môn phái
 

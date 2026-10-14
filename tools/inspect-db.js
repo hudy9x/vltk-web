@@ -1,4 +1,4 @@
-const { openDatabase } = require('../server/database');
+const { openDatabase } = require('../server/database.ts');
 const db = openDatabase();
 console.table(db.prepare('SELECT * FROM characters').all());
 console.table(db.prepare('SELECT key, length(value) AS bytes, updated_at FROM storage').all());

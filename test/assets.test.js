@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { tmpdir } = require('node:os');
-const { createAssetCache, validBytes, isAssetPath } = require('../server/assets');
+const { createAssetCache, validBytes, isAssetPath } = require('../server/assets.ts');
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN2kAAAAASUVORK5CYII=','base64');
 
 test('repair base64 images locally and redownload empty/corrupt files; cache concurrent requests', async () => {

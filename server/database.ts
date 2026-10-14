@@ -1,13 +1,15 @@
-const { DatabaseSync } = require('node:sqlite');
-const { mkdirSync, readFileSync } = require('node:fs');
-const path = require('node:path');
-const { randomUUID } = require('node:crypto');
-const ROOT = path.resolve(__dirname, '..');
+import { DatabaseSync } from 'node:sqlite';
+import { mkdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { ROOT } from './paths.ts';
+import type { StorageOperation, StorageSnapshot } from './types.ts';
+export { ROOT } from './paths.ts';
 // Preserve game keys, but exclude cloud credentials and per-tab heartbeat locks.
-const isGameKey = key => typeof key === 'string' && key.length <= 128 &&
+export const isGameKey = (key: unknown): key is string => typeof key === 'string' && key.length <= 128 &&
   /^(jxidle(?:$|_)|jx_|jxDev$|jxBanMark$|jxBanWiped_|jxCheat$)/.test(key) &&
   !/^jxidle_(auth|sbvia|hb_)/.test(key);
-function openDatabase(filename = process.env.DB_PATH || path.join(ROOT, 'database/game.sqlite')) {
+export function openDatabase(filename = process.env.DB_PATH || path.join(ROOT, 'database/game.sqlite')) {
   if (filename !== ':memory:') mkdirSync(path.dirname(path.resolve(filename)), { recursive: true });
   const db = new DatabaseSync(filename);
   db.exec('PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
@@ -15,14 +17,14 @@ function openDatabase(filename = process.env.DB_PATH || path.join(ROOT, 'databas
   db.prepare("INSERT OR IGNORE INTO metadata VALUES ('generation', ?)").run(randomUUID());
   return db;
 }
-function snapshot(db) {
+export function snapshot(db: DatabaseSync): StorageSnapshot {
   return {
-    generation: db.prepare("SELECT value FROM metadata WHERE key='generation'").get().value,
+    generation: db.prepare("SELECT value FROM metadata WHERE key='generation'").get()!.value as string,
     initialized: !!db.prepare("SELECT 1 FROM metadata WHERE key='initialized'").get(),
-    entries: Object.fromEntries(db.prepare('SELECT key, value FROM storage ORDER BY key').all().map(r => [r.key, r.value]))
+    entries: Object.fromEntries(db.prepare('SELECT key, value FROM storage ORDER BY key').all().map(r => [r.key as string, r.value as string]))
   };
 }
-function validateOperations(operations) {
+function validateOperations(operations: unknown): asserts operations is StorageOperation[] {
   if (!Array.isArray(operations) || operations.length > 256) throw Object.assign(new Error('Invalid operations'), { status: 400 });
   for (const op of operations) {
     if (!op || !isGameKey(op.key) || !(op.value === null || typeof op.value === 'string') || (op.value?.length || 0) > 2_000_000) {
@@ -30,7 +32,8 @@ function validateOperations(operations) {
     }
   }
 }
-function applyBatch(db, batch) {
+export function applyBatch(db: DatabaseSync, input: unknown): void {
+  const batch = input as { operations: unknown; id: unknown; generation: unknown };
   validateOperations(batch.operations);
   if (typeof batch.id !== 'string' || !/^[a-zA-Z0-9-]{1,80}$/.test(batch.id)) throw Object.assign(new Error('Invalid batch ID'), { status: 400 });
   if (batch.generation !== snapshot(db).generation) throw Object.assign(new Error('Database was reset; reload the game'), { status: 409 });
@@ -46,14 +49,14 @@ function applyBatch(db, batch) {
     db.exec('COMMIT');
   } catch (error) { db.exec('ROLLBACK'); throw error; }
 }
-function initialize(db, entries) {
+export function initialize(db: DatabaseSync, entries: unknown): StorageSnapshot {
   if (!entries || typeof entries !== 'object' || Array.isArray(entries)) throw Object.assign(new Error('Invalid entries'), { status: 400 });
-  const operations = Object.entries(entries).map(([key, value]) => ({ key, value }));
+  const operations = Object.entries(entries as Record<string, unknown>).map(([key, value]) => ({ key, value }));
   validateOperations(operations);
   if (!snapshot(db).initialized) applyBatch(db, { id: randomUUID(), generation: snapshot(db).generation, operations });
   return snapshot(db);
 }
-function reset(db) {
+export function reset(db: DatabaseSync): void {
   db.exec('BEGIN IMMEDIATE');
   try {
     db.exec('DELETE FROM storage; DELETE FROM applied_batches;');
@@ -62,4 +65,3 @@ function reset(db) {
     db.exec('COMMIT');
   } catch (error) { db.exec('ROLLBACK'); throw error; }
 }
-module.exports = { ROOT, openDatabase, snapshot, initialize, applyBatch, reset, isGameKey };

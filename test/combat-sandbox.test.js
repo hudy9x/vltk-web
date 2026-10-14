@@ -4,8 +4,8 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const acorn = require('acorn');
-const { createServer } = require('../server');
-const { openDatabase } = require('../server/database');
+const { createServer } = require('../server/index.ts');
+const { openDatabase } = require('../server/database.ts');
 const ROOT = path.resolve(__dirname, '..');
 function loadDeclaration(s,file,name) {
   const text=fs.readFileSync(path.join(ROOT,file),'utf8');
@@ -77,10 +77,11 @@ test('ordinary mode does not create profiles or replace combat functions',()=>{
 });
 test('arena config is advertised only when development and arena mode are both enabled',async()=>{
   for(const development of [true,false]){
-    const db=openDatabase(':memory:');const {server}=createServer({db,development,combatSandbox:true,downloadAssets:false});
+    const db=openDatabase(':memory:');const {app,server}=createServer({db,development,combatSandbox:true,downloadAssets:false});
+    await app.ready();
     await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
     try{const config=await(await fetch(`http://127.0.0.1:${server.address().port}/api/config`)).json();assert.equal(config.development,development);assert.equal(config.combatSandbox,development?true:undefined);}
-    finally{await new Promise(resolve=>server.close(resolve));db.close();}
+    finally{await app.close();db.close();}
   }
 });
 
