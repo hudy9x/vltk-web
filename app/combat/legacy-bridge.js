@@ -15,6 +15,9 @@ var advanceContactEffect = CombatEngine.advanceContactEffect;
 var advanceSkillContacts = CombatEngine.updateCombat;
 var drawContactProjectile = CombatEngine.drawFallbackProjectile;
 var spawnLotusImpact = CombatEngine.spawnLotusImpact;
+var actorActionLocked = CombatEngine.actorActionLocked;
+var beginActorCast = CombatEngine.beginActorCast;
+var applyActorHurt = CombatEngine.applyActorHurt;
 // Feed raw damage and the recipient into the display queue, after HP is resolved.
 var showDamageNumber = function (target, amount, kind = "phys", critical = false, suffix = "") {
   return CombatEngine.enqueueDamageLabel(l.txt || (l.txt = []), target, amount, kind,

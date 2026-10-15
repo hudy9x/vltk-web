@@ -279,6 +279,7 @@ var _w = function (A, n) {
 };
 
 var Mw = function (A, n, t, e) {
+  if (actorActionLocked(A)) return;
   const a = Z0.g;
   if (!a) {
     const _ = Math.hypot(n - A.x, t - A.y) || 1,
@@ -330,6 +331,7 @@ var Mw = function (A, n, t, e) {
 };
 
 var wa = function (A, n, t, e) {
+  if (actorActionLocked(A)) return;
   if (!Z0.g) {
     const g = Math.hypot(n - A.x, t - A.y) || 1,
       u = Math.min(1, e / g);

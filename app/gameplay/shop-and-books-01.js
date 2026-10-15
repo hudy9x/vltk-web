@@ -83,7 +83,7 @@ var b7 = function (A, n) {
     ) {
       const g = c.poison > 0 ? c.poisonDmg * c.poison : 0;
       ((c.poisonDmg = (g + h) / ve), (c.poison = ve));
-    } else c.hp -= h;
+    } else { c.hp -= h; applyActorHurt(c, h, c.max); }
   }
 };
 
@@ -106,6 +106,7 @@ var A6 = function (A) {
   for (const i in t.buff) t.buff[i] <= n && t.buff[i] > 0 && ((t.buff[i] = 0), (e = !0));
   const a = l.enemies.some((i) => !i.dead);
   for (const i in o.sk) {
+    if (actorActionLocked(v)) break;
     const r = T[i];
     if (!(o.sk[i] || 0)) continue;
     const d = wn(r);
@@ -120,6 +121,7 @@ var A6 = function (A) {
       g = ae(r, f),
       u = i4(r),
       w = () => {
+        beginActorCast(v);
         u ? (l.life = Math.max(1, l.life - h)) : (l.mana -= h);
       };
     if (!(u ? l.life < h + l.P.life * 0.3 : l.mana < h + l.P.mana * 0.15)) {

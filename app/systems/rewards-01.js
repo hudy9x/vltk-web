@@ -679,19 +679,21 @@ var cb = function (A) {
     a = e || { x: v.x - 36, y: v.y + 12 },
     i = Math.hypot(a.x - t.x, a.y - t.y),
     r = e ? e.r + 14 : 10;
+  t.t -= A;
+  if (actorActionLocked(t)) { t.moving = false; return; }
   if (((t.moving = i > r), t.moving)) {
     const c = Math.min(1, (170 * A) / i);
     ((t.dir = kn(a.x - t.x, a.y - t.y)), (t.x += (a.x - t.x) * c), (t.y += (a.y - t.y) * c));
   }
   if (
     (Math.hypot(v.x - t.x, v.y - t.y) > 500 && ((t.x = v.x - 30), (t.y = v.y + 10)),
-    (t.t -= A),
     e && !t.moving && t.t <= 0)
   ) {
     t.t = 1.2;
     queueSkillContact(t, e, { melee: true, rad: r / QA, parts: { phys: 1 } }, target => {
       const damage = Ph(n);
       target.hp -= damage;
+      applyActorHurt(target, damage, target.max);
       target.hitT = 0.1;
       showDamageNumber(target, damage);
     }, { maxTargets: 1, visual: () => {} });

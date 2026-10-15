@@ -35,7 +35,6 @@ var Td = function (A) {
   if (
     (l.slowT > 0 && (l.slowT -= A),
     l.stunT > 0 && (l.stunT -= A),
-    l.hurtT > 0 && (l.hurtT -= A),
     l.tpCd > 0 && (l.tpCd -= A),
     l.potCd &&
       ((l.potCd.life = Math.max(0, l.potCd.life - A)),
@@ -94,7 +93,7 @@ var Td = function (A) {
               !t &&
               (l.stunT > 0 ||
                 wa(v, l.moveTo.x, l.moveTo.y, 150 * Ra() * (l.slowT > 0 ? Qa : 1) * A))),
-      !(l.stunT > 0) &&
+      !(l.stunT > 0) && !actorActionLocked(v) &&
         !(hA() && !l.manTgt) &&
         (l.atkT <= 0 && (l.atkT = oD()))));
   for (const e of _1()) $d(e, A);

@@ -1,8 +1,10 @@
 import type { CombatTarget, CombatSkill, ContactHitHandler, CastOptions, CombatCast, SpriteMissile, ContactEffect, FallbackContact } from './types';
 import { skillIgnoresTerrain } from './config';
+import { beginActorCast } from './action-state';
 
 // Một cast giữ chung bộ đếm hit/pulse cho mọi đạn của cùng lần xuất chiêu.
 export function queueSkillContact(actor: CombatTarget, target: CombatTarget, skill: CombatSkill, onHit: ContactHitHandler, options: CastOptions = {}): CombatCast {
+  const blocked = !skill.ev2 && !beginActorCast(actor);
   const narrow = [361, 368].includes(+skill.id!);
   if (narrow) skill = Object.assign({}, skill, { geo: Object.assign({}, skill.geo, {
     k: "line", shape: "rect", width: 24, len: (skill.geo && skill.geo.len) || skill.rad || 100, pierce: true, area: 0,
@@ -13,6 +15,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
   }
   const previous = activeCombatCast;
   const cast: CombatCast = {
+    actionRevision: skill.ev2 ? undefined : actor.actionRevision || 0,
     actor,
     skill,
     ignoreTerrain: skillIgnoresTerrain(skill),
@@ -31,6 +34,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     elapsed: 0, pulse: -1, nextPulse: 0, pulseFrame: -1, targetPulses: new Map(),
     interval: [362, 375].includes(+skill.id!) ? 0.3 : 0,
   };
+  if (blocked) return cast;
   if (skill.geo || narrow || cast.interval) cast.maxTargets = Infinity;
   if (cast.interval) {
     const spriteId = A0.f && A0.f[skill.id!] && A0.f[skill.id!].c || A0.s && A0.s[skill.id!];

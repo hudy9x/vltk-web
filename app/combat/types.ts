@@ -2,6 +2,16 @@
 export interface WorldPoint { x: number; y: number }
 
 export interface CombatTarget extends WorldPoint {
+  act?: string;
+  actT?: number;
+  animKey?: string;
+  moving?: boolean;
+  mv?: boolean;
+  atT?: number;
+  castT?: number;
+  hurtT?: number;
+  actionRevision?: number;
+  hurtProxy?: boolean;
   /** Player dùng l.life; quái dùng hp. Player không bắt buộc có hp. */
   hp?: number;
   r?: number;
@@ -47,6 +57,7 @@ export interface CastOptions {
 }
 
 export interface CombatCast {
+  actionRevision?: number;
   actor: CombatTarget;
   skill: CombatSkill;
   ignoreTerrain: boolean;
@@ -141,6 +152,9 @@ export type ContactEffect = ContactVisual & {
   contactHits: Set<CombatTarget>;
 };
 export interface CombatWorld {
+  moveTo?: CombatTarget | null;
+  pickTarget?: unknown;
+  hurtT?: number;
   fx: VisualEffect[];
   fxQ?: VisualEffect[];
   combatProjectiles?: ContactEffect[];

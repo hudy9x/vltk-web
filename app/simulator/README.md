@@ -47,6 +47,9 @@ người chơi đã hoán đổi tạm thời.
   quái. Đánh quái loại các SIM khỏi danh sách mục tiêu.
 - Mana luôn sẵn có, kỹ năng không tiêu hao MP. HP, độc, choáng và chiêu tiêu hao
   sinh lực vẫn được xử lý; chết thì SIM bị xóa khỏi sân.
+- SIM dùng chung khóa hành động của `CombatEngine`: dừng di chuyển khi ra chiêu,
+  dừng cả di chuyển và ra chiêu khi một đòn sau giảm trừ vượt 5% HP tối đa.
+  Hurt kéo dài 0,25 giây; đạn chưa qua windup bị hủy, đạn đã bay vẫn tiếp tục.
 - Mở bảng điểm, nhập tiềm năng/cấp kỹ năng hoặc dùng **+1**, rồi bấm **Áp dụng
   điểm đã nhập**. Điểm được kiểm tra trước khi cập nhật chỉ số; lỗi sẽ hoàn tác.
 - Đặt tên và bấm **Lưu template**. Chọn template và **Tạo SIM từ template** để
