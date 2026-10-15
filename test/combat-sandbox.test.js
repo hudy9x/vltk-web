@@ -362,7 +362,9 @@ test('monster-style pursuit keeps a target, attacks after approaching and tracks
   s.Mw=(who,x,y)=>{moves++;Object.assign(who,{x,y});};
   s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);
   assert.equal(moves,1);assert.equal(actor.casts,1);assert.equal(actor.target,s.v);
-  s.v.x+=200;s.arenaSimulator.tick(.6);
+  s.v.x+=200;s.arenaSimulator.tick(.1);
+  assert.equal(moves,1,'SIM stays still until its cast finishes');
+  advanceSimulator(s,.6);s.arenaSimulator.tick(.6);
   assert.equal(moves,2);assert.equal(actor.casts,2);assert.equal(actor.x,s.v.x);
 });
 test('manual potential and skill allocation is isolated, budgeted and live for the selected SIM',()=>{
@@ -469,4 +471,39 @@ test('template table creates from the clicked row and deletes only its template 
  assert.equal(s.arenaSimulator.actor,actor,'deleting a template keeps spawned actors alive');
  const reopened=simulatorGame(s.entries);assert.equal(reopened.arenaSimulator.templates().length,1);assert.equal(reopened.arenaSimulator.templates()[0].id,two.id);
  await assert.rejects(()=>s.arenaSimulator.deleteTemplate(one.id),/không tồn tại/);
+});
+
+test('real skill damage applies hurt only above five percent max HP and interrupts a monster attack',()=>{
+ const s=simulatorGame(),monster=s.l.enemies[0];Object.assign(monster,{hp:1000,max:1000,act:'at'});
+ const skill={parts:{phys:50},crit:0,series:0,series5:0};
+ s.hs(skill,monster);assert.equal(monster.hp,950);assert.ok(!(monster.hurtT>0));assert.equal(monster.act,'at');
+ s.hs({...skill,parts:{phys:51}},monster);assert.equal(monster.hp,899);assert.equal(monster.act,'hurt');assert.ok(monster.hurtT>0);
+});
+
+test('SIM PK applies hurt after player absorption, and player casting recovers on the shared clock',()=>{
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');actor.x=s.v.x;actor.y=s.v.y;
+ s.l.P.sorb=80;s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);advanceSimulator(s,.2);
+ assert.equal(s.l.life,980);assert.ok(!(s.v.hurtT>0),'100 raw but 20 actual damage is below 5%');
+ advanceSimulator(s,.4);s.l.P.sorb=0;actor.cooldown=0;s.arenaSimulator.tick(.6);advanceSimulator(s,.2);
+ assert.equal(s.l.life,880);assert.equal(s.v.act,'hurt');assert.ok(s.v.hurtT>0);
+ loadDeclaration(s,'app/core/state-and-save-01.js','oD');assert.equal(s.oD(),.05,'hurt blocks every player cast entry');
+ advanceSimulator(s,.3);assert.equal(s.v.hurtT,0);assert.equal(s.v.act,'st');
+});
+
+test('hurt blocks SIM casting and movement, and toggling modes cannot bypass recovery',()=>{
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');s.arenaSimulator.setFarm(true);
+ s.applyActorHurt(actor,51,1000);const x=actor.x,y=actor.y;
+ s.arenaSimulator.setFarm(false);s.arenaSimulator.setFarm(true);s.arenaSimulator.tick(.1);
+ assert.equal(actor.casts,0);assert.equal(actor.x,x);assert.equal(actor.y,y);assert.equal(actor.act,'hurt');
+ advanceSimulator(s,.3);s.arenaSimulator.tick(.1);assert.equal(actor.casts,1);
+});
+
+test('native monster damage triggers player hurt only after mitigation exceeds five percent',()=>{
+ const s=simulatorGame();loadDeclaration(s,'app/core/state-and-save-01.js','U9');
+ Object.assign(s,{Dw:['phys'],Yr:75,Pe:()=>100});s.l.life=1000;s.v.act='at';
+ const attacker={...s.l.enemies[0],dmg:50,ar:100,series:0};
+ s.U9(attacker);assert.equal(s.l.life,950);assert.ok(!(s.v.hurtT>0));assert.equal(s.v.act,'at');
+ attacker.dmg=51;s.U9(attacker);assert.equal(s.l.life,899);assert.equal(s.v.act,'hurt');assert.ok(s.v.hurtT>0);
+ advanceSimulator(s,.3);s.l.P.manaShield=100;s.l.mana=1000;attacker.dmg=100;
+ s.U9(attacker);assert.equal(s.l.life,899);assert.ok(!(s.v.hurtT>0),'mana absorption leaves no HP damage to trigger hurt');
 });

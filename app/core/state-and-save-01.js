@@ -266,7 +266,7 @@ var hs = function (A, n) {
     (trace && trace("Sát thương trực tiếp = chỉ độc ? 0 : max(1, tổng × ea)", { poisonOnly: y, accountMultiplier: ea(), damage: i, hpBefore: n.hp, hpAfter: n.hp - i })),
     (n.hp -= i),
     (n.hitT = 0.12),
-    n.act !== "at" && ((n.act = "hurt"), (n.actT = 0), W3(r0[n.tid].anim, "hurt", 0.3)),
+    applyActorHurt(n, i, n.max) && W3(n.animKey || r0[n.tid].anim, "hurt", 0.3),
     (A.stun || l.P.stunAdd) &&
       Math.random() * 100 < (A.stun || 0) + (l.P.stunAdd || 0) &&
       (n.stun > 0 || Tt(n, "Choáng", "#ffd24a"), (n.stun = Math.max(n.stun, 0.8 * _))),
@@ -299,6 +299,7 @@ var hs = function (A, n) {
 var Tt = function () {};
 
 var U9 = function (A) {
+  const attackerHP = A.hp;
   const trace = typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.step : null;
   const n = typeof Rn == "function" ? Rn(A) : null;
   if (Math.random() * 100 >= Pe(A.ar * (n ? Math.max(0.1, 1 + n.ar / 100) : 1), l.P.def)) {
@@ -361,12 +362,7 @@ var U9 = function (A) {
   if (
     ((trace && trace("Trừ HP", { damage: e, hpBefore: l.life, hpAfter: l.life - e, dot: l.hpDot || 0, dotSeconds: l.hpDotT || 0, sorb: l.P.sorb || 0, from: (l.P.from && l.P.from[A.series]) || 0 })),
     (l.life -= e),
-    (l.hurtT = 0.25),
-    v.act !== "at" &&
-      Math.random() < 0.3 &&
-      ((v.act = "hurt"),
-      (v.actT = 0),
-      (l.atkT = Math.max(l.atkT || 0, 0.25 * (1 - (l.P.hitRec || 0) / 100)))),
+    applyActorHurt(v, e, l.P.life),
     l.P.retMelee || l.P.retMeleeP || l.P.retRangeP)
   ) {
     const a = A.ranged
@@ -374,6 +370,7 @@ var U9 = function (A) {
       : l.P.retMelee + (e * l.P.retMeleeP) / 100;
     a > 0 && (A.hp -= a * ea());
   }
+  applyActorHurt(A, attackerHP - A.hp, A.max);
   showDamageNumber(v, e, t);
 };
 
@@ -645,6 +642,7 @@ var eD = function (A, n, t, e, a, context) {
 };
 
 var aD = function (A, n, t) {
+  if (actorActionLocked(v)) return 0;
   if (hA() && l.clickHold) return 0;
   if (!o.sk[gs] || l.dash || l.town) return 0;
   const e = A.actives.find((d) => d.id === gs);
@@ -684,6 +682,7 @@ var aD = function (A, n, t) {
 var sD = function (A) {
   const n = l.dash;
   if (!n) return !1;
+  if (v.hurtT > 0) { l.dash = null; return false; }
   n.t += A;
   const t = Math.min(1, n.t / qd);
   if (
@@ -694,7 +693,7 @@ var sD = function (A) {
   ) {
     l.dash = null;
     const e = n.tg;
-    (e && !e.dead && e.hp > 0 && q0(v, e) <= ((e.r || 12) + 24) / QA && mt(v.x, v.y, e.x, e.y) && Ls(hs(n.a, e), n.a),
+    (beginActorCast(v), e && !e.dead && e.hp > 0 && q0(v, e) <= ((e.r || 12) + 24) / QA && mt(v.x, v.y, e.x, e.y) && Ls(hs(n.a, e), n.a),
       (v.act = "at"),
       (v.actT = 0),
       n.a.id && G8(n.a.id));
@@ -748,6 +747,7 @@ var iD = function (A) {
 };
 
 var oD = function () {
+  if (actorActionLocked(v)) return 0.05;
   const A = l.P,
     n = _1();
   if (!n.length) return 0.3;
@@ -849,7 +849,9 @@ var $d = function (A, n) {
     return;
   }
   const t = A.slowT > 0 ? ((A.slowT -= n), Qa) : 1;
-  if ((A.poison > 0 && ((A.poison -= n), (A.hp -= A.poisonDmg * n)), A.home && KD(A, n))) return;
+  if (A.poison > 0) { A.poison -= n; A.hp -= A.poisonDmg * n; }
+  if (actorActionLocked(A)) { A.moving = false; A.atkCd = Math.max(0, (A.atkCd || 0) - n * t); return; }
+  if (A.home && KD(A, n)) return;
   const e = (typeof om == "function" && om(A)) || v,
     a = q0(A, e),
     i = A.ranged ? A.reach || 200 : Math.max((A.r + 24) / QA, Math.min(A.reach || 0, 90));

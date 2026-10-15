@@ -374,6 +374,10 @@ var Am = function (A) {
       return;
     }
     const i = t.filter((u) => q0(v, u) < jh);
+    if (actorActionLocked(e)) {
+      e.mv = false; e.atkT = Math.max(0, (e.atkT || 0) - A);
+      e.atT = Math.max(0, (e.atT || 0) - A); return;
+    }
     i.length || (e.hp = Math.min(e.hpMax, e.hp + e.hpMax * 0.03 * A));
     const r = i.sort(
         (u, w) => Math.hypot(u.x - e.x, u.y - e.y) - Math.hypot(w.x - e.x, w.y - e.y),
@@ -401,7 +405,7 @@ var Am = function (A) {
       (Math.hypot(v.x - e.x, v.y - e.y) > 600 && ((e.x = d.x), (e.y = d.y)),
       (e.atkT -= A),
       fB(e, t, A),
-      r && !e.mv && e.atkT <= 0)
+      r && !e.mv && e.atkT <= 0 && !actorActionLocked(e))
     ) {
       const u = E(1 / (e.rt || 1), 0.35, 2);
       ((e.atkT = u),
@@ -430,6 +434,7 @@ var Am = function (A) {
         (y1(e.se, r.series) ? (x *= 1 + Ct) : y1(r.series, e.se) && (x *= 1 - Ct),
           (x = Math.max(1, x)),
           (r.hp -= x),
+          applyActorHurt(r, x, r.max),
           (r.hitT = 0.1),
           (r.aggro = !0),
           (!r.tgtA || Math.random() < 0.35) && (r.tgtA = e),
@@ -440,7 +445,7 @@ var Am = function (A) {
           !l.quiet && showDamageNumber(r, x, e.el));
       }, { maxTargets: 1 });
     }
-    (e.atT > 0 && (e.atT -= A), e.hurtT > 0 && (e.hurtT -= A));
+    e.atT > 0 && (e.atT -= A);
   });
 };
 
@@ -451,6 +456,7 @@ var dB = function (A, n) {
 };
 
 var fB = function (A, n, t) {
+  if (actorActionLocked(A)) return;
   if ((A.supT = (A.supT || 0) - t) > 0) return;
   A.supT = 0.5;
   const e = ya(),
@@ -463,11 +469,12 @@ var fB = function (A, n, t) {
       .filter((r) => r.hp < r.max * 0.6);
     if (i.length) {
       A.hlCd = e + 8;
+      beginActorCast(A);
       for (const r of i) r.me ? za(A.hl[1], !0) : (r.x.hp = Math.min(r.x.hpMax, r.x.hp + A.hl[1]));
       l.quiet || $A(A.x, A.y - 60, "✚ " + T[A.hl[0]].n, "#8f8", 11);
     }
   }
-  if (!(!a || !A.cu || !A.cu.length))
+  if (!actorActionLocked(A) && !(!a || !A.cu || !A.cu.length))
     for (const [i, r, c] of A.cu) {
       const f = n
         .filter((g) => !((g.curse || {})[i] > e))
@@ -513,7 +520,7 @@ var hB = function (A, n) {
     (y1(n.series, A.se) ? (t *= 1 + Ct) : y1(A.se, n.series) && (t *= 1 - Ct),
     (A.hp -= t),
     l.quiet || showDamageNumber(A, t, Dw[n.series] || "phys"),
-    !(A.atT > 0) && Math.random() < 0.3 && (A.hurtT = 0.25),
+    applyActorHurt(A, t, A.hpMax),
     A.hp <= 0)
   ) {
     ((A.hp = 0), (A.dead = !0), (A.resp = sm));

@@ -1,6 +1,7 @@
 import type { ContactEffect, SpriteMissile } from './types';
 import { collideCombatEffect } from './collision';
 import { SKILL_RANGE_Y_RATIO } from './config';
+import { advanceActorActions } from './action-state';
 
 // dt luôn tính bằng giây. Riêng đạn sprite đổi sang frame bằng K3 như code cũ.
 export function advanceCombatMissile(effect: SpriteMissile & ContactEffect, dt: number): boolean {
@@ -68,11 +69,14 @@ export function advanceContactEffect(effect: ContactEffect, dt: number): boolean
 }
 
 export function advanceSkillContacts(dt: number): void {
+  advanceActorActions(dt);
   const pending = l.combatProjectiles || [];
   for (const cast of new Set(pending.map(effect => effect.combat))) cast.elapsed += dt;
   l.combatProjectiles = [];
   for (const effect of pending) {
-    effect.contactAlive = !l.town && !(l.deadT > 0) && effect.combat.zone === l.zoneShown && advanceContactEffect(effect, dt);
+    const cast = effect.combat;
+    const interrupted = cast.actionRevision != null && cast.actionRevision !== (cast.actor.actionRevision || 0) && cast.elapsed - dt < cast.windup;
+    effect.contactAlive = !interrupted && !l.town && !(l.deadT > 0) && cast.zone === l.zoneShown && advanceContactEffect(effect, dt);
     if (effect.contactAlive) l.combatProjectiles.push(effect);
   }
   l.fx = l.fx.filter(effect => {

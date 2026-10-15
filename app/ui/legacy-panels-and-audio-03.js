@@ -492,6 +492,7 @@ var Qv = function () {
 };
 
 var Ah = function (A) {
+  if (actorActionLocked(v)) { v.moving = false; return false; }
   if (hA() && l.clickHold) return !1;
   const [n, t] = Qv();
   if (!n && !t) return (Y.tmp && !Y.active && (Y.tmp = !1), !1);

@@ -49,6 +49,8 @@ declare function M8(...args: unknown[]): unknown;
 declare function bA(path: string): unknown;
 declare function L3(...args: unknown[]): unknown;
 declare function nameplateOffset(animation: string | undefined, scale: number, ratio: number, padding: number, fallback: number): number;
+declare function actorActionLocked(actor: CombatTarget): boolean;
+declare function applyActorHurt(actor: CombatTarget, damage: number, maximumHP: number): boolean;
 
 const errorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 
@@ -141,6 +143,8 @@ export function createSimulator() {
   }
   function cancelCasts(actor: SimulatorActor | null = sim) {
     if (!actor) return;
+    actor.castT = 0;
+    if (actor.act === "at") { actor.act = "st"; actor.actT = 0; }
     actor.generation++;
     for (const field of ["combatProjectiles", "fx", "fxQ"]) {
       if (l[field]) l[field] = l[field].filter((effect: LegacyRecord) => !effect.combat || effect.combat.actor !== actor);
@@ -230,7 +234,7 @@ export function createSimulator() {
     updateInfo();
   }
   function playerTarget(actor: SimulatorActor): LegacyEntity {
-    return { x: v.x, y: v.y, n: o.name, hp: l.life, max: l.P.life, r: 17, cls: "normal", tid: actor.tid,
+    return { x: v.x, y: v.y, n: o.name, hp: l.life, max: l.P.life, hurtProxy: true, r: 17, cls: "normal", tid: actor.tid,
       def: l.P.def, series: l.P.series, res: l.P.res, act: "at", poison: 0, poisonDmg: 0, slowT: 0, stun: 0 };
   }
   function hit(actor: SimulatorActor, skill: SimulatorSkill, target: LegacyEntity) {
@@ -254,6 +258,7 @@ export function createSimulator() {
         l.mana -= mana; damage -= mana;
         step("PK: (kỹ năng − min(khiên, damage × Jr)) × (1 − sorb/100) × (1 − from/100) − khiên mana", { raw, shield, sorb: defense.sorb || 0, from: (defense.from && defense.from[actor.series]) || 0, manaAbsorbed: mana, damage, hpBefore: l.life, hpAfter: Math.max(0, l.life - damage) });
         l.life = Math.max(0, l.life - damage);
+        applyActorHurt(v, damage, defense.life);
         if (receiver.poison > 0) {
           const seconds = receiver.poison * (1 - (defense.poisonRed || 0) / 100);
           if (seconds > .05) { l.hpDot = (l.hpDot || 0) + receiver.poisonDmg * seconds; l.hpDotT = Math.max(l.hpDotT || 0, seconds); }
@@ -296,6 +301,7 @@ export function createSimulator() {
       if (actor.hp <= 0) return;
     }
     actor.cooldown = Math.max(0, actor.cooldown - dt * speed);
+    if (actorActionLocked(actor)) { actor.moving = false; return; }
     const targets = availableTargets(actor);
     if (!actor.target || !targets.includes(actor.target)) {
       actor.target = targets.sort((a, b) => skillCastDistance(actor, a) - skillCastDistance(actor, b))[0] || null;

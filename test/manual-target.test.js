@@ -38,7 +38,7 @@ function game() {
   vm.createContext(s);
   const combat = loadCombatEngine(s, { bridge: false });
   // Keep the cast/tick spies; use the real migrated range/terrain functions.
-  for (const name of ['skillIgnoresTerrain', 'SKILL_RANGE_Y_RATIO', 'skillCastDistance']) s[name] = combat[name];
+  for (const name of ['skillIgnoresTerrain', 'SKILL_RANGE_Y_RATIO', 'skillCastDistance', 'actorActionLocked']) s[name] = combat[name];
   const ui = 'app/ui/legacy-panels-and-audio-04.js';
   for (const name of ['Y','$1','hA','Rv']) declaration(s, ui, name);
   for (const name of ['eh','Wa','Qv','Ah']) declaration(s, 'app/ui/legacy-panels-and-audio-03.js', name);

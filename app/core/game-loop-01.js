@@ -66,13 +66,14 @@ var qm = function (A, n) {
 };
 
 var jm = function (A, n) {
+  if (actorActionLocked(v)) return 0.05;
   return w_(A)
     ? skillCastDistance(v, n) - n.r / QA > g_
       ? ((l.moveTo = (hA() && l.clickHold) || ($1() && !(hA() && l.manTgt === n)) ? null : n), 0.05)
       : ((l.moveTo = null),
         (l.tgtHitT = l.clock || 0),
         (l.tgtD = 0),
-        o4(A),
+        o4(A), beginActorCast(v),
         typeof Y !== "undefined" && Y.stopAfterCast(),
         A.cd && ((l.skCd = l.skCd || {})[A.id] = (l.clock || 0) + A.cd),
         l.rotNext != null && ((l.rotI = l.rotNext), (l.rotNext = null)),
