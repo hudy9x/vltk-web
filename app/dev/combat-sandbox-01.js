@@ -71,11 +71,11 @@ var combatSandbox = (function () {
     l.life = Math.max(0, l.life - 1);
     if (typeof combatLog !== "undefined" && combatLog) combatLog.record("in", attacker, before - l.life, "Đòn đánh");
     l.hurtT = 0.15;
-    $A(v.x, v.y - 30, "1", "#ffab8a", 11);
+    showDamageNumber(v, before - l.life);
   };
   function clearCombat() {
     pendingRespawns.clear(); spawnPlans = [];
-    for (const field of ["enemies", "corpses", "ground", "fx", "fxQ", "combatProjectiles", "traps", "allies"]) l[field] = [];
+    for (const field of ["enemies", "corpses", "ground", "fx", "fxQ", "combatProjectiles", "traps", "allies", "txt"]) l[field] = [];
     for (const field of ["manTgt", "tgt", "moveTo", "pickTarget", "clickedTarget", "dash", "dashTrail"]) l[field] = null;
     for (const field of ["atkT", "deadT", "stunT", "slowT", "hpDotT", "hpDot", "hurtT", "stall", "spawnT"]) l[field] = 0;
     l.skCd = {}; l.clickHold = false; Y.target = null; Y.active = false; Y.keys = {};

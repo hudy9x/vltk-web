@@ -693,7 +693,7 @@ var cb = function (A) {
       const damage = Ph(n);
       target.hp -= damage;
       target.hitT = 0.1;
-      $A(target.x, target.y - 30, F(damage), "#9fe36a", 11);
+      showDamageNumber(target, damage);
     }, { maxTargets: 1, visual: () => {} });
     ((t.act = "at"),
       (t.actT = 0),

@@ -6,6 +6,8 @@ var combatLog = (function () {
   let lastSecond = -1, timeText = "";
   let owner = null, revision = 0;
   let events = [], sequence = 0;
+  const targetIds = new WeakMap();
+  let nextTargetId = 0;
   function ensureOwner() {
     const current = o && o.fac ? `${m0}|${o.arenaFaction || o.netOwner || "local"}|${o.name}` : null;
     if (current !== owner) { owner = current; events = []; sequence = 0; revision++; }
@@ -15,7 +17,9 @@ var combatLog = (function () {
     if (!owner || l.quiet || !["out", "in"].includes(type) || !(amount > 0 || amount === 0 && outcome === "miss") || !Number.isFinite(amount)) return;
     const now = Date.now(), second = Math.floor(now / 1000);
     if (second !== lastSecond) { lastSecond = second; const parts = timeFormat.formatToParts(new Date(now)); timeText = `${parts.find(part => part.type === "hour").value}:${parts.find(part => part.type === "second").value}`; }
-    events.push({ sequence: ++sequence, outcome, type, target: typeof target === "string" ? target : target && target.n || "Quái", amount, detail, time: timeText });
+    if (target && typeof target === "object" && !targetIds.has(target)) targetIds.set(target, ++nextTargetId);
+    const targetKey = target && typeof target === "object" ? `entity:${targetIds.get(target)}` : `name:${target}`;
+    events.push({ sequence: ++sequence, outcome, type, target: typeof target === "string" ? target : target && target.n || "Quái", targetKey, amount, detail, time: timeText, timestamp: now });
     if (events.length > limit) events.splice(0, events.length - limit);
     revision++;
   }
@@ -49,14 +53,31 @@ var combatLog = (function () {
   function currentFilter() {
     return o && ["out", "in"].includes(o.combatLogFilter) ? o.combatLogFilter : "both";
   }
+  // Presentation only: preserve every raw event and its actual HP loss in entries().
+  // Object identity prevents two monsters with the same name from sharing a total.
+  function displayEntries(filter) {
+    const groups = [], latest = new Map();
+    for (const event of entries(filter)) {
+      const key = JSON.stringify([event.type, event.targetKey, event.outcome, event.detail]);
+      const group = latest.get(key);
+      if (group && event.timestamp - group.timestamp <= 120) {
+        group.amount += event.amount;
+        group.hits++;
+      } else {
+        const row = { ...event, hits: 1 };
+        groups.push(row); latest.set(key, row);
+      }
+    }
+    return groups;
+  }
   function direction(event) {
     return event.type === "out" ? "→ Gây" : "← Nhận";
   }
   function line(event) {
-    return `${String(event.sequence).padStart(3, "0")} - ${event.time} ${event.outcome === "miss" ? (event.type === "out" ? "→" : "←") : direction(event)} ${event.outcome === "miss" ? "Trượt ⚔️" : `${numberFormat.format(event.amount)} ⚔️`} ${event.type === "out" ? "lên" : "từ"} ${event.target}`;
+    return `${String(event.sequence).padStart(3, "0")} - ${event.time} ${event.outcome === "miss" ? (event.type === "out" ? "→" : "←") : direction(event)} ${event.outcome === "miss" ? "Trượt ⚔️" : `${numberFormat.format(event.amount)} ⚔️`}${event.hits > 1 ? ` ×${event.hits}` : ""} ${event.type === "out" ? "lên" : "từ"} ${event.target}`;
   }
   function text(filter = currentFilter()) {
-    return entries(filter).map(line).join("\n");
+    return displayEntries(filter).map(line).join("\n");
   }
   function clear() {
     ensureOwner(); events = []; sequence = 0; revision++;
@@ -88,8 +109,8 @@ var combatLog = (function () {
     }
     const select = container.querySelector("#combat-log-filter");
     if (select.value !== filter) select.value = filter;
-    const rows = entries(filter).slice(-100);
-    container.querySelector(".combat-log-rows").innerHTML = rows.length ? rows.map(event => `<div class="cl combat-${event.type}"><i>${String(event.sequence).padStart(3, "0")} - ${D(event.time)}</i> ${event.outcome === "miss" ? (event.type === "out" ? "→" : "←") : direction(event)} <b>${event.outcome === "miss" ? "Trượt" : numberFormat.format(event.amount)}</b> ⚔️ ${event.type === "out" ? "lên" : "từ"} ${D(event.target)}</div>`).join("") : '<div class="combat-empty">Chưa có sát thương phù hợp với bộ lọc.</div>';
+    const rows = displayEntries(filter).slice(-100);
+    container.querySelector(".combat-log-rows").innerHTML = rows.length ? rows.map(event => `<div class="cl combat-${event.type}"><i>${String(event.sequence).padStart(3, "0")} - ${D(event.time)}</i> ${event.outcome === "miss" ? (event.type === "out" ? "→" : "←") : direction(event)} <b>${event.outcome === "miss" ? "Trượt" : numberFormat.format(event.amount)}</b> ⚔️${event.hits > 1 ? ` ×${event.hits}` : ""} ${event.type === "out" ? "lên" : "từ"} ${D(event.target)}</div>`).join("") : '<div class="combat-empty">Chưa có sát thương phù hợp với bộ lọc.</div>';
   }
   return { record, miss: (type, target) => record(type, target, 0, "", "miss"), entries, render, clear, text, get revision() { ensureOwner(); return revision; } };
 })();

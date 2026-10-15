@@ -236,9 +236,29 @@ Canvas -> drawFallbackProjectile -> render.ts (chỉ vẽ)
 | `app/combat/collision.ts` | Lọc/sắp xếp va chạm, vùng nổ và các quái chồng nhau |
 | `app/combat/damage.ts` | Giới hạn số hit và một lượt damage mỗi pulse trước khi gọi `onHit` |
 | `app/combat/impact-fields.ts` | Hoa sen Băng Tung Vô Ảnh theo từng tia va chạm, vùng sát thương 80 |
+| `app/combat/damage-labels.ts` | Gộp damage trong 120 ms, xếp tối đa 4 dòng theo từng mục tiêu và bảng màu |
 | `app/combat/render.ts` | Vẽ đạn/vùng thay thế khi thiếu sprite |
 | `app/combat/legacy-bridge.js` | Nối tên hàm JS hiện có sang API TS, dùng chung state |
 | `app/combat/legacy-globals.d.ts` | Khai báo kiểu tại biên TS/JS, không tạo state mới |
+
+Số damage bám theo thân mục tiêu, xếp dọc tối đa 4 dòng (3 khi giảm FX).
+Số mới xuất hiện giữa thân rồi bay lên ngay với tốc độ `riseSpeed` (mặc định 40 px/s).
+Số cũ tiếp tục bay lên, vẽ phía sau số mới; không dạt ngang. Khoảng hở tối thiểu
+giữa hai dòng là 2 px, tính từ kích thước chữ thực tế và viền, kể cả khi chí mạng to hơn.
+Hit cùng mục tiêu, loại sát thương, chí mạng và ký hiệu ngũ hành trong 120 ms
+được cộng từ số gốc rồi mới làm tròn, ví dụ chỉ hiện `325` trên mục tiêu.
+Thời gian tồn tại lấy từ `lifetime` / `lowFxLifetime`, tính từ lần cập nhật cuối.
+HP và dữ liệu log gốc vẫn xử lý riêng từng hit;
+log hiển thị/copy gộp các hit cùng mục tiêu, chiều và chiêu trong 120 ms, có `×N`.
+Số thứ tự của dòng log gộp là số thứ tự hit đầu tiên trong nhóm.
+Đổi phái/tạo lại quái trong arena sẽ xóa số cũ.
+Chỉnh `DAMAGE_LABEL_LAYOUT` và `DAMAGE_LABEL_COLORS` trong `damage-labels.ts`:
+
+| Loại | Màu |
+| --- | --- |
+| Mọi hệ sát thương / mặc định | Đỏ `#ff6262` |
+| Chí mạng / trọng kích (ưu tiên hơn màu hệ) | Vàng `#ffe170` |
+| Trượt / né / hóa giải | Xám `#d5d9df` |
 
 Lần chuyển này giữ nguyên công thức va chạm, phạm vi, tốc độ, nhịp damage và thứ
 tự tick. Các công thức chỉ số/sát thương trong `core/`, dữ liệu skill và render

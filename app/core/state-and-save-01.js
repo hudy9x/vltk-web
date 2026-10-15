@@ -196,7 +196,7 @@ var hs = function (A, n) {
   )
   {
     if (typeof combatLog !== "undefined" && combatLog) combatLog.miss("out", n);
-    return ($A(n.x, n.y - n.r - 8, "Trượt", "#aaa", 11), 0);
+    return (showDamageNumber(n, "Trượt"), 0);
   }
   A.ev2 || E8(A, n);
   const e = Math.random() * 100 < A.crit,
@@ -209,7 +209,7 @@ var hs = function (A, n) {
     d = 0;
   const f = n.cls === "boss" || n.cls === "elite";
   if (f && Math.random() * 100 < (n.cls === "boss" ? 6 : 3) - (l.P.antiBlock || 0))
-    return ($A(n.x, n.y - n.r - 8, "Hóa giải", "#ccc", 11), 0);
+    return (showDamageNumber(n, "Hóa giải"), 0);
   const h = n.resBrkT > 0 ? 10 : 0,
     g = l.P.anti,
     u =
@@ -283,15 +283,9 @@ var hs = function (A, n) {
   (B && za((i * B) / 100, !0), O && (l.mana = Math.min(l.P.mana, l.mana + (i * O) / 100)));
   const G = p ? " ⚡" : P ? " 🛡" : "";
   return y
-    ? ($A(n.x, n.y - n.r - 6, "☠" + F(d) + G, Hi.poison || "#8fe34a", 12), d)
-    : ($A(
-        n.x,
-        n.y - n.r - 6,
-        F(i) + G + (a ? "!" : ""),
-        e || a ? "#ffe14a" : Hi[r],
-        e || a ? 16 : 12,
-      ),
-      d > 0 && i > 0 && $A(n.x + 14, n.y - n.r - 18, "☠" + F(d), Hi.poison || "#8fe34a", 10),
+    ? (showDamageNumber(n, d, "poison", false, G), d)
+    : (showDamageNumber(n, i, r, e || a, G),
+      d > 0 && i > 0 && showDamageNumber(n, d, "poison"),
       i);
 };
 
@@ -301,11 +295,11 @@ var U9 = function (A) {
   const n = typeof Rn == "function" ? Rn(A) : null;
   if (Math.random() * 100 >= Pe(A.ar * (n ? Math.max(0.1, 1 + n.ar / 100) : 1), l.P.def)) {
     if (typeof combatLog !== "undefined" && combatLog) combatLog.miss("in", A);
-    $A(v.x, v.y - 30, "Né", "#9cf", 11);
+    showDamageNumber(v, "Né");
     return;
   }
   if (l.P.block && Math.random() * 100 < l.P.block) {
-    $A(v.x, v.y - 30, "Hóa giải", "#9cf", 11);
+    showDamageNumber(v, "Hóa giải");
     return;
   }
   const t = Dw[A.series] || "phys";
@@ -365,7 +359,7 @@ var U9 = function (A) {
       : l.P.retMelee + (e * l.P.retMeleeP) / 100;
     a > 0 && (A.hp -= a * ea());
   }
-  $A(v.x + Z(-10, 10), v.y - 36, "-" + F(e), "#ff6a5a", 12);
+  showDamageNumber(v, e, t);
 };
 
 var za = function (A, n) {

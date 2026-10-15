@@ -437,7 +437,7 @@ var Am = function (A) {
           p.light && Math.random() < Od && (r.stun = Math.max(r.stun || 0, Ed)),
           e.stn && Math.random() * 100 < e.stn && (r.stun = Math.max(r.stun || 0, 0.8)),
           e.id && typeof E8 == "function" && E8({ id: e.id }, r),
-          !l.quiet && $A(r.x, r.y - r.r - 6, F(x), "#8fe36a", 11));
+          !l.quiet && showDamageNumber(r, x, e.el));
       }, { maxTargets: 1 });
     }
     (e.atT > 0 && (e.atT -= A), e.hurtT > 0 && (e.hurtT -= A));
@@ -505,14 +505,14 @@ var nm = function () {
 
 var hB = function (A, n) {
   if (Math.random() * 100 >= Pe(n.ar, A.def)) {
-    l.quiet || $A(A.x, A.y - 30, "Né", "#9cf", 10);
+    l.quiet || showDamageNumber(A, "Né");
     return;
   }
   let t = n.dmg * Z(0.8, 1.2) * (1 - Math.min(75, A.res) / 100);
   if (
     (y1(n.series, A.se) ? (t *= 1 + Ct) : y1(A.se, n.series) && (t *= 1 - Ct),
     (A.hp -= t),
-    l.quiet || $A(A.x + Z(-8, 8), A.y - 34, "-" + F(t), "#ff8a7a", 10),
+    l.quiet || showDamageNumber(A, t, Dw[n.series] || "phys"),
     !(A.atT > 0) && Math.random() < 0.3 && (A.hurtT = 0.25),
     A.hp <= 0)
   ) {

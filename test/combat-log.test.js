@@ -77,7 +77,7 @@ test('the real player poison tick records its fractional HP loss as incoming dam
  test('real accuracy failure logs one outgoing miss and one incoming miss without damage',()=>{
  const s=game(),core=fs.readFileSync(path.join(__dirname,'../app/core/state-and-save-01.js'),'utf8'),acorn=require('acorn');
  const nodes=acorn.parse(core,{ecmaVersion:'latest'}).body.filter(n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>['hs','U9'].includes(d.id.name)));
- s.Math=Object.create(Math);s.Math.random=()=>1;s.Pe=()=>50;s.$A=()=>{};s.v={x:0,y:0};s.l.P={ar:1,def:1};
+ s.Math=Object.create(Math);s.Math.random=()=>1;s.Pe=()=>50;s.showDamageNumber=()=>{};s.v={x:0,y:0};s.l.P={ar:1,def:1};
  for(const node of nodes)vm.runInContext(core.slice(node.start,node.end),s);
  const monster={n:'Hổ',hp:100,def:1,ar:1,x:0,y:0,r:10};s.hs({useAR:true,ar:1},monster);s.U9(monster);
  assert.equal(monster.hp,100);assert.equal(s.l.life,100);assert.equal(s.combatLog.entries().length,2);assert.equal(s.combatLog.entries()[0].outcome,'miss');assert.equal(s.combatLog.entries()[1].type,'in');
@@ -85,7 +85,25 @@ test('the real player poison tick records its fractional HP loss as incoming dam
 
 test('sequence format pads to three digits and preserves values above 999 in display and copied logs',()=>{
  const s=game(),container=logContainer();s.combatLog.record('out','Hổ',1);assert.match(s.combatLog.text(),/^001 -/);
- for(let i=2;i<=1001;i++)s.combatLog.record('out','Hổ',1);
+ for(let i=2;i<=1001;i++)s.combatLog.record('out','Hổ '+i,1);
  assert.match(s.combatLog.text(),/^999 -/m);assert.match(s.combatLog.text(),/^1000 -/m);assert.match(s.combatLog.text(),/^1001 -/m);
  s.combatLog.render(container);assert.match(container.querySelector('.combat-log-rows').innerHTML,/>999 -/);assert.match(container.querySelector('.combat-log-rows').innerHTML,/>1000 -/);assert.doesNotMatch(s.combatLog.text(),/1000\. -/);
+});
+
+test('log display and copy show burst totals and hit counts while raw events and same-name targets stay distinct',async()=>{
+ const s=game(),container=logContainer();let now=1000,copied='';
+ s.Date=class extends Date{static now(){return now;}};
+ s.navigator={clipboard:{writeText:async value=>{copied=value;}}};
+ const a={n:'Hổ'},b={n:'Hổ'};
+ for(let i=0;i<3;i++){s.combatLog.record('out',a,10,'Chiêu test');now+=30;}
+ s.combatLog.record('out',b,7,'Chiêu test');
+ assert.equal(s.combatLog.entries('out').length,4);assert.equal(s.combatLog.entries('out')[0].amount,10);
+ s.combatLog.render(container);
+ assert.match(container.querySelector('.combat-log-rows').innerHTML,/>30<\/b> ⚔️ ×3/);
+ assert.match(container.querySelector('.combat-log-rows').innerHTML,/>7<\/b> ⚔️ lên Hổ/);
+ await container.querySelector('#combat-log-copy').onclick();assert.match(copied,/Gây 30 ⚔️ ×3 lên Hổ/);
+ now=1121;s.combatLog.record('out',a,8,'Chiêu test');
+ s.combatLog.record('in',a,5,'Chiêu test');s.combatLog.miss('out',a);
+ const text=s.combatLog.text();assert.match(text,/Gây 8 ⚔️ lên Hổ/);assert.match(text,/Nhận 5 ⚔️ từ Hổ/);assert.match(text,/Trượt ⚔️ lên Hổ/);
+ assert.doesNotMatch(s.combatLog.text('in'),/×3/);
 });

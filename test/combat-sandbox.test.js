@@ -6,6 +6,7 @@ const path = require('node:path');
 const acorn = require('acorn');
 const { createServer } = require('../server/index.ts');
 const { openDatabase } = require('../server/database.ts');
+const { loadCombatEngine } = require('./helpers/combat-engine');
 const ROOT = path.resolve(__dirname, '..');
 function loadDeclaration(s,file,name) {
   const text=fs.readFileSync(path.join(ROOT,file),'utf8');
@@ -35,6 +36,7 @@ function game(enabled=true, entries=new Map()) {
     n1:(id,level,cls,x,y)=>({tid:id,L:level,cls,x,y,spd:40,hp:1,max:1,dmg:9999}),
   };
   vm.createContext(s);
+  loadCombatEngine(s);
   for(const name of ['I3','Yd','bn','t1'])loadDeclaration(s,'app/core/state-and-save-03.js',name);
   for(const name of ['ee','SA'])loadDeclaration(s,'app/gameplay/shop-and-books-01.js',name);
   vm.runInContext(fs.readFileSync(path.join(ROOT,'app/dev/combat-sandbox-01.js'),'utf8'),s);

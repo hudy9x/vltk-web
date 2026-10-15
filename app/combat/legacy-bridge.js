@@ -15,3 +15,9 @@ var advanceContactEffect = CombatEngine.advanceContactEffect;
 var advanceSkillContacts = CombatEngine.updateCombat;
 var drawContactProjectile = CombatEngine.drawFallbackProjectile;
 var spawnLotusImpact = CombatEngine.spawnLotusImpact;
+// Feed raw damage and the recipient into the display queue, after HP is resolved.
+var showDamageNumber = function (target, amount, kind = "phys", critical = false, suffix = "") {
+  return CombatEngine.enqueueDamageLabel(l.txt || (l.txt = []), target, amount, kind,
+    { critical, suffix, quiet: l.quiet, lowFx: o.lowFx, context: typeof W !== "undefined" ? W : undefined });
+};
+var updateDamageLabels = CombatEngine.updateDamageLabels;

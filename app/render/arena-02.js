@@ -235,9 +235,9 @@ var NP = function (A) {
           n.stroke()));
   }
   ((n.globalAlpha = 1), (l.fx = l.fx.filter((a) => a.life > 0)), (n.textAlign = "center"), IP());
+  updateDamageLabels(l.txt, A, n);
   for (const a of l.txt)
-    ((a.life -= A),
-      (a.y -= 32 * A),
+    ((!a.target && ((a.life -= A), (a.y -= 32 * A))),
       (n.globalAlpha = E(a.life / 0.5, 0, 1)),
       (n.font = `${a.size}px "IBM Plex Mono", monospace`),
       (n.strokeStyle = "#111"),
