@@ -587,3 +587,99 @@ test('Thien Vuong hit sheets animate once at a fixed impact point instead of sca
   }
  }
 });
+
+// Real primary cast + real collide-event lookup + real secondary damage formula.
+function lotusWorld(options = {}) {
+  const s = world(options);
+  secondaryWorld(s);
+  for (const name of ['l1', 'l4', 'Uw', 'Jw', 'F5']) declaration(s, 'app/combat/skills-01.js', name);
+  for (const name of ['I5', 'S5']) declaration(s, 'app/core/attributes-01.js', name);
+  declaration(s, 'app/core/state-and-save-01.js', 'tD');
+  declaration(s, 'app/render/arena-02.js', 'yn');
+  s.Tw = () => [];
+  s.skill = { ...standardSkill(s, 336), ev: true, tot: 40 };
+  s.flowers = [];
+  const spawn = s.spawnLotusImpact;
+  s.spawnLotusImpact = (...args) => {
+    const cast = spawn(...args);
+    s.flowers.push({ cast, center: { ...args[1] } });
+    return cast;
+  };
+  return s;
+}
+
+test('Bang Tung three rays contacting three distinct monsters create three lotus fields at their actual contacts', () => {
+  const s = lotusWorld(), targets = [enemy(s, 220), enemy(s, 220, -100), enemy(s, 220, 100)];
+  s.skill.nMis = 3;
+  s.oD();
+  const missiles = s.l.combatProjectiles.slice();
+  assert.equal(missiles.length, 3);
+  targets.forEach((target, i) => {
+    const missile = missiles[i];
+    target.x = missile.x + Math.cos(missile.ang) * 180;
+    target.y = missile.y - (missile.z + missile.hz) * s.wf + Math.sin(missile.ang) * 90 + 14;
+  });
+  assert.equal(s.flowers.length, 0);
+  run(s, .05); assert.equal(s.flowers.length, 0, 'No lotus before physical contact');
+  run(s, 1.5);
+  assert.equal(s.flowers.length, 3);
+  for (const target of targets) {
+    assert.equal(s.flowers.filter(f => f.center.x === target.x && f.center.y === target.y).length, 1);
+    assert.ok(target.hp < 100);
+  }
+  run(s, 1); assert.equal(s.flowers.length, 3, 'The same projectile cannot bloom again on later ticks');
+});
+
+test('three separate rays hitting one monster produce three blooms and three independent secondary hits', () => {
+  const s = lotusWorld(), target = enemy(s, 180);
+  s.skill.nMis = 3;
+  s.oD();
+  const missiles = s.l.combatProjectiles.slice(), direction = missiles[1].ang;
+  // Aim the three real missiles at the same body to test per-projectile impacts.
+  for (const missile of missiles) missile.ang = direction;
+  run(s, 1.5);
+  assert.equal(s.flowers.length, 3);
+  assert.ok(s.flowers.every(f => f.center.x === 180 && f.center.y === 0));
+  assert.equal(target.hp, 60, 'One existing primary hit plus one secondary hit per lotus');
+  run(s, 1); assert.equal(target.hp, 60);
+});
+
+test('a single Bang Tung impact creates one real lotus sprite and an 80-radius field; nearby AoE hits do not spawn more flowers', () => {
+  const s = lotusWorld(), target = enemy(s, 180), nearby = enemy(s, 180, 35), outside = enemy(s, 180, 65);
+  s.skill.nMis = 1;
+  s.oD(); run(s, .95);
+  assert.equal(s.flowers.length, 1);
+  assert.equal(s.flowers[0].cast.skill.geo.r, 80);
+  const flowers = s.l.fx.filter(effect => effect.k === 'boom' && effect.s === s.A0.m[188].fly);
+  assert.equal(flowers.length, 1);
+  assert.equal(flowers[0].x, 180); assert.equal(flowers[0].y, -14);
+  assert.equal(target.hp, 80); assert.equal(nearby.hp, 90); assert.equal(outside.hp, 100);
+  assert.deepEqual(Object.keys(s.flowers[0].cast.skill.parts), ['cold']);
+  run(s, 1); assert.equal(s.flowers.length, 1); assert.equal(target.hp, 80); assert.equal(nearby.hp, 90);
+});
+
+test('lotus fields keep their impact position and expire; entering during the active window gives only one hit', () => {
+  const s = lotusWorld(), target = enemy(s, 180), entering = enemy(s, 400, 100);
+  s.skill.nMis = 1;
+  s.oD(); run(s, .95);
+  assert.equal(s.flowers.length, 1);
+  const center = s.flowers[0].center;
+  target.x = 500; s.v.x = -300;
+  entering.x = 180; entering.y = 35;
+  run(s, .2); assert.equal(entering.hp, 90);
+  assert.equal(center.x, 180); assert.equal(center.y, 0);
+  run(s, 2); assert.equal(entering.hp, 90);
+  const late = enemy(s, 180, 35); run(s, .2); assert.equal(late.hp, 100);
+});
+
+test('quiet and low-FX combat retain one lotus field per missile and the same damage without visible sprites', () => {
+  for (const quiet of [false, true]) {
+    const s = lotusWorld({ state: { quiet }, preferences: { lowFx: true } }), target = enemy(s, 180);
+    s.skill.nMis = 3; s.oD();
+    const missiles = s.l.combatProjectiles.slice();
+    for (const missile of missiles) missile.ang = missiles[1].ang;
+    run(s, 1.5);
+    assert.equal(s.flowers.length, 3); assert.equal(target.hp, 60);
+    if (quiet) assert.equal(s.l.fx.length, 0);
+  }
+});

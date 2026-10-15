@@ -14,3 +14,4 @@ var advanceCombatMissile = CombatEngine.advanceCombatMissile;
 var advanceContactEffect = CombatEngine.advanceContactEffect;
 var advanceSkillContacts = CombatEngine.updateCombat;
 var drawContactProjectile = CombatEngine.drawFallbackProjectile;
+var spawnLotusImpact = CombatEngine.spawnLotusImpact;

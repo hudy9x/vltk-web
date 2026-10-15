@@ -584,6 +584,8 @@ var tD = function (A, n, t, e) {
 };
 
 var eD = function (A, n, t, e, a) {
+  // Băng Tâm Tuyết Liên đã được tạo theo từng va chạm, không tạo lại ở hit đầu.
+  if (+A.id === 336 && +a.sid === 382 && A.impactLotusHandled) return;
   if (+A.id === 339 && !A.impactVisualTargets) A = Object.assign({}, A, { impactVisualTargets: new Set() });
   if (+A.id === 319 && !a.self) a = Object.assign({}, a, { self: true, col: false });
   // Beggar skills only damage at projectile impact; lightning uses one timed field.
@@ -776,6 +778,9 @@ var oD = function () {
   d.unshift(t);
   const extraHits = l8(e, t, a, d.length);
   let triggered = false;
+  const lotusEvent = +e.id === 336 && e.ev && typeof F5 === "function"
+    ? F5(e).find(event => +event.sid === 382) : null;
+  if (lotusEvent) e = Object.assign({}, e, { impactLotusHandled: true });
   if (+e.id === 339) e = Object.assign({}, e, { impactVisualTargets: new Set() });
   queueSkillContact(v, t, e, (target) => {
     const damage = hs(e, target);
@@ -789,6 +794,14 @@ var oD = function () {
   }, {
     maxTargets: e.geo && (e.geo.pierce || e.geo.k === "self" || e.geo.k === "spot") ? Infinity : Math.max(1, (e.geo && e.geo.n) || e.targets || d.length),
     maxHits: target => +e.id === 368 ? 3 : target === t ? 1 + extraHits : 1,
+    onImpact: lotusEvent ? (_target, position) => {
+      const lotusSkill = Object.assign({}, e, {
+        parts: S5(e, lotusEvent), stun: lotusEvent.stun || 0, useAR: false, ev2: true, crit: 0,
+      });
+      spawnLotusImpact(v, position, lotusSkill, target => {
+        if (!lotusEvent.chance || Math.random() < lotusEvent.chance) Ls(hs(lotusSkill, target), lotusSkill);
+      });
+    } : undefined,
   });
   return (
     (v.face = t.x >= v.x ? 1 : -1),

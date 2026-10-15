@@ -235,6 +235,7 @@ Canvas -> drawFallbackProjectile -> render.ts (chỉ vẽ)
 | `app/combat/geometry.ts` | Quét đường đạn qua hình tròn/chữ nhật |
 | `app/combat/collision.ts` | Lọc/sắp xếp va chạm, vùng nổ và các quái chồng nhau |
 | `app/combat/damage.ts` | Giới hạn số hit và một lượt damage mỗi pulse trước khi gọi `onHit` |
+| `app/combat/impact-fields.ts` | Hoa sen Băng Tung Vô Ảnh theo từng tia va chạm, vùng sát thương 80 |
 | `app/combat/render.ts` | Vẽ đạn/vùng thay thế khi thiếu sprite |
 | `app/combat/legacy-bridge.js` | Nối tên hàm JS hiện có sang API TS, dùng chung state |
 | `app/combat/legacy-globals.d.ts` | Khai báo kiểu tại biên TS/JS, không tạo state mới |
@@ -295,6 +296,15 @@ thời gian hiệu ứng còn tồn tại. Vùng giữ tọa độ ban đầu, k
 trong vùng tại mỗi nhịp; nhiều lớp hình ảnh không nhân đôi sát thương cùng nhịp.
 Va chạm quét cả đoạn chuyển động của đạn
 để tránh bỏ sót mục tiêu khi đạn chạy nhanh.
+
+Băng Tung Vô Ảnh tạo **một hoa sen cho mỗi cặp tia/quái va chạm**: ba tia chạm
+ba quái tạo ba hoa sen, nhiều tia chạm cùng một quái tạo nhiều lần nở hoa tại cùng
+tọa độ. Một tia không tạo lại hoa sen trên cùng quái ở mỗi tick. Hoa sen dùng
+`fx/m188_fly.webp`, giữ tọa độ lúc va chạm và tồn tại theo animation. Mỗi hoa sen
+có vùng sát thương bán kính **80 đơn vị game**; mỗi quái trong vùng nhận một
+lượt sát thương phụ từ mỗi hoa sen, kể cả quái đi vào khi hoa sen còn hoạt động.
+Các hoa sen chồng nhau có vùng/damage độc lập. Công thức sát thương lạnh của
+Băng Tâm Tuyết Liên được giữ; tắt/giảm FX vẫn mô phỏng vùng đúng.
 
 Hiệu ứng hình ảnh dùng cùng vị trí mô phỏng; giới hạn số FX, tùy chọn giảm hiệu
 ứng và mô phỏng offline không quyết định damage. Chiêu phụ gây damage và debuff

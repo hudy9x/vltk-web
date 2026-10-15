@@ -1,7 +1,15 @@
-import type { ContactEffect } from './types';
+import type { ContactEffect, CombatTarget } from './types';
 import { contactFraction, rectangleContactFraction } from './geometry';
 import { applyContactHit } from './damage';
 import { SKILL_RANGE_Y_RATIO, skillCastDistance } from './config';
+
+/** Không gộp các đạn khác nhau đánh vào cùng quái; không phát lại qua mỗi tick. */
+function notifyProjectileImpact(effect: ContactEffect, target: CombatTarget): void {
+  if (!effect.combat.onImpact || effect.impactTargets?.has(target) || target.dead ||
+    (target === v ? l.life <= 0 : target.hp! <= 0)) return;
+  (effect.impactTargets || (effect.impactTargets = new Set())).add(target);
+  effect.combat.onImpact(target, { x: target.x, y: target.y });
+}
 
 // Chọn va chạm theo thứ tự trên đường đi, rồi mới gọi damage và tạo FX trúng.
 export function collideCombatEffect(effect: ContactEffect, x0: number, y0: number, x1: number, y1: number): boolean {
@@ -35,6 +43,8 @@ export function collideCombatEffect(effect: ContactEffect, x0: number, y0: numbe
     const x = x0 + (x1 - x0) * fraction, y = y0 + (y1 - y0) * fraction;
     if (!cast.ignoreTerrain && typeof mt === "function" && !mt(x0, y0 + 14, target.x, target.y)) continue;
     if (effect.melee && !staticArea && skillCastDistance(cast.actor, target) > (cast.skill.rad || 75) + (target.r || 12) / QA) continue;
+    // Va chạm vật lý vẫn phát impact khi một đạn khác đã dùng hết quota damage.
+    if (!staticArea) notifyProjectileImpact(effect, target);
     if (applyContactHit(effect, target)) {
       if (effect.k === "jm") gf(effect, x, y);
       else if (effect.k === "mis" && effect.hit && !l.quiet) {
@@ -57,7 +67,10 @@ export function collideCombatEffect(effect: ContactEffect, x0: number, y0: numbe
       for (const contact of contacts) {
         const other = contact.target;
         if (other !== target && contactFraction(x, y, x, y, other, radius) != null &&
-          (cast.ignoreTerrain || mt(x, y + 14, other.x, other.y))) applyContactHit(effect, other);
+          (cast.ignoreTerrain || mt(x, y + 14, other.x, other.y))) {
+          notifyProjectileImpact(effect, other);
+          applyContactHit(effect, other);
+        }
       }
       effect.x = x; effect.y = y;
       return true;

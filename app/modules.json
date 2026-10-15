@@ -1497,7 +1497,8 @@
         "advanceCombatMissile",
         "advanceContactEffect",
         "advanceSkillContacts",
-        "drawContactProjectile"
+        "drawContactProjectile",
+        "spawnLotusImpact"
       ]
     },
     {

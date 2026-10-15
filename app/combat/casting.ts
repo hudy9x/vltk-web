@@ -17,6 +17,8 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     skill,
     ignoreTerrain: skillIgnoresTerrain(skill),
     onHit,
+    onImpact: options.onImpact,
+    duration: options.duration,
     targets: options.targets || (() => _1()),
     maxTargets: options.maxTargets || (skill.geo && skill.geo.pierce ? Infinity : Math.max(1, skill.targets || (skill.geo && skill.geo.n) || 1)),
     maxHits: options.maxHits || (() => +skill.id! === 368 && !skill.ev2 ? 3 : 1),

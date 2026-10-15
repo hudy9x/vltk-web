@@ -33,6 +33,8 @@ export interface CombatSkill {
 
 /** Callback chạy sau va chạm: code cũ tiếp tục tính damage, debuff và log. */
 export type ContactHitHandler = (target: CombatTarget) => void;
+/** Mỗi cặp đạn/mục tiêu phát một impact, độc lập giới hạn damage của cả cast. */
+export type ContactImpactHandler = (target: CombatTarget, position: WorldPoint) => void;
 export interface CastOptions {
   targets?: () => CombatTarget[];
   maxTargets?: number;
@@ -40,6 +42,8 @@ export interface CastOptions {
   windup?: number;
   visual?: () => void;
   hideFallbackVisual?: boolean;
+  onImpact?: ContactImpactHandler;
+  duration?: number;
 }
 
 export interface CombatCast {
@@ -47,6 +51,7 @@ export interface CombatCast {
   skill: CombatSkill;
   ignoreTerrain: boolean;
   onHit: ContactHitHandler;
+  onImpact?: ContactImpactHandler;
   targets: () => CombatTarget[];
   maxTargets: number;
   maxHits: (target: CombatTarget) => number;
@@ -73,6 +78,7 @@ export interface SpriteMetadata {
 interface EffectBase extends WorldPoint {
   combat?: CombatCast;
   contactHits?: Set<CombatTarget>;
+  impactTargets?: Set<CombatTarget>;
   contactAlive?: boolean;
   cosmetic?: boolean;
   follow?: unknown;

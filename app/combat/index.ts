@@ -10,6 +10,7 @@
  *
  * config.ts: phạm vi xuất chiêu và địa hình.
  * casting.ts: hiệu chỉnh vùng ảnh hưởng theo skill, giữ nguyên số liệu cũ.
+ * impact-fields.ts: hoa sen theo từng va chạm của tia Băng Tung Vô Ảnh, vùng 80.
  * geometry.ts: công thức hình tròn/chữ nhật; types.ts: dữ liệu đi qua từng bước.
  *
  * legacy-bridge.js nối API cũ với các export này. legacy-globals.d.ts mô tả
@@ -22,4 +23,5 @@ export { collideCombatEffect } from './collision';
 export { applyContactHit } from './damage';
 export { drawContactProjectile, drawContactProjectile as drawFallbackProjectile } from './render';
 export { SKILL_RANGE_Y_RATIO, skillCastDistance, skillIgnoresTerrain } from './config';
-export type { CombatCast, CombatTarget, CombatSkill, SkillGeometry, ContactEffect, CastOptions, ContactHitHandler } from './types';
+export { spawnLotusImpact, LOTUS_IMPACT_RADIUS } from './impact-fields';
+export type { CombatCast, CombatTarget, CombatSkill, SkillGeometry, ContactEffect, CastOptions, ContactHitHandler, ContactImpactHandler, WorldPoint } from './types';
