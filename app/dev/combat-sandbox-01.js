@@ -9,7 +9,7 @@ var combatSandbox = (function () {
   const profiles = {};
   let activeFaction = null;
   let stored = {};
-  let options = { monster: 0, count: 3, stationary: false, level: null, rarity: "all", monsterRarity: "normal", showHealth: false };
+  let options = { monster: 0, count: 3, stationary: false, level: null, rarity: "all", monsterRarity: "normal", showHealth: false, oneDamage: true };
   try { stored = JSON.parse(localStorage.getItem(key) || "{}"); } catch {}
   try { Object.assign(options, JSON.parse(localStorage.getItem(optionsKey) || "{}")); } catch {}
   function createProfile(faction) {
@@ -66,9 +66,10 @@ var combatSandbox = (function () {
   rD = function () { l.stall = 0; };
   const originalDamage = U9;
   U9 = function (attacker) {
-    if (!attacker.arenaMonster) return originalDamage(attacker);
+    if (!attacker.arenaMonster || !options.oneDamage) return originalDamage(attacker);
     const before = l.life;
     l.life = Math.max(0, l.life - 1);
+    if (typeof arenaSimulator !== "undefined" && arenaSimulator) arenaSimulator.forcedDamage(attacker, before, l.life);
     if (typeof combatLog !== "undefined" && combatLog) combatLog.record("in", attacker, before - l.life, "Đòn đánh");
     l.hurtT = 0.15;
     showDamageNumber(v, before - l.life);
@@ -83,8 +84,13 @@ var combatSandbox = (function () {
   function createMonster(plan, slot) {
     const monster = n1(plan.id, plan.level, plan.rarity === "normal" ? "normal" : "boss", plan.x, plan.y);
     if (plan.rarity === "gold") { monster.goldBoss = true; monster.n = "Trùm Hoàng Kim · " + r0[plan.id].n; }
-    Object.assign(monster, { hp: 100_000, max: 100_000, dmg: 1, arenaMonster: true, arenaSlot: slot, spd: plan.stationary ? 0 : monster.spd });
+    Object.assign(monster, { hp: 100_000, max: 100_000, nativeDamage: monster.dmg, dmg: options.oneDamage ? 1 : monster.dmg, arenaMonster: true, arenaSlot: slot, spd: plan.stationary ? 0 : monster.spd });
     return monster;
+  }
+  function setOneDamage(enabled) {
+    options.oneDamage = !!enabled;
+    for (const monster of l.enemies) if (monster.arenaMonster) monster.dmg = options.oneDamage ? 1 : monster.nativeDamage;
+    localStorage.setItem(optionsKey, JSON.stringify(options));
   }
   function tick(dt) {
     arenaTime += dt;
@@ -193,7 +199,7 @@ var combatSandbox = (function () {
       (level == null || level === "" || entry.ranges.some(([lo, hi]) => +level >= lo && +level <= hi)) &&
       `${entry.id} ${entry.name}`.toLocaleLowerCase("vi").includes(query));
   }
-  panel.innerHTML = `<summary>Phòng test · 10 môn phái</summary><div class="arena-factions">${factions.map(faction => `<button type="button" data-faction="${faction.key}">${D(faction.n)}</button>`).join("")}</div><p id="arena-info"></p><div class="arena-skills"></div><label>Lọc quái <input id="arena-filter" placeholder="Tên hoặc ID quái"></label><label>Cấp quái <input id="arena-level" type="number" min="1" max="200" placeholder="Tất cả" value="${options.level || ""}" style="width:90px"></label><label>Độ hiếm <select id="arena-rarity"><option value="all">Tất cả</option><option value="normal">Thường</option><option value="boss">Boss</option><option value="gold">Hoàng Kim</option></select></label><label>Quái <select id="arena-monster"></select></label><label>Số lượng <input id="arena-count" type="number" min="1" max="20" value="${options.count}" style="width:65px"></label><label><input id="arena-still" type="checkbox" ${options.stationary ? "checked" : ""}> Quái đứng yên</label><button type="button" data-spawn>Tạo lại quái · 100k HP / 1 sát thương</button> <button type="button" data-clear>Xóa quái</button>`;
+  panel.innerHTML = `<summary>Phòng test · 10 môn phái</summary><div class="arena-factions">${factions.map(faction => `<button type="button" data-faction="${faction.key}">${D(faction.n)}</button>`).join("")}</div><p id="arena-info"></p><div class="arena-skills"></div><label>Lọc quái <input id="arena-filter" placeholder="Tên hoặc ID quái"></label><label>Cấp quái <input id="arena-level" type="number" min="1" max="200" placeholder="Tất cả" value="${options.level || ""}" style="width:90px"></label><label>Độ hiếm <select id="arena-rarity"><option value="all">Tất cả</option><option value="normal">Thường</option><option value="boss">Boss</option><option value="gold">Hoàng Kim</option></select></label><label>Quái <select id="arena-monster"></select></label><label>Số lượng <input id="arena-count" type="number" min="1" max="20" value="${options.count}" style="width:65px"></label><label><input id="arena-still" type="checkbox" ${options.stationary ? "checked" : ""}> Quái đứng yên</label><button type="button" data-spawn>Tạo lại quái · 100k HP</button> <button type="button" data-clear>Xóa quái</button>`;
   function refreshPanel() {
     if (!panel || !o || !I[o.fac]) return;
     panel.querySelectorAll("[data-faction]").forEach(button => button.classList.toggle("on", button.dataset.faction === o.fac));
@@ -239,6 +245,10 @@ var combatSandbox = (function () {
     options.showHealth = event.target.checked;
     localStorage.setItem(optionsKey, JSON.stringify(options));
   };
+  const damageLabel = document.createElement("label");
+  damageLabel.innerHTML = `<input id="arena-one-damage" type="checkbox" ${options.oneDamage ? "checked" : ""}> Quái gây đúng 1 máu (bỏ chọn: sát thương gốc)</label>`;
+  panel.appendChild(damageLabel);
+  panel.querySelector("#arena-one-damage").onchange = event => setOneDamage(event.target.checked);
   panel.querySelector("#arena-level").value = options.level || "";
   panel.querySelector("#arena-filter").oninput = updateMonsterFilter;
   panel.querySelector("#arena-level").oninput = updateMonsterFilter;
@@ -252,5 +262,5 @@ var combatSandbox = (function () {
   let selected;
   try { selected = localStorage.getItem(selectionKey); } catch {}
   switchFaction(profiles[selected] ? selected : factions[0].key);
-  return { switchFaction, selectSkill, spawnMonsters, clearCombat, createProfile, filterMonsters, tick, healthLabel };
+  return { switchFaction, selectSkill, spawnMonsters, clearCombat, createProfile, filterMonsters, tick, healthLabel, setOneDamage, get oneDamage() { return options.oneDamage; } };
 })();

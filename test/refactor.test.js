@@ -65,3 +65,15 @@ test('editing an imported TS source changes the compiled entry, without editing 
     assert.equal(fs.readFileSync(entry, 'utf8'), "export { range } from './range';\n");
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
+
+test('simulator is a self-contained TypeScript entry with all runtime modules bundled and mapped',()=>{
+  const files=fs.readdirSync(path.join(ROOT,'app/simulator'));
+  assert.ok(files.includes('index.ts'));assert.ok(files.includes('runtime.ts'));assert.ok(files.includes('panel.ts'));assert.ok(files.includes('diagnostics.ts'));
+  assert.ok(!files.some(file=>file.endsWith('.js')));
+  assert.ok(!fs.existsSync(path.join(ROOT,'app/dev/arena-sim-01.js')));
+  const {inputs,map}=assemble();
+  for(const file of files.filter(file=>file.endsWith('.ts')&&file!=='types.ts')){
+    assert.ok(inputs.includes('app/simulator/'+file),'Unbundled simulator module: '+file);
+    assert.ok(map.sources.includes('simulator/'+file),'Missing simulator source map: '+file);
+  }
+});

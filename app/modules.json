@@ -1368,6 +1368,12 @@
       "lines": 4
     },
     {
+      "file": "render/nameplates.ts",
+      "symbols": ["nameplateOffset"],
+      "global": "nameplateOffset",
+      "lines": 1
+    },
+    {
       "file": "render/arena-01.js",
       "symbols": [
         "xP",
@@ -2830,6 +2836,14 @@
         "combatSandbox"
       ],
       "lines": 1
+    },
+    {
+      "file": "simulator/index.ts",
+      "symbols": [
+        "arenaSimulator"
+      ],
+      "lines": 1,
+      "global": "arenaSimulator"
     }
   ]
 }

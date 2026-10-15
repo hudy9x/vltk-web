@@ -6,6 +6,7 @@ var combatLog = (function () {
   let lastSecond = -1, timeText = "";
   let owner = null, revision = 0;
   let events = [], sequence = 0;
+  let simulatorLog = null;
   const targetIds = new WeakMap();
   let nextTargetId = 0;
   function ensureOwner() {
@@ -13,6 +14,7 @@ var combatLog = (function () {
     if (current !== owner) { owner = current; events = []; sequence = 0; revision++; }
   }
   function record(type, target, amount, detail = "", outcome = "hit") {
+    if (l.sim) return;
     ensureOwner();
     if (!owner || l.quiet || !["out", "in"].includes(type) || !(amount > 0 || amount === 0 && outcome === "miss") || !Number.isFinite(amount)) return;
     const now = Date.now(), second = Math.floor(now / 1000);
@@ -51,7 +53,7 @@ var combatLog = (function () {
     return events.filter(event => filter === "both" || event.type === filter).map(event => Object.assign({}, event));
   }
   function currentFilter() {
-    return o && ["out", "in"].includes(o.combatLogFilter) ? o.combatLogFilter : "both";
+    return o && ["out", "in", ...(simulatorLog ? ["formula", "sim"] : [])].includes(o.combatLogFilter) ? o.combatLogFilter : "both";
   }
   // Presentation only: preserve every raw event and its actual HP loss in entries().
   // Object identity prevents two monsters with the same name from sharing a total.
@@ -77,6 +79,7 @@ var combatLog = (function () {
     return `${String(event.sequence).padStart(3, "0")} - ${event.time} ${event.outcome === "miss" ? (event.type === "out" ? "→" : "←") : direction(event)} ${event.outcome === "miss" ? "Trượt ⚔️" : `${numberFormat.format(event.amount)} ⚔️`}${event.hits > 1 ? ` ×${event.hits}` : ""} ${event.type === "out" ? "lên" : "từ"} ${event.target}`;
   }
   function text(filter = currentFilter()) {
+    if (simulatorLog && ["formula", "sim"].includes(filter)) return simulatorLog.text(filter === "sim");
     return displayEntries(filter).map(line).join("\n");
   }
   function clear() {
@@ -85,14 +88,17 @@ var combatLog = (function () {
   function render(container) {
     const filter = currentFilter();
     // Keep controls mounted: replacing the select closes its native popup during combat.
-    if (!container.querySelector(".combat-log-rows")) {
-      container.innerHTML = `<div class="combat-log-filter"><label>Hiển thị <select id="combat-log-filter"><option value="both">Cả hai</option><option value="out">Gây sát thương</option><option value="in">Nhận sát thương</option></select></label><button id="combat-log-clear" type="button">Xóa log</button><button id="combat-log-copy" type="button">Copy log</button><span class="combat-log-status" role="status"></span></div><div class="combat-log-rows"></div>`;
+    if (!container.querySelector(".combat-log-rows") || container._simulatorLogProvider !== simulatorLog) {
+      container._simulatorLogProvider = simulatorLog;
+      container.innerHTML = `<div class="combat-log-filter"><label>Hiển thị <select id="combat-log-filter"><option value="both">Cả hai</option><option value="out">Gây sát thương</option><option value="in">Nhận sát thương</option>${simulatorLog ? '<option value="formula">Log công thức</option><option value="sim">Log của SIM</option>' : ""}</select></label>${simulatorLog ? '<label class="sim-log-options"><input id="sim-log-enabled" type="checkbox"> Ghi log công thức</label>' : ""}<button id="combat-log-clear" type="button">Xóa log</button><button id="combat-log-copy" type="button">Copy log</button><span class="combat-log-status" role="status"></span></div><div class="combat-log-rows"></div>`;
       container.querySelector("#combat-log-filter").onchange = event => {
-        o.combatLogFilter = ["out", "in"].includes(event.target.value) ? event.target.value : "both";
+        o.combatLogFilter = ["out", "in", ...(simulatorLog ? ["formula", "sim"] : [])].includes(event.target.value) ? event.target.value : "both";
         $(); T2();
       };
       container.querySelector("#combat-log-clear").onclick = () => {
-        clear(); T2();
+        if (simulatorLog && ["formula", "sim"].includes(currentFilter())) simulatorLog.clear(currentFilter() === "sim");
+        else clear();
+        T2();
         container.querySelector(".combat-log-status").textContent = "Đã xóa log";
       };
       container.querySelector("#combat-log-copy").onclick = async () => {
@@ -103,14 +109,28 @@ var combatLog = (function () {
           await navigator.clipboard.writeText(contents);
           status.textContent = "Đã copy log";
         } catch (error) {
-          status.textContent = "Không thể copy. Hãy cho phép truy cập clipboard.";
+          status.textContent = "Không thể copy tự động. Nhấn Ctrl/Cmd+C để copy log đã chọn.";
+          if (typeof document === "undefined") return;
+          const fallback = document.createElement("textarea");
+          fallback.value = contents; fallback.readOnly = true;
+          fallback.setAttribute("aria-label", "Log để copy");
+          status.appendChild(fallback); fallback.focus(); fallback.select();
         }
       };
     }
     const select = container.querySelector("#combat-log-filter");
     if (select.value !== filter) select.value = filter;
+    const formulas = simulatorLog && ["formula", "sim"].includes(filter);
+    const options = container.querySelector(".sim-log-options");
+    if (options) options.hidden = !formulas;
+    const enabled = container.querySelector("#sim-log-enabled");
+    if (enabled && simulatorLog) {
+      enabled.checked = simulatorLog.enabled;
+      enabled.onchange = event => { simulatorLog.enabled = event.target.checked; T2(); };
+    }
+    if (formulas) { simulatorLog.render(container.querySelector(".combat-log-rows"), filter === "sim"); return; }
     const rows = displayEntries(filter).slice(-100);
     container.querySelector(".combat-log-rows").innerHTML = rows.length ? rows.map(event => `<div class="cl combat-${event.type}"><i>${String(event.sequence).padStart(3, "0")} - ${D(event.time)}</i> ${event.outcome === "miss" ? (event.type === "out" ? "→" : "←") : direction(event)} <b>${event.outcome === "miss" ? "Trượt" : numberFormat.format(event.amount)}</b> ⚔️${event.hits > 1 ? ` ×${event.hits}` : ""} ${event.type === "out" ? "lên" : "từ"} ${D(event.target)}</div>`).join("") : '<div class="combat-empty">Chưa có sát thương phù hợp với bộ lọc.</div>';
   }
-  return { record, miss: (type, target) => record(type, target, 0, "", "miss"), entries, render, clear, text, get revision() { ensureOwner(); return revision; } };
+  return { registerSimulatorLog(provider) { simulatorLog = provider; revision++; }, get simulatorLog() { return simulatorLog; }, record, miss: (type, target) => record(type, target, 0, "", "miss"), entries, render, clear, text, get revision() { ensureOwner(); return revision + (simulatorLog ? simulatorLog.revision : 0); } };
 })();

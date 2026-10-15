@@ -543,7 +543,7 @@ var uB = function (A, n, t) {
       ((A.fillStyle = w0[I[n.f].series]), A.beginPath(), A.arc(n.x, n.y - 20, 12, 0, 7), A.fill()),
     L3(
       n.x,
-      n.y - (r ? Math.min(r, 90) * 0.9 : 52) - 6,
+      n.y - nameplateOffset(n.gk, Jn, 0.9, 6, 58),
       `${n.n}`,
       "#7fe36a",
       11,

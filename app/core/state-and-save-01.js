@@ -187,6 +187,7 @@ var ja = function (A, n, t, e, a, i, r) {
 };
 
 var hs = function (A, n) {
+  const trace = typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.step : null;
   ((n.aggro = !0),
     A && A.id && T[A.id] && T[A.id].tier === 90 && ((n.hitSk || (n.hitSk = {}))[A.id] = 1));
   const t = typeof Rn == "function" ? Rn(n) : null;
@@ -195,6 +196,7 @@ var hs = function (A, n) {
     Math.random() * 100 >= Pe(A.ar || l.P.ar, Math.max(0, n.def + (t ? t.def : 0)), A.ignore)
   )
   {
+    trace && trace("Trượt: lần tung ngẫu nhiên ≥ tỉ lệ trúng", { attack: A.ar || l.P.ar, defense: Math.max(0, n.def + (t ? t.def : 0)), ignore: A.ignore || 0 });
     if (typeof combatLog !== "undefined" && combatLog) combatLog.miss("out", n);
     return (showDamageNumber(n, "Trượt"), 0);
   }
@@ -209,7 +211,8 @@ var hs = function (A, n) {
     d = 0;
   const f = n.cls === "boss" || n.cls === "elite";
   if (f && Math.random() * 100 < (n.cls === "boss" ? 6 : 3) - (l.P.antiBlock || 0))
-    return (showDamageNumber(n, "Hóa giải"), 0);
+    return (trace && trace("Boss/elite hóa giải", { chance: (n.cls === "boss" ? 6 : 3) - (l.P.antiBlock || 0) }), showDamageNumber(n, "Hóa giải"), 0);
+  trace && trace("Bạo kích / chí mạng", { critical: e, physicalMultiplier: y5, fatal: a, fatalMultiplier: 1.5 });
   const h = n.resBrkT > 0 ? 10 : 0,
     g = l.P.anti,
     u =
@@ -243,20 +246,24 @@ var hs = function (A, n) {
       (i += X),
       X > c && ((c = X), (r = j)));
   }
+  trace && trace("Tổng trực tiếp sau kháng", { damage: i, poisonTotal: d });
   (y1(A.series, n.series) && (i += l.P.series5),
     a && (i *= 1.5),
     f && l.P.antiSorb && (i *= 1 + l.P.antiSorb / 100));
+  trace && trace("Cộng khắc hệ → chí mạng → xuyên hấp thụ boss", { seriesFlat: y1(A.series, n.series) ? l.P.series5 : 0, fatal: a, antiSorb: f ? l.P.antiSorb || 0 : 0, damage: i });
   const p = y1(A.series, n.series),
     P = y1(n.series, A.series);
   (p ? (i *= 1 + Ct) : P && (i *= 1 - Ct),
     l.P.me2 && l.P.me2[n.series] && (i *= 1 + l.P.me2[n.series] / 100),
     A.parts.cold && !(n.slowT > 0) && Tt(n, "Băng", "#8fd8ff"),
     A.parts.cold && !(n.slowT > 0) && (n.slowT = (A.coldT || f8) + (l.P.coldEnh || 0) / 18));
+  trace && trace("Nhân khắc hệ → tăng sát thương theo hệ", { seriesFactor: p ? 1 + Ct : P ? 1 - Ct : 1, versusFactor: 1 + ((l.P.me2 && l.P.me2[n.series]) || 0) / 100, damage: i });
   const _ = 1 + (l.P.stunLong || 0) / 100;
   A.parts.light && Math.random() < Od && (n.stun = Math.max(n.stun, Ed * _));
   const y = !(i > 0) && d > 0;
   if (
     ((i = y ? 0 : Math.max(1, i * ea())),
+    (trace && trace("Sát thương trực tiếp = chỉ độc ? 0 : max(1, tổng × ea)", { poisonOnly: y, accountMultiplier: ea(), damage: i, hpBefore: n.hp, hpAfter: n.hp - i })),
     (n.hp -= i),
     (n.hitT = 0.12),
     n.act !== "at" && ((n.act = "hurt"), (n.actT = 0), W3(r0[n.tid].anim, "hurt", 0.3)),
@@ -292,18 +299,22 @@ var hs = function (A, n) {
 var Tt = function () {};
 
 var U9 = function (A) {
+  const trace = typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.step : null;
   const n = typeof Rn == "function" ? Rn(A) : null;
   if (Math.random() * 100 >= Pe(A.ar * (n ? Math.max(0.1, 1 + n.ar / 100) : 1), l.P.def)) {
+    trace && trace("Né: lần tung ngẫu nhiên ≥ tỉ lệ trúng", { attack: A.ar, defense: l.P.def });
     if (typeof combatLog !== "undefined" && combatLog) combatLog.miss("in", A);
     showDamageNumber(v, "Né");
     return;
   }
   if (l.P.block && Math.random() * 100 < l.P.block) {
+    trace && trace("Người chơi hóa giải", { chance: l.P.block });
     showDamageNumber(v, "Hóa giải");
     return;
   }
   const t = Dw[A.series] || "phys";
   let e = A.dmg * Z(0.8, 1.2) * (n ? Math.max(0.1, 1 + n.dmg / 100) : 1);
+  trace && trace("Sát thương gốc × ngẫu nhiên × lời nguyền", { base: A.dmg, curseFactor: n ? Math.max(0.1, 1 + n.dmg / 100) : 1, damage: e });
   if (
     ((e = ja(
       e,
@@ -327,6 +338,7 @@ var U9 = function (A) {
     const a = gD * (1 - (l.P.stunRed || 0) / 100);
     a > 0.05 && ((l.stunT = Math.max(l.stunT || 0, a)), Tt(null, "Choáng", "#ffd24a"));
   }
+  trace && trace("Sau kháng → khắc hệ → trừ res5 → khiên sát thương", { seriesFactor: y1(A.series, l.P.series) ? 1 + Ct : y1(l.P.series, A.series) ? 1 - Ct : 1, res5: l.P.res5 || 0, shield: l.P.dmgShield || 0, shieldCap: Jr, damage: e });
   if ((t === "poison" && !(l.hpDotT > 0) && Tt(null, "Độc", "#8fe34a"), t === "poison")) {
     const a = ve * (1 - (l.P.poisonRed || 0) / 100),
       i = e * 0.4;
@@ -341,11 +353,14 @@ var U9 = function (A) {
     n && n.ret && !A.ranged && (A.hp -= ((e * n.ret) / 100) * ea()),
     l.P.manaShield > 0 && l.mana > 0)
   ) {
+    trace && trace("Sau tách độc 40% → hấp thụ → giảm theo hệ", { poison: t === "poison", dot: l.hpDot || 0, dotSeconds: l.hpDotT || 0, sorb: l.P.sorb || 0, from: (l.P.from && l.P.from[A.series]) || 0, damage: e });
     const a = Math.min(l.mana, (e * l.P.manaShield) / 100);
+    trace && trace("Khiên mana: trừ min(mana, damage × manaShield / 100)", { mana: l.mana, manaShield: l.P.manaShield, absorbed: a, damage: e - a });
     ((l.mana -= a), (e -= a));
   }
   if (
-    ((l.life -= e),
+    ((trace && trace("Trừ HP", { damage: e, hpBefore: l.life, hpAfter: l.life - e, dot: l.hpDot || 0, dotSeconds: l.hpDotT || 0, sorb: l.P.sorb || 0, from: (l.P.from && l.P.from[A.series]) || 0 })),
+    (l.life -= e),
     (l.hurtT = 0.25),
     v.act !== "at" &&
       Math.random() < 0.3 &&
@@ -577,7 +592,11 @@ var tD = function (A, n, t, e) {
   for (const a of F5(A)) eD(A, n, t, e, a);
 };
 
-var eD = function (A, n, t, e, a) {
+var eD = function (A, n, t, e, a, context) {
+  // Optional actor context lets SIM reuse the same events without retaining
+  // the temporary player globals in delayed contact callbacks.
+  const caster = context ? context.actor : v;
+  const draw = action => context ? context.visual(action) : action();
   // Băng Tâm Tuyết Liên đã được tạo theo từng va chạm, không tạo lại ở hit đầu.
   if (+A.id === 336 && +a.sid === 382 && A.impactLotusHandled) return;
   if (+A.id === 339 && !A.impactVisualTargets) A = Object.assign({}, A, { impactVisualTargets: new Set() });
@@ -585,7 +604,7 @@ var eD = function (A, n, t, e, a) {
   // Beggar skills only damage at projectile impact; lightning uses one timed field.
   if (([357, 359].includes(+A.id) && a.self) || +A.id === 375) return;
   const i = !a.noVis && typeof Be == "function",
-    r = a.rays || a.self ? v : n,
+    r = a.rays || a.self ? caster : n,
     c = a.rays ? Math.max(280, (A.rad || 0) + 40) : a.self ? 170 : [302, 339, 342, 357, 318, 321].includes(+A.id) ? 50 : [353, 355].includes(+A.id) ? 100 : 150,
     d =
       a.col && e
@@ -594,9 +613,9 @@ var eD = function (A, n, t, e, a) {
             .filter((h) => !h.dead && q0(r, h) < c && (skillIgnoresTerrain(A) || mt(r.x, r.y, h.x, h.y)))
             .sort((h, g) => q0(r, h) - q0(r, g))
             .slice(0, Qi(A, a));
-  if (a.castFx && i) Be(v, A, null, null, { self: !0, fx: a.castFx });
+  if (a.castFx && i) draw(() => Be(caster, A, null, null, { self: !0, fx: a.castFx }));
   if (a.fxOnly) {
-    if (i) Be(a.self ? v : n, A, a.n, a.rays ? v : null, a);
+    if (i) draw(() => Be(a.self ? caster : n, A, a.n, a.rays ? caster : null, a));
     return;
   }
   const eligible = d;
@@ -605,23 +624,23 @@ var eD = function (A, n, t, e, a) {
     crit: a.el === "phys" ? A.crit : 0,
     geo: a.self ? { k: "self", r: c, pierce: true } : a.rays ? { k: "fan", n: Qi(A, a) } : { k: "spot", r: c, pierce: true },
   });
-  queueSkillContact(v, a.self ? v : n, u, target => {
+  queueSkillContact(caster, a.self ? caster : n, u, target => {
     if (!a.chance || Math.random() < a.chance) {
-      const damage = hs(u, target);
-      Ls(damage, u);
-      if (+A.id === 339 && damage > 0 && !a.noFx) showNhiepHonImpact(target, A);
+      const damage = context ? context.hit(u, target) : hs(u, target);
+      if (!context) Ls(damage, u);
+      if (+A.id === 339 && damage > 0 && !a.noFx) draw(() => showNhiepHonImpact(target, A));
     }
   }, {
     hideFallbackVisual: +A.id === 339,
     maxTargets: Qi(A, a),
     maxHits: () => a.rays ? Qi(A, a) : 1,
-    targets: () => _1(),
-    visual: () => {
+    targets: context ? context.targets : () => _1(),
+    visual: () => draw(() => {
       if (+A.id === 339 || !i || a.noFx) return;
       l.ev2Tg = eligible;
-      try { Be(a.self ? v : n, A, a.n, a.rays ? v : null, a); }
+      try { Be(a.self ? caster : n, A, a.n, a.rays ? caster : null, a); }
       finally { l.ev2Tg = null; }
-    },
+    }),
   });
 };
 

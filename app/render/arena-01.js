@@ -641,22 +641,11 @@ var L3 = function (A, n, t, e, a, i, r, c, d, f) {
 var IP = function () {
   if (!vs.length) return;
   ((W.textAlign = "center"), (W.lineJoin = "round"));
-  const A = [];
-  for (const n of vs.sort((t, e) => e.y - t.y)) {
-    ((W.font = `${n.size}px "IBM Plex Mono", monospace`),
-      (n.tw = W.measureText(n.text).width),
-      (n.w = Math.max(n.tw + (n.dot ? 12 : 0), n.sub ? W.measureText(n.sub).width : 0, 44)),
-      (n.h = n.size + 4 + (n.hp >= 0 ? 7 : 0) + (n.sub ? n.size + 2 : 0)));
-    let t = n.y;
-    for (let e = 0; e < 8; e++) {
-      const a = A.find((i) => Math.abs(i.x - n.x) < (i.w + n.w) / 2 && t > i.top && t - n.h < i.y);
-      if (!a) break;
-      t = a.top - 1;
-    }
-    ((n.py = t), (n.top = t - n.h), A.push({ x: n.x, w: n.w, y: t, top: n.top }));
-  }
   for (const n of vs) {
-    const t = n.py,
+    W.font = `${n.size}px "IBM Plex Mono", monospace`;
+    n.tw = W.measureText(n.text).width;
+    n.w = Math.max(n.tw + (n.dot ? 12 : 0), n.sub ? W.measureText(n.sub).width : 0, 44);
+    const t = n.y,
       e = Math.min(n.w, 56);
     (n.hp >= 0 &&
       ((W.fillStyle = "#000c"),

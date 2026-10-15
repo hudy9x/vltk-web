@@ -739,3 +739,6 @@ body.u20[data-u2t=char] #panel{width:min(690px,96vw)}
 .combat-log-filter button{background:#253b2b;color:#e5dba9;border:1px solid #758064;border-radius:3px;padding:3px 7px;font:inherit;cursor:pointer}
 .combat-log-filter button:hover{background:#3c5740}
 .combat-log-status{color:#b6e59b;font-size:.9em}
+.combat-log-status textarea{display:block;width:min(420px,70vw);height:110px;background:#101a14;color:#efdfb0;font:11px monospace}
+.sim-formula-event summary{cursor:pointer;padding:4px 0}
+.sim-formula-event pre{font:11px monospace;line-height:1.45;color:#d9dfcf}

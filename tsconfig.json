@@ -11,5 +11,9 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
-  "include": ["app/combat/**/*.ts"]
+  "include": [
+    "app/combat/**/*.ts",
+    "app/render/**/*.ts",
+    "app/simulator/**/*.ts"
+  ]
 }

@@ -12,6 +12,7 @@ render/     Canvas, sprite và hiệu ứng hiển thị
 ui/         panel, nút bấm, màn hình nhân vật và thế giới
 systems/    hệ thống bổ trợ, âm thanh và điều khiển
 online/     tài khoản, chat, Chợ và tổ đội
+simulator/  SIM TypeScript: nhân vật, kỹ năng/PK, log công thức và nút cạnh GM
 dev/        bảng GM trong môi trường development, định nghĩa rương GM
     |
     v
@@ -46,3 +47,7 @@ nguyên thứ tự JS cũ. Trình duyệt không tải các package build này.
 `npm test` kiểm tra các module được liệt kê đầy đủ, phân tích cú pháp từng file và
 kiểm tra source map của bundle. Module GM có test hành vi riêng.
 Các test SQLite/HTTP và bootstrap kiểm tra đồng bộ save và cách tải bundle hiện tại.
+
+Mã SIM được cô lập trong `simulator/`; bắt đầu từ `simulator/index.ts`.
+Nút **SIM** cạnh **GM** mở bảng riêng, đóng bảng không dừng mô phỏng.
+Xem `simulator/README.md` để biết ranh giới với game JS và vai trò từng module.

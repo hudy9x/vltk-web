@@ -73,6 +73,13 @@ var NP = function (A) {
     )
     .sort((a, i) => a.y - i.y);
   for (const a of e) {
+    // Finish the previous entity's anchored nameplate before drawing the next
+    // (closer) body. Never collect all nameplates into a foreground overlay.
+    IP();
+    if (a.arenaSim && typeof arenaSimulator !== "undefined" && arenaSimulator) {
+      arenaSimulator.draw(n, a, A);
+      continue;
+    }
     if (a.oth) {
       othDraw(n, a.oth, A);
       continue;
@@ -110,7 +117,7 @@ var NP = function (A) {
             kf(f.anim, v.act || "st", v.dir || 0, v.actT || 0, v.x, v.y, Jn),
           );
       (Pf(n, "over", w ? Math.min(w, 90) : 60), sv(n, A));
-      const x = v.y - (w ? Math.min(w, 90) * 0.9 : 52) - 6,
+      const x = v.y - nameplateOffset(v.animKey, Jn, 0.9, 6, 58),
         p = typeof bo == "function" && bo();
       (L3(
         v.x,
@@ -192,14 +199,7 @@ var NP = function (A) {
           i * Ua,
         ),
       a.hitT > 0 && (a.hitT -= A));
-    const d =
-      a.y -
-      (c
-        ? Math.min(c, 90) * 0.85
-        : a.img && a.img.naturalHeight
-          ? a.img.naturalHeight * i
-          : a.r * 2) -
-      8;
+    const d = a.y - nameplateOffset(a.animKey, i * Ua, 0.85, 8, a.r * 2 + 8);
     L3(
       a.x,
       d,
@@ -213,6 +213,7 @@ var NP = function (A) {
       w0[a.series],
     );
   }
+  IP();
   for (const effect of l.fx) {
     const cast = effect.combat;
     const repeating = cast && +cast.skill.id !== 375 && cast.interval && cast.pulse >= 0;
@@ -234,7 +235,7 @@ var NP = function (A) {
           n.arc(a.x, a.y - (a.r ? 0 : 10), 8 + (1 - i) * (a.r || 30), 0, 7),
           n.stroke()));
   }
-  ((n.globalAlpha = 1), (l.fx = l.fx.filter((a) => a.life > 0)), (n.textAlign = "center"), IP());
+  ((n.globalAlpha = 1), (l.fx = l.fx.filter((a) => a.life > 0)), (n.textAlign = "center"));
   updateDamageLabels(l.txt, A, n);
   for (const a of l.txt)
     ((!a.target && ((a.life -= A), (a.y -= 32 * A))),

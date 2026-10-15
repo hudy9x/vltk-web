@@ -107,3 +107,26 @@ test('log display and copy show burst totals and hit counts while raw events and
  const text=s.combatLog.text();assert.match(text,/Gây 8 ⚔️ lên Hổ/);assert.match(text,/Nhận 5 ⚔️ từ Hổ/);assert.match(text,/Trượt ⚔️ lên Hổ/);
  assert.doesNotMatch(s.combatLog.text('in'),/×3/);
 });
+
+test('SIM/formula filters route copy and clear to the diagnostics provider without clearing normal damage', async()=>{
+ const s=game(),container=logContainer(),cleared=[];let copied='';
+ s.navigator={clipboard:{writeText:async text=>{copied=text;}}};
+ const provider={revision:2,enabled:true,text:simOnly=>JSON.stringify({simOnly,steps:['raw formula']}),
+ render:(rows,simOnly)=>{rows.innerHTML=simOnly?'SIM only':'all formulas';},clear:simOnly=>{cleared.push(simOnly);provider.revision++;}};
+ s.combatLog.record('out','Hổ',20);const before=s.combatLog.revision;
+ s.combatLog.registerSimulatorLog(provider);assert.ok(s.combatLog.revision>before);
+ s.combatLog.render(container);assert.match(container.toolbar,/Log của SIM/);assert.match(container.toolbar,/Log công thức/);
+ container.querySelector('#combat-log-filter').onchange({target:{value:'sim'}});
+ s.combatLog.render(container);assert.equal(container.querySelector('.combat-log-rows').innerHTML,'SIM only');
+ await container.querySelector('#combat-log-copy').onclick();assert.equal(JSON.parse(copied).simOnly,true);
+ container.querySelector('#combat-log-clear').onclick();assert.deepEqual(cleared,[true]);assert.equal(s.combatLog.entries().length,1);
+ container.querySelector('#combat-log-filter').onchange({target:{value:'formula'}});s.combatLog.render(container);
+ assert.equal(container.querySelector('.combat-log-rows').innerHTML,'all formulas');
+ container.querySelector('#combat-log-clear').onclick();assert.deepEqual(cleared,[true,false]);
+ assert.equal(container.mounts,1,'filters remain mounted across damage and formula views');
+});
+
+test('ordinary game log does not expose unavailable SIM filters',()=>{
+ const s=game(),container=logContainer();s.o.combatLogFilter='sim';s.combatLog.render(container);
+ assert.doesNotMatch(container.toolbar,/Log của SIM|Log công thức/);assert.equal(container.querySelector('#combat-log-filter').value,'both');
+});

@@ -5,6 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const acorn = require('acorn');
 const { loadCombatEngine } = require('./helpers/combat-engine');
+const { compileTypeScriptEntry } = require('../tools/build-app');
 const ROOT = path.resolve(__dirname, '..');
 function load(sandbox, file) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), sandbox, { filename: file });
@@ -681,5 +682,97 @@ test('quiet and low-FX combat retain one lotus field per missile and the same da
     run(s, 1.5);
     assert.equal(s.flowers.length, 3); assert.equal(target.hp, 60);
     if (quiet) assert.equal(s.l.fx.length, 0);
+  }
+});
+
+// Exercise the SIM adapter with real event lookup, sprites and collision engine.
+function simulatorCastWorld(id) {
+  const s = lotusWorld(), hero = s.v;
+  vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts', 'SimSkillCasting').code, s);
+  const actor = { x: 0, y: 0, hp: 1000, r: 17 }, profile = { sk: {}, lowFx: false };
+  const stats = { skillBonus: { [id]: 100 }, seriesSkill: 0, skillEnh: 0 };
+  s.skill = { ...standardSkill(s, id), ev: true, tot: 40, nMis: 1 };
+  s.l8 = () => 0;
+  s.valid = true; s.hits = [];
+  s.withActor = action => {
+    const player = s.o, v = s.v, originalStats = s.l.P;
+    s.o = profile; s.v = actor; s.l.P = stats;
+    try { return action(); } finally { s.o = player; s.v = v; s.l.P = originalStats; }
+  };
+  s.cast = (target, targets) => s.SimSkillCasting.castSimulatorSkill(actor, target, s.skill,
+    () => s.valid, targets, (skill, contact) => {
+      s.hits.push({ actor, skill, contact });
+      return s.withActor(() => s.hs(skill, contact));
+    }, s.withActor);
+  return Object.assign(s, { actor, hero, stats });
+}
+
+test('SIM Bang Tung emits a real lotus at contact and applies its own secondary skill bonus to its allowed targets', () => {
+  const s = simulatorCastWorld(336), target = enemy(s, 180), near = enemy(s, 180, 35), excluded = enemy(s, 180, -35);
+  s.cast(target, () => [target, near]);
+  assert.equal(s.flowers.length, 0);
+  run(s, .95);
+  assert.equal(s.flowers.length, 1);
+  const flower = s.flowers[0];
+  assert.equal(flower.cast.actor, s.actor);
+  assert.equal(flower.cast.skill.parts.cold, 5, '40 × .25 × secondary/primary bonus (.5), using SIM stats');
+  assert.equal(target.hp, 80); assert.equal(near.hp, 90); assert.equal(excluded.hp, 100);
+  assert.ok(s.l.fx.some(effect => effect.s === s.A0.m[188].fly));
+  assert.equal(s.v, s.hero); assert.ok(!s.l.P.skillBonus);
+});
+
+test('SIM Thien Ngoai creates the real lava sprite and secondary AoE with SIM attribution', () => {
+  const s = simulatorCastWorld(362), target = enemy(s, 180), near = enemy(s, 240), excluded = enemy(s, 180, 15);
+  s.cast(target, () => [target, near]);
+  run(s, .5);
+  const secondary = s.l.combatProjectiles.filter(effect => effect.combat.skill.ev2);
+  assert.ok(secondary.length > 0);
+  assert.ok(secondary.every(effect => effect.combat.actor === s.actor));
+  assert.ok(secondary.some(effect => effect.mid === s.LP[363][0]));
+  assert.equal(secondary[0].combat.skill.parts.fire, 20, 'secondary uses SIM bonus, not the player stats');
+  run(s, 1);
+  assert.ok(s.hits.some(hit => hit.skill.ev2 && hit.contact === target));
+  assert.ok(s.hits.some(hit => hit.skill.ev2 && hit.contact === near));
+  assert.equal(excluded.hp, 100);
+  assert.equal(s.v, s.hero);
+});
+
+test('SIM secondary contacts stop on cancellation and never fall back to the player enemy list', () => {
+  for (const id of [336, 362]) {
+    const s = simulatorCastWorld(id), target = enemy(s, 180), excluded = enemy(s, 180, 15);
+    s.cast(target, () => [target]);
+    run(s, .5);
+    s.valid = false;
+    const health = target.hp;
+    run(s, 2);
+    assert.equal(target.hp, health);
+    assert.equal(excluded.hp, 100);
+    assert.equal(s.v, s.hero);
+  }
+});
+
+test('SIM lotus and lava can hit the player in PK and stop all delayed damage when PK is disabled', () => {
+  for (const id of [336, 362]) {
+    const s = simulatorCastWorld(id), unrelated = enemy(s, 180);
+    s.hero.x = 180;
+    let pk = true;
+    const hit = (skill, contact) => {
+      assert.equal(contact, s.hero);
+      s.l.life -= 10;
+      s.hits.push(skill);
+      return 10;
+    };
+    s.SimSkillCasting.castSimulatorSkill(s.actor, s.hero, s.skill, () => pk,
+      () => pk ? [s.hero] : [], hit, s.withActor);
+    run(s, 1);
+    assert.ok(s.hits.some(skill => skill.ev2), `skill ${id}: secondary hits the player`);
+    assert.equal(unrelated.hp, 100);
+    pk = false;
+    const health = s.l.life;
+    // Also exercise stale callbacks retained outside the projectile array.
+    for (const effect of s.l.combatProjectiles) effect.combat.onHit(s.hero);
+    run(s, 2);
+    assert.equal(s.l.life, health);
+    assert.equal(unrelated.hp, 100);
   }
 });
