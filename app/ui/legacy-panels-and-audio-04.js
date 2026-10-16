@@ -244,9 +244,9 @@ var an = 45;
 
 var sh = 8;
 
-var ih = 20;
+var ih = 0.3;
 
-var ao = 1.5;
+var ao = 0.3;
 
 var $1 = () => o.ctrl === "manual" || !!Y.tmp;
 

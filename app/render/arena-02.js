@@ -70,12 +70,17 @@ var NP = function (A) {
       [{ hero: !0, y: v.y }],
       typeof othEnts == "function" ? othEnts() : [],
       typeof rm == "function" ? rm() : [],
+      typeof equipmentTrader !== "undefined" ? equipmentTrader.entities() : [],
     )
     .sort((a, i) => a.y - i.y);
   for (const a of e) {
     // Finish the previous entity's anchored nameplate before drawing the next
     // (closer) body. Never collect all nameplates into a foreground overlay.
     IP();
+    if (a.equipmentTrader) {
+      equipmentTrader.draw(n, a);
+      continue;
+    }
     if (a.arenaSim && typeof arenaSimulator !== "undefined" && arenaSimulator) {
       arenaSimulator.draw(n, a, A);
       continue;

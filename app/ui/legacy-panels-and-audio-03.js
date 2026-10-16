@@ -647,10 +647,10 @@ var nc = function () {
       return;
     }
     if ((l.tpCd || 0) > 0) {
-      k(`Thổ Địa Phù hồi sau ${Math.ceil(l.tpCd)} giây`);
+      k(`Thổ Địa Phù hồi sau ${Math.ceil(l.tpCd * 1000)} ms`);
       return;
     }
-    ((l.town = !0),
+    ((l.tpCd = ih), (l.town = !0),
       (l.enemies = []),
       (l.corpses = []),
       (l.pickTarget = null),
@@ -671,6 +671,7 @@ var nc = function () {
 
 var en = function () {
   if (l.town) {
+    if ((l.tpCd || 0) > 0) { k(`Thổ Địa Phù hồi sau ${Math.ceil(l.tpCd * 1000)} ms`); return; }
     l.town = !1;
     {
       const A = AA(Math.min(o.stage, d0));

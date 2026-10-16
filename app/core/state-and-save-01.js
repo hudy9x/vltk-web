@@ -392,30 +392,15 @@ var r8 = function (A) {
 };
 
 var X9 = function (A) {
-  l.hot = l.hot || { life: 0, mana: 0, lifeT: 0, manaT: 0 };
-  const n = l.hot,
-    t = l.P;
-  for (const r of ["life", "mana"])
-    if (n[r + "T"] > 0) {
-      const c = Math.min(A, n[r + "T"]);
-      ((n[r + "T"] -= A),
-        r === "life"
-          ? (l.life = Math.min(t.life, l.life + n.life * c))
-          : (l.mana = Math.min(t.mana, l.mana + n.mana * c)));
-    }
+  delete l.hot;
+  const t = l.P;
   if (((l.potCd = l.potCd || { life: 0, mana: 0 }), o.potBuy !== !1)) for (const r of [0, 1]) J9(r);
   if (o.potOff) return;
-  const e = (r, c) => E((o[r] ?? c) / 100, 0.05, 0.95),
-    a = l.life < t.life * e("potHp", 50),
-    i =
-      l.mana < t.mana * e("potMp", 50) ||
-      (t.main.cost > 0 && !t.main.costLife && l.mana < t.main.cost * 2);
-  for (const [r, c] of [
-    ["life", a],
-    ["mana", i],
-  ]) {
-    const d = r === "life" && l.life < t.life * e("potUrg", 30);
-    if (!c || l.potCd[r] > 0 || (n[r + "T"] > 0 && !d)) continue;
+  const e = (r, c) => E((o[r] ?? c) / 100, 0.05, 0.95);
+  for (const r of ["life", "mana"]) {
+    const needed = r === "life" ? l.life < t.life * e("potHp", 50) :
+      l.mana < t.mana * e("potMp", 50) || (t.main.cost > 0 && !t.main.costLife && l.mana < t.main.cost * 2);
+    if (!needed || l.potCd[r] > 0) continue;
     const f = typeof ic == "function" ? ic(r === "life" ? 0 : 1) : null,
       h = f ? null : ch(r),
       g = f ? f.p : h || r8(r);
@@ -444,16 +429,12 @@ var J9 = function (A) {
 };
 
 var Hd = function (A, n, t) {
-  l.hot = l.hot || { life: 0, mana: 0, lifeT: 0, manaT: 0 };
-  const e = l.hot;
   (t || (o.gold -= Ot(n)), (o.potUsed = (o.potUsed || 0) + 1), _n("pots"));
-  const a = (i, r, c) => {
-    const d = e[i + "T"] > 0 ? e[i] * e[i + "T"] : 0;
-    ((e[i + "T"] = c), (e[i] = (d + r) / c));
-  };
-  n.kind === "both"
-    ? (a("life", n.total, n.dur), a("mana", n.mtotal, n.mdur))
-    : a(A, n.total, n.dur);
+  applyPotionRecovery(l, A, n);
+  if (n.kind === "both") {
+    l.potCd = l.potCd || { life: 0, mana: 0 };
+    l.potCd.life = l.potCd.mana = ao;
+  }
 };
 
 var c8 = function (A) {

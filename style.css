@@ -22,6 +22,7 @@ button[disabled]{opacity:.4;cursor:default}
 .coin{width:14px;height:10px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 40% 35%,#fbe9ad,#a7792b);box-shadow:0 0 0 1px #5a3d14}
 .bar{position:relative;height:12px;background:#060908;border:1px solid var(--line2);border-radius:3px;overflow:hidden}
 .bar i{position:absolute;inset:0;width:0;transition:width .15s linear}
+.bar.hp i,.bar.mp i{transition:none}
 .bar span{position:absolute;inset:0;font-size:9.5px;line-height:11px;text-align:center;color:#fff;text-shadow:0 0 2px #000,0 0 2px #000}
 .bar.xp i{background:linear-gradient(#e0bd55,#8f6a1c)} .bar.hp i{background:linear-gradient(#e0503f,#7d1a12)} .bar.mp i{background:linear-gradient(#5a8fe6,#1d3f80)}
 
