@@ -81,7 +81,7 @@ var gameMaster = (function () {
     context.restore();
   }
 
-  const amounts = { gold: 1_000_000_000_000, knb: 100_000, xp: 100_000_000, chest: 100, rings: 2, level150: 150, learn90: 1, max90: 1, potential: 3000 };
+  const amounts = { gold: 1_000_000_000_000, knb: 100_000, xp: 100_000_000, chest: 100, level150: 150, learn90: 1, max90: 1, potential: 3000 };
   function grant(action) {
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
     if (!(action in amounts)) throw new Error("Lệnh GM không hợp lệ.");
@@ -139,17 +139,6 @@ var gameMaster = (function () {
       if (!(factor > 0) || !Number.isFinite(factor))
         throw new Error("Hệ số kinh nghiệm không hợp lệ.");
       d8(amounts.xp / factor);
-    } else if (action === "rings") {
-      if (INV_MAX - o.inv.length < amounts.rings)
-        throw new Error("Cần 2 ô trống trong Hành trang để nhận nhẫn.");
-      const template = S.sets.gold.find((item) => item.n === "Càn Khôn Giới Chỉ");
-      if (!template) throw new Error("Không tìm thấy Càn Khôn Giới Chỉ trong dữ liệu game.");
-      const rings = Array.from({ length: amounts.rings }, () => {
-        const item = Ta("gold", template, 5);
-        item.lock = true;
-        return item;
-      });
-      o.inv.push(...rings);
     } else {
       const key = prefix + o.fac;
       if (!I[o.fac]) throw new Error("Môn phái không hợp lệ.");
@@ -168,7 +157,6 @@ var gameMaster = (function () {
         knb: "KNB",
         xp: "điểm kinh nghiệm",
         chest: "rương Hoàng Kim môn phái",
-        rings: "Càn Khôn Giới Chỉ",
       }[action] +
       "."
     );
@@ -223,7 +211,6 @@ var gameMaster = (function () {
     <button type="button" data-gm="knb"><img src="img/ep/knb.png" alt="">+10 vạn Kim Nguyên Bảo</button>
     <button type="button" data-gm="xp">+100 triệu điểm kinh nghiệm</button>
     <button type="button" data-gm="chest"><img src="img/ep/box2.png" alt="">+100 rương Hoàng Kim môn phái hiện tại</button>
-    <button type="button" data-gm="rings"><img src="img/i/g44.png" alt="">+2 Càn Khôn Giới Chỉ</button>
     <p id="gm-status" role="status" aria-live="polite">Phần thưởng được lưu vào save hiện tại.</p></div>`;
   toggle.onclick = () => {
     panel.hidden = !panel.hidden;

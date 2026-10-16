@@ -473,37 +473,141 @@ test('template table creates from the clicked row and deletes only its template 
  await assert.rejects(()=>s.arenaSimulator.deleteTemplate(one.id),/không tồn tại/);
 });
 
-test('real skill damage applies hurt only above five percent max HP and interrupts a monster attack',()=>{
+test('real skill damage preserves monster actions above the old five percent threshold',()=>{
  const s=simulatorGame(),monster=s.l.enemies[0];Object.assign(monster,{hp:1000,max:1000,act:'at'});
  const skill={parts:{phys:50},crit:0,series:0,series5:0};
  s.hs(skill,monster);assert.equal(monster.hp,950);assert.ok(!(monster.hurtT>0));assert.equal(monster.act,'at');
- s.hs({...skill,parts:{phys:51}},monster);assert.equal(monster.hp,899);assert.equal(monster.act,'hurt');assert.ok(monster.hurtT>0);
+ s.hs({...skill,parts:{phys:51}},monster);assert.equal(monster.hp,899);assert.equal(monster.act,'at');assert.ok(!(monster.hurtT>0));
 });
 
-test('SIM PK applies hurt after player absorption, and player casting recovers on the shared clock',()=>{
+test('SIM PK damage respects absorption without freezing player actions',()=>{
  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');actor.x=s.v.x;actor.y=s.v.y;
  s.l.P.sorb=80;s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);advanceSimulator(s,.2);
  assert.equal(s.l.life,980);assert.ok(!(s.v.hurtT>0),'100 raw but 20 actual damage is below 5%');
  advanceSimulator(s,.4);s.l.P.sorb=0;actor.cooldown=0;s.arenaSimulator.tick(.6);advanceSimulator(s,.2);
- assert.equal(s.l.life,880);assert.equal(s.v.act,'hurt');assert.ok(s.v.hurtT>0);
- loadDeclaration(s,'app/core/state-and-save-01.js','oD');assert.equal(s.oD(),.05,'hurt blocks every player cast entry');
- advanceSimulator(s,.3);assert.equal(s.v.hurtT,0);assert.equal(s.v.act,'st');
+ assert.equal(s.l.life,880);assert.notEqual(s.v.act,'hurt');assert.ok(!(s.v.hurtT>0));
+ assert.equal(s.actorActionLocked(s.v),false);
 });
 
-test('hurt blocks SIM casting and movement, and toggling modes cannot bypass recovery',()=>{
+test('large hits do not block SIM casting after mode changes',()=>{
  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');s.arenaSimulator.setFarm(true);
- s.applyActorHurt(actor,51,1000);const x=actor.x,y=actor.y;
+ s.applyActorHurt(actor,51,1000);
  s.arenaSimulator.setFarm(false);s.arenaSimulator.setFarm(true);s.arenaSimulator.tick(.1);
- assert.equal(actor.casts,0);assert.equal(actor.x,x);assert.equal(actor.y,y);assert.equal(actor.act,'hurt');
- advanceSimulator(s,.3);s.arenaSimulator.tick(.1);assert.equal(actor.casts,1);
+ assert.equal(actor.casts,1);assert.notEqual(actor.act,'hurt');assert.ok(!(actor.hurtT>0));
 });
 
-test('native monster damage triggers player hurt only after mitigation exceeds five percent',()=>{
+test('native monster damage no longer freezes the player above five percent',()=>{
  const s=simulatorGame();loadDeclaration(s,'app/core/state-and-save-01.js','U9');
  Object.assign(s,{Dw:['phys'],Yr:75,Pe:()=>100});s.l.life=1000;s.v.act='at';
  const attacker={...s.l.enemies[0],dmg:50,ar:100,series:0};
  s.U9(attacker);assert.equal(s.l.life,950);assert.ok(!(s.v.hurtT>0));assert.equal(s.v.act,'at');
- attacker.dmg=51;s.U9(attacker);assert.equal(s.l.life,899);assert.equal(s.v.act,'hurt');assert.ok(s.v.hurtT>0);
+ attacker.dmg=51;s.U9(attacker);assert.equal(s.l.life,899);assert.equal(s.v.act,'at');assert.ok(!(s.v.hurtT>0));
  advanceSimulator(s,.3);s.l.P.manaShield=100;s.l.mana=1000;attacker.dmg=100;
  s.U9(attacker);assert.equal(s.l.life,899);assert.ok(!(s.v.hurtT>0),'mana absorption leaves no HP damage to trigger hurt');
+});
+
+test('cold damage increases slow intensity independently of duration and stronger hits refresh it',()=>{
+ const s=simulatorGame(),base=s.l.enemies[0];
+ const low={...base,hp:10000,max:10000,slowT:0},high={...low};
+ s.hs({parts:{cold:100},crit:0,series:0,series5:0},low);
+ s.hs({parts:{cold:500},crit:0,series:0,series5:0},high);
+ assert.equal(low.slowT,s.f8);assert.equal(high.slowT,low.slowT);assert.ok(high.hp<low.hp);
+ assert.equal(low.slowPower,.25);assert.ok(high.slowPower>low.slowPower);
+ low.slowT=.2;s.l.P.coldEnh=18;
+ s.hs({parts:{cold:500},coldT:3,crit:0,series:0,series5:0},low);
+ assert.equal(low.slowT,4,'stronger cold refreshes its independently calculated duration');
+ low.slowT=0;s.hs({parts:{cold:100},coldT:3,crit:0,series:0,series5:0},low);
+ assert.equal(low.slowT,4);
+});
+
+test('poison adds remaining damage into the refreshed duration without immediate HP loss',()=>{
+ const s=simulatorGame(),monster=s.l.enemies[0];Object.assign(monster,{hp:1000,max:1000,poison:0});
+ const skill={parts:{poison:90},poisonT:3,crit:0,series:0,series5:0};
+ s.hs(skill,monster);assert.equal(monster.hp,1000);assert.equal(monster.poison,3);assert.equal(monster.poisonDmg,30);
+ monster.poison=2;s.hs(skill,monster);
+ assert.equal(monster.poison,3);assert.equal(monster.poisonDmg,50,'60 remaining plus 90 new damage over 3s');
+});
+
+test('explicit stun refreshes to the configured duration rather than adding hit durations',()=>{
+ const s=simulatorGame(),monster=s.l.enemies[0];Object.assign(monster,{hp:10000,max:10000,stun:0});
+ s.l.P.stunLong=100;
+ const skill={parts:{phys:1},stun:100,crit:0,series:0,series5:0};
+ s.hs(skill,monster);assert.equal(monster.stun,1.6);
+ monster.stun=.4;s.hs(skill,monster);assert.equal(monster.stun,1.6);
+ monster.stun=2;s.hs(skill,monster);assert.equal(monster.stun,2,'a shorter incoming stun never shortens the existing one');
+});
+
+test('cold power grows with diminishing returns, stays bounded, expires and rejects weaker refreshes',()=>{
+ const s=simulatorGame(),engine=s.CombatEngine,target={};
+ const values=[1,100,500,1000,1e9].map(engine.coldSlowPower);
+ for(let i=1;i<values.length;i++)assert.ok(values[i]>values[i-1]);
+ assert.equal(values[1],.25);assert.ok(Math.abs(values[2]-.5357142857142857)<1e-12);
+ assert.ok(values[3]-values[2]<values[2]-values[1]);assert.ok(values.at(-1)<.75);
+ for(const damage of [0,-1,NaN,Infinity])assert.equal(engine.coldSlowPower(damage),0);
+ s.applyColdSlow(target,500,2);target.slowT=.3;
+ assert.equal(s.applyColdSlow(target,100,10),false);assert.equal(target.slowT,.3);
+ assert.equal(s.applyColdSlow(target,500,2),true);assert.equal(target.slowT,2);
+ target.slowT=0;assert.equal(s.coldSpeedFactor(target),1);
+ s.applyColdSlow(target,100,1);assert.equal(s.coldSpeedFactor(target),.75);
+ assert.equal(s.applyColdSlow({},100,0),false);
+});
+
+test('cold intensity uses only the cold component after resistance, not physical damage or target HP',()=>{
+ const s=simulatorGame(),base=s.l.enemies[0],hit=(cold,phys,res,max=10000)=>{
+  const target={...base,hp:max,max,slowT:0,res:{...base.res,cold:res}};
+  s.hs({parts:{cold,phys},crit:0,series:0,series5:0},target);return target;
+ };
+ const low=hit(100,0,0),high=hit(500,0,0),resisted=hit(500,0,75),mixed=hit(100,3000,0);
+ assert.ok(high.slowPower>resisted.slowPower);assert.ok(resisted.slowPower>low.slowPower);
+ assert.equal(mixed.slowPower,low.slowPower);assert.equal(hit(100,0,0,100000).slowPower,low.slowPower);
+ const zero=hit(0,100,0);assert.equal(zero.slowT,0);
+});
+
+test('native monster cold applies the same strength curve while freeze reduction changes only duration',()=>{
+ const s=simulatorGame();loadDeclaration(s,'app/core/state-and-save-01.js','U9');
+ Object.assign(s,{Dw:['cold'],Yr:75,Pe:()=>100});s.l.life=10000;s.l.P.freezeRed=50;
+ const attacker={...s.l.enemies[0],dmg:500,ar:100,series:0};s.U9(attacker);
+ assert.equal(s.l.slowT,s.f8*.5);assert.equal(s.l.slowPower,s.CombatEngine.coldSlowPower(500));
+ s.l.slowT=0;s.l.P.res.cold=75;s.U9(attacker);assert.equal(s.l.slowPower,s.CombatEngine.coldSlowPower(125));
+ s.l.slowT=0;s.l.P.freezeRed=100;s.U9(attacker);assert.equal(s.l.slowT,0);
+});
+
+test('SIM PK transfers resolved cold strength and defender duration reduction, keeping stronger active cold',()=>{
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');actor.x=s.v.x;actor.y=s.v.y;
+ actor.stats.main.parts={cold:500};s.l.P.freezeRed=50;s.arenaSimulator.setPK(true);
+ s.arenaSimulator.tick(.1);advanceSimulator(s,.2);
+ assert.ok(s.l.slowT>0);assert.equal(s.l.slowPower,s.CombatEngine.coldSlowPower(500));
+ assert.equal(s.l.slowT,s.f8*.5);
+ advanceSimulator(s,.4);s.l.slowT=.2;actor.stats.main.parts={cold:100};actor.cooldown=0;
+ s.arenaSimulator.tick(.6);advanceSimulator(s,.2);
+ assert.equal(s.l.slowT,.2);assert.equal(s.l.slowPower,s.CombatEngine.coldSlowPower(500));
+});
+
+test('monster and SIM movement and attack cooldowns use the same cold speed factor',()=>{
+ const s=simulatorGame();loadDeclaration(s,'app/core/state-and-save-01.js','$d');
+ s.q0=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);s.r0[0].anim='monster';
+ let moved=0;s.Mw=(_actor,_x,_y,distance)=>moved=distance;
+ const monster={x:0,y:0,hp:1000,max:1000,r:17,tid:0,spd:100,reach:40,atkCd:2,cd:1,ar:1};
+ s.applyColdSlow(monster,100,2);s.$d(monster,.2);assert.equal(moved,15);assert.equal(monster.atkCd,1.85);
+ const actor=s.arenaSimulator.create('wudang');actor.cooldown=2;actor.spd=100;
+ s.applyColdSlow(actor,500,2);s.arenaSimulator.setFarm(true);actor.stats.main.rad=10;actor.x=0;actor.y=0;
+ s.arenaSimulator.tick(.2);const speed=s.coldSpeedFactor(actor);
+ assert.ok(Math.abs(actor.cooldown-(2-.2*speed))<1e-12);assert.ok(Math.abs(moved-20*speed)<1e-12);
+});
+
+test('allied cold attacks use resisted cold damage for slow intensity',()=>{
+ const s=simulatorGame(),target=s.l.enemies[0];Object.assign(target,{x:550,y:500,hp:10000,max:10000,res:{...target.res,cold:50}});
+ Object.assign(s,{H2:()=>1,L:{},jh:1000,_1:()=>[target],q0:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),fB(){},
+  queueSkillContact:(_actor,_target,_skill,onHit)=>onHit(target)});
+ const ally={x:500,y:500,t:0,hp:1000,hpMax:1000,owner:'ally',pf:{cold:1},dps:100,rt:1,atkT:0,atT:0,se:0,ct:2};
+ s.l.allies=[ally];loadDeclaration(s,'app/online/party-01.js','Am');s.Am(.1);
+ assert.equal(target.slowT,2);assert.equal(target.slowPower,s.CombatEngine.coldSlowPower(50));
+});
+
+test('SIM animation follows its cold speed and returns to normal after expiry',()=>{
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');let elapsed;
+ Object.assign(s,{H8:(_actor,dt)=>elapsed=dt,ps(){},M8:()=>true,L3(){},nameplateOffset:()=>55,Jn:1});
+ const context={fillStyle:'',beginPath(){},arc(){},fill(){}};
+ s.applyColdSlow(actor,100,1);s.arenaSimulator.draw(context,actor,.2);assert.ok(Math.abs(elapsed-.15)<1e-12);
+ actor.slowT=0;s.arenaSimulator.draw(context,actor,.2);assert.equal(elapsed,.2);
 });

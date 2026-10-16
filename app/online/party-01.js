@@ -421,7 +421,7 @@ var Am = function (A) {
       const attack = { id: e.id, L: e.L, nMis: e.nm, parts, melee: e.mel, rad: h, ox: e.x, oy: e.y };
       queueSkillContact(e, r, attack, (r) => {
         let w = e.dps * u * Z(0.85, 1.15),
-          x = 0;
+          x = 0, coldDamage = 0;
         const p = Object.keys(e.pf).length ? e.pf : { [e.el]: 1 };
         for (const P in p) {
           let _ = w * p[P];
@@ -429,7 +429,9 @@ var Am = function (A) {
             dB(r, ja(_, "poison", e.se, r.series, r.res, 75, 0));
             continue;
           }
-          x += ja(_, P, e.se, r.series, r.res, 75, 0);
+          const damage = ja(_, P, e.se, r.series, r.res, 75, 0);
+          x += damage;
+          if (P === "cold") coldDamage = damage;
         }
         (y1(e.se, r.series) ? (x *= 1 + Ct) : y1(r.series, e.se) && (x *= 1 - Ct),
           (x = Math.max(1, x)),
@@ -438,7 +440,7 @@ var Am = function (A) {
           (r.hitT = 0.1),
           (r.aggro = !0),
           (!r.tgtA || Math.random() < 0.35) && (r.tgtA = e),
-          p.cold && !(r.slowT > 0) && (r.slowT = e.ct || f8),
+          coldDamage > 0 && applyColdSlow(r, coldDamage, e.ct || f8),
           p.light && Math.random() < Od && (r.stun = Math.max(r.stun || 0, Ed)),
           e.stn && Math.random() * 100 < e.stn && (r.stun = Math.max(r.stun || 0, 0.8)),
           e.id && typeof E8 == "function" && E8({ id: e.id }, r),

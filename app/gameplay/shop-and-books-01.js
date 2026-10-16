@@ -65,6 +65,9 @@ var b7 = function (A, n) {
   if (!i.length) return;
   const r = F0();
   for (const c of i) {
+    // The aura applies poison without a projectile; show its native contact sprite.
+    if (+A === 69 && !l.quiet && A0.m[94] && typeof gf === "function")
+      gf({ m: A0.m[94] }, c.x, c.y - 14);
     const d = Rn(c),
       f = d ? Object.fromEntries(Q0.map((g) => [g, c.res[g] + (d.res[g] || 0)])) : c.res;
     let h =

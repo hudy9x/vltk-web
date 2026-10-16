@@ -3,8 +3,6 @@ import type { CombatTarget } from './types';
 declare function ws(animation: string, action: string): number;
 declare var Y: { target: unknown; mouse?: boolean };
 
-export const HURT_HP_FRACTION = 0.05;
-export const HURT_SECONDS = 0.25;
 const active = new Set<CombatTarget>();
 
 export function actorActionLocked(actor: CombatTarget): boolean {
@@ -25,15 +23,11 @@ export function beginActorCast(actor: CombatTarget): boolean {
   return true;
 }
 
-/** Per resolved hit, after mitigation; exactly 5% never interrupts. */
-export function applyActorHurt(actor: CombatTarget, damage: number, maximumHP: number): boolean {
-  if (actor.hurtProxy || !Number.isFinite(damage) || !(maximumHP > 0) || !(damage > maximumHP * HURT_HP_FRACTION)) return false;
-  actor.hurtT = Math.max(actor.hurtT || 0, HURT_SECONDS);
-  actor.castT = 0; actor.actionRevision = (actor.actionRevision || 0) + 1;
-  actor.moving = false; actor.mv = false; actor.atT = 0; actor.act = 'hurt'; actor.actT = 0;
-  if (typeof v !== 'undefined' && actor === v) l.hurtT = actor.hurtT;
-  active.add(actor);
-  return true;
+/** Legacy hit-handler hook: damage alone never locks actions or interrupts a cast.
+ * Keep the bridge signature while explicit poison, cold and stun remain independent.
+ */
+export function applyActorHurt(_actor: CombatTarget, _damage: number, _maximumHP: number): boolean {
+  return false;
 }
 
 /** Advanced once by the shared combat simulation, including headless/offline ticks. */

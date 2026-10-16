@@ -9,6 +9,7 @@ import { mountSimulatorPanel, renderSimulatorControls } from './panel';
 import { createTemplateStore } from './templates';
 import { POTENTIALS, setPotential, setSkillLevel, skillLimit } from './build';
 import { castSimulatorSkill } from './skill-cast';
+import { applyColdPower, coldSpeedFactor } from '../combat/cold-status';
 import type { Potential } from './build';
 import type { SimulatorTemplate } from './types';
 
@@ -264,7 +265,11 @@ export function createSimulator() {
           if (seconds > .05) { l.hpDot = (l.hpDot || 0) + receiver.poisonDmg * seconds; l.hpDotT = Math.max(l.hpDotT || 0, seconds); }
           step("Độc PK chuyển sang DoT; không tính thành HP mất ngay", { dps: receiver.poisonDmg, seconds, pending: l.hpDot || 0 });
         }
-        l.slowT = Math.max(l.slowT || 0, receiver.slowT * (1 - (defense.freezeRed || 0) / 100));
+        if ((receiver.slowT || 0) > 0) {
+          const seconds = (receiver.slowT || 0) * (1 - (defense.freezeRed || 0) / 100);
+          // Transfer the resolved intensity without applying resistance a second time.
+          applyColdPower(l, receiver.slowPower || 0, seconds);
+        }
         l.stunT = Math.max(l.stunT || 0, receiver.stun * (1 - (defense.stunRed || 0) / 100));
         step("HP thực mất", { before, after: l.life, actualLoss: before - l.life });
       });
@@ -292,7 +297,7 @@ export function createSimulator() {
   function tickActor(actor: SimulatorActor, dt: number) {
     actor.mana = actor.stats.mana;
     if (actor.stun > 0) { actor.stun = Math.max(0, actor.stun - dt); return; }
-    const speed = actor.slowT > 0 ? Qa : 1;
+    const speed = coldSpeedFactor(actor);
     actor.slowT = Math.max(0, (actor.slowT || 0) - dt);
     if (actor.poison > 0) {
       const duration = Math.min(dt, actor.poison), before = actor.hp;
@@ -336,7 +341,7 @@ export function createSimulator() {
   function draw(context: CanvasRenderingContext2D, actor: SimulatorActor, dt: number) {
     const look = actor.look;
     actor.animKey = look && look.anim;
-    H8(actor, dt, actor.moving ? "run" : "st");
+    H8(actor, dt * coldSpeedFactor(actor), actor.moving ? "run" : "st");
     if (actor.act !== "at" && actor.act !== "hurt") ps(actor, actor.moving ? "run" : "st");
     const height = look && look.anim ? kf(look.anim, actor.act || "st", actor.dir || 0, actor.actT || 0, actor.x, actor.y, Jn) : 0;
     if (!height && !(look && M8(bA(look.img), look.sz, actor.x, actor.y, 1, actor.face < 0, 1))) {

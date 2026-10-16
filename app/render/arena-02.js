@@ -104,7 +104,7 @@ var NP = function (A) {
         (v.py = v.y),
         (v.moving = Math.hypot(h, g) > 0.4),
         v.moving && v.act !== "at" && (v.dir = kn(h, g)),
-        H8(v, l.stunT > 0 ? 0 : l.slowT > 0 ? A * Qa : A, v.moving ? "run" : "st"),
+        H8(v, l.stunT > 0 ? 0 : A * coldSpeedFactor(l), v.moving ? "run" : "st"),
         l.deadT > 0
           ? ps(v, "die")
           : v.act !== "at" && v.act !== "hurt" && ps(v, v.moving ? "run" : "st"),
@@ -154,7 +154,7 @@ var NP = function (A) {
       n.ellipse(a.x, a.y, a.r, a.r * 0.38, 0, 0, 7),
       n.stroke(),
       (a.animKey = r0[a.tid].anim),
-      H8(a, a.stun > 0 ? 0 : a.slowT > 0 ? A * Qa : A, a.moving ? "run" : "st"),
+      H8(a, a.stun > 0 ? 0 : A * coldSpeedFactor(a), a.moving ? "run" : "st"),
       a.act !== "at" &&
         a.act !== "hurt" &&
         a.act !== "die" &&

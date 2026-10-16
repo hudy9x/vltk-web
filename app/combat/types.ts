@@ -2,6 +2,8 @@
 export interface WorldPoint { x: number; y: number }
 
 export interface CombatTarget extends WorldPoint {
+  slowT?: number;
+  slowPower?: number;
   act?: string;
   actT?: number;
   animKey?: string;
@@ -152,6 +154,8 @@ export type ContactEffect = ContactVisual & {
   contactHits: Set<CombatTarget>;
 };
 export interface CombatWorld {
+  slowT?: number;
+  slowPower?: number;
   moveTo?: CombatTarget | null;
   pickTarget?: unknown;
   hurtT?: number;
