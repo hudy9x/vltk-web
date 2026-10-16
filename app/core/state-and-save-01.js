@@ -208,6 +208,7 @@ var hs = function (A, n) {
   let i = 0,
     r = "phys",
     c = 0,
+    coldDamage = 0,
     d = 0;
   const f = n.cls === "boss" || n.cls === "elite";
   if (f && Math.random() * 100 < (n.cls === "boss" ? 6 : 3) - (l.P.antiBlock || 0))
@@ -242,6 +243,7 @@ var hs = function (A, n) {
       continue;
     }
     ((X = ja(X, j, A.series, n.series, w, x, A.series5)),
+      j === "cold" && (coldDamage = X),
       e && j === "phys" && (X *= y5),
       (i += X),
       X > c && ((c = X), (r = j)));
@@ -255,8 +257,8 @@ var hs = function (A, n) {
     P = y1(n.series, A.series);
   (p ? (i *= 1 + Ct) : P && (i *= 1 - Ct),
     l.P.me2 && l.P.me2[n.series] && (i *= 1 + l.P.me2[n.series] / 100),
-    A.parts.cold && !(n.slowT > 0) && Tt(n, "Băng", "#8fd8ff"),
-    A.parts.cold && !(n.slowT > 0) && (n.slowT = (A.coldT || f8) + (l.P.coldEnh || 0) / 18));
+    coldDamage > 0 && !(n.slowT > 0) && Tt(n, "Băng", "#8fd8ff"),
+    coldDamage > 0 && applyColdSlow(n, coldDamage, (A.coldT || f8) + (l.P.coldEnh || 0) / 18));
   trace && trace("Nhân khắc hệ → tăng sát thương theo hệ", { seriesFactor: p ? 1 + Ct : P ? 1 - Ct : 1, versusFactor: 1 + ((l.P.me2 && l.P.me2[n.series]) || 0) / 100, damage: i });
   const _ = 1 + (l.P.stunLong || 0) / 100;
   A.parts.light && Math.random() < Od && (n.stun = Math.max(n.stun, Ed * _));
@@ -315,6 +317,7 @@ var U9 = function (A) {
   }
   const t = Dw[A.series] || "phys";
   let e = A.dmg * Z(0.8, 1.2) * (n ? Math.max(0.1, 1 + n.dmg / 100) : 1);
+  let coldDamage = 0;
   trace && trace("Sát thương gốc × ngẫu nhiên × lời nguyền", { base: A.dmg, curseFactor: n ? Math.max(0.1, 1 + n.dmg / 100) : 1, damage: e });
   if (
     ((e = ja(
@@ -326,12 +329,13 @@ var U9 = function (A) {
       (l.P.resMaxE && l.P.resMaxE[t]) || l.P.resMax || Yr,
       10,
     )),
+    t === "cold" && (coldDamage = e),
     y1(A.series, l.P.series)
       ? ((e *= 1 + Ct), l.P.res5 && (e = Math.max(1, e - l.P.res5)))
       : y1(l.P.series, A.series) && (e *= 1 - Ct),
     l.P.dmgShield && (e -= Math.min(l.P.dmgShield, e * Jr)),
-    t === "cold" && !(l.slowT > 0) && Tt(null, "Băng", "#8fd8ff"),
-    t === "cold" && (l.slowT = Math.max(l.slowT || 0, f8 * (1 - (l.P.freezeRed || 0) / 100))),
+    coldDamage > 0 && !(l.slowT > 0) && (l.P.freezeRed || 0) < 100 && Tt(null, "Băng", "#8fd8ff"),
+    coldDamage > 0 && applyColdSlow(l, coldDamage, f8 * (1 - (l.P.freezeRed || 0) / 100)),
     t === "light" &&
       Math.random() < (uD[A.cls] || 0) &&
       !(Math.random() * 100 < (l.P.antiStun || 0)))
@@ -829,7 +833,8 @@ var $d = function (A, n) {
     A.stun -= n;
     return;
   }
-  const t = A.slowT > 0 ? ((A.slowT -= n), Qa) : 1;
+  const t = coldSpeedFactor(A);
+  A.slowT = Math.max(0, (A.slowT || 0) - n);
   if (A.poison > 0) { A.poison -= n; A.hp -= A.poisonDmg * n; }
   if (actorActionLocked(A)) { A.moving = false; A.atkCd = Math.max(0, (A.atkCd || 0) - n * t); return; }
   if (A.home && KD(A, n)) return;

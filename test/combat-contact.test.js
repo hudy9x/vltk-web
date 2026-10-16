@@ -776,3 +776,20 @@ test('SIM lotus and lava can hit the player in PK and stop all delayed damage wh
     assert.equal(unrelated.hp, 100);
   }
 });
+
+test('Vo Hinh Doc emits its green native contact sprite only on nearby living monsters at aura pulses', () => {
+ const s=world(),near=enemy(s,50),far=enemy(s,400),dead=enemy(s,40);dead.dead=true;
+ Object.assign(s,{Yn:{69:{el:'poison',every:10/18,rad:180}},y4:{},zi:()=>1,i6:()=>90,F0:()=>1,
+  Q0:['poison'],Rn:()=>null,ja:value=>value,ea:()=>1,ve:3});
+ s.l.P.main={};near.res=far.res=dead.res={poison:0};
+ declaration(s,'app/gameplay/shop-and-books-01.js','b7');
+ s.b7(69,.01);
+ assert.equal(near.hp,100);assert.equal(near.poison,3);assert.equal(near.poisonDmg,30);
+ assert.equal(far.poison,undefined);assert.equal(dead.poison,undefined);
+ assert.equal(s.l.fxQ.length,1);assert.equal(s.l.fxQ[0].s,s.A0.m[94].hit);
+ assert.equal(s.l.fxQ[0].x,near.x);assert.equal(s.l.fxQ[0].y,near.y-14);
+ s.b7(69,.1);assert.equal(s.l.fxQ.length,1,'no contact between aura pulses');
+ s.o.lowFx=true;s.b7(69,.6);assert.equal(s.l.fxQ.length,2);assert.equal(near.poisonDmg,60);
+ s.l.quiet=true;s.b7(69,.6);assert.equal(s.l.fxQ.length,2);assert.equal(near.poisonDmg,90,'hidden FX keeps original poison stacking');
+ near.x=400;s.l.quiet=false;s.b7(69,.6);assert.equal(s.l.fxQ.length,2,'leaving the aura stops contacts');
+});

@@ -224,34 +224,12 @@ test("GM finds real level 90 skills for every faction, preserves learning progre
   s.o.fac = "vo0";
   assert.throws(() => s.gameMaster.grant("learn90"), /gia nhập/);
 });
-test("GM grants two independent original Can Khon rings with +2 all skills and rejects insufficient inventory space", () => {
+test("Can Khon ring grant moved out of GM into the equipment NPC", () => {
   const s = game();
-  const catalog = {};
-  catalog.window = catalog;
-  for (const file of ["data.js", "setvi.js"])
-    vm.runInNewContext(fs.readFileSync(path.join(ROOT, file), "utf8"), catalog);
-  s.S = catalog.JX;
-  for (const name of ["Pn", "Ta"])
-    vm.runInContext(declaration("app/gameplay/crafting-01.js", name), s);
-  s.gameMaster.grant("rings");
-  assert.equal(s.o.inv.length, 2);
-  assert.notEqual(s.o.inv[0].uid, s.o.inv[1].uid);
-  for (const ring of s.o.inv) {
-    assert.equal(ring.n, "Càn Khôn Giới Chỉ");
-    assert.equal(ring.ic, "img/i/g44.png");
-    assert.equal(ring.lvl, 10);
-    assert.equal(ring.s, 0);
-    assert.equal(ring.lock, true);
-    assert.equal(ring.set.kind, "gold");
-    assert.equal(ring.req.find(([kind]) => kind === 36)[1], 60);
-    assert.equal(ring.mag.find((m) => m.a === 139).p[0], 2);
-  }
-  assert.notEqual(s.o.inv[0].mag, s.o.inv[1].mag);
-  assert.equal(s.saved.at(-1).inv.length, 2);
-  const uid = s.o.uid;
-  assert.throws(() => s.gameMaster.grant("rings"), /2 ô trống/);
-  assert.equal(s.o.inv.length, 2);
-  assert.equal(s.o.uid, uid);
+  const panel = s.nodes.find(node => node.id === "gm-panel");
+  assert.doesNotMatch(panel.innerHTML, /data-gm="rings"/);
+  assert.throws(() => s.gameMaster.grant("rings"), /không hợp lệ/);
+  assert.equal(s.o.inv.length, 0);
 });
 test("production has no GM controls or grants, while previously earned chests remain usable", () => {
   const s = game(false);

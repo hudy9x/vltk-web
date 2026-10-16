@@ -16,7 +16,7 @@ function game(arena = false) {
   s.m = selector => {
     if (selector === '#arena') return { addEventListener(type, fn) { s.tap = fn; }, getBoundingClientRect: () => ({ left: 0, top: 0 }) };
     if (selector === '#combat-sandbox') return { appendChild(button) { s.shortcut = button; } };
-    if (!nodes.has(selector)) nodes.set(selector, { querySelector: () => ({}), innerHTML: '' });
+    if (!nodes.has(selector)) nodes.set(selector, { querySelector: () => ({ focus() {} }), innerHTML: '' });
     return nodes.get(selector);
   };
   s.o = { fac: 'shaolin', sex: 0, inv: [], uid: 10 };
@@ -27,9 +27,12 @@ function game(arena = false) {
   s.J = (html, mount) => { s.html = html; mount(); };
   s.k = message => { s.toast = message; };
   s.$ = () => { s.saved = JSON.parse(JSON.stringify(s.o)); };
-  s.V = () => {};
+  s.V = () => {}; s.x1 = () => false;
   for (const [file, names] of [
     ['app/gameplay/equipment-01.js', ['k6']],
+    ['app/core/helpers-and-config-01.js', ['un', 'Wr']],
+    ['app/combat/skills-01.js', ['V2', 'G5', 's4']],
+    ['app/core/attributes-01.js', ['Y2', 'Dt']],
     ['app/gameplay/equipment-02.js', ['Mp', 'Hp', '$a']],
     ['app/gameplay/crafting-01.js', ['K1', 'V6', 'F6', 'cA']],
   ]) {
@@ -60,11 +63,11 @@ function inRange(actual, ranges) {
     assert.ok(value >= min && value <= max, `${value} outside ${min}..${max}`);
   });
 }
-test('blue catalog contains exactly eight level-10 slots, respects sex and allows all five elements', () => {
+test('blue catalog contains eight equipment slots and both weapon groups at level 10, respects sex and allows all five elements', () => {
   const s = game(), trader = s.equipmentTrader;
   for (const sex of [0, 1]) {
     const catalog = trader.blueCatalog(sex);
-    assert.deepEqual([...new Set(catalog.map(item => item.d))].sort(), [2,3,4,5,6,7,8,9]);
+    assert.deepEqual([...new Set(catalog.map(item => item.d))].sort(), [0,1,2,3,4,5,6,7,8,9]);
     assert.ok(catalog.every(item => item.lvl === 10 && (!item.req.some(([id, value]) => id === 38 && value >= 0 && value !== sex))));
     for (const item of catalog) for (let series = 0; series < 5; series++) {
       const pick = { ...selection(s, item, series), sex };
@@ -99,7 +102,7 @@ test('blue trades roll the selected lines within 90–100%, preserve templates, 
 });
 test('invalid selections and full inventories never award partial items or consume UIDs', () => {
   const s = game(), t = s.equipmentTrader, pick = selection(s), uid = s.o.uid;
-  for (const bad of [{ ...pick, kind: 'bad' }, { ...pick, sex: 2 }, { ...pick, series: 5 }, { ...pick, item: '0:0' }, { ...pick, lines: [] }, { ...pick, lines: [999999] }, { ...pick, lines: [pick.lines[0], pick.lines[0]] }]) assert.throws(() => t.trade(bad));
+  for (const bad of [{ ...pick, kind: 'bad' }, { ...pick, sex: 2 }, { ...pick, series: 5 }, { ...pick, item: '10:0' }, { ...pick, lines: [] }, { ...pick, lines: [999999] }, { ...pick, lines: [pick.lines[0], pick.lines[0]] }]) assert.throws(() => t.trade(bad));
   s.INV_MAX = 0;
   assert.throws(() => t.trade(pick), /ô trống/);
   assert.equal(s.o.inv.length, 0);
@@ -155,4 +158,89 @@ test('NPC can be placed, hidden and removed; arena mounts it and its shortcut; t
   assert.ok(prevented && stopped);
   npc.remove(); assert.equal(t.entities().length, 1);
   assert.equal(game().equipmentTrader.entities().length, 0);
+});
+test('NPC keeps its fixed boss019 sprite independently of player equipment and appearance', () => {
+  const s = game(), draws = [];
+  s.Jn = 1.35;
+  s.Va = (...args) => draws.push(args);
+  s.Jt = s.kf = s.bA = () => { throw new Error('NPC must not use player appearance or merchant image'); };
+  const context = new Proxy({ drawImage: (...args) => draws.push(args) }, { get: (obj, key) => obj[key] || (() => {}) });
+  const npc = s.equipmentTrader.place({ x: 300, y: 400 });
+  s.equipmentTrader.draw(context, npc);
+  s.o.sex = 1; s.o.fac = 'wudang'; s.o.eq = { armor: { n: 'New armor' }, weapon: { n: 'New weapon' } };
+  s.equipmentTrader.draw(context, npc);
+  assert.equal(draws.length, 2);
+  assert.deepEqual(draws[0], draws[1]);
+  assert.equal(draws[0][0], 'boss019');
+  assert.equal(draws[0][1], 'st');
+});
+test('all level-10 weapons build ten pieces that satisfy the real elemental activation rules', () => {
+  const s = game(), t = s.equipmentTrader;
+  for (const sex of [0, 1]) for (const weapon of t.blueCatalog(sex).filter(item => item.d <= 1)) for (let series = 0; series < 5; series++) {
+    const pick = { ...selection(s, weapon, series), sex };
+    const uid = s.o.uid;
+    const preview = t.compatiblePreview(pick);
+    assert.equal(s.o.uid, uid);
+    assert.equal(preview.length, 10);
+    const eq = Object.fromEntries(preview.map(entry => [entry.slot, entry.item]));
+    assert.equal(Object.keys(eq).length, 10);
+    assert.equal(eq.weapon.k, weapon.k); assert.equal(eq.weapon.d, weapon.d); assert.equal(eq.weapon.s, series);
+    for (const item of Object.values(eq)) {
+      assert.equal(item.lvl, 10);
+      assert.ok(item.req.every(([kind, value]) => kind !== 38 || value < 0 || value === sex));
+      assert.ok(item.req.every(([kind, value]) => kind !== 39 || value < 0 || value === s.I[s.o.fac].id));
+      assert.ok(s.Dt(item, eq) >= 2, `${item.n} / ${item.s}`);
+    }
+    s.o.inv = [];
+    const items = t.tradeCompatible(pick);
+    assert.equal(items.length, 10); assert.equal(s.saved.inv.length, 10);
+    assert.equal(new Set(items.map(item => item.uid)).size, 10);
+    const receivedEq = Object.fromEntries(preview.map((entry, i) => [entry.slot, items[i]]));
+    for (const item of items) {
+      assert.ok(s.Dt(item, receivedEq) >= 2);
+      assert.ok(item.lock);
+      const source = t.blueCatalog(sex).find(template => template.key === `${item.d}:${item.k}`);
+      item.mag.forEach((line, index) => inRange(line.p, t.affixes(source, item.s, index).find(entry => entry.a === line.a).p));
+    }
+    assert.deepEqual(Array.from(items[0].mag, line => line.a), Array.from(pick.lines));
+  }
+});
+test('compatible kits require a blue weapon and enough space, without partial rewards or UID consumption', () => {
+  const s = game(), t = s.equipmentTrader;
+  const weapon = t.blueCatalog(0).find(item => item.d === 0);
+  const pick = selection(s, weapon, 3);
+  s.INV_MAX = 9;
+  const uid = s.o.uid;
+  assert.throws(() => t.tradeCompatible(pick), /10 ô trống/);
+  assert.equal(s.o.uid, uid); assert.equal(s.o.inv.length, 0);
+  assert.throws(() => t.tradeCompatible(selection(s)), /vũ khí/);
+  assert.throws(() => t.tradeCompatible({ ...pick, kind: 'gold' }), /vũ khí/);
+  s.o.fac = null;
+  assert.throws(() => t.tradeCompatible(pick), /vào game/);
+});
+test('NPC grants two independent original Can Khon rings with +2 all skills and handles full inventory', () => {
+  const s = game(), t = s.equipmentTrader;
+  const items = t.grantRings();
+  assert.equal(items.length, 2); assert.notEqual(items[0].uid, items[1].uid);
+  for (const item of items) {
+    assert.equal(item.n, 'Càn Khôn Giới Chỉ'); assert.equal(item.ic, 'img/i/g44.png');
+    assert.equal(item.mag.find(line => line.a === 139).p[0], 2);
+    assert.equal(item.set.kind, 'gold'); assert.equal(item.lock, true);
+  }
+  assert.notEqual(items[0].mag, items[1].mag);
+  assert.equal(s.saved.inv.length, 2);
+  s.INV_MAX = 3;
+  const uid = s.o.uid;
+  assert.throws(() => t.grantRings(), /2 ô trống/);
+  assert.equal(s.o.uid, uid); assert.equal(s.o.inv.length, 2);
+});
+test('compatible action is visible only for blue weapons and rings are always offered by the NPC', () => {
+  const s = game(), t = s.equipmentTrader;
+  t.open();
+  assert.doesNotMatch(s.html, /data-trader-compatible/); assert.match(s.html, /data-trader-rings/);
+  const click = dataset => s.m('#mBody .equipment-trader').onclick({ target: { closest: () => ({ dataset }) } });
+  click({ traderChoice: 'slot', value: '0' });
+  assert.match(s.html, /data-trader-compatible/); assert.match(s.html, /Bộ ngũ hành tương thích/);
+  click({ traderKind: 'gold' });
+  assert.doesNotMatch(s.html, /data-trader-compatible/); assert.match(s.html, /data-trader-rings/);
 });

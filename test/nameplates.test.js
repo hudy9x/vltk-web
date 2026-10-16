@@ -37,6 +37,7 @@ function scene() {
     updateDamageLabels: noop, SP: noop, my: noop,
   };
   vm.createContext(s);
+  s.coldSpeedFactor = require('./helpers/combat-engine').loadCombatEngine(s, { bridge: false }).coldSpeedFactor;
   vm.runInContext(compileTypeScriptEntry('render/nameplates.ts', 'nameplateOffset').code, s);
   load(s, 'app/render/arena-01.js', 'L3');
   load(s, 'app/render/arena-01.js', 'IP');
