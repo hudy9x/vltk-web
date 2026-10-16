@@ -27,5 +27,6 @@ export { drawContactProjectile, drawContactProjectile as drawFallbackProjectile 
 export { SKILL_RANGE_Y_RATIO, skillCastDistance, skillIgnoresTerrain } from './config';
 export { spawnLotusImpact, LOTUS_IMPACT_RADIUS } from './impact-fields';
 export { actorActionLocked, beginActorCast, applyActorHurt, advanceActorActions, HURT_HP_FRACTION, HURT_SECONDS } from './action-state';
+export { applyPotionRecovery, advanceConsumableCooldowns } from './recovery';
 export { enqueueDamageLabel, updateDamageLabels, DAMAGE_LABEL_COLORS, DAMAGE_LABEL_LAYOUT } from './damage-labels';
 export type { CombatCast, CombatTarget, CombatSkill, SkillGeometry, ContactEffect, CastOptions, ContactHitHandler, ContactImpactHandler, WorldPoint } from './types';

@@ -20,6 +20,7 @@ var Td = function (A) {
       l.deadT <= 0 && ((l.life = n.life), (l.mana = n.mana), (o.wave = 1), Ga() || o8()));
     return;
   }
+  advanceConsumableCooldowns(l, A);
   if (
     ((l.life = Math.min(n.life, l.life + n.regen * A)),
     (l.mana = Math.min(n.mana, l.mana + n.manaRegen * A)),
@@ -35,10 +36,6 @@ var Td = function (A) {
   if (
     (l.slowT > 0 && (l.slowT -= A),
     l.stunT > 0 && (l.stunT -= A),
-    l.tpCd > 0 && (l.tpCd -= A),
-    l.potCd &&
-      ((l.potCd.life = Math.max(0, l.potCd.life - A)),
-      (l.potCd.mana = Math.max(0, l.potCd.mana - A))),
     Ab(A),
     cb(A),
     typeof Am == "function" && Am(A),

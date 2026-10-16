@@ -2844,6 +2844,12 @@
       ],
       "lines": 1,
       "global": "arenaSimulator"
+    },
+    {
+      "file": "gameplay/equipment-trader-01.js",
+      "symbols": [
+        "equipmentTrader"
+      ]
     }
   ]
 }
