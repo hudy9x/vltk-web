@@ -833,6 +833,8 @@ var xv = function (A, n) {
 };
 
 var Qf = function (A, n) {
+  const advanced = window.SKILL_150_TARGET_NAMES && window.SKILL_150_TARGET_NAMES[A];
+  if (advanced) return advanced;
   const t = Xf[A];
   if (t && T[t[1]]) return `${t[0]} (tầng ${t[2]} ${T[t[1]].n})`;
   if (A >= 1e3) return null;
@@ -844,6 +846,7 @@ var Qf = function (A, n) {
 
 var Bv = function (A) {
   const n = [];
+  const detail = T[A].tier === 150 && window.SKILL_150_DETAILS && window.SKILL_150_DETAILS[A];
   for (const t in T) {
     const e = T[t];
     if (!(!e.attr || (e.f && e.f !== T[A].f))) {
@@ -852,7 +855,8 @@ var Bv = function (A) {
           const i = o.sk[t] ? o.sk[t] + z1(+t) : 0,
             r = b0(e, a, Math.max(1, i));
           if (!r || !r[2] || /\(##\)/.test(e.n) || e.req <= 0) continue;
-          const c = Xf[+r[0]];
+          const child = detail && detail.support.find(link => link.id === +t && link.target === +r[0] && link.target !== +A);
+          const c = Xf[+r[0]] || (child ? [detail.name, +A, 2] : null);
           +r[0] == +A
             ? n.push([e.n, i, i ? r[2] : 0, r[2]])
             : c &&

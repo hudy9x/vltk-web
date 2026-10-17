@@ -517,6 +517,10 @@
       "lines": 504
     },
     {
+      "file": "data/skill-150-details-01.js",
+      "symbols": []
+    },
+    {
       "file": "core/attributes-01.js",
       "symbols": [
         "ut",
@@ -1632,6 +1636,10 @@
         "Bv"
       ],
       "lines": 865
+    },
+    {
+      "file": "ui/skill-150-effects-01.js",
+      "symbols": ["skill150EffectRows"]
     },
     {
       "file": "ui/legacy-panels-and-audio-02.js",
