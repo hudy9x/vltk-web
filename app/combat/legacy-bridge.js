@@ -26,6 +26,9 @@ var coldSpeedFactor = CombatEngine.coldSpeedFactor;
 // Feed raw damage and the recipient into the display queue, after HP is resolved.
 var showDamageNumber = function (target, amount, kind = "phys", critical = false, suffix = "") {
   return CombatEngine.enqueueDamageLabel(l.txt || (l.txt = []), target, amount, kind,
-    { critical, suffix, quiet: l.quiet, lowFx: o.lowFx, context: typeof W !== "undefined" ? W : undefined });
+    { critical, suffix, quiet: l.quiet, lowFx: o.lowFx, context: typeof W !== "undefined" ? W : undefined,
+      priority: typeof v !== "undefined" && target === v ? 3 : target === l.tgt || target === l.manTgt ? 2 : target.cls === "boss" ? 1 : 0,
+      viewport: typeof B0 !== "undefined" && typeof M0 !== "undefined"
+        ? { x: B0.x, y: B0.y, width: M0.w, height: M0.h } : undefined });
 };
 var updateDamageLabels = CombatEngine.updateDamageLabels;
