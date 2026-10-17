@@ -181,10 +181,8 @@
     "icon": "img/s/1059.png",
     "assets": [
       "img/s/1059.png",
-      "fx/advanced/m349_fly.webp",
-      "fx/advanced/m349_flyb.webp",
-      "fx/advanced/m349_hit.webp",
-      "fx/advanced/m349_hitb.webp"
+      "fx/advanced/m350_fly.webp",
+      "fx/advanced/m350_hit.webp"
     ]
   },
   "1060": {
@@ -196,8 +194,10 @@
     "icon": "img/s/1060.png",
     "assets": [
       "img/s/1060.png",
-      "fx/advanced/m350_fly.webp",
-      "fx/advanced/m350_hit.webp"
+      "fx/advanced/m349_fly.webp",
+      "fx/advanced/m349_flyb.webp",
+      "fx/advanced/m349_hit.webp",
+      "fx/advanced/m349_hitb.webp"
     ]
   },
   "1061": {
@@ -307,7 +307,8 @@
     "icon": "img/s/1067.png",
     "assets": [
       "img/s/1067.png",
-      "fx/advanced/m329_fly.webp"
+      "fx/advanced/m329_fly.webp",
+      "fx/advanced/m357_fly.webp"
     ]
   },
   "1069": {
