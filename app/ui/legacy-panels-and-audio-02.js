@@ -73,7 +73,8 @@ var Kf = function (A, n, t, e, a, i) {
       `Cấp yêu cầu: ${r.req}${r.tier === 90 && v0() > 0 ? " (đã chuyển sinh: không cần)" : ""}`,
     ]),
     g.push(["b", `Cấp kỹ năng: ${n}/${r.max}${t ? ` (+${t} từ trang bị → ${e})` : ""}`]),
-    r.tier === 90 && g.push(["g", D7(A)]),
+    r.book && !n && g.push(["b", `Lĩnh ngộ: ${typeof Fi === "object" && Fi[r.book] || `Bí Kíp ${r.tier}`}`]),
+    [90, 150].includes(r.tier) && g.push(["g", D7(A)]),
     g.push(["sep"]),
     g.push(["tt", e ? `Cấp hiện tại: ${e}` : "Cấp 1 (chưa học)"]));
   for (const p of h(a)) g.push(["m", p]);
@@ -159,10 +160,12 @@ var R8 = function s(A) {
   J(
     Kf(A, t, e, a, r, c) +
       `
-    <div class="btnrow">${i && a ? '<button class="btn" id="skMain">Chọn làm chiêu chính</button>' : ""}<button class="btn" id="skPlus" ${Q1(n) && !locked90 ? "" : "disabled"}>+ Cộng điểm</button><button class="btn red" id="skMinus" ${t && !locked90 ? "" : "disabled"}>− Rút điểm</button></div>
+    <div class="btnrow">${i && a ? '<button class="btn" id="skMain">Chọn làm chiêu chính</button>' : ""}<button class="btn" id="skPlus" ${Q1(n) && !locked90 ? "" : "disabled"}>${[90, 150].includes(n.tier) && !SA(A) ? "Lĩnh ngộ" : "+ Cộng điểm"}</button><button class="btn red" id="skMinus" ${t && !locked90 ? "" : "disabled"}>− Rút điểm</button>${[90, 150].includes(n.tier) && t && _4(A) && N("misc", "dtbk") > 0 ? '<button class="btn" id="skMaster">📕 Đại Thành</button>' : ""}</div>
     <div class="btnrow"><button class="btn" id="skMax" ${Q1(n) && !locked90 ? "" : "disabled"}>Cộng tối đa</button><button class="btn red" id="skClear" ${t && !locked90 ? "" : "disabled"}>Xóa hết điểm</button></div>`,
     () => {
       n6(m("#mBody"));
+      const master = m("#skMaster");
+      master && (master.onclick = () => { h6(A); s(A); });
       const d = m("#skMain");
       (d &&
         (d.onclick = () => {
@@ -219,7 +222,7 @@ var Zn = function s() {
         d = r ? z1(a) : 0,
         f = c && r ? F2(l.P, i, r + d) : null;
       return `<div class="skl${W2(i) ? "" : " lock"}${l.P.main.id === +a ? " main" : ""}" data-id="${a}">
-      <img class="sic" src="${D(i.ic || "")}" alt=""><div class="info"><b>${D(i.n)}</b>${i.book && !P4(i) ? ' <small class="reqbad">cần Bí Kíp 90</small>' : ""}${i.tier === 90 && r && r < i.max && N("misc", "dtbk") > 0 && _4(a) ? ` <button class="btn sm" data-dt="${a}">📕</button>` : ""}</div>
+      <img class="sic" src="${D(i.ic || "")}" alt=""><div class="info"><b>${D(i.n)}</b>${i.book && !P4(i) ? ` <small class="reqbad">cần ${D(Fi[i.book])}</small>` : ""}${[90, 150].includes(i.tier) && r && r < i.max && N("misc", "dtbk") > 0 && _4(a) ? ` <button class="btn sm" data-dt="${a}">📕</button>` : ""}</div>
       <span class="lvl">${d ? `<b class="skb" title="Cấp hiệu lực = ${r} + ${d} từ trang bị">${r + d}</b><small>/${i.max} (${r}+${d})</small>` : `${r}/${i.max}`}</span><span class="pm"><button class="plus" data-id="${a}" title="Cộng 1 điểm" ${Q1(i) ? "" : "disabled"}>+</button><button class="minus" data-id="${a}" title="Rút lại 1 điểm" ${r > 0 ? "" : "disabled"}>−</button><button class="skinfo" data-id="${a}" title="Thông tin kỹ năng">i</button></span>
       </div>`;
     })

@@ -189,7 +189,7 @@ var ja = function (A, n, t, e, a, i, r) {
 var hs = function (A, n) {
   const trace = typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.step : null;
   ((n.aggro = !0),
-    A && A.id && T[A.id] && T[A.id].tier === 90 && ((n.hitSk || (n.hitSk = {}))[A.id] = 1));
+    A && A.id && T[A.id] && [90, 150].includes(T[A.id].tier) && ((n.hitSk || (n.hitSk = {}))[A.id] = 1));
   const t = typeof Rn == "function" ? Rn(n) : null;
   if (
     A.useAR &&

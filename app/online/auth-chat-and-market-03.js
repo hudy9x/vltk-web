@@ -555,7 +555,7 @@ var Rg = async function () {
             (e > 0 ? Do : 0) +
             Math.min(Math.max(0, o.bonusSkp | 0), 15 + 15 * e),
           i = Object.keys(o.sk).reduce(
-            (r, c) => r + (T[c] && T[c].tier === 90 ? 1 : o.sk[c] | 0),
+            (r, c) => r + (T[c] && [90, 150].includes(T[c].tier) && !SA(c) ? 0 : o.sk[c] | 0),
             0,
           );
         (o.skPts | 0) > Math.max(0, a - i) && (o.skPts = Math.max(0, a - i));

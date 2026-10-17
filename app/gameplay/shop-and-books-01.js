@@ -1,7 +1,7 @@
 // gameplay/shop-and-books — shared IIFE scope; order is defined in modules.json.
 var P4 = (s) =>
   !s.book ||
-  v0() > 0 ||
+  (s.tier === 90 && v0() > 0) ||
   (o.sk[s.id] || 0) > 0 ||
   !!(o.bkOk && o.bkOk[s.id]) ||
   (typeof N == "function" && N("misc", s.book) > 0);
@@ -497,11 +497,17 @@ var l6 = function (A, n) {
     (n0(!0), (typeof zn == "function" && zn() ? mi : fA)("skill"));
   };
   if (A === "dtbk") {
-    (t(), k("Bấm 📕 ở võ công 90 đã học để đại thành cấp 20"));
+    (t(), k("Bấm 📕 ở võ công 90 hoặc 150 đã học để luyện đến cấp tối đa"));
     return;
   }
   if (A === "mt90") {
     (t(), k("Bấm + ở võ công 90 để lĩnh ngộ (không tốn điểm)"));
+    return;
+  }
+  if (A === "mt120" || A === "mt150") {
+    t();
+    k(A === "mt120" ? "Bấm + ở chiêu 120 để lĩnh ngộ bằng Bí Kíp 120, sau đó cộng điểm kỹ năng"
+      : "Bấm + ở chiêu 150 để lĩnh ngộ bằng Bí Kíp 150, sau đó rèn luyện hoặc dùng Đại Thành Bí Kíp");
     return;
   }
   if (A === "ldt") return (f2(!1), iA());
@@ -660,7 +666,7 @@ var _4 = function (A) {
     t = o && I[o.fac];
   return !!(
     n &&
-    n.tier === 90 &&
+    [90, 150].includes(n.tier) &&
     t &&
     (t.skills || []).some((e) => +e == +A) &&
     (o.sk[A] | 0) >= 1 &&
@@ -675,7 +681,7 @@ var h6 = function (A) {
   const n = T[A];
   if (!n || N("misc", "dtbk") < 1) return;
   if (!_4(A)) {
-    k("Phải học võ công 90 này trước mới dùng được Đại Thành Bí Kíp");
+    k("Phải học võ công 90 hoặc 150 này trước mới dùng được Đại Thành Bí Kíp");
     return;
   }
   const t = va(),
@@ -752,8 +758,8 @@ var iA = function s() {
         const t = es(n),
           e = n.can ? ` · đã dùng ${pn(n.k)}/${XA(n.k)}${Bt() ? "" : " · cần cấp 80"}` : "",
           a =
-            n.k === "mt90"
-              ? N("misc", "bk90")
+            ts[n.k]
+              ? N("misc", ts[n.k])
               : n.k === "dtbk"
                 ? N("misc", "dtbk")
                 : n.k === "ldp"
@@ -799,7 +805,7 @@ var iA = function s() {
       const a = m("#ktcDtbk");
       a &&
         (a.onclick = () => {
-          (n0(!0), fA("skill"), k("Bấm 📕 ở võ công 90 đã học để đại thành cấp 20"));
+          (n0(!0), fA("skill"), k("Bấm 📕 ở võ công 90 hoặc 150 đã học để luyện đến cấp tối đa"));
         });
       const i = m("#ktcRngua");
       i &&
@@ -840,7 +846,7 @@ var As = function () {
       .join("");
   J(
     `<h3>Đổi môn phái <small>${A} Lệnh Bài Đổi Phái</small></h3>
-    <p class="desc">Dùng 1 Lệnh Bài Đổi Phái: chuyển sang phái mới (đổi cả hệ ngũ hành nếu khác hệ). <b>Giữ</b> cấp, tiềm năng, trang bị, cấp võ công 90 đã luyện; <b>hoàn lại toàn bộ điểm kỹ năng</b> để học võ công phái mới; nhận chiêu nhập môn + vũ khí phái mới.</p>
+    <p class="desc">Dùng 1 Lệnh Bài Đổi Phái: chuyển sang phái mới (đổi cả hệ ngũ hành nếu khác hệ). <b>Giữ</b> cấp, tiềm năng, trang bị, tiến độ võ công 90 và 150 đã luyện; <b>hoàn lại điểm kỹ năng đã cộng</b> để học võ công phái mới; nhận chiêu nhập môn + vũ khí phái mới.</p>
     ${A ? "" : '<p class="bad small">Chưa có Lệnh Bài Đổi Phái — mua ở Kỳ Trân Các.</p>'}<div class="facpick">${n}</div>`,
     () => {
       document.querySelectorAll("#mBody [data-dp]").forEach(

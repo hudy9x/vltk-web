@@ -11,7 +11,7 @@ var N7 = function (A) {
   const e = o.bkOk || (o.bkOk = {});
   for (const c in o.sk)
     (T[c] && T[c].book && (e[c] = 1),
-      (o.skPts += T[c] && T[c].tier === 90 && !(typeof SA == "function" && SA(c)) ? 0 : o.sk[c]));
+      (o.skPts += m4(T[c]) ? 0 : o.sk[c]));
   ((o.sk = {}),
     (o.fac = A),
     (o.main = 0),
@@ -322,6 +322,22 @@ var J0 = [
     use: () => (U("misc", "bk90", 1), "Nhận 1 Bí Kíp 90"),
   },
   {
+    k: "mt120",
+    n: "Bí Kíp 120",
+    ic: "img/ep/mt90.png",
+    knb: 5000, kx: 1,
+    d: "Lĩnh ngộ 1 chiêu hỗ trợ cấp 120, sau đó tăng bằng điểm kỹ năng",
+    use: () => (U("misc", "bk120", 1), "Nhận 1 Bí Kíp 120"),
+  },
+  {
+    k: "mt150",
+    n: "Bí Kíp 150",
+    ic: "img/ep/mt90.png",
+    knb: 5000, kx: 1,
+    d: "Lĩnh ngộ 1 chiêu cấp 150 ở cấp 1; tăng cấp qua rèn luyện hoặc Đại Thành Bí Kíp",
+    use: () => (U("misc", "bk150", 1), "Nhận 1 Bí Kíp 150"),
+  },
+  {
     k: "vlmt",
     n: "Võ Lâm Mật Tịch",
     ic: "img/ep/mt90.png",
@@ -379,7 +395,7 @@ var J0 = [
     n: "Đại Thành Bí Kíp",
     ic: "img/ep/dtbk.png",
     knb: 25,
-    d: "Đưa 1 võ công 90 đã học lên cấp 20 ngay, không cần luyện (dùng ở thẻ Võ công)",
+    d: "Luyện tối đa 1 võ công đã học: cấp 90 lên 20, cấp 150 lên 25 (dùng ở thẻ Võ công)",
     use: () => (U("misc", "dtbk", 1), "Nhận 1 Đại Thành Bí Kíp"),
   },
 ];

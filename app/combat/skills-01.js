@@ -542,7 +542,7 @@ var J2 = (s) => (s >= 0 ? "+" : "") + (s * 100).toFixed(1) + "%";
 
 var g4 = (s) => (s >= 0 ? "+" : "") + Math.round(s);
 
-var m4 = (s) => !!s && s.tier === 90 && !(typeof SA == "function" && SA(s.id));
+var m4 = (s) => !!s && [90, 150].includes(s.tier) && !(typeof SA == "function" && SA(s.id));
 
 var W2 = (s) => !!s && (o.lvl >= s.req || (s.tier === 90 && v0() > 0));
 
@@ -615,11 +615,11 @@ var Z2 = function (A) {
 var Ri = function () {
   const A = Object.values(o.attr).reduce((t, e) => t + e, 0),
     n = Object.keys(o.sk).reduce(
-      (t, e) => t + (T[e] && T[e].tier === 90 && !SA(e) ? 0 : o.sk[e]),
+      (t, e) => t + (m4(T[e]) ? 0 : o.sk[e]),
       0,
     );
   J(
-    `<h3>Tẩy Tủy</h3><p class="desc">Trả lại điểm đã cộng để phân phối lại. Miễn phí, dùng bao nhiêu lần cũng được. Võ công 90 lĩnh ngộ bằng Bí Kíp 90 được giữ nguyên cấp; mọi võ công khác hoàn lại toàn bộ điểm.</p>
+    `<h3>Tẩy Tủy</h3><p class="desc">Trả lại điểm đã cộng để phân phối lại. Miễn phí, dùng bao nhiêu lần cũng được. Võ công 90 và 150 đã rèn luyện được giữ nguyên cấp; mọi võ công cộng điểm, gồm cấp 120, hoàn lại toàn bộ điểm.</p>
     <div class="card stats"><span>Tiềm năng đã cộng</span><span>${A}</span><span>Điểm kỹ năng đã cộng</span><span>${Math.max(0, n)}</span></div>
     <div class="btnrow"><button class="btn" id="ttA" ${A ? "" : "disabled"}>Tẩy tiềm năng</button><button class="btn" id="ttS" ${n > 0 ? "" : "disabled"}>Tẩy kỹ năng</button><button class="btn" id="ttAll" ${A || n > 0 ? "" : "disabled"}>Tẩy cả hai</button></div>`,
     () => {
@@ -638,7 +638,7 @@ var p4 = function (A, n) {
       a = {};
     for (const i in o.sk)
       (T[i] && T[i].book && (e[i] = 1),
-        T[i] && T[i].tier === 90 && !SA(i) ? (a[i] = o.sk[i]) : (o.skPts += o.sk[i]));
+        m4(T[i]) ? (a[i] = o.sk[i]) : (o.skPts += o.sk[i]));
     ((o.sk = a), (o.main = 0), (o.mainLock = !1), (o.slots = [0, 0, 0, 0]));
   }
   ((l.dirty = !0),
@@ -659,9 +659,11 @@ var p4 = function (A, n) {
 var Yi = function (A) {
   const n = T[A];
   if (!n || !Q1(n)) return !1;
-  if ((l.sim || Z2(A), m4(n) || o.skPts--, n.tier === 90 && !SA(A))) {
+  if (!l.sim && !unlockSkillBook(A)) return !1;
+  if ((m4(n) || o.skPts--, m4(n))) {
     const t = va();
     ((o.sk[A] = Math.max(1, t[A] ? t[A].lv : 1)), t[A] || (t[A] = { lv: 1, xp: 0 }));
+    n.tier === 150 && (o.sk150Training = 1);
   } else o.sk[A] = (o.sk[A] || 0) + 1;
   return !0;
 };
@@ -697,7 +699,7 @@ var Z5 = function (A, n, t) {
   const e = va();
   for (const a in o.sk) {
     const i = T[a];
-    if (!i || i.tier !== 90 || !o.sk[a] || ee[a] || !w7(a, t)) continue;
+    if (!m4(i) || !o.sk[a] || ee[a] || !w7(a, t)) continue;
     const r = e[a] || (e[a] = { lv: o.sk[a], xp: 0 });
     if (!(r.lv >= i.max)) {
       for (r.xp += A; r.lv < i.max && r.xp >= v4(r.lv);)
@@ -720,7 +722,7 @@ var p7 = function (A) {
 var D7 = function (A) {
   const n = T[A],
     t = va()[A];
-  if (!n || n.tier !== 90) return "";
+  if (!n || ![90, 150].includes(n.tier)) return "";
   if (ee[A]) {
     const e = ee[A].filter((a) => T[a]);
     return `Không luyện: cộng điểm kỹ năng, tối đa cấp ${D4(A)} (tất cả chiêu hỗ trợ đạt 5 → 1, mỗi lần tất cả +1 → +1, tất cả 20 → 20) · ${e.map((a) => `${T[a].n} ${o.sk[a] || 0}`).join(", ")}`;
@@ -732,7 +734,7 @@ var D7 = function (A) {
     : `Luyện ${t.xp}/${v4(t.lv)}`;
 };
 
-var Fi = { bk90: "Bí Kíp 90" };
+var Fi = { bk90: "Bí Kíp 90", bk120: "Bí Kíp 120", bk150: "Bí Kíp 150" };
 
 (function () {
   for (const A of Object.values(T))

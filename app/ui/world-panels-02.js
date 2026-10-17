@@ -524,7 +524,7 @@ var XB = (s) =>
 
 var e5 = [
   ["Tiện ích", ["knb", "tt", "tsbl", "bch", "ldt"]],
-  ["Quý hiếm", ["rht", "rda", "mt90", "dtbk", "vlmt", "ttk"]],
+  ["Quý hiếm", ["rht", "rda", "mt90", "mt120", "mt150", "dtbk", "vlmt", "ttk"]],
   ["Đặc biệt", ["ldp", "dgt"]],
   ["Thú cưỡi", ["rngua"]],
 ];
