@@ -9,9 +9,11 @@ var combatSandbox = (function () {
   const profiles = {};
   let activeFaction = null;
   let stored = {};
-  let options = { monster: 0, count: 3, stationary: false, level: null, rarity: "all", monsterRarity: "normal", showHealth: false, oneDamage: true };
+  const healthOptions = [100_000, 1_000_000, 10_000_000, 100_000_000];
+  let options = { monster: 0, count: 3, health: 100_000, stationary: false, level: null, rarity: "all", monsterRarity: "normal", showHealth: false, oneDamage: true };
   try { stored = JSON.parse(localStorage.getItem(key) || "{}"); } catch {}
   try { Object.assign(options, JSON.parse(localStorage.getItem(optionsKey) || "{}")); } catch {}
+  if (!healthOptions.includes(+options.health)) options.health = 100_000;
   function createProfile(faction) {
     const state = I3();
     Object.assign(state, {
@@ -74,9 +76,10 @@ var combatSandbox = (function () {
     l.hurtT = 0.15;
     showDamageNumber(v, before - l.life);
   };
-  function clearCombat() {
+  function clearCombat(preserveSims = true) {
     pendingRespawns.clear(); spawnPlans = [];
-    for (const field of ["enemies", "corpses", "ground", "fx", "fxQ", "combatProjectiles", "traps", "allies", "txt"]) l[field] = [];
+    l.enemies = preserveSims ? l.enemies.filter(actor => actor.arenaSim && !actor.dead && actor.hp > 0) : [];
+    for (const field of ["corpses", "ground", "fx", "fxQ", "combatProjectiles", "traps", "allies", "txt"]) l[field] = [];
     for (const field of ["manTgt", "tgt", "moveTo", "pickTarget", "clickedTarget", "dash", "dashTrail"]) l[field] = null;
     for (const field of ["atkT", "deadT", "stunT", "slowT", "hpDotT", "hpDot", "hurtT", "stall", "spawnT"]) l[field] = 0;
     l.skCd = {}; l.clickHold = false; Y.target = null; Y.active = false; Y.keys = {};
@@ -84,7 +87,7 @@ var combatSandbox = (function () {
   function createMonster(plan, slot) {
     const monster = n1(plan.id, plan.level, plan.rarity === "normal" ? "normal" : "boss", plan.x, plan.y);
     if (plan.rarity === "gold") { monster.goldBoss = true; monster.n = "Trùm Hoàng Kim · " + r0[plan.id].n; }
-    Object.assign(monster, { hp: 100_000, max: 100_000, nativeDamage: monster.dmg, dmg: options.oneDamage ? 1 : monster.dmg, arenaMonster: true, arenaSlot: slot, spd: plan.stationary ? 0 : monster.spd });
+    Object.assign(monster, { hp: plan.health, max: plan.health, nativeDamage: monster.dmg, dmg: options.oneDamage ? 1 : monster.dmg, arenaMonster: true, arenaSlot: slot, spd: plan.stationary ? 0 : monster.spd });
     return monster;
   }
   function setOneDamage(enabled) {
@@ -96,15 +99,29 @@ var combatSandbox = (function () {
     arenaTime += dt;
     l.enemies = l.enemies.filter(monster => !monster.arenaMonster || !monster.dead);
     if (l.town) return;
+    const occupied = new Set(l.enemies.filter(monster => monster.arenaMonster && monster.hp > 0).map(monster => monster.arenaSlot));
     for (const [slot, due] of pendingRespawns) {
       if (arenaTime + 1e-9 < due) continue;
-      if (spawnPlans[slot] && !l.enemies.some(monster => monster.arenaMonster && monster.arenaSlot === slot && monster.hp > 0))
-        l.enemies.push(createMonster(spawnPlans[slot], slot));
+      if (spawnPlans[slot] && !occupied.has(slot)) {
+        l.enemies.push(createMonster(spawnPlans[slot], slot)); occupied.add(slot);
+      }
       pendingRespawns.delete(slot);
     }
   }
   function healthLabel(monster) {
     return options.showHealth && monster.arenaMonster ? ` · HP ${Math.max(0, Math.ceil(monster.hp)).toLocaleString("vi-VN")}/${monster.max.toLocaleString("vi-VN")}` : "";
+  }
+  function nearestTarget(monster) {
+    let nearest = l.life > 0 && !(l.deadT > 0) ? v : null;
+    const distance = actor => (actor.x - monster.x) ** 2 + ((actor.y - monster.y) * 2) ** 2;
+    let best = nearest ? distance(nearest) : Infinity;
+    const sims = typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.actors : l.enemies.filter(actor => actor.arenaSim);
+    for (const actor of sims) {
+      if (!actor.arenaSim || actor.dead || !(actor.hp > 0)) continue;
+      const value = distance(actor);
+      if (value < best) { best = value; nearest = actor; }
+    }
+    return nearest;
   }
   function selectSkill(id) {
     maxLevel90Skills(o);
@@ -133,7 +150,7 @@ var combatSandbox = (function () {
   function switchFaction(faction) {
     if (!profiles[faction]) throw new Error("Môn phái không hợp lệ.");
     if (activeFaction) $();
-    clearCombat();
+    clearCombat(false);
     HA = false; m0 = 0;
     o = v8(JSON.parse(JSON.stringify(profiles[faction])));
     maxLevel90Skills(o);
@@ -152,25 +169,42 @@ var combatSandbox = (function () {
     const selectedMonster = matching.find(entry => entry.id === options.monster && entry.rarity === options.monsterRarity) || matching[0];
     if (selectedMonster) spawnMonsters(selectedMonster.id, options.count, options.stationary, options.level, selectedMonster.rarity);
   }
-  function spawnMonsters(id, count, stationary, level = options.level, rarity = options.monsterRarity) {
+  function spawnMonsters(id, count, stationary, level = options.level, rarity = options.monsterRarity, health = options.health) {
     if (!r0[id]) throw new Error("Quái không hợp lệ.");
-    count = Math.max(1, Math.min(20, Math.floor(+count) || 1));
+    count = +count; health = +health;
+    if (!Number.isSafeInteger(count) || count < 1 || count > 10_000) throw new Error("Số lượng quái phải là số nguyên từ 1 đến 10.000.");
+    if (!healthOptions.includes(health)) throw new Error("Máu quái phải là 100k, 1m, 10m hoặc 100m.");
     rarity = ["normal", "boss", "gold"].includes(rarity) ? rarity : "normal";
     const entry = monsterCatalog.find(entry => entry.id === +id && entry.rarity === rarity);
     if (!entry) throw new Error("Loại quái không có trong dữ liệu.");
     const spawnLevel = level == null || level === "" ? (entry.ranges[0]?.[0] || 150) : Math.max(1, Math.min(200, Math.floor(+level) || 1));
     if (level != null && level !== "" && !entry.ranges.some(([lo, hi]) => spawnLevel >= lo && spawnLevel <= hi)) throw new Error("Quái không có ở cấp đã chọn.");
-    options = Object.assign({}, options, { monster: +id, count, stationary: !!stationary, level: level == null || level === "" ? null : spawnLevel, monsterRarity: rarity });
+    options = Object.assign({}, options, { monster: +id, count, health, stationary: !!stationary, level: level == null || level === "" ? null : spawnLevel, monsterRarity: rarity });
     localStorage.setItem(optionsKey, JSON.stringify(options));
     clearCombat();
     l.town = false;
+    // Divide the visible, walkable arena into scattered packs. No timers or waves:
+    // every requested body exists before this function returns, including stress loads.
+    const width = typeof M0 !== "undefined" && M0.w > 0 ? Math.min(M0.w, O0.w) : Math.min(900, O0.w);
+    const height = typeof M0 !== "undefined" && M0.h > 0 ? Math.min(M0.h, O0.h) : Math.min(600, O0.h);
+    const left = Math.max(0, Math.min(O0.w - width, v.x - width / 2));
+    const top = Math.max(0, Math.min(O0.h - height, v.y - height / 2));
+    const groups = Math.min(count, Math.max(4, Math.min(24, Math.ceil(count / 8))));
+    const columns = Math.min(groups, Math.max(1, Math.ceil(Math.sqrt(groups * width / height))));
+    const rows = Math.ceil(groups / columns);
+    const cellWidth = Math.max(1, width - 100) / columns, cellHeight = Math.max(1, height - 180) / rows;
     for (let index = 0; index < count; index++) {
-      const angle = index * Math.PI * 2 / count;
-      const [x, y] = X0(v.x + Math.cos(angle) * 160, v.y + Math.sin(angle) * 100);
-      const plan = { id: +id, level: spawnLevel, rarity, x, y, stationary: !!stationary };
+      const group = index % groups, member = Math.floor(index / groups);
+      const members = Math.ceil((count - group) / groups), angle = member * 2.399963 + group;
+      const spread = Math.sqrt((member + 0.5) / members) * 0.38;
+      const [x, y] = X0(left + 50 + (group % columns + 0.5 + Math.cos(angle) * spread) * cellWidth,
+        top + 130 + (Math.floor(group / columns) + 0.5 + Math.sin(angle) * spread) * cellHeight);
+      const plan = { id: +id, level: spawnLevel, rarity, health, x, y, stationary: !!stationary };
       spawnPlans.push(plan);
       l.enemies.push(createMonster(plan, index));
     }
+    panel.querySelector("#arena-count").value = count;
+    panel.querySelector("#arena-health").value = String(health);
     refreshPanel();
   }
   const panel = document.createElement("details");
@@ -199,7 +233,7 @@ var combatSandbox = (function () {
       (level == null || level === "" || entry.ranges.some(([lo, hi]) => +level >= lo && +level <= hi)) &&
       `${entry.id} ${entry.name}`.toLocaleLowerCase("vi").includes(query));
   }
-  panel.innerHTML = `<summary>Phòng test · 10 môn phái</summary><div class="arena-factions">${factions.map(faction => `<button type="button" data-faction="${faction.key}">${D(faction.n)}</button>`).join("")}</div><p id="arena-info"></p><div class="arena-skills"></div><label>Lọc quái <input id="arena-filter" placeholder="Tên hoặc ID quái"></label><label>Cấp quái <input id="arena-level" type="number" min="1" max="200" placeholder="Tất cả" value="${options.level || ""}" style="width:90px"></label><label>Độ hiếm <select id="arena-rarity"><option value="all">Tất cả</option><option value="normal">Thường</option><option value="boss">Boss</option><option value="gold">Hoàng Kim</option></select></label><label>Quái <select id="arena-monster"></select></label><label>Số lượng <input id="arena-count" type="number" min="1" max="20" value="${options.count}" style="width:65px"></label><label><input id="arena-still" type="checkbox" ${options.stationary ? "checked" : ""}> Quái đứng yên</label><button type="button" data-spawn>Tạo lại quái · 100k HP</button> <button type="button" data-clear>Xóa quái</button>`;
+  panel.innerHTML = `<summary>Phòng test · 10 môn phái</summary><div class="arena-factions">${factions.map(faction => `<button type="button" data-faction="${faction.key}">${D(faction.n)}</button>`).join("")}</div><p id="arena-info"></p><div class="arena-skills"></div><label>Lọc quái <input id="arena-filter" placeholder="Tên hoặc ID quái"></label><label>Cấp quái <input id="arena-level" type="number" min="1" max="200" placeholder="Tất cả" value="${options.level || ""}" style="width:90px"></label><label>Độ hiếm <select id="arena-rarity"><option value="all">Tất cả</option><option value="normal">Thường</option><option value="boss">Boss</option><option value="gold">Hoàng Kim</option></select></label><label>Quái <select id="arena-monster"></select></label><label>Số lượng (1–10.000) <input id="arena-count" type="number" min="1" max="10000" step="1" value="${options.count}" style="width:65px"></label><label>Máu quái <select id="arena-health"><option value="100000">100k HP</option><option value="1000000">1m HP</option><option value="10000000">10m HP</option><option value="100000000">100m HP</option></select></label><label><input id="arena-still" type="checkbox" ${options.stationary ? "checked" : ""}> Quái đứng yên</label><button type="button" data-spawn>Tạo lại quái</button> <button type="button" data-clear>Xóa quái</button>`;
   function refreshPanel() {
     if (!panel || !o || !I[o.fac]) return;
     panel.querySelectorAll("[data-faction]").forEach(button => button.classList.toggle("on", button.dataset.faction === o.fac));
@@ -215,7 +249,7 @@ var combatSandbox = (function () {
       else if (button.hasAttribute("data-spawn")) {
         const [id, rarity] = panel.querySelector("#arena-monster").value.split(":");
         if (!id) throw new Error("Không có quái phù hợp với bộ lọc.");
-        spawnMonsters(id, panel.querySelector("#arena-count").value, panel.querySelector("#arena-still").checked, panel.querySelector("#arena-level").value, rarity);
+        spawnMonsters(id, panel.querySelector("#arena-count").value, panel.querySelector("#arena-still").checked, panel.querySelector("#arena-level").value, rarity, panel.querySelector("#arena-health").value);
       }
       else if (button.hasAttribute("data-clear")) clearCombat();
     } catch (error) { k(error.message); }
@@ -262,5 +296,5 @@ var combatSandbox = (function () {
   let selected;
   try { selected = localStorage.getItem(selectionKey); } catch {}
   switchFaction(profiles[selected] ? selected : factions[0].key);
-  return { switchFaction, selectSkill, spawnMonsters, clearCombat, createProfile, filterMonsters, tick, healthLabel, setOneDamage, get oneDamage() { return options.oneDamage; } };
+  return { switchFaction, selectSkill, spawnMonsters, clearCombat, createProfile, filterMonsters, tick, healthLabel, setOneDamage, nearestTarget, get oneDamage() { return options.oneDamage; } };
 })();

@@ -10,6 +10,10 @@ declare function queueSkillContact(actor: LegacyEntity, target: LegacyEntity, sk
   hit: (target: LegacyEntity) => void, options: CastOptions): CombatCast;
 declare function spawnLotusImpact(actor: LegacyEntity, position: WorldPoint, skill: SimulatorSkill,
   hit: (target: LegacyEntity) => void, targets: () => LegacyEntity[]): CombatCast;
+declare function spawnSnowTrail(actor: LegacyEntity, target: LegacyEntity, skill: SimulatorSkill,
+  hit: (target: LegacyEntity) => void, targets: () => LegacyEntity[], speed: number): CombatCast;
+declare function b0(skill: LegacyRecord, attribute: string, level: number): number[] | null;
+declare var T: Record<string, LegacyRecord>, K3: number;
 declare function G3(actor: LegacyEntity, target: LegacyEntity, skill: SimulatorSkill): unknown;
 declare function showNhiepHonImpact(target: LegacyEntity, skill: SimulatorSkill): void;
 declare function eD(skill: SimulatorSkill, target: LegacyEntity, targets: LegacyEntity[], collided: LegacyEntity[],
@@ -27,7 +31,9 @@ export function castSimulatorSkill(actor: SimulatorActor, target: LegacyEntity, 
   valid: () => boolean, targets: () => LegacyEntity[],
   hit: SkillActorContext['hit'], withContext: SkillActorContext['visual']): CombatCast {
   const events = F5(input), lotus = +input.id! === 336 ? events.find(event => +event.sid === 382) : undefined;
+  const snow = +input.id! === 337 ? events.find(event => +event.sid === 338) : undefined;
   const skill = { ...input, ...(lotus ? { impactLotusHandled: true } : {}),
+    ...(snow ? { snowTrailHandled: true } : {}),
     ...(+input.id! === 339 ? { impactVisualTargets: new Set() } : {}) };
   const live = () => valid() ? targets() : [];
   const damage = (ability: SimulatorSkill, contact: LegacyEntity): number =>
@@ -36,7 +42,7 @@ export function castSimulatorSkill(actor: SimulatorActor, target: LegacyEntity, 
   const extra = withContext(() => l8(skill, target, skillCastDistance(actor, target),
     1 + (skill.geo ? nD(skill, target, live()).length : 0)));
   let triggered = false;
-  return queueSkillContact(actor, target, skill, contact => {
+  const cast = queueSkillContact(actor, target, skill, contact => {
     if (!valid() || !live().includes(contact)) return;
     const amount = damage(skill, contact);
     if (+skill.id! === 339 && amount > 0) withContext(() => showNhiepHonImpact(contact, skill));
@@ -58,4 +64,11 @@ export function castSimulatorSkill(actor: SimulatorActor, target: LegacyEntity, 
       }, live));
     } : undefined,
   });
+  if (snow) withContext(() => {
+    const ability = { ...skill, parts: S5(skill, snow), stun: snow.stun || 0, useAR: false, ev2: true, crit: 0 };
+    spawnSnowTrail(actor, target, ability, contact => {
+      if (!snow.chance || Math.random() < snow.chance) damage(ability, contact);
+    }, live, ((b0(T[skill.id!], 'missle_speed_v', skill.L || 1) || [30])[0] || 30) * K3);
+  });
+  return cast;
 }

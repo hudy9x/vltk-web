@@ -71,7 +71,7 @@ test('arena spawns the selected monster/count with 100k HP, exact one-point inco
   s.l.combatProjectiles=[{}];s.l.manTgt=s.l.enemies[0];s.Y.target={x:10,y:10};
   s.combatSandbox.switchFaction('wudang');
   assert.equal(s.l.combatProjectiles.length,0);assert.equal(s.l.manTgt,null);assert.equal(s.Y.target,null);
-  s.combatSandbox.spawnMonsters(1,500,false);assert.equal(s.l.enemies.length,20);assert.equal(s.l.enemies[0].spd,40);
+  s.combatSandbox.spawnMonsters(1,500,false);assert.equal(s.l.enemies.length,500);assert.equal(s.l.enemies[0].spd,40);
   assert.throws(()=>s.combatSandbox.spawnMonsters(999,1,false),/không hợp lệ/);
   const before=s.o.lvl;s.cD(s.l.enemies[0]);s.o8();assert.equal(s.o.lvl,before);
 });
@@ -227,13 +227,13 @@ test('PK checkbox cancellation invalidates existing contacts; enabled PK applies
   assert.equal(s.combatLog.entries()[0].amount,40);
   const event=s.arenaSimulator.events.at(-1);assert.equal(event.steps.at(-1).values.actualLoss,40);
 });
-test('removing or clearing SIM invalidates in-flight damage and never enables ordinary monster AI',()=>{
+test('explicit SIM removal cancels its damage while clearing monsters keeps other SIM alive',()=>{
   const s=simulatorGame(),sim=s.arenaSimulator.create('wudang');
   s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);
   const pending=s.l.combatProjectiles[0];s.arenaSimulator.remove();
   pending.combat.onHit(s.v);assert.equal(s.l.life,1000);
-  s.arenaSimulator.create('wudang');s.combatSandbox.clearCombat();s.combatSandbox.tick(.1);
-  assert.equal(s.arenaSimulator.actor,null);
+  const kept=s.arenaSimulator.create('wudang');s.combatSandbox.clearCombat();s.combatSandbox.tick(.1);
+  assert.equal(s.arenaSimulator.actor,kept);assert.ok(s.l.enemies.includes(kept));
   assert.ok(!s.l.enemies.includes(sim));
 });
 test('formula log is bounded, clearable and disabling logging does not disable attacks',()=>{
@@ -610,4 +610,118 @@ test('SIM animation follows its cold speed and returns to normal after expiry',(
  const context={fillStyle:'',beginPath(){},arc(){},fill(){}};
  s.applyColdSlow(actor,100,1);s.arenaSimulator.draw(context,actor,.2);assert.ok(Math.abs(elapsed-.15)<1e-12);
  actor.slowT=0;s.arenaSimulator.draw(context,actor,.2);assert.equal(elapsed,.2);
+});
+
+test('native hits hurt at fifteen percent after shields and further damage still lands during hurt',()=>{
+ const s=simulatorGame();loadDeclaration(s,'app/core/state-and-save-01.js','U9');
+ Object.assign(s,{Dw:['phys'],Yr:75,Pe:()=>100});s.l.life=1000;
+ const attacker={...s.l.enemies[0],dmg:150,ar:100,series:0};
+ s.l.P.sorb=50;s.U9(attacker);assert.equal(s.l.life,925);assert.ok(!(s.v.hurtT>0));
+ s.l.P.sorb=0;s.U9(attacker);assert.equal(s.l.life,775);assert.equal(s.v.hurtT,.5);
+ attacker.dmg=10;s.U9(attacker);assert.equal(s.l.life,765);assert.equal(s.v.act,'hurt');
+ advanceSimulator(s,.52);assert.ok(!(s.v.hurtT>0));
+ s.l.P.manaShield=100;s.l.mana=1000;attacker.dmg=200;s.U9(attacker);
+ assert.equal(s.l.life,765);assert.ok(!(s.v.hurtT>0));
+});
+
+test('real outgoing damage hurts monsters at fifteen percent but poison ticks remain independent',()=>{
+ const s=simulatorGame(),monster=s.l.enemies[0];Object.assign(monster,{hp:1000,max:1000,act:'at',animKey:'monster'});
+ s.hs({parts:{phys:149},crit:0,series:0,series5:0},monster);assert.ok(!(monster.hurtT>0));
+ s.hs({parts:{phys:150},crit:0,series:0,series5:0},monster);assert.equal(monster.hurtT,.5);assert.equal(monster.act,'hurt');
+ s.hs({parts:{phys:10},crit:0,series:0,series5:0},monster);assert.equal(monster.hp,691);
+ s.hs({parts:{poison:1000},crit:0,series:0,series5:0},monster);assert.equal(monster.hp,691);assert.equal(monster.poison,3);
+});
+
+test('SIM PK uses final HP damage for hurt and SIM cannot bypass hurt by switching modes',()=>{
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');actor.x=s.v.x;actor.y=s.v.y;
+ actor.stats.main.parts={phys:200};s.l.P.sorb=50;s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);advanceSimulator(s,.2);
+ assert.equal(s.l.life,900);assert.ok(!(s.v.hurtT>0));
+ advanceSimulator(s,.4);s.l.P.sorb=0;actor.cooldown=0;s.arenaSimulator.tick(.6);advanceSimulator(s,.2);
+ assert.equal(s.l.life,700);assert.ok(s.v.hurtT>0);assert.equal(s.v.act,'hurt');
+ const casts=actor.casts;s.applyActorHurt(actor,150,1000);
+ s.arenaSimulator.setPK(false);s.arenaSimulator.setFarm(true);s.arenaSimulator.tick(.1);
+ assert.equal(actor.casts,casts);assert.equal(actor.act,'hurt');advanceSimulator(s,.52);actor.cooldown=0;s.arenaSimulator.tick(.1);
+ assert.equal(actor.casts,casts+1);
+});
+
+test('replacing or clearing monsters preserves all SIM identities, profiles, HP and mode settings',()=>{
+ const s=simulatorGame(),one=s.arenaSimulator.create('wudang'),two=s.arenaSimulator.create('shaolin');
+ s.arenaSimulator.setFarm(true);two.hp=777;const profile=JSON.stringify(two.profile);
+ s.combatSandbox.spawnMonsters(1,75,false,145,'normal',1000000);
+ assert.equal(s.l.enemies.filter(e=>e.arenaMonster).length,75);assert.equal(s.arenaSimulator.actors.length,2);
+ assert.ok(s.l.enemies.includes(one)&&s.l.enemies.includes(two));assert.equal(two.hp,777);assert.equal(two.farm,true);
+ assert.equal(JSON.stringify(two.profile),profile);assert.equal(s.arenaSimulator.actor,two);
+ s.combatSandbox.tick(.1);assert.equal(s.arenaSimulator.actors.length,2);
+ s.combatSandbox.clearCombat();assert.equal(s.l.enemies.length,2);s.combatSandbox.tick(.1);
+ assert.equal(s.arenaSimulator.actors.length,2);
+});
+
+test('stress creation builds every requested monster synchronously and spreads packs over the viewport',()=>{
+ const s=game();s.M0={w:900,h:600};
+ s.combatSandbox.spawnMonsters(1,1000,true,145,'normal',10000000);
+ assert.equal(s.l.enemies.length,1000);assert.equal(new Set(s.l.enemies.map(e=>e.arenaSlot)).size,1000);
+ const xs=s.l.enemies.map(e=>e.x),ys=s.l.enemies.map(e=>e.y);
+ assert.ok(Math.max(...xs)-Math.min(...xs)>600);assert.ok(Math.max(...ys)-Math.min(...ys)>300);
+ assert.equal(new Set(s.l.enemies.map(e=>`${e.x}:${e.y}`)).size,1000);
+ assert.ok(s.l.enemies.every(e=>e.hp===10000000&&e.spd===0&&e.x>=0&&e.x<=1000&&e.y>=0&&e.y<=1000));
+ for(const e of s.l.enemies){e.hp=0;e.dead=true;s.cD(e);}s.combatSandbox.tick(3);
+ assert.equal(s.l.enemies.length,1000);assert.ok(s.l.enemies.every(e=>e.hp===10000000));
+});
+
+test('all four monster health options persist through respawn and restart, and the UI submits exact count and HP',()=>{
+ for(const health of [100000,1000000,10000000,100000000]){
+  const s=game();s.combatSandbox.spawnMonsters(1,3,true,145,'normal',health);
+  assert.ok(s.l.enemies.every(e=>e.hp===health&&e.max===health));
+  const dead=s.l.enemies[0];dead.hp=0;dead.dead=true;s.cD(dead);s.combatSandbox.tick(3);
+  assert.ok(s.l.enemies.every(e=>e.hp===health));const restored=game(true,s.entries);
+  assert.ok(restored.l.enemies.every(e=>e.hp===health));assert.equal(restored.fields.get('#arena-health').value,String(health));
+ }
+ const s=game(),panel=s.document.createElement('details');
+ s.fields.get('#arena-monster').value='1:normal';s.fields.get('#arena-level').value='145';
+ s.fields.get('#arena-count').value='125';s.fields.get('#arena-health').value='100000000';panel.querySelector('#arena-still').checked=true;
+ panel.onclick({target:{closest:()=>({dataset:{},hasAttribute:attr=>attr==='data-spawn'})}});
+ assert.equal(s.l.enemies.length,125);assert.ok(s.l.enemies.every(e=>e.hp===100000000));
+});
+
+test('invalid spawn counts and health never silently truncate or erase the current field',()=>{
+ const s=game(),before=s.l.enemies;
+ for(const count of [0,-1,1.5,NaN,Infinity,10001])assert.throws(()=>s.combatSandbox.spawnMonsters(1,count,false,145,'normal'),/Số lượng/);
+ assert.throws(()=>s.combatSandbox.spawnMonsters(1,10,false,145,'normal',123),/Máu quái/);
+ assert.equal(s.l.enemies,before);
+});
+
+test('arena monsters continuously choose the nearest living player or SIM, excluding dead SIM and ordinary monsters',()=>{
+ const s=simulatorGame(),one=s.arenaSimulator.create('wudang'),two=s.arenaSimulator.create('shaolin');
+ const monster=s.l.enemies.find(e=>e.arenaMonster);Object.assign(monster,{x:0,y:0});
+ Object.assign(s.v,{x:100,y:0});Object.assign(one,{x:30,y:0});Object.assign(two,{x:70,y:0});
+ assert.equal(s.combatSandbox.nearestTarget(monster),one);
+ one.x=150;assert.equal(s.combatSandbox.nearestTarget(monster),two);
+ s.v.x=20;assert.equal(s.combatSandbox.nearestTarget(monster),s.v);
+ s.l.life=0;assert.equal(s.combatSandbox.nearestTarget(monster),two);
+ two.hp=0;assert.equal(s.combatSandbox.nearestTarget(monster),one);
+ one.dead=true;assert.equal(s.combatSandbox.nearestTarget(monster),null);
+});
+
+test('native monster AI pursues its nearest SIM and damages it only at physical contact',()=>{
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang'),monster=s.l.enemies.find(e=>e.arenaMonster);
+ loadDeclaration(s,'app/core/state-and-save-01.js','$d');
+ Object.assign(s,{q0:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),ws:()=>.4});s.r0[monster.tid].anim='monster';
+ Object.assign(s.v,{x:400,y:0});Object.assign(actor,{x:40,y:0,r:17});
+ Object.assign(monster,{x:0,y:0,r:17,atkCd:0,reach:60,ranged:false,ar:100,cd:1});
+ let hits=0;s.arenaSimulator.receiveMonsterHit=(target,attacker)=>{assert.equal(target,actor);assert.equal(attacker,monster);target.hp-=10;hits++;};
+ s.$d(monster,.01);assert.equal(hits,0);advanceSimulator(s,.2);assert.equal(hits,1);assert.equal(actor.hp,990);assert.equal(s.l.life,1000);
+ actor.x=500;s.v.x=100;monster.castT=0;monster.atkCd=0;s.$d(monster,.01);
+ assert.equal(monster.face,1);assert.equal(monster.moving,true);assert.equal(monster.x,100,'native movement now follows the closer player');
+});
+
+test('monster hits on SIM reuse real defenses and transfer cold/poison without changing the player context',()=>{
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');loadDeclaration(s,'app/core/state-and-save-01.js','U9');
+ Object.assign(s,{Dw:['phys','cold','poison'],Yr:75,Pe:()=>100});
+ const attacker={...s.l.enemies.find(e=>e.arenaMonster),hp:100000,max:100000,dmg:100,ar:100,series:0,ranged:true};
+ const player=s.o,world=s.l,hero=s.v;actor.stats.sorb=80;
+ s.arenaSimulator.receiveMonsterHit(actor,attacker);assert.equal(actor.hp,980);assert.equal(s.l.life,1000);
+ actor.stats.sorb=0;attacker.series=1;s.arenaSimulator.receiveMonsterHit(actor,attacker);
+ assert.equal(actor.slowT,s.f8);assert.equal(actor.slowPower,.25);assert.ok(!(s.l.slowT>0));
+ attacker.series=2;s.arenaSimulator.receiveMonsterHit(actor,attacker);assert.equal(actor.poison,3);assert.equal(actor.poisonDmg,40/3);
+ assert.ok(!(s.l.hpDotT>0));assert.equal(s.o,player);assert.equal(s.l,world);assert.equal(s.v,hero);
 });

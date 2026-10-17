@@ -534,7 +534,7 @@ var hB = function (A, n) {
 var uB = function (A, n, t) {
   ((A.fillStyle = "#0007"), A.beginPath(), A.ellipse(n.x, n.y, 16, 6, 0, 0, 7), A.fill());
   const e = n.atT > 0 ? "at" : n.hurtT > 0 ? "hurt" : n.mv ? "run" : "st",
-    a = e === "at" ? (n.atD || 0.45) - n.atT : e === "hurt" ? 0.25 - n.hurtT : n.t,
+    a = e === "at" ? (n.atD || 0.45) - n.atT : e === "hurt" ? Math.max(0, 0.5 - n.hurtT) : n.t,
     i = Jt(n.f, n.s);
   n.gk = i && i.anim;
   let r = !1;

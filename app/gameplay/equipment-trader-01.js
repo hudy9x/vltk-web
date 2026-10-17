@@ -299,7 +299,7 @@ var equipmentTrader = (function () {
   `;
   document.head.appendChild(style);
   if (typeof combatSandbox !== "undefined" && combatSandbox) {
-    place({ x: O0.w / 2 - 130, y: O0.h / 2 + 50, visible: () => !l.town && !l.dg && !l.tower });
+    place({ x: O0.w / 2 - 350, y: O0.h / 2 - 160, visible: () => !l.town && !l.dg && !l.tower });
     const button = document.createElement("button");
     button.type = "button"; button.textContent = "Thần Trang Sứ Giả · Đồ xanh / HKMP";
     button.onclick = open;

@@ -390,6 +390,18 @@ var G3 = function (A, n, t) {
     x8(A, n, t);
     return;
   }
+  if (+t.id === 368 && !t.ev2 && t.ev && t.L >= 16 && activeCombatCast) {
+    const cast = activeCombatCast, onImpact = cast.onImpact;
+    // Each physical sword/body pair owns a ring, independently of damage quotas.
+    cast.onImpact = (target, position) => {
+      if (onImpact) onImpact(target, position);
+      const sprite = A0.m[27] && A0.m[27].hit;
+      if (!l.quiet && sprite) (l.fxQ || (l.fxQ = [])).push({
+        k: "boom", s: sprite, x: position.x, y: position.y - 14,
+        t: 0, life: yn(sprite), dir: 0, cosmetic: true,
+      });
+    };
+  }
   const g = a ? a[0] : e.form === void 0 ? 1 : e.form,
     u = E(
       !d && (t.nMis > 1 || (t.nMis === 1 && !(typeof h4 < "u" && h4[t.id])))

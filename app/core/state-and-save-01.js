@@ -581,6 +581,7 @@ var eD = function (A, n, t, e, a, context) {
   const draw = action => context ? context.visual(action) : action();
   // Băng Tâm Tuyết Liên đã được tạo theo từng va chạm, không tạo lại ở hit đầu.
   if (+A.id === 336 && +a.sid === 382 && A.impactLotusHandled) return;
+  if (+A.id === 337 && +a.sid === 338 && A.snowTrailHandled) return;
   if (+A.id === 339 && !A.impactVisualTargets) A = Object.assign({}, A, { impactVisualTargets: new Set() });
   if (+A.id === 319 && !a.self) a = Object.assign({}, a, { self: true, col: false });
   // Beggar skills only damage at projectile impact; lightning uses one timed field.
@@ -620,7 +621,17 @@ var eD = function (A, n, t, e, a, context) {
     visual: () => draw(() => {
       if (+A.id === 339 || !i || a.noFx) return;
       l.ev2Tg = eligible;
-      try { Be(a.self ? caster : n, A, a.n, a.rays ? caster : null, a); }
+      try {
+        const visualStart = l.fx.length, contactStart = (l.combatProjectiles || []).length;
+        Be(a.self ? caster : n, A, a.n, a.rays ? caster : null, a);
+        if (+A.id === 368 && +a.sid === 162) {
+          // Keep the secondary's collision/damage, but let primary sword contacts
+          // display its ring. A stationary damage hit must not gate the animation.
+          const emitted = new Set(l.fx.slice(visualStart).concat((l.combatProjectiles || []).slice(contactStart)));
+          for (const effect of emitted) if (effect.k === "jm")
+            effect.m = Object.assign({}, effect.m, { fly: null, hit: null });
+        }
+      }
       finally { l.ev2Tg = null; }
     }),
   });
@@ -778,6 +789,9 @@ var oD = function () {
   let triggered = false;
   const lotusEvent = +e.id === 336 && e.ev && typeof F5 === "function"
     ? F5(e).find(event => +event.sid === 382) : null;
+  const snowEvent = +e.id === 337 && e.ev && typeof F5 === "function"
+    ? F5(e).find(event => +event.sid === 338) : null;
+  if (snowEvent) e = Object.assign({}, e, { snowTrailHandled: true });
   if (lotusEvent) e = Object.assign({}, e, { impactLotusHandled: true });
   if (+e.id === 339) e = Object.assign({}, e, { impactVisualTargets: new Set() });
   queueSkillContact(v, t, e, (target) => {
@@ -801,6 +815,14 @@ var oD = function () {
       });
     } : undefined,
   });
+  if (snowEvent) {
+    const snowSkill = Object.assign({}, e, {
+      parts: S5(e, snowEvent), stun: snowEvent.stun || 0, useAR: false, ev2: true, crit: 0,
+    });
+    spawnSnowTrail(v, t, snowSkill, target => {
+      if (!snowEvent.chance || Math.random() < snowEvent.chance) Ls(hs(snowSkill, target), snowSkill);
+    }, undefined, ((b0(T[e.id], "missle_speed_v", e.L) || [30])[0] || 30) * K3);
+  }
   return (
     (v.face = t.x >= v.x ? 1 : -1),
     (v.dir = kn(t.x - v.x, t.y - v.y)),
@@ -838,8 +860,10 @@ var $d = function (A, n) {
   if (A.poison > 0) { A.poison -= n; A.hp -= A.poisonDmg * n; }
   if (actorActionLocked(A)) { A.moving = false; A.atkCd = Math.max(0, (A.atkCd || 0) - n * t); return; }
   if (A.home && KD(A, n)) return;
-  const e = (typeof om == "function" && om(A)) || v,
-    a = q0(A, e),
+  const e = A.arenaMonster && typeof combatSandbox !== "undefined" && combatSandbox
+    ? combatSandbox.nearestTarget(A) : (typeof om == "function" && om(A)) || v;
+  if (!e) { A.moving = false; return; }
+  const a = q0(A, e),
     i = A.ranged ? A.reach || 200 : Math.max((A.r + 24) / QA, Math.min(A.reach || 0, 90));
   ((A.face = e.x >= A.x ? 1 : -1),
     (A.dir = kn(e.x - A.x, e.y - A.y)),
@@ -855,8 +879,10 @@ var $d = function (A, n) {
       ((A.atkCd =
         A.cd * (A.curse && typeof Rn == "function" ? 1 + ((Rn(A) || {}).slow || 0) / 100 : 1)),
       queueSkillContact(A, e, { melee: !A.ranged, rad: A.reach || 90, parts: { phys: 1 } },
-        target => target === v ? U9(A) : hB(target, A),
-        { maxTargets: 1, targets: () => [e].filter(target => target === v || (l.allies || []).includes(target)), visual: () => {} }),
+        target => target === v ? U9(A) : target.arenaSim && typeof arenaSimulator !== "undefined" && arenaSimulator
+          ? arenaSimulator.receiveMonsterHit(target, A) : hB(target, A),
+        { maxTargets: 1, targets: () => [e].filter(target => target === v ? l.life > 0 :
+          target.arenaSim ? l.enemies.includes(target) && !target.dead && target.hp > 0 : (l.allies || []).includes(target)), visual: () => {} }),
       (A.act = "at"),
       (A.actT = 0),
       W3(A.animKey || r0[A.tid].anim, "at", 0.35)));

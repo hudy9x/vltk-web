@@ -15,6 +15,7 @@ var advanceContactEffect = CombatEngine.advanceContactEffect;
 var advanceSkillContacts = CombatEngine.updateCombat;
 var drawContactProjectile = CombatEngine.drawFallbackProjectile;
 var spawnLotusImpact = CombatEngine.spawnLotusImpact;
+var spawnSnowTrail = CombatEngine.spawnSnowTrail;
 var actorActionLocked = CombatEngine.actorActionLocked;
 var beginActorCast = CombatEngine.beginActorCast;
 var applyActorHurt = CombatEngine.applyActorHurt;
