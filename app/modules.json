@@ -2850,6 +2850,11 @@
       "symbols": [
         "equipmentTrader"
       ]
+    },
+    {
+      "file": "status/index.ts",
+      "global": "statusInspector",
+      "symbols": ["statusInspector"]
     }
   ]
 }

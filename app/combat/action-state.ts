@@ -23,12 +23,26 @@ export function beginActorCast(actor: CombatTarget): boolean {
   return true;
 }
 
-/** Legacy hit-handler hook: damage alone never locks actions or interrupts a cast.
- * Keep the bridge signature while explicit poison, cold and stun remain independent.
- */
-export function applyActorHurt(_actor: CombatTarget, _damage: number, _maximumHP: number): boolean {
-  return false;
+/** A single resolved HP hit of at least 15% maximum HP interrupts the windup. */
+export function applyActorHurt(actor: CombatTarget, damage: number, maximumHP: number): boolean {
+  // SIM PK first calculates against a disposable proxy, then applies the player's
+  // shields. Only the final HP damage may put the real player into hurt.
+  if (actor.hurtProxy || !Number.isFinite(damage) || !Number.isFinite(maximumHP) ||
+    maximumHP <= 0 || damage < maximumHP * 0.15) return false;
+  actor.hurtT = 0.5;
+  actor.castT = 0; actor.atT = 0;
+  actor.actionRevision = (actor.actionRevision || 0) + 1;
+  actor.moving = false; actor.mv = false; actor.act = 'hurt'; actor.actT = 0;
+  if (typeof v !== 'undefined' && actor === v) {
+    l.hurtT = actor.hurtT; l.moveTo = null; l.pickTarget = null;
+    (l as CombatWorldWithDash).dash = null;
+    if (typeof Y !== 'undefined') { Y.target = null; Y.mouse = false; }
+  }
+  active.add(actor);
+  return true;
 }
+
+type CombatWorldWithDash = typeof l & { dash?: unknown };
 
 /** Advanced once by the shared combat simulation, including headless/offline ticks. */
 export function advanceActorActions(dt: number): void {

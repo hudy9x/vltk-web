@@ -1,0 +1,505 @@
+{
+  "708": {
+    "id": 708,
+    "name": "Đảo Hư Thiên",
+    "tier": 120,
+    "req": 120,
+    "faction": "tianwang",
+    "icon": "img/s/708.png",
+    "assets": [
+      "img/s/708.png"
+    ]
+  },
+  "709": {
+    "id": 709,
+    "name": "Đại Thừa Như Lai Chú",
+    "tier": 120,
+    "req": 120,
+    "faction": "shaolin",
+    "icon": "img/s/709.png",
+    "assets": [
+      "img/s/709.png"
+    ]
+  },
+  "710": {
+    "id": 710,
+    "name": "Mê Ảnh Tung",
+    "tier": 120,
+    "req": 120,
+    "faction": "tangmen",
+    "icon": "img/s/710.png",
+    "assets": [
+      "img/s/710.png"
+    ]
+  },
+  "711": {
+    "id": 711,
+    "name": "Hấp Tinh Yểm",
+    "tier": 120,
+    "req": 120,
+    "faction": "wudu",
+    "icon": "img/s/711.png",
+    "assets": [
+      "img/s/711.png"
+    ]
+  },
+  "712": {
+    "id": 712,
+    "name": "Bế Nguyệt Phất Trần",
+    "tier": 120,
+    "req": 120,
+    "faction": "emei",
+    "icon": "img/s/712.png",
+    "assets": [
+      "img/s/712.png"
+    ]
+  },
+  "713": {
+    "id": 713,
+    "name": "Ngự Tuyết Ẩn",
+    "tier": 120,
+    "req": 120,
+    "faction": "cuiyan",
+    "icon": "img/s/713.png",
+    "assets": [
+      "img/s/713.png"
+    ]
+  },
+  "714": {
+    "id": 714,
+    "name": "Hỗn Thiên Khí Công",
+    "tier": 120,
+    "req": 120,
+    "faction": "gaibang",
+    "icon": "img/s/714.png",
+    "assets": [
+      "img/s/714.png"
+    ]
+  },
+  "715": {
+    "id": 715,
+    "name": "Ma Âm Phệ Phách",
+    "tier": 120,
+    "req": 120,
+    "faction": "tianren",
+    "icon": "img/s/715.png",
+    "assets": [
+      "img/s/715.png"
+    ]
+  },
+  "716": {
+    "id": 716,
+    "name": "Xuất Ứ Bất Nhiễm",
+    "tier": 120,
+    "req": 120,
+    "faction": "wudang",
+    "icon": "img/s/716.png",
+    "assets": [
+      "img/s/716.png"
+    ]
+  },
+  "717": {
+    "id": 717,
+    "name": "Lưỡng Nghi Chân Khí",
+    "tier": 120,
+    "req": 120,
+    "faction": "kunlun",
+    "icon": "img/s/717.png",
+    "assets": [
+      "img/s/717.png"
+    ]
+  },
+  "1055": {
+    "id": 1055,
+    "name": "Đại Lực Kim Cang Chưởng",
+    "tier": 150,
+    "req": 150,
+    "faction": "shaolin",
+    "icon": "img/s/1055.png",
+    "assets": [
+      "img/s/1055.png",
+      "fx/advanced/m345_fly.webp",
+      "fx/advanced/m345_hit.webp"
+    ]
+  },
+  "1056": {
+    "id": 1056,
+    "name": "Vi Đà Hiến Xử",
+    "tier": 150,
+    "req": 150,
+    "faction": "shaolin",
+    "icon": "img/s/1056.png",
+    "assets": [
+      "img/s/1056.png",
+      "fx/advanced/m318_fly.webp",
+      "fx/advanced/m318_flyb.webp",
+      "fx/advanced/m318_hit.webp",
+      "fx/advanced/p17.webp",
+      "img/s/318.png",
+      "snd/sound_k003.mp3",
+      "fx/m134_fly.webp",
+      "fx/m134_hit.webp"
+    ]
+  },
+  "1057": {
+    "id": 1057,
+    "name": "Tam Giới Quy Thiền",
+    "tier": 150,
+    "req": 150,
+    "faction": "shaolin",
+    "icon": "img/s/1057.png",
+    "assets": [
+      "img/s/1057.png",
+      "fx/advanced/m319_fly.webp",
+      "fx/advanced/m319_hit.webp",
+      "img/s/319.png",
+      "snd/sound_k005.mp3",
+      "fx/m135_fly.webp",
+      "fx/m135_flyb.webp",
+      "fx/m135_hit.webp"
+    ]
+  },
+  "1058": {
+    "id": 1058,
+    "name": "Hào Hùng Trảm",
+    "tier": 150,
+    "req": 150,
+    "faction": "tianwang",
+    "icon": "img/s/1058.png",
+    "assets": [
+      "img/s/1058.png",
+      "fx/advanced/m320_fly.webp",
+      "fx/advanced/m320_hit.webp"
+    ]
+  },
+  "1059": {
+    "id": 1059,
+    "name": "Tung Hoành Bát Hoang",
+    "tier": 150,
+    "req": 150,
+    "faction": "tianwang",
+    "icon": "img/s/1059.png",
+    "assets": [
+      "img/s/1059.png",
+      "fx/advanced/m349_fly.webp",
+      "fx/advanced/m349_flyb.webp",
+      "fx/advanced/m349_hit.webp",
+      "fx/advanced/m349_hitb.webp"
+    ]
+  },
+  "1060": {
+    "id": 1060,
+    "name": "Bá Vương Tạm Kim",
+    "tier": 150,
+    "req": 150,
+    "faction": "tianwang",
+    "icon": "img/s/1060.png",
+    "assets": [
+      "img/s/1060.png",
+      "fx/advanced/m350_fly.webp",
+      "fx/advanced/m350_hit.webp"
+    ]
+  },
+  "1061": {
+    "id": 1061,
+    "name": "Kiếm Hoa Vãn Tinh",
+    "tier": 150,
+    "req": 150,
+    "faction": "emei",
+    "icon": "img/s/1061.png",
+    "assets": [
+      "img/s/1061.png",
+      "fx/advanced/m323_fly.webp",
+      "fx/advanced/m323_hit.webp",
+      "fx/advanced/p6.webp",
+      "fx/advanced/m325_fly.webp",
+      "fx/advanced/m325_hit.webp",
+      "img/s/323.png",
+      "snd/sound_k005.mp3",
+      "fx/m139_hit.webp",
+      "fx/m139_hitb.webp"
+    ]
+  },
+  "1062": {
+    "id": 1062,
+    "name": "Băng Vũ Lạc Tinh",
+    "tier": 150,
+    "req": 150,
+    "faction": "emei",
+    "icon": "img/s/1062.png",
+    "assets": [
+      "img/s/1062.png",
+      "fx/advanced/m324_fly.webp",
+      "fx/advanced/p6.webp",
+      "img/s/324.png",
+      "snd/sound_k005.mp3",
+      "fx/m140_fly.webp",
+      "fx/m140_flyb.webp",
+      "fx/m140_hit.webp",
+      "fx/m140_hitb.webp"
+    ]
+  },
+  "1063": {
+    "id": 1063,
+    "name": "Băng Tước Hoạt Kỳ",
+    "tier": 150,
+    "req": 150,
+    "faction": "cuiyan",
+    "icon": "img/s/1063.png",
+    "assets": [
+      "img/s/1063.png",
+      "fx/advanced/m326_fly.webp",
+      "fx/advanced/m326_hit.webp",
+      "fx/advanced/p6.webp",
+      "img/s/325.png",
+      "fx/m138_hit.webp",
+      "fx/m138_hitb.webp",
+      "fx/m326_fly.webp",
+      "fx/m326_hit.webp"
+    ]
+  },
+  "1065": {
+    "id": 1065,
+    "name": "Thủy Anh Man Tú",
+    "tier": 150,
+    "req": 150,
+    "faction": "cuiyan",
+    "icon": "img/s/1065.png",
+    "assets": [
+      "img/s/1065.png",
+      "fx/advanced/m327_fly.webp",
+      "fx/advanced/m327_hit.webp",
+      "fx/advanced/p6.webp",
+      "fx/advanced/m355_fly.webp",
+      "img/s/323.png",
+      "fx/m139_hit.webp",
+      "fx/m139_hitb.webp",
+      "fx/m327_fly.webp",
+      "fx/m327_hit.webp"
+    ]
+  },
+  "1066": {
+    "id": 1066,
+    "name": "Hình Tiêu Cốt Lập",
+    "tier": 150,
+    "req": 150,
+    "faction": "wudu",
+    "icon": "img/s/1066.png",
+    "assets": [
+      "img/s/1066.png",
+      "fx/advanced/m328_fly.webp",
+      "fx/advanced/m328_hit.webp",
+      "fx/advanced/p5.webp",
+      "fx/advanced/m356_fly.webp",
+      "fx/advanced/m356_hit.webp",
+      "img/s/328.png",
+      "fx/m142_fly.webp",
+      "fx/m142_hit.webp",
+      "fx/c3.webp"
+    ]
+  },
+  "1067": {
+    "id": 1067,
+    "name": "U Hồn Phệ Ảnh",
+    "tier": 150,
+    "req": 150,
+    "faction": "wudu",
+    "icon": "img/s/1067.png",
+    "assets": [
+      "img/s/1067.png",
+      "fx/advanced/m329_fly.webp"
+    ]
+  },
+  "1069": {
+    "id": 1069,
+    "name": "Vô Ảnh Xuyên",
+    "tier": 150,
+    "req": 150,
+    "faction": "tangmen",
+    "icon": "img/s/1069.png",
+    "assets": [
+      "img/s/1069.png",
+      "fx/advanced/m331_fly.webp"
+    ]
+  },
+  "1070": {
+    "id": 1070,
+    "name": "Thiết Liên Tứ Sát",
+    "tier": 150,
+    "req": 150,
+    "faction": "tangmen",
+    "icon": "img/s/1070.png",
+    "assets": [
+      "img/s/1070.png",
+      "fx/advanced/m332_fly.webp",
+      "fx/advanced/m360_fly.webp",
+      "fx/advanced/m360_hit.webp",
+      "img/s/332.png"
+    ]
+  },
+  "1071": {
+    "id": 1071,
+    "name": "Càn Khôn Nhất Trịch",
+    "tier": 150,
+    "req": 150,
+    "faction": "tangmen",
+    "icon": "img/s/1071.png",
+    "assets": [
+      "img/s/1071.png",
+      "fx/advanced/m333_fly.webp",
+      "fx/advanced/m333_hit.webp",
+      "img/s/332.png",
+      "fx/m333_fly.webp",
+      "fx/m333_hit.webp"
+    ]
+  },
+  "1073": {
+    "id": 1073,
+    "name": "Thời Thặng Lục Long",
+    "tier": 150,
+    "req": 150,
+    "faction": "gaibang",
+    "icon": "img/s/1073.png",
+    "assets": [
+      "img/s/1073.png",
+      "fx/advanced/m335_fly.webp",
+      "fx/advanced/p18.webp",
+      "fx/advanced/m363_fly.webp",
+      "fx/advanced/m363_hit.webp",
+      "fx/advanced/m344_fly.webp"
+    ]
+  },
+  "1074": {
+    "id": 1074,
+    "name": "Bổng Huýnh Lược Địa",
+    "tier": 150,
+    "req": 150,
+    "faction": "gaibang",
+    "icon": "img/s/1074.png",
+    "assets": [
+      "img/s/1074.png",
+      "fx/advanced/m336_fly.webp",
+      "fx/advanced/m336_hit.webp",
+      "fx/advanced/p8.webp",
+      "img/s/336.png",
+      "fx/m146_fly.webp",
+      "fx/m146_hit.webp",
+      "fx/c3.webp"
+    ]
+  },
+  "1075": {
+    "id": 1075,
+    "name": "Giang Hải Nộ Lan",
+    "tier": 150,
+    "req": 150,
+    "faction": "tianren",
+    "icon": "img/s/1075.png",
+    "assets": [
+      "img/s/1075.png",
+      "fx/advanced/m337_fly.webp",
+      "fx/advanced/m337_hit.webp",
+      "img/s/337.png",
+      "fx/m147_fly.webp",
+      "fx/m147_hit.webp",
+      "fx/c3.webp"
+    ]
+  },
+  "1076": {
+    "id": 1076,
+    "name": "Tật Hỏa Liệu Nguyên",
+    "tier": 150,
+    "req": 150,
+    "faction": "tianren",
+    "icon": "img/s/1076.png",
+    "assets": [
+      "img/s/1076.png",
+      "fx/advanced/m366_fly.webp",
+      "fx/advanced/p8.webp"
+    ]
+  },
+  "1078": {
+    "id": 1078,
+    "name": "Tạo Hóa Thái Thanh",
+    "tier": 150,
+    "req": 150,
+    "faction": "wudang",
+    "icon": "img/s/1078.png",
+    "assets": [
+      "img/s/1078.png",
+      "fx/advanced/m340_fly.webp",
+      "fx/advanced/p7.webp"
+    ]
+  },
+  "1079": {
+    "id": 1079,
+    "name": "Kiếm Thùy Tinh Hà",
+    "tier": 150,
+    "req": 150,
+    "faction": "wudang",
+    "icon": "img/s/1079.png",
+    "assets": [
+      "img/s/1079.png",
+      "fx/advanced/m341_fly.webp",
+      "fx/advanced/p7.webp",
+      "fx/advanced/m369_fly.webp",
+      "img/s/341.png",
+      "snd/sound_k001.mp3",
+      "fx/m151_fly.webp",
+      "fx/m151_hit.webp"
+    ]
+  },
+  "1080": {
+    "id": 1080,
+    "name": "Cửu Thiên Cương Phong",
+    "tier": 150,
+    "req": 150,
+    "faction": "kunlun",
+    "icon": "img/s/1080.png",
+    "assets": [
+      "img/s/1080.png",
+      "fx/advanced/m342_fly.webp",
+      "fx/advanced/m342_hit.webp",
+      "fx/advanced/p7.webp",
+      "img/s/342.png",
+      "snd/sound_k003.mp3",
+      "fx/m152_fly.webp",
+      "fx/m152_hit.webp"
+    ]
+  },
+  "1081": {
+    "id": 1081,
+    "name": "Thiên Lôi Chấn Nhạc",
+    "tier": 150,
+    "req": 150,
+    "faction": "kunlun",
+    "icon": "img/s/1081.png",
+    "assets": [
+      "img/s/1081.png",
+      "fx/advanced/m372_fly.webp",
+      "fx/advanced/p7.webp",
+      "fx/advanced/m343_fly.webp",
+      "fx/advanced/m343_hit.webp",
+      "img/s/372.png",
+      "snd/sound_k001.mp3",
+      "fx/m178_fly.webp",
+      "fx/m178_hit.webp",
+      "fx/c4.webp"
+    ]
+  },
+  "1114": {
+    "id": 1114,
+    "name": "Ngọc Tuyền Tâm Kinh",
+    "tier": 150,
+    "req": 150,
+    "faction": "emei",
+    "icon": "img/s/1114.png",
+    "assets": [
+      "img/s/1114.png",
+      "fx/advanced/m375_fly.webp",
+      "img/s/375.png",
+      "fx/m181_fly.webp",
+      "fx/m181_hit.webp",
+      "fx/c4.webp"
+    ]
+  }
+}

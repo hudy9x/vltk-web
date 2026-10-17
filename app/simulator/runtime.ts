@@ -238,6 +238,19 @@ export function createSimulator() {
     return { x: v.x, y: v.y, n: o.name, hp: l.life, max: l.P.life, hurtProxy: true, r: 17, cls: "normal", tid: actor.tid,
       def: l.P.def, series: l.P.series, res: l.P.res, act: "at", poison: 0, poisonDmg: 0, slowT: 0, stun: 0 };
   }
+  function receiveMonsterHit(actor: SimulatorActor, attacker: LegacyEntity): void {
+    if (!actors.includes(actor) || actor.dead || actor.hp <= 0 || !l.enemies.includes(actor)) return;
+    // Reuse U9, including the arena one-damage option and actual SIM defenses.
+    // Translate sustained statuses at the boundary so no temporary world state
+    // or damage leaks onto the real player.
+    asSim(actor, () => {
+      l.hpDotT = actor.poison || 0; l.hpDot = (actor.poisonDmg || 0) * l.hpDotT;
+      l.slowT = actor.slowT || 0; l.slowPower = actor.slowPower || 0; l.stunT = actor.stun || 0;
+      U9(attacker);
+      actor.poison = l.hpDotT; actor.poisonDmg = l.hpDotT > 0 ? l.hpDot / l.hpDotT : 0;
+      actor.slowT = l.slowT; actor.slowPower = l.slowPower; actor.stun = l.stunT;
+    }, false);
+  }
   function hit(actor: SimulatorActor, skill: SimulatorSkill, target: LegacyEntity) {
     const isPlayer = target === v;
     if (isPlayer && (!actor.pk || l.life <= 0)) return 0;
@@ -536,6 +549,6 @@ export function createSimulator() {
   };
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  return { create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }

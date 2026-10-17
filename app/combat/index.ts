@@ -26,6 +26,7 @@ export { applyContactHit } from './damage';
 export { drawContactProjectile, drawContactProjectile as drawFallbackProjectile } from './render';
 export { SKILL_RANGE_Y_RATIO, skillCastDistance, skillIgnoresTerrain } from './config';
 export { spawnLotusImpact, LOTUS_IMPACT_RADIUS } from './impact-fields';
+export { spawnSnowTrail, SNOW_TRAIL_RADIUS } from './snow-trail';
 export { actorActionLocked, beginActorCast, applyActorHurt, advanceActorActions } from './action-state';
 export { applyPotionRecovery, advanceConsumableCooldowns } from './recovery';
 export { applyColdSlow, coldSlowPower, coldSpeedFactor } from './cold-status';

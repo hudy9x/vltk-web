@@ -434,7 +434,7 @@ var E5 = function (A, n, t, e) {
   return !0;
 };
 
-var j0 = function (A) {
+var j0 = function (A, trace) {
   A = A || o.eq;
   const n = {},
     t = o.lvl,
@@ -457,7 +457,11 @@ var j0 = function (A) {
     f = null;
   for (const K in A) {
     const f0 = A[K];
-    if (!f0 || !R5(f0)) continue;
+    if (!f0) continue;
+    if (!R5(f0)) {
+      if (trace) trace({ kind: "inactive", id: K, name: f0.n }, n, r);
+      continue;
+    }
     const gA = K === "horse" ? z(n, "fastwalkrun_p") : 0,
       oA =
         K === "weapon"
@@ -485,6 +489,7 @@ var j0 = function (A) {
           z(n, "weapondamagemax_v") - oA[1],
           z(n, "weapondamageenhance_p") - oA[2],
         ]));
+    if (trace) trace({ kind: "equipment", id: K, name: f0.n }, n, r);
   }
   const h = t4(A),
     g = Math.round(z(n, "allskill_v")),
@@ -499,6 +504,7 @@ var j0 = function (A) {
       const zA = b0(f0, oA, gA);
       zA && E5(f0, oA, zA, h) && pt(n, oA, zA);
     }
+    if (trace) trace({ kind: "skill", id: K, name: f0.n, level: gA }, n, r);
   }
   if (typeof nm == "function")
     for (const [K, f0] of nm()) {
@@ -509,9 +515,12 @@ var j0 = function (A) {
           const zA = b0(gA, oA, f0);
           zA && E5(gA, oA, zA, h) && pt(n, oA, zA);
         }
+      if (trace) trace({ kind: "ally", id: K, name: gA && gA.n, level: f0 }, n, r);
     }
   (Hb(n),
+    trace && trace({ kind: "title", name: "Danh hiệu đang đeo" }, n, r),
     Qb(n),
+    trace && trace({ kind: "collection", name: "Bộ sưu tập" }, n, r),
     (u.rebDmg = 1 + mo().dmg),
     (u.dmgMul = u.rebDmg * g7),
     (u.str = i.str + o.attr.str + z(n, "strength_v")),

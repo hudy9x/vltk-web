@@ -628,6 +628,7 @@ var ps = function (A, n) {
 };
 
 var H8 = function (A, n, t) {
+  if (A.hurtT > 0) { A.act = "hurt"; A.actT = Math.max(0, 0.5 - A.hurtT); return; }
   ((A.actT = (A.actT || 0) + n),
     (A.act === "at" || A.act === "hurt") &&
       A.actT >= Math.max(0.25, ws(A.animKey, A.act)) &&

@@ -793,3 +793,140 @@ test('Vo Hinh Doc emits its green native contact sprite only on nearby living mo
  s.l.quiet=true;s.b7(69,.6);assert.equal(s.l.fxQ.length,2);assert.equal(near.poisonDmg,90,'hidden FX keeps original poison stacking');
  near.x=400;s.l.quiet=false;s.b7(69,.6);assert.equal(s.l.fxQ.length,2,'leaving the aura stops contacts');
 });
+
+// Load the actual level-16 event configuration, including its native ring sprite.
+function nhanKiemWorld(options = {}) {
+ const s=lotusWorld(options);
+ declaration(s,'app/combat/skills-01.js','Vw');
+ const source=fs.readFileSync(path.join(ROOT,'app/combat/skills-01.js'),'utf8');
+ const setup=acorn.parse(source,{ecmaVersion:'latest'}).body.find(node=>node.type==='ForOfStatement'&&
+  node.right.type==='ArrayExpression'&&node.right.elements.some(value=>value.value===368));
+ assert.ok(setup);vm.runInContext(source.slice(setup.start,setup.end),s);
+ s.skill={...standardSkill(s,368),ev:true,tot:40};
+ s.S5=()=>({light:10});
+ s.impacts=[];s.l.fxQ=[];
+ s.l.fxQ.push=function(...effects){s.impacts.push(...effects);return Array.prototype.push.apply(this,effects);};
+ return s;
+}
+
+test('level-20 Nhan Kiem shows one native ring per sword/body contact in all eight directions, including up-left',()=>{
+ for(const [dx,dy]of [[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]]){
+  const s=nhanKiemWorld(),target=enemy(s,dx*50,dy*35);
+  target.hp=target.max=10000;s.oD();const swords=s.l.combatProjectiles.slice();
+  assert.equal(swords.length,3);assert.equal(s.impacts.length,0);
+  run(s,2);
+  const contacts=swords.filter(ray=>ray.contactHits.has(target)).length;
+  assert.equal(contacts,3,`all swords reach target in direction ${dx},${dy}`);
+  const rings=s.impacts.filter(effect=>effect.s===s.A0.m[27].hit);
+  assert.equal(rings.length,contacts,`one ring per contact in direction ${dx},${dy}`);
+  assert.ok(rings.every(effect=>effect.cosmetic&&!effect.combat&&effect.x===target.x&&effect.y===target.y-14));
+ }
+});
+
+test('four piercing Nhan Kiem swords each show rings on every contacted body without adding damage hits',()=>{
+ const s=nhanKiemWorld(),first=enemy(s,55),second=enemy(s,95),third=enemy(s,135),offPath=enemy(s,95,85);
+ for(const target of s.l.enemies)target.hp=target.max=10000;
+ s.skill.nMis=4;
+ s.oD();const swords=s.l.combatProjectiles.slice();assert.equal(swords.length,4);run(s,2);
+ for(const target of [first,second,third]){
+  const contacts=swords.filter(ray=>ray.contactHits.has(target)).length;
+  assert.equal(contacts,4);
+  const rings=s.impacts.filter(effect=>effect.s===s.A0.m[27].hit&&effect.x===target.x&&effect.y===target.y-14);
+  assert.equal(rings.length,contacts,'damage quota must not suppress the fourth cosmetic ring');
+  assert.equal(swords[0].combat.hits.get(target),3,'primary damage retains its original cap');
+ }
+ assert.equal(s.impacts.filter(effect=>effect.s===s.A0.m[27].hit).length,12);
+ assert.ok(swords.every(ray=>!ray.contactHits.has(offPath)));
+ const count=s.impacts.length;run(s,2);assert.equal(s.impacts.length,count,'a contact never emits again on later ticks');
+});
+
+test('Nhan Kiem contact rings retain level unlock and quiet/low-FX behavior',()=>{
+ for(const {level,quiet,lowFx,expected}of [
+  {level:15,quiet:false,lowFx:false,expected:0},
+  {level:20,quiet:true,lowFx:false,expected:0},
+  {level:20,quiet:false,lowFx:true,expected:3},
+ ]){
+  const s=nhanKiemWorld({state:{quiet},preferences:{lowFx}}),target=enemy(s,60);
+  s.skill.L=level;target.hp=target.max=10000;
+  s.oD();run(s,2);
+  assert.equal(s.impacts.filter(effect=>effect.s===s.A0.m[27].hit).length,expected);
+ }
+});
+
+test('SIM Nhan Kiem uses the same per-sword rings on its permitted targets, away from the player',()=>{
+ const s=nhanKiemWorld(),actor={x:300,y:300,hp:1000},target=enemy(s,250,265),excluded=enemy(s,250,265);
+ target.hp=excluded.hp=10000;s.skill.nMis=4;
+ vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','SimSkillCasting').code,s);
+ const withActor=action=>{const hero=s.v;s.v=actor;try{return action();}finally{s.v=hero;}};
+ s.SimSkillCasting.castSimulatorSkill(actor,target,s.skill,()=>true,()=>[target],
+  (skill,contact)=>s.hs(skill,contact),withActor);
+ const swords=s.l.combatProjectiles.slice();run(s,2);
+ assert.equal(swords.filter(ray=>ray.contactHits.has(target)).length,4);
+ assert.equal(s.impacts.filter(effect=>effect.s===s.A0.m[27].hit).length,4);
+ assert.equal(excluded.hp,10000);assert.equal(target.hp,9960,'three primary hits and one existing secondary hit');
+ assert.equal(s.v.x,0);assert.equal(s.v.y,0);
+});
+
+function snowWorld(options = {}) {
+ const s=lotusWorld(options);
+ s.skill={...standardSkill(s,337),ev:true,tot:40};
+ return s;
+}
+
+test('Bang Tam snow begins at cast time and advances through fixed patches to the selected position in eight directions',()=>{
+ for(let dir=0;dir<8;dir++){
+  const s=snowWorld(),angle=dir*Math.PI/4,target=enemy(s,Math.cos(angle)*350,Math.sin(angle)*350/2);
+  s.oD();const patches=s.l.combatProjectiles.filter(effect=>effect.k==='boom'&&effect.s===s.A0.m[148].fly);
+  assert.ok(patches.length>=4);assert.equal(patches[0].t,0);assert.equal(patches[0].x,0);assert.equal(patches[0].y,-14);
+  assert.equal(patches.at(-1).x,target.x);assert.equal(patches.at(-1).y,target.y-14);
+  for(let i=1;i<patches.length;i++)assert.ok(patches[i].t<patches[i-1].t);
+  assert.ok(patches.every(effect=>effect.combat.skill.geo.r===150));
+  assert.equal(new Set(patches.map(effect=>effect.combat)).size,1);
+  const positions=patches.map(e=>[e.x,e.y]);target.x+=200;target.y+=80;s.v.x-=200;s.v.y-=80;
+  run(s,.04);assert.equal(patches[0].t,.05);assert.ok(patches.at(-1).t<0);
+  assert.deepEqual(patches.map(e=>[e.x,e.y]),positions);
+  declaration(s,'app/render/arena-01.js','CP');const frames=[];s.Fa=(sprite,dir,t,x,y)=>frames.push({sprite,t,x,y});
+  for(const patch of patches)s.CP(patch);
+  assert.equal(frames.length,1);assert.equal(frames[0].x,0);assert.equal(frames[0].y,-14);
+ }
+});
+
+test('snow affects every live occupant within the old 150 radius along its path without repeated overlap damage',()=>{
+ const s=snowWorld(),target=enemy(s,350),nearCaster=enemy(s,0,40),middle=enemy(s,175,35),far=enemy(s,175,130);
+ const pack=Array.from({length:6},()=>enemy(s,175,35));s.oD();
+ run(s,.02);assert.equal(nearCaster.hp,90);assert.equal(middle.hp,100);assert.equal(target.hp,100);
+ run(s,1.5);assert.equal(middle.hp,90);assert.ok(pack.every(mob=>mob.hp===90));assert.equal(far.hp,100);
+ assert.ok(target.hp<100);const health=middle.hp;run(s,1);assert.equal(middle.hp,health);
+ assert.equal(s.l.combatProjectiles.filter(e=>e.k==='boom').length,0);
+});
+
+test('snow uses live occupants, keeps damage in quiet and low FX modes and survives missing sprite metadata',()=>{
+ for(const quiet of [false,true])for(const missing of [false,true]){
+  const s=snowWorld({state:{quiet},preferences:{lowFx:true}}),target=enemy(s,350),entering=enemy(s,175,200);
+  if(missing)delete s.A0.m[148];s.oD();entering.y=35;run(s,1.5);
+  assert.equal(entering.hp,90);assert.ok(target.hp<100);
+  if(quiet||missing)assert.ok(!s.l.fx.some(effect=>effect.k==='boom'&&effect.s===s.A0.m[148]?.fly));
+ }
+});
+
+test('snow stops at terrain and is invalidated on zone change or player death',()=>{
+ const s=snowWorld(),target=enemy(s,350);s.mt=(x0,y0,x1)=>x1<180;
+ // Exercise the shared helper directly: ordinary targeting correctly refuses a blocked cast.
+ const skill={...s.skill,ev2:true};s.spawnSnowTrail(s.v,target,skill,hit=>s.hs(skill,hit));
+ assert.ok(s.l.combatProjectiles.every(effect=>effect.x<180));
+ for(const field of ['zone','death']){
+  const w=snowWorld(),far=enemy(w,350),near=enemy(w,0,35);w.oD();
+  if(field==='zone')w.l.zoneShown++;else w.l.deadT=1;
+  run(w,2);assert.equal(near.hp,100);assert.equal(far.hp,100);assert.equal(w.l.combatProjectiles.length,0);
+ }
+});
+
+test('SIM snow uses its own caster, damage bonuses and allowed targets; cancellation stops later contacts',()=>{
+ const s=simulatorCastWorld(337),target=enemy(s,350),middle=enemy(s,175,35),excluded=enemy(s,175,-35);
+ s.cast(target,()=>[target,middle]);const fields=s.l.combatProjectiles.filter(effect=>effect.k==='boom');
+ assert.ok(fields.length>1);assert.ok(fields.every(effect=>effect.combat.actor===s.actor));
+ assert.equal(fields[0].combat.skill.parts.cold,7,'40 × .35 × SIM secondary bonus ratio .5');
+ run(s,1.5);assert.equal(middle.hp,90);assert.equal(excluded.hp,100);assert.equal(s.v,s.hero);
+ const cancelled=simulatorCastWorld(337),later=enemy(cancelled,350);cancelled.cast(later,()=>[later]);
+ cancelled.valid=false;run(cancelled,2);assert.equal(later.hp,100);
+});
