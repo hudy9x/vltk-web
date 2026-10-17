@@ -444,6 +444,13 @@ var G3 = function (A, n, t) {
         if (separateImpact) missile.m = Object.assign({}, missile.m, { hit: null });
       }
     } else bs(f, g, o.lowFx && !activeCombatCast ? Math.min(u, 3) : u, a, A, n, n);
+    if (+t.id === 1069) {
+      // Twice the speed must not double the old lifetime-based flight range.
+      for (const missile of (l.combatProjectiles || []).slice(contactStart)) {
+        if (missile.k === "jm" && missile.mid === f && !missile.travelLimit)
+          missile.travelLimit = missile.spd * missile.lf / 2;
+      }
+    }
     if (+t.id === 1061) CombatEngine.spawnSwordFlowerCharge(activeCombatCast, A0.c && A0.c[e.pre]);
     const legacyId = ({ 322: 138, 326: 138, 323: 139, 327: 139 })[+t.id];
     const legacySprite = legacyId && A0.m[legacyId] && A0.m[legacyId].hit;

@@ -3,12 +3,14 @@ import { collideCombatEffect } from './collision';
 import { SKILL_RANGE_Y_RATIO } from './config';
 import { advanceActorActions } from './action-state';
 import { beginContactFrame, endContactFrame } from './spatial/contact-query';
+import { advanceIronLotusVisual } from '../render/iron-lotus';
 
 // dt luôn tính bằng giây. Riêng đạn sprite đổi sang frame bằng K3 như code cũ.
 export function advanceCombatMissile(effect: SpriteMissile & ContactEffect, dt: number): boolean {
   const before = effect.age;
   effect.age += dt * K3;
   if (effect.age < 0) return true;
+  advanceIronLotusVisual(effect, before);
   if ((!effect.kind || effect.still) && !(effect.za && effect.z > 20)) {
     if (collideCombatEffect(effect, effect.x, effect.y - (effect.z + effect.hz) * wf, effect.x, effect.y - (effect.z + effect.hz) * wf)) return false;
   }

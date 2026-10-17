@@ -320,7 +320,8 @@
     "icon": "img/s/1069.png",
     "assets": [
       "img/s/1069.png",
-      "fx/advanced/m331_fly.webp"
+      "fx/advanced/m331_fly.webp",
+      "fx/advanced/m359_fly.webp"
     ]
   },
   "1070": {

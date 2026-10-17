@@ -81,14 +81,15 @@
 - **path**:
   - Icon: `img/s/1069.png`
   - Sprite đòn chính: `fx/advanced/m331_fly.webp`
-  - Sprite đòn phụ: `fx/advanced/m359_fly.webp`
+  - Sprite đòn phụ: `fx/advanced/m359_fly.webp` (Truy Tâm Tỏa Mệnh, event va chạm 1097 từ cấp kỹ năng 11; cố định tại quái trúng đạn)
   - Sprite tụ khí: `Không có`
 
 - **tên skill**: Thiết Liên Tứ Sát (Cấp 150 - Công kích nội công)
 - **path**:
   - Icon: `img/s/1070.png`
   - Sprite đòn chính: `fx/advanced/m332_fly.webp`
-  - Sprite đòn phụ: `Không có`
+  - Sprite đòn phụ: `fx/advanced/m360_fly.webp` (event 1098: 8 tia quanh tâm chiêu, mỗi 18 frame từ cấp kỹ năng 11)
+  - Sprite va chạm đòn phụ: `fx/advanced/m360_hit.webp`
   - Sprite tụ khí: `Không có`
 
 - **tên skill**: Càn Khôn Nhất Trịch (Cấp 150 - Công kích ngoại công)

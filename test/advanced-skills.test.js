@@ -69,7 +69,7 @@ test('Thiên Vương uses the swapped sheets and manifest tracks the corrected F
 });
 
 test('150 fields play one sheet at a fixed caster/target anchor at every skill level',()=>{
-  for(const id of [1056,1062,1066,1076,1078,1079,1081,1114])for(const level of [1,25]) {
+  for(const id of [1056,1062,1066,1070,1076,1078,1079,1081,1114])for(const level of [1,25]) {
     const {s,skill}=advancedCombat();s.v.x=50;s.v.y=70;
     const target={x:180,y:110,hp:100,r:12};
     const cast=s.queueSkillContact(s.v,target,skill(id,level),()=>{},{targets:()=>[],windup:0});
@@ -81,6 +81,62 @@ test('150 fields play one sheet at a fixed caster/target anchor at every skill l
     for(let i=0;i<12;i++)s.advanceSkillContacts(1/60);
     assert.equal(effect.x,initial.x);assert.equal(effect.y,initial.y);
     assert.equal(effect.m.fly,s.JFX.m[s.JFX.f[id].c].fly,'preserve sheet/frame metadata');
+  }
+});
+
+test('Thiết Liên Tứ Sát emits eight secondary rays at the enemy field, with original level and timing gates',()=>{
+  for(const level of [10,11,25]) {
+    const {s,skill}=advancedCombat();
+    const caster={x:30,y:50,hp:100},target={x:240,y:180,hp:100,r:12};let hits=0;
+    const cast=s.queueSkillContact(caster,target,skill(1070,level),()=>hits++,{targets:()=>[target],windup:0});
+    const field=s.l.combatProjectiles[0];
+    const rays=()=>s.l.fx.filter(fx=>fx.k==='mis'&&fx.s?.f==='fx/advanced/m360_fly.webp');
+    s.advanceSkillContacts(.99);assert.equal(rays().length,0);
+    s.advanceSkillContacts(.01);
+    assert.equal(rays().length,level<11?0:8);
+    if(level>=11) {
+      assert.equal(new Set(rays().map(fx=>fx.dir)).size,8);
+      for(const fx of rays()) {
+        assert.equal(fx.x1,target.x);assert.equal(fx.y1,target.y-14);
+        assert.ok(fx.cosmetic&&!fx.combat);
+        assert.equal(fx.hit,s.JFX.m['advanced-360'].hit);
+        assert.ok(Math.abs(Math.hypot(fx.x2-fx.x1,(fx.y2-fx.y1)*2)-576*.67)<1e-9);
+      }
+    }
+    // Main field stays where cast even if its target subsequently moves.
+    target.x+=100;target.y+=100;
+    for(let i=0;i<41;i++)s.advanceSkillContacts(1/60);
+    const impacts=s.l.fx.filter(fx=>fx.k==='boom'&&fx.s?.f==='fx/advanced/m360_hit.webp');
+    assert.equal(impacts.length,level<11?0:8);
+    assert.equal(field.x,240);assert.equal(field.y,166);
+    assert.equal(cast.emitted,1);assert.equal(hits,1,'secondary visual must not duplicate primary damage');
+    s.advanceSkillContacts(.32);
+    assert.equal(rays().length,level===25?8:0,'second event requires the parent to live 36 frames');
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.equal(s.l.fx.length,0);
+  }
+});
+
+test('Thiết Liên Tứ Sát suppresses secondary visuals under budget, quiet, cancellation and zone guards',()=>{
+  for(const guard of ['quiet','budget','interrupted','zone']) {
+    const {s,skill}=advancedCombat();
+    const caster={x:0,y:0,hp:100,actionRevision:0},target={x:180,y:0,hp:100,r:12};
+    s.queueSkillContact(caster,target,skill(1070),()=>{},{targets:()=>[],windup:guard==='interrupted'?2:0});
+    if(guard==='quiet')s.l.quiet=true;
+    if(guard==='budget')for(let i=0;i<160;i++)s.l.fx.push({k:'boom',t:0,life:5,x:0,y:0});
+    if(guard==='interrupted')caster.actionRevision++;
+    if(guard==='zone')s.l.zoneShown=99;
+    for(let i=0;i<65;i++)s.advanceSkillContacts(1/60);
+    assert.equal(s.l.fx.filter(fx=>fx.s?.f==='fx/advanced/m360_fly.webp').length,0,guard);
+  }
+});
+
+test('Thiết Liên Tứ Sát emits one burst per interval at different frame rates',()=>{
+  for(const fps of [10,20,30,60,144]) {
+    const {s,skill}=advancedCombat();
+    s.queueSkillContact(s.v,{x:180,y:50,hp:100},skill(1070),()=>{},{targets:()=>[],windup:0});
+    for(let i=0;i<Math.ceil(1.1*fps);i++)s.advanceSkillContacts(1/fps);
+    assert.equal(s.l.fx.filter(fx=>fx.k==='mis'&&fx.s?.f==='fx/advanced/m360_fly.webp').length,8,`${fps} FPS`);
   }
 });
 
@@ -138,6 +194,180 @@ test('U Hồn emits separated homing hands and one cosmetic impact per hand with
     assert.ok(impacts.every(fx=>fx.cosmetic&&!fx.combat&&fx.x===target.x&&fx.y===target.y-14));
   }
 });
+test('Vô Ảnh Xuyên plays its original impact once at the struck enemy from level 11',()=>{
+  for(const level of [1,10,11,25])for(const quiet of [false,true]) {
+    const {s,skill}=advancedCombat();s.l.quiet=quiet;
+    const target={x:140,y:0,hp:100,r:12};let hits=0,impacts=0;
+    s.queueSkillContact(s.v,target,skill(1069,level),()=>hits++,{
+      targets:()=>[target],windup:0,onImpact:()=>impacts++,
+    });
+    const visible=()=>s.l.fx.filter(fx=>fx.s?.f==='fx/advanced/m359_fly.webp');
+    assert.equal(visible().length,0,'no impact when cast starts');
+    for(let i=0;i<30;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits,1);assert.equal(impacts,1);
+    assert.equal(visible().length,!quiet&&level>=11?1:0);
+    for(const fx of visible()) {
+      assert.equal(fx.x,target.x);assert.equal(fx.y,target.y-14);
+      assert.equal(fx.life,20*53/1000);assert.ok(fx.cosmetic&&!fx.combat);
+      assert.ok(manifest[1069].assets.includes(fx.s.f));
+      assert.ok(fs.existsSync(path.join(ROOT,fx.s.f)));
+    }
+    for(let i=0;i<120;i++)s.advanceSkillContacts(1/60);
+    assert.equal(visible().length,0);assert.equal(hits,1);
+  }
+  const {s,skill}=advancedCombat();
+  s.queueSkillContact(s.v,{x:140,y:0,hp:100},skill(1069),()=>assert.fail('missed projectile'),{targets:()=>[],windup:0});
+  for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+  assert.equal(s.l.fx.filter(fx=>fx.s?.f==='fx/advanced/m359_fly.webp').length,0);
+});
+
+test('Vô Ảnh Xuyên releases at body height and splashes nearby enemies without duplicate damage',()=>{
+  for(const mode of ['normal','quiet','budget','missing-impact'])for(const level of [10,11,25]) {
+    const {s,skill}=advancedCombat();
+    const caster={x:500,y:300,hp:100},target={x:680,y:300,hp:100,r:12};
+    const near={x:672,y:328,hp:100,r:12},far={x:680,y:390,hp:100,r:12};
+    const hits=[],sk=skill(1069,level),originalGeo=sk.geo;
+    if(mode==='quiet')s.l.quiet=true;
+    if(mode==='budget')for(let i=0;i<165;i++)s.l.fx.push({k:'boom',t:0,life:5,x:0,y:0});
+    if(mode==='missing-impact')delete s.JFX.m['advanced-359'];
+    const cast=s.queueSkillContact(caster,target,sk,hit=>hits.push(hit),{targets:()=>[target,near,far],windup:0});
+    const missile=s.l.combatProjectiles[0];
+    assert.equal(missile.x,caster.x);assert.equal(missile.y,caster.y-8);
+    assert.equal(missile.spd,(s.b0(s.T[1069],'missle_speed_v',level)||[])[0]);
+    assert.equal(sk.geo,originalGeo,'per-cast geometry must not mutate the selected skill');
+    assert.equal(hits.length,0,'splash waits for a projectile collision');
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.filter(hit=>hit===target).length,1,`${mode} level ${level}`);
+    assert.equal(hits.filter(hit=>hit===near).length,level>=11?1:0,`${mode} level ${level} nearby`);
+    assert.equal(hits.filter(hit=>hit===far).length,0);
+    assert.equal(cast.hits.get(target),1);
+  }
+});
+
+test('Đại Lực Kim Cang Chưởng and Tam Giới Quy Thiền damage clustered enemies once per cast',()=>{
+  for(const id of [1055,1057])for(const level of [1,25])for(const mode of ['normal','quiet','budget']) {
+    const {s,skill}=advancedCombat();
+    const target={x:140,y:0,hp:100,r:12},near={x:135,y:26,hp:100,r:12};
+    const far={x:140,y:100,hp:100,r:12},hits=[],sk=skill(id,level),originalGeo=sk.geo;
+    if(mode==='quiet')s.l.quiet=true;
+    if(mode==='budget')for(let i=0;i<165;i++)s.l.fx.push({k:'boom',t:0,life:5,x:0,y:0});
+    const cast=s.queueSkillContact(s.v,target,sk,hit=>hits.push(hit),{targets:()=>[target,near,far],windup:0});
+    assert.equal(sk.geo,originalGeo,'area settings belong only to this cast');
+    assert.equal(hits.length,0);
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.filter(hit=>hit===target).length,1,`${id} ${level} ${mode} primary`);
+    assert.equal(hits.filter(hit=>hit===near).length,1,`${id} ${level} ${mode} nearby`);
+    assert.equal(hits.filter(hit=>hit===far).length,0,`${id} ${level} ${mode} outside`);
+    assert.equal(cast.hits.get(target),1);assert.equal(cast.hits.get(near),1);
+  }
+});
+
+test('all three Tianwang 150 skills splash clustered enemies within radius 96 once per cast',()=>{
+  for(const id of [1058,1059,1060])for(const level of [1,25])for(const mode of ['normal','quiet','budget']) {
+    const {s,skill}=advancedCombat();
+    const target={x:90,y:0,hp:100,r:12},near={x:85,y:26,hp:100,r:12};
+    const far={x:90,y:100,hp:100,r:12},hits=[],sk=skill(id,level),originalGeo=sk.geo;
+    if(mode==='quiet')s.l.quiet=true;
+    if(mode==='budget')for(let i=0;i<165;i++)s.l.fx.push({k:'boom',t:0,life:5,x:0,y:0});
+    const cast=s.queueSkillContact(s.v,target,sk,hit=>hits.push(hit),{targets:()=>[target,near,far],windup:0});
+    assert.equal(sk.geo,originalGeo);assert.equal(cast.skill.geo.area,96);
+    assert.equal(hits.length,0,'area damage waits for contact');
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.filter(hit=>hit===target).length,1,`${id} ${level} ${mode} primary`);
+    assert.equal(hits.filter(hit=>hit===near).length,1,`${id} ${level} ${mode} nearby`);
+    assert.equal(hits.filter(hit=>hit===far).length,0,`${id} ${level} ${mode} outside`);
+    assert.equal(cast.hits.get(target),1);assert.equal(cast.hits.get(near),1);
+  }
+});
+
+test('Băng Tước Hoạt Kỳ sends exactly three blades from one origin in a narrow symmetric fan',()=>{
+  for(const level of [1,25])for(const angle of [0,Math.PI/2,-Math.PI*.7]) {
+    const {s,skill}=advancedCombat(),caster={x:500,y:300,hp:100};
+    const target={x:caster.x+Math.cos(angle)*300,y:caster.y+Math.sin(angle)*150,hp:100};
+    const cast=s.queueSkillContact(caster,target,skill(1063,level),()=>{},{targets:()=>[],windup:0});
+    const blades=s.l.combatProjectiles.slice();assert.equal(cast.emitted,3);
+    for(const [index,blade] of blades.entries()) {
+      assert.equal(blade.x,caster.x);assert.equal(blade.y,caster.y-14);assert.equal(blade.kind,1);
+      assert.ok(Math.abs(blade.ang-angle-[-.10,0,.10][index])<1e-9);
+    }
+    s.advanceSkillContacts(1/18);
+    for(const blade of blades) {
+      assert.ok(Math.abs(blade.x-caster.x-Math.cos(blade.ang)*blade.spd)<1e-9);
+      assert.ok(Math.abs(blade.y-(caster.y-14)-Math.sin(blade.ang)*blade.spd/2)<1e-9);
+    }
+    const gap=Math.hypot(blades[0].x-blades[2].x,(blades[0].y-blades[2].y)*2);
+    assert.ok(gap>0&&gap<blades[1].spd*.21,'the outer rays separate gradually, within a narrow fan');
+  }
+});
+
+test('Băng Tước Hoạt Kỳ splashes within 96 without multiplying damage from overlapping blades',()=>{
+  for(const mode of ['normal','quiet','budget']) {
+    const {s,skill}=advancedCombat(),target={x:140,y:0,hp:100,r:12};
+    const near={x:135,y:26,hp:100,r:12},far={x:140,y:110,hp:100,r:12},hits=[];
+    if(mode==='quiet')s.l.quiet=true;
+    if(mode==='budget')for(let i=0;i<165;i++)s.l.fx.push({k:'boom',t:0,life:5,x:0,y:0});
+    const cast=s.queueSkillContact(s.v,target,skill(1063),hit=>hits.push(hit),{targets:()=>[target,near,far],windup:0});
+    assert.equal(cast.emitted,3);assert.equal(cast.skill.geo.area,96);assert.equal(hits.length,0);
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.filter(hit=>hit===target).length,1,mode);
+    assert.equal(hits.filter(hit=>hit===near).length,1,mode);
+    assert.equal(hits.filter(hit=>hit===far).length,0,mode);
+  }
+});
+
+test('Thời Thặng Lục Long pierces and damages every enemy along its path once',()=>{
+  for(const level of [1,25])for(const quiet of [false,true]) {
+    const {s,skill}=advancedCombat();s.l.quiet=quiet;
+    const targets=[100,180,260].map(x=>({x,y:0,hp:100,r:12}));
+    const offPath={x:180,y:70,hp:100,r:12},hits=[];
+    const cast=s.queueSkillContact(s.v,targets[2],skill(1073,level),hit=>hits.push(hit),{
+      targets:()=>[...targets,offPath],windup:0,
+    });
+    assert.equal(cast.skill.geo.pierce,true);assert.equal(cast.skill.geo.area,0);
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    for(const target of targets)assert.equal(hits.filter(hit=>hit===target).length,1,`level ${level}`);
+    assert.ok(!hits.includes(offPath),'do not widen the dragon into an unrelated area attack');
+  }
+});
+
+test('Bổng Huýnh Lược Địa emits three abreast and steers toward a moving target',()=>{
+  for(const angle of [0,Math.PI/2,-Math.PI*.7]) {
+    const {s,skill}=advancedCombat(),caster={x:500,y:300,hp:100};
+    const target={x:caster.x+Math.cos(angle)*300,y:caster.y+Math.sin(angle)*150,hp:100};
+    const cast=s.queueSkillContact(caster,target,skill(1074),()=>{},{targets:()=>[],windup:0});
+    const rays=s.l.combatProjectiles.slice();assert.equal(cast.emitted,3);
+    for(const [index,ray] of rays.entries()) {
+      const side=[-24,0,24][index];
+      assert.equal(ray.kind,5);assert.equal(ray.tgt,target);
+      assert.ok(Math.abs(ray.x-(caster.x-Math.sin(angle)*side))<1e-9);
+      assert.ok(Math.abs(ray.y-(caster.y-14+Math.cos(angle)*side/2))<1e-9);
+      assert.ok(Math.abs(ray.ang-angle)<1e-9);
+    }
+    s.advanceSkillContacts(1/18);
+    const center=rays[1],before=center.ang;
+    target.x-=Math.sin(angle)*80;target.y+=Math.cos(angle)*40;
+    s.advanceSkillContacts(1/18);
+    assert.ok(center.ang>before,'center ray follows the moved target instead of flying straight');
+  }
+});
+
+test('Bổng Huýnh Lược Địa splashes nearby bodies once with three physical homing rays',()=>{
+  for(const level of [1,25])for(const mode of ['normal','quiet','budget']) {
+    const {s,skill}=advancedCombat(),target={x:140,y:0,hp:100,r:12};
+    const near={x:135,y:26,hp:100,r:12},far={x:140,y:110,hp:100,r:12},hits=[];
+    if(mode==='quiet')s.l.quiet=true;
+    if(mode==='budget')for(let i=0;i<165;i++)s.l.fx.push({k:'boom',t:0,life:5,x:0,y:0});
+    const cast=s.queueSkillContact(s.v,target,skill(1074,level),hit=>hits.push(hit),{targets:()=>[target,near,far],windup:0});
+    assert.equal(cast.emitted,3);assert.equal(cast.skill.geo.area,96);
+    assert.equal(cast.skill.geo.pierce,false);assert.equal(hits.length,0);
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.filter(hit=>hit===target).length,1,`${level} ${mode}`);
+    assert.equal(hits.filter(hit=>hit===near).length,1,`${level} ${mode}`);
+    assert.equal(hits.filter(hit=>hit===far).length,0,`${level} ${mode}`);
+    assert.equal(s.l.combatProjectiles.length,0,'rays expire or stop after contact');
+  }
+});
+
 test('every faction skill grid exposes Lv120 and Lv150 while preserving level gates', () => {
   const s=catalog(),nodes=new Map();s.m=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id);};
   Object.assign(s,{document:{querySelectorAll:()=>[]},D:String,N:()=>0,z1:()=>0,SA:()=>false,GA:()=>s.o.lvl,
