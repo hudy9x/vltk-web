@@ -23,7 +23,7 @@ function catalog() {
     h4:{}, Df:{}, B8(){}, Q0:['phys','cold','fire','poison','light'],
   };
   s.window=s;vm.createContext(s);
-  for (const file of ['data.js','app/data/projectile-effects-01.js','app/data/projectile-effects-02.js','app/data/advanced-skills-01.js']) load(s,file);
+  for (const file of ['data.js','app/data/projectile-effects-01.js','app/data/projectile-effects-02.js','app/data/advanced-skills-01.js','app/data/skill-150-details-01.js']) load(s,file);
   s.T=s.JX.skills;s.I=Object.fromEntries(s.JX.factions.map(f=>[f.key,f]));s.A0=s.JFX;
   declaration(s,'app/render/arena-01.js','TP');
   return s;
@@ -270,4 +270,146 @@ test('Kiếm Hoa uses the documented p6 charge once, not the secondary missile i
   assert.ok(s.l.fx.includes(charge));
   for(let i=0;i<6;i++)s.advanceSkillContacts(1/60);
   assert.ok(!s.l.fx.includes(charge));
+});
+
+// Execute the real j0 support-aggregation loop, followed by the real F2 formula.
+function supportStats(s, levels) {
+  const text=fs.readFileSync(path.join(ROOT,'app/core/attributes-01.js'),'utf8');
+  const tree=acorn.parse(text,{ecmaVersion:'latest'});
+  const j0=tree.body.find(node=>node.type==='VariableDeclaration'&&node.declarations[0].id.name==='j0').declarations[0].init;
+  const loop=j0.body.body.find(node=>node.type==='ForInStatement'&&text.slice(node.start,node.end).includes('u.skillBonus'));
+  assert.ok(loop);
+  s.o.sk=levels;s.u={skillBonus:{},seriesSkill:0,wmin:100,wmax:100,physPct:0,add:{},enh:{},crit:0,ignoreDef:0,aspd:2,series:0};
+  s.w=id=>levels[id]||0;
+  vm.runInContext(text.slice(loop.start,loop.end),s);
+  return s.u;
+}
+
+test('24 detail entries and all 82 exact support curves cover the document without changing level 120',()=>{
+  const s=catalog(),details=s.SKILL_150_DETAILS;
+  assert.equal(Object.keys(details).length,24);
+  let links=0;
+  for(const [id,entry]of Object.entries(details)) {
+    assert.equal(s.T[id].tier,150);assert.ok(entry.mechanics.length);assert.ok(entry.samples.length);
+    for(const link of entry.support) {
+      links++;assert.equal(link.coefficients.length,20);
+      assert.equal(link.coefficients.at(-1),link.maximum);
+      const matches=Object.values(s.T[link.id].attr).filter(rows=>Array.isArray(rows[0])&&rows[0][0]===link.target);
+      assert.equal(matches.length,1,`${link.id} -> ${link.target} must not double count`);
+      assert.deepEqual(Array.from(matches[0],row=>row[2]),Array.from(link.coefficients));
+    }
+  }
+  assert.equal(links,82);
+  for(const [id,total]of [[1055,395],[1056,114],[1076,305],[1081,197]])
+    assert.equal(details[id].support.reduce((n,link)=>n+link.maximum,0),total);
+  const before=JSON.stringify(s.T);
+  load(s,'app/data/skill-150-details-01.js');assert.equal(JSON.stringify(s.T),before,'reload must be idempotent');
+  const base={window:null,JFX:{m:{},f:{},c:{}}};base.window=base;vm.createContext(base);
+  load(base,'data.js');load(base,'app/data/advanced-skills-01.js');
+  for(const skill of Object.values(base.JX.skills)) {
+    if(skill.tier===120)assert.equal(JSON.stringify(s.T[skill.id]),JSON.stringify(skill));
+    for(const [key,value]of Object.entries(skill.attr))assert.equal(JSON.stringify(s.T[skill.id].attr[key]),JSON.stringify(value),`${skill.id}.${key}`);
+  }
+});
+
+test('150 support bonuses change real damage, use exact intermediate levels and keep secondary bonuses separate',()=>{
+  const {s,skill}=advancedCombat();
+  const base=s.F2(supportStats(s,{}),s.T[1055],25).tot;
+  let stats=supportStats(s,{14:2});assert.equal(stats.skillBonus[1055],7);
+  assert.ok(Math.abs(s.F2(stats,s.T[1055],25).tot/base-1.07)<1e-10);
+  stats=supportStats(s,{14:20,218:20,271:20,318:20});assert.equal(stats.skillBonus[1055],395);
+  assert.ok(Math.abs(s.F2(stats,s.T[1055],25).tot/base-4.95)<1e-10);
+  stats=supportStats(s,{172:20,179:20,182:20,375:20});
+  assert.equal(stats.skillBonus[1109],197);assert.equal(stats.skillBonus[1081],undefined);
+  assert.ok(skill(1114).tot>0);assert.equal(s.SKILL_150_DETAILS[1114].support.length,0);
+});
+
+test('150 skill details use the same compact current/next-level layout as 90 without reference tables',()=>{
+  const s=catalog();s.D=text=>String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+  Object.assign(s,{z1:()=>0,UA:skill=>skill.tier===150,wn:()=> 'passive',_7:{passive:'Hỗ trợ'},
+    g0:['Kim','Mộc','Thủy','Hỏa','Thổ'],j1:()=>null,Ci:()=>true,B5:{},i4:()=>false,
+    xv:()=>['Thông số chiêu'],Gf:()=>[],l1:{},f4:()=>0,Ev:String,Xf:{},
+    mw:/^(skill_|missle_)/,ww:10,y7:()=>'',D7:()=>'',v0:()=>0});
+  declaration(s,'app/core/helpers-and-config-01.js','b0');
+  for(const name of ['Bv','Qf'])declaration(s,'app/ui/legacy-panels-and-audio-01.js',name);
+  declaration(s,'app/ui/legacy-panels-and-audio-02.js','Kf');
+  for(const id of Object.keys(s.SKILL_150_DETAILS)) {
+    const html=s.Kf(+id,10,0,10,10,11);
+    assert.match(html,/Cấp hiện tại: 10/);assert.match(html,/Cấp kế tiếp: 11/);
+    assert.match(html,/Thông số chiêu/);assert.match(html,/Tiêu hao nội lực:/);
+    assert.match(html,/Phạm vi tấn công:/);
+    assert.doesNotMatch(html,/<table|<details|skill150-details|Cơ chế tham khảo|Hệ số gốc|Chi tiết tuyệt kỹ 150/);
+    assert.ok(!html.includes('undefined'));assert.ok(!html.includes('NaN'));
+  }
+  s.o.sk={14:20};s.z1=id=>id===14?1:0;
+  assert.match(s.Kf(1055,25,0,25,25,0),/Hàng Long Bất Vũ cấp 21: \+132%/);
+  assert.doesNotMatch(s.Kf(1055,25,0,25,25,0),/Cấp kế tiếp/);
+  s.o.sk={172:20};s.z1=()=>0;
+  assert.match(s.Kf(1081,10,0,10,10,11),/Thiên Tế Tấn Lôi → Thiên Lôi Chấn Nhạc \(tầng 2\) cấp 20: \+54%/);
+  for(const skill of Object.values(s.T).filter(skill=>skill.tier===120)) {
+    const before=s.Kf(skill.id,20,0,20,20,0),details=s.SKILL_150_DETAILS;
+    s.SKILL_150_DETAILS=undefined;
+    assert.equal(s.Kf(skill.id,20,0,20,20,0),before);s.SKILL_150_DETAILS=details;
+  }
+  assert.equal(s.Qf(1055,s.T[14]),'Đại Lực Kim Cang Chưởng');
+  assert.match(s.Qf(1109,s.T[172]),/Thiên Lôi Chấn Nhạc.*tầng phụ/);
+});
+
+function normalizedSkillUi() {
+  const s={Math,Set,Map,JFX:{m:{},c:{},f:{}},o:{lvl:150,sk:{}},l:{},
+    E:(n,a,b)=>Math.max(a,Math.min(b,n)),mw:/^(skill_|missle_)/,ww:10,
+    z1:()=>0,Ci:()=>true,i4:()=>false,wn:()=> 'passive',_7:{passive:'Hỗ trợ'},
+    Ev:String,v0:()=>0,D7:()=>'',y7:()=>'',Ti:key=>key,f4:()=>0};
+  s.window=s;vm.createContext(s);load(s,'data.js');s.T=s.JX.skills;s.S=s.JX;
+  const source=fs.readFileSync(path.join(ROOT,'app/core/helpers-and-config-01.js'),'utf8');
+  const normalize=acorn.parse(source,{ecmaVersion:'latest'}).body.find(node=>
+    node.type==='IfStatement'&&source.slice(node.test.start,node.test.end)==='window.SK_STD');
+  assert.ok(normalize);
+  // Follow the actual manifest order, including the attr replacement that used
+  // to erase all imported 150 support links after isolated catalog tests passed.
+  for(const {file}of require('../app/modules.json').modules) {
+    if(/^data\/skill-tables-|^data\/advanced-skills-|^data\/skill-150-details-/.test(file))load(s,'app/'+file);
+    if(file==='core/helpers-and-config-01.js')vm.runInContext(source.slice(normalize.start,normalize.end),s);
+  }
+  s.I=Object.fromEntries(s.JX.factions.map(f=>[f.key,f]));
+  s.D=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  for(const name of ['b0','i1','pw','UA','j1','B5','g0'])declaration(s,'app/core/helpers-and-config-01.js',name);
+  declaration(s,'app/combat/skills-01.js','l1');
+  for(const name of ['Cv','X8','Sv','Iv','Xf'])declaration(s,'app/ui/legacy-panels-and-audio-03.js',name);
+  for(const name of ['xv','Bv','Qf'])declaration(s,'app/ui/legacy-panels-and-audio-01.js',name);
+  load(s,'app/ui/skill-150-effects-01.js');
+  for(const name of ['Gf','Kf'])declaration(s,'app/ui/legacy-panels-and-audio-02.js',name);
+  return s;
+}
+
+test('actual startup normalization preserves all 82 support links and both directions in real skill modals',()=>{
+  const s=normalizedSkillUi();let count=0;
+  for(const detail of Object.values(s.SKILL_150_DETAILS))for(const link of detail.support) {
+    const attrs=Object.values(s.T[link.id].attr).filter(rows=>Array.isArray(rows[0])&&rows[0][0]===link.target);
+    assert.equal(attrs.length,1,`${link.id} -> ${link.target} after SK_STD`);
+    assert.equal(attrs[0][19][2],link.maximum);count++;
+    assert.ok(s.Qf(link.target,s.T[link.id]).includes(detail.name));
+  }
+  assert.equal(count,82);
+  const main=s.Kf(1063,25,0,25,25,0);
+  assert.match(main,/Tầng 2: Băng Ngưng Hàn Yên/);assert.match(main,/Số tia: 5/);
+  assert.match(main,/Được hỗ trợ/);assert.match(main,/Băng Tung Vô ảnh/);
+  assert.match(main,/Băng sát: 1370 đến 2383 điểm/);
+  assert.doesNotMatch(main,/<table|<details|Cơ chế tham khảo/);
+  const support=s.Kf(102,0,0,0,1,1);
+  assert.match(support,/Hỗ trợ sát thương cho:/);assert.match(support,/Thủy Anh Man Tú: \+1%/);
+  s.o.sk={99:20};s.z1=id=>id===99?1:0;
+  assert.ok(s.Kf(1063,25,0,25,25,0).includes(`${s.T[99].n} cấp 21: +48%`));
+});
+
+test('150 tiers use source coefficients and gates while legacy 90 tier tables remain unchanged',()=>{
+  const s=normalizedSkillUi();
+  const locked=s.Gf(s.T[1079],10);assert.match(locked[0][1],/từ cấp 11/);assert.equal(locked.length,1);
+  const unlocked=s.Gf(s.T[1079],25);assert.ok(unlocked.some(row=>row[0]==='ev'&&row[1].includes('Kiếm Minh Thương Khung')));
+  assert.ok(unlocked.some(row=>row[1]==='Lôi sát: 35% sát thương chiêu chính'));
+  assert.ok(unlocked.some(row=>row[1]==='Độ trễ: 0.18 giây'));
+  const legacy=s.Gf(s.T[337],20);assert.ok(legacy.some(row=>row[1].includes('Phong Tuyết Băng Thiên')));
+  const previous=s.skill150EffectRows;s.skill150EffectRows=undefined;
+  assert.deepEqual(s.Gf(s.T[337],20),legacy);s.skill150EffectRows=previous;
+  assert.equal(s.skill150EffectRows(s.T[713],20),null);
 });

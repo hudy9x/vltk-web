@@ -1,5 +1,9 @@
 // ui/legacy-panels-and-audio — shared IIFE scope; order is defined in modules.json.
 var Gf = function s(A, n, t, e = 0) {
+  if (!t && typeof skill150EffectRows === "function") {
+    const advanced = skill150EffectRows(A, n);
+    if (advanced) return advanced;
+  }
   const a = window.SK_EV || {},
     i = [],
     r = (f, h, g) =>
