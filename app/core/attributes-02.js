@@ -58,7 +58,11 @@ var F2 = function (A, n, t) {
     I0 = {
       skLeech: (b0(n, "steallife_p", t) || [0])[0] || 0,
       skMLeech: (b0(n, "stealmana_p", t) || [0])[0] || 0,
-      geo: h ? g : U2(n) && n.form < 8 ? N5(n, t, f) : null,
+      geo: n.tier === 150 && n.form === 7
+        ? { k: "self", r: f, pierce: true }
+        : n.tier === 150 && n.form === 6
+          ? { k: "spot", r: f, pierce: true }
+          : h ? g : U2(n) && n.form < 8 ? N5(n, t, f) : null,
       many: h || null,
       id: n.id,
       n: n.n,

@@ -28,7 +28,7 @@ var combatSandbox = (function () {
     if (faction.starter) state.sk[faction.starter] = 1;
     for (const id of faction.skills) {
       const skill = T[id];
-      if (skill && skill.tier === 90 && !SA(id)) {
+      if (skill && [90, 120, 150].includes(skill.tier) && !SA(id)) {
         state.sk[id] = skill.max; state.skL[id] = { lv: skill.max, xp: 0 }; state.bkOk[id] = 1;
       }
     }
@@ -140,7 +140,7 @@ var combatSandbox = (function () {
     state.bkOk || (state.bkOk = {});
     for (const id of I[state.fac].skills) {
       const skill = T[id];
-      if (skill && skill.tier === 90 && !SA(id)) {
+      if (skill && [90, 120, 150].includes(skill.tier) && !SA(id)) {
         state.sk[id] = skill.max;
         state.skL[id] = { lv: skill.max, xp: 0 };
         state.bkOk[id] = 1;
@@ -238,7 +238,7 @@ var combatSandbox = (function () {
     if (!panel || !o || !I[o.fac]) return;
     panel.querySelectorAll("[data-faction]").forEach(button => button.classList.toggle("on", button.dataset.faction === o.fac));
     panel.querySelector("#arena-info").textContent = `${I[o.fac].n} · Cấp ${o.lvl} · ${o.skPts} điểm kỹ năng còn lại`;
-    panel.querySelector(".arena-skills").innerHTML = `<button type="button" data-skill="basic">Đánh thường</button>` + I[o.fac].skills.filter(id => o.sk[id] && T[id] && T[id].tier === 90 && UA(T[id])).map(id => `<button type="button" class="${+o.main === +id ? "on" : ""}" data-skill="${id}">${D(T[id].n)}</button>`).join("");
+    panel.querySelector(".arena-skills").innerHTML = `<button type="button" data-skill="basic">Đánh thường</button>` + I[o.fac].skills.filter(id => o.sk[id] && T[id] && [90, 120, 150].includes(T[id].tier) && (UA(T[id]) || T[id].tier === 120)).map(id => `<button type="button" class="${+o.main === +id ? "on" : ""}" ${UA(T[id]) ? `data-skill="${id}"` : `data-skill-info="${id}"`} title="${T[id].tier === 120 ? "Xem chiêu hỗ trợ · chưa áp dụng hiệu ứng chiến đấu" : "Chọn làm chiêu chính"}">Lv${T[id].tier} · ${D(T[id].n)}</button>`).join("");
   }
   panel.onclick = event => {
     const button = event.target.closest("button");
@@ -246,6 +246,7 @@ var combatSandbox = (function () {
     try {
       if (button.dataset.faction) switchFaction(button.dataset.faction);
       else if (button.dataset.skill) selectSkill(button.dataset.skill);
+      else if (button.dataset.skillInfo) R8(+button.dataset.skillInfo);
       else if (button.hasAttribute("data-spawn")) {
         const [id, rarity] = panel.querySelector("#arena-monster").value.split(":");
         if (!id) throw new Error("Không có quái phù hợp với bộ lọc.");

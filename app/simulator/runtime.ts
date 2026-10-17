@@ -472,10 +472,12 @@ export function createSimulator() {
     const faction = I[field("sim-faction").value];
     const active = faction.skills.filter(id => T[id] && UA(T[id]));
     const skills90 = active.filter(id => T[id].tier === 90);
-    const option = (id: number) => `<option value="${id}">${T[id].tier === 90 ? "9x · " : ""}${D(T[id].n)}</option>`;
+    const skills150 = active.filter(id => T[id].tier === 150);
+    const option = (id: number) => `<option value="${id}">${T[id].tier >= 90 ? `Lv${T[id].tier} · ` : ""}${D(T[id].n)}</option>`;
     field("sim-skill").innerHTML = '<option value="basic">Đánh thường</option>' +
       (skills90.length ? `<optgroup label="Kỹ năng 9x · cấp tối đa">${skills90.map(option).join("")}</optgroup>` : "") +
-      `<optgroup label="Kỹ năng khác">${active.filter(id => T[id].tier !== 90).map(option).join("")}</optgroup>`;
+      (skills150.length ? `<optgroup label="Kỹ năng 150 · cấp tối đa">${skills150.map(option).join("")}</optgroup>` : "") +
+      `<optgroup label="Kỹ năng khác">${active.filter(id => ![90, 150].includes(T[id].tier)).map(option).join("")}</optgroup>`;
     field("sim-skill").value = String(sim && sim.profile.fac === faction.key ? sim.profile.main : skills90[0] || active[0] || "basic");
   }
   function updateInfo() {
