@@ -34,6 +34,7 @@ export interface SkillGeometry {
 
 export interface CombatSkill {
   id?: number | string;
+  L?: number;
   geo?: SkillGeometry;
   rad?: number;
   targets?: number;
@@ -116,6 +117,7 @@ export interface SpriteMissile extends EffectBase {
 }
 export interface InterpolatedMissile extends EffectBase {
   k: 'mis';
+  s?: SpriteMetadata;
   t: number;
   life: number;
   x1: number;

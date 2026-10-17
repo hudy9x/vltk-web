@@ -5273,7 +5273,7 @@
     "enemy": 1,
     "self": 0,
     "weapon": 0,
-    "eqt": 102,
+    "eqt": 101,
     "cost": 0,
     "wait": 3,
     "attr": {
@@ -5802,7 +5802,7 @@
     "enemy": 1,
     "self": 0,
     "weapon": 0,
-    "eqt": 101,
+    "eqt": 102,
     "cost": 0,
     "wait": 5,
     "attr": {
@@ -11115,10 +11115,21 @@
     "tier": 150
   }
 };
+  // Vô Ảnh Xuyên: double flight speed at every level (frames use this curve).
+  skills[1069].attr.missle_speed_v = skills[1069].attr.missle_speed_v.map(speed => speed * 2);
   Object.assign(window.JX.skills, skills);
   for (const skill of Object.values(skills)) {
     const faction = window.JX.factions.find(faction => faction.key === skill.f);
     if (faction && !faction.skills.includes(skill.id)) faction.skills.push(skill.id);
+  }
+  // Match the existing Tangmen weapon branches: crossbow, flying knife, dart.
+  // Reorder only the three 150 slots; preserve every other tier and remain
+  // idempotent when this catalog is registered again.
+  const tangmen = window.JX.factions.find(faction => faction.key === "tangmen");
+  const tangmen150 = [1070, 1069, 1071];
+  let row150 = 0;
+  for (let index = 0; index < tangmen.skills.length; index++) {
+    if (tangmen150.includes(tangmen.skills[index])) tangmen.skills[index] = tangmen150[row150++];
   }
   const effects = {
   "m": {
@@ -12010,9 +12021,16 @@
   // Correct the two crossed Thiên Vương animation mappings.
   effects.f[1059].c = "advanced-350";
   effects.f[1060].c = "advanced-349";
+  effects.m["advanced-331"].spd *= 2;
   // Vi Đà: use the same wider radius in tooltips, targeting and collision.
   skills[1056].radius = 256;
   skills[1056].attr.skill_attackradius = skills[1056].attr.skill_attackradius.map(() => 256);
+  // Child event 1097: Vô Ảnh Xuyên's stationary impact sheet.
+  effects.m["advanced-359"] = {
+    fly: { f: "fx/advanced/m359_fly.webp", n: 20, d: 1, w: 195, h: 160,
+      ax: 99, ay: 125, ms: 53 },
+    spd: 0, life: 1.72,
+  };
   // Child event 1095 is the stationary impact of U Hồn Phệ Ảnh.
   effects.m["advanced-329"].hit = {
     f: "fx/advanced/m357_fly.webp", n: 19, d: 1, w: 225, h: 230,
