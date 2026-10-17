@@ -407,6 +407,10 @@
       "lines": 12018
     },
     {
+      "file": "gameplay/skill-progression-01.js",
+      "symbols": ["unlockSkillBook", "migrateAdvancedSkillTraining"]
+    },
+    {
       "file": "core/helpers-and-config-01.js",
       "symbols": [
         "fa",

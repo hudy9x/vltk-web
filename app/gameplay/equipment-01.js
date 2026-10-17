@@ -7,7 +7,7 @@ var G1 = ["vlmt", "ttk", "rngua"];
 
 var F7 = (s) => o.inv.reduce((A, n) => A + (n.ktc && n.ktc.k === s ? n.ktc.c : 0), 0);
 
-var ts = { ldp: "ldp", dgt: "dgt", dtbk: "dtbk", mt90: "bk90", ldt: "ldt", rngua: "rngua" };
+var ts = { ldp: "ldp", dgt: "dgt", dtbk: "dtbk", mt90: "bk90", mt120: "bk120", mt150: "bk150", ldt: "ldt", rngua: "rngua" };
 
 var E4 = (s) => F7(s) + (ts[s] ? N("misc", ts[s]) : s === "vlmt" || s === "ttk" ? N("misc", s) : 0);
 

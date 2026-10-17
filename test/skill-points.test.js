@@ -9,6 +9,7 @@ function game(){
  D0(){},tn(){},Zn(){},qA(){},_s(){},$(){},k(){}};
  vm.createContext(s);
  for(const name of ['Ni','Q1'])declaration(s,'app/core/attributes-02.js',name);
+ declaration(s,'app/gameplay/skill-progression-01.js','unlockSkillBook');
  declaration(s,'app/combat/skills-01.js','Yi');
  declaration(s,'app/ui/legacy-panels-and-audio-01.js','qf');
  declaration(s,'app/ui/legacy-panels-and-audio-02.js','bulkSkillPoints');

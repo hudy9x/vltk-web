@@ -265,7 +265,7 @@ var Nw = function (A) {
       if (!Q1(c) || te(c)) continue;
       const d = o.sk[r] || 0,
         f =
-          UA(c) && c.tier !== 90 ? Math.max(Ni(c), Math.min(c.max, GA() + d7 - c.req + 1)) : Ni(c),
+          UA(c) && ![90, 150].includes(c.tier) ? Math.max(Ni(c), Math.min(c.max, GA() + d7 - c.req + 1)) : Ni(c),
         h = Math.max(1, Math.min(20, f - d));
       for (const g of [...new Set([1, Math.min(5, h), h])]) {
         o.sk[r] = d + g;
@@ -274,12 +274,10 @@ var Nw = function (A) {
       }
     }
     if (e == null) break;
-    if (
-      ((a = Math.min(a, o.skPts)),
-      typeof Z2 == "function" && !l.sim && Z2(e),
-      (a = Math.min(a, Ni(T[e]) - (o.sk[e] || 0))),
-      T[e].tier === 90)
-    ) {
+    a = Math.min(a, o.skPts);
+    if (!l.sim && !unlockSkillBook(e)) break;
+    a = Math.min(a, Ni(T[e]) - (o.sk[e] || 0));
+    if ([90, 150].includes(T[e].tier)) {
       (Yi(e), m4(T[e]) || n++);
       continue;
     }
@@ -473,7 +471,7 @@ var Q1 = function (A) {
 var Ni = function (A) {
   return typeof SA == "function" && SA(A.id)
     ? D4(A.id)
-    : A.tier === 90
+    : [90, 150].includes(A.tier)
       ? 1
       : Math.max(0, Math.min(A.max, GA() - A.req + 1));
 };

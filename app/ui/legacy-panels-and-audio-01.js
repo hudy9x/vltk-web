@@ -746,7 +746,7 @@ var Bs = function () {
 var qf = function (A) {
   const n = o.sk[A] || 0;
   if (!n) return !1;
-  const t = T[A].tier === 90 && !SA(A);
+  const t = m4(T[A]);
   return (
     n <= 1 || t ? delete o.sk[A] : (o.sk[A] = n - 1),
     t || o.skPts++,

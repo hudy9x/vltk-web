@@ -593,7 +593,7 @@ var ob = async function () {
   const A = Q();
   if (o.lvl < Ee || A.stat.reborn >= n2) return;
   (await X1(
-    "Chuyển sinh: về cấp 1, giữ trang bị. Toàn bộ điểm tiềm năng và kỹ năng cũ bị tẩy (giữ nguyên võ công 90 đã luyện), nhận điểm thưởng chuyển sinh. Quái mạnh hơn. Tiếp tục?",
+    "Chuyển sinh: về cấp 1, giữ trang bị. Toàn bộ điểm tiềm năng và kỹ năng cũ bị tẩy (giữ nguyên võ công 90 và 150 đã luyện), nhận điểm thưởng chuyển sinh. Quái mạnh hơn. Tiếp tục?",
   ),
     A.stat.reborn++,
     delete o.tanthuXp);
@@ -608,7 +608,7 @@ var ob = async function () {
   const a = {};
   for (const i in o.sk)
     T[i] &&
-      T[i].tier === 90 &&
+      [90, 150].includes(T[i].tier) &&
       o.sk[i] > 0 &&
       !(typeof SA == "function" && SA(i)) &&
       (a[i] = o.sk[i]);
@@ -624,7 +624,7 @@ var ob = async function () {
     (l.dirty = !0),
     (l.zoneShown = null),
     C(
-      `<b class="up">Chuyển sinh lần ${n}!</b> Tẩy toàn bộ điểm cũ (giữ võ công 90${
+      `<b class="up">Chuyển sinh lần ${n}!</b> Tẩy toàn bộ điểm cũ (giữ võ công 90/150${
         Object.keys(a).length
           ? ": " +
             Object.keys(a)

@@ -1,6 +1,6 @@
 // Advanced skill catalog extracted from the locally archived game.B5yDbhNX.js.
 // 120 support mechanics and 150 secondary event chains are not ported here.
-// Unlocking uses the existing level/skill-point rules, without unavailable books.
+// 120 unlocks with its book and uses skill points; 150 unlocks then trains like 90.
 (function registerAdvancedSkills() {
   const skills = {
   "708": {
@@ -11119,6 +11119,7 @@
   skills[1069].attr.missle_speed_v = skills[1069].attr.missle_speed_v.map(speed => speed * 2);
   Object.assign(window.JX.skills, skills);
   for (const skill of Object.values(skills)) {
+    skill.book = skill.tier === 150 ? "bk150" : "bk120";
     const faction = window.JX.factions.find(faction => faction.key === skill.f);
     if (faction && !faction.skills.includes(skill.id)) faction.skills.push(skill.id);
   }

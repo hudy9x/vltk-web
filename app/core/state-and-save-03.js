@@ -233,11 +233,6 @@ var v8 = function (A) {
       (((a >= 708 && a <= 717) || (a >= 1055 && a <= 1109)) &&
         (n.skPts = (n.skPts || 0) + (n.sk[a] | 0)),
       delete n.sk[a]);
-  {
-    const a = (A.mats || {}).misc || {},
-      i = (a.bk120 | 0) + (a.bk150 | 0);
-    i && ((a.bk90 = (a.bk90 | 0) + i), delete a.bk120, delete a.bk150);
-  }
   if (!n.sk9Free) {
     n.sk9Free = 1;
     for (const a in n.sk)
@@ -362,12 +357,13 @@ var v8 = function (A) {
     const a = (n.lvl || 1) + $i * ((n.rw && n.rw.stat && n.rw.stat.reborn) || 0);
     for (const i in n.sk) {
       const r = T[i];
-      if (!r || r.tier === 90) continue;
+      if (!r || [90, 150].includes(r.tier)) continue;
       const c = Math.max(1, Math.min(r.max, a - r.req + 1));
       n.sk[i] > c && ((n.skPts = (n.skPts || 0) + n.sk[i] - c), (n.sk[i] = c));
     }
     n.sk9m = 1;
   }
+  migrateAdvancedSkillTraining(n);
   if ((n.eqRebuild | 0) < 2 && typeof ZA == "function") {
     let a = 0,
       i = 0;

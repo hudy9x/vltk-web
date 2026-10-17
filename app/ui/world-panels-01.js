@@ -156,7 +156,7 @@ var $B = function () {
         w = o.sk[g] || 0,
         x = w ? z1(g) : 0,
         p = Q1(u);
-      return `<div class="u2k ${[W2(u) ? "" : "lock", l.P.main.id === +g ? "main" : "", w ? "on" : ""].join(" ")}" data-id="${g}" title="${D(u.n)}"><img src="${D(u.ic || "")}" alt=""><i>${w ? w + x : ""}</i>${p ? `<button class="plus" data-id="${g}" title="Cộng 1 điểm">+</button>` : ""}${u.tier === 90 && w && w < u.max && N("misc", "dtbk") > 0 && _4(g) ? `<button class="u2dt" data-dt="${g}" title="Dùng Đại Thành Bí Kíp">📕</button>` : ""}</div>`;
+      return `<div class="u2k ${[W2(u) ? "" : "lock", l.P.main.id === +g ? "main" : "", w ? "on" : ""].join(" ")}" data-id="${g}" title="${D(u.n)}"><img src="${D(u.ic || "")}" alt=""><i>${w ? w + x : ""}</i>${p ? `<button class="plus" data-id="${g}" title="${[90, 150].includes(u.tier) ? "Lĩnh ngộ bằng bí kíp" : "Cộng 1 điểm"}">+</button>` : ""}${[90, 150].includes(u.tier) && w && w < u.max && N("misc", "dtbk") > 0 && _4(g) ? `<button class="u2dt" data-dt="${g}" title="Dùng Đại Thành Bí Kíp">📕</button>` : ""}</div>`;
     },
     r = l.P && l.P.basic,
     c = o.mainLock && o.main === "basic",
@@ -170,7 +170,7 @@ var $B = function () {
   ((m("#t-skill").innerHTML =
     `<div class="u2tabs"><button class="on">${D(A.n)}</button><button id="u2skOpt">› Trợ Thủ Kiếm Hiệp</button></div>
     <div class="u2kg">${d}${f}</div>
-    <div class="u2foot"><span class="dim small">Bí Kíp 90 ×${N("misc", "bk90")} · Đại Thành ×${N("misc", "dtbk")}${o.mainLock ? ' · <a id="bAutoMain">bỏ khóa chiêu chính</a>' : ""}</span><span class="sp"></span><button class="btn sm" id="bSugSk">Gợi ý</button><button class="btn sm" id="bTT">Tẩy Tủy</button><span class="u2pts">Điểm kỹ năng còn: <b>${o.skPts}</b></span></div>
+    <div class="u2foot"><span class="dim small">Bí Kíp 90 ×${N("misc", "bk90")} · 120 ×${N("misc", "bk120")} · 150 ×${N("misc", "bk150")} · Đại Thành ×${N("misc", "dtbk")}${o.mainLock ? ' · <a id="bAutoMain">bỏ khóa chiêu chính</a>' : ""}</span><span class="sp"></span><button class="btn sm" id="bSugSk">Gợi ý</button><button class="btn sm" id="bTT">Tẩy Tủy</button><span class="u2pts">Điểm kỹ năng còn: <b>${o.skPts}</b></span></div>
     <p class="dim small u2tip">Bấm biểu tượng: xem chi tiết, chọn chiêu chính, rút điểm. Bấm <b class="plusd">+</b> để cộng điểm.</p>`),
     document.querySelectorAll("#t-skill .plus").forEach(
       (g) =>
