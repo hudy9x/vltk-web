@@ -386,7 +386,10 @@ var G3 = function (A, n, t) {
   const parentMissile = parentMissileId && A0.m[parentMissileId] && A0.m[parentMissileId].fly;
   const f = parentMissile ? parentMissileId : e.c || A0.s[t.id],
     h = t.id && A0.m[f];
-  if ((Ya(t), !h || (l.quiet && !activeCombatCast))) {
+  // Kiếm Hoa owns its p6 charge below, including the physical area.
+  // Avoid drawing the same pre-cast sheet twice.
+  if (+t.id !== 1061 || !activeCombatCast) Ya(t);
+  if (!h || (l.quiet && !activeCombatCast)) {
     x8(A, n, t);
     return;
   }
@@ -426,7 +429,22 @@ var G3 = function (A, n, t) {
     _ = u1 && u1.life;
   try {
     const visualStart = l.fx.length, contactStart = (l.combatProjectiles || []).length;
-    bs(f, g, o.lowFx && !activeCombatCast ? Math.min(u, 3) : u, a, A, n, n);
+    if (l.fx.length <= mf) CombatEngine.spawnAdvancedCastVisual(+t.id, A, A0.m);
+    const layout = CombatEngine.advancedSkillLayout(+t.id, A, n);
+    const separateImpact = CombatEngine.configureAdvancedSkillImpact(+t.id, activeCombatCast, h.hit);
+    if (layout) {
+      for (const placement of layout) {
+        const missile = Wn(f, placement.x, placement.y, placement.angle, n);
+        if (!missile) continue;
+        missile.kind = placement.kind;
+        if (!placement.kind) {
+          missile.spd = 0;
+          missile.travelLimit = 0;
+        }
+        if (separateImpact) missile.m = Object.assign({}, missile.m, { hit: null });
+      }
+    } else bs(f, g, o.lowFx && !activeCombatCast ? Math.min(u, 3) : u, a, A, n, n);
+    if (+t.id === 1061) CombatEngine.spawnSwordFlowerCharge(activeCombatCast, A0.c && A0.c[e.pre]);
     const legacyId = ({ 322: 138, 326: 138, 323: 139, 327: 139 })[+t.id];
     const legacySprite = legacyId && A0.m[legacyId] && A0.m[legacyId].hit;
     if (legacySprite) {

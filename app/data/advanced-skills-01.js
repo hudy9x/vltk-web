@@ -12007,6 +12007,17 @@
     }
   }
 };
+  // Correct the two crossed Thiên Vương animation mappings.
+  effects.f[1059].c = "advanced-350";
+  effects.f[1060].c = "advanced-349";
+  // Vi Đà: use the same wider radius in tooltips, targeting and collision.
+  skills[1056].radius = 256;
+  skills[1056].attr.skill_attackradius = skills[1056].attr.skill_attackradius.map(() => 256);
+  // Child event 1095 is the stationary impact of U Hồn Phệ Ảnh.
+  effects.m["advanced-329"].hit = {
+    f: "fx/advanced/m357_fly.webp", n: 19, d: 1, w: 225, h: 230,
+    ax: 112, ay: 141, ms: 56,
+  };
   for (const key of ["m", "c", "f"]) Object.assign(window.JFX[key], effects[key]);
   // Preserve zero-speed fields and source lifetimes; the legacy fallback
   // otherwise treats every fly sheet as a moving projectile at 360 px/s.
