@@ -368,6 +368,49 @@ test('Bổng Huýnh Lược Địa splashes nearby bodies once with three physic
   }
 });
 
+test('Thời Thặng Lục Long flies first, followed by its delayed fire core and flame trail',()=>{
+  const {s,skill}=advancedCombat(),target={x:300,y:0,hp:100,r:12};let hits=0;
+  const cast=s.queueSkillContact(s.v,target,skill(1073),()=>hits++,{targets:()=>[target],windup:0});
+  const dragon=s.l.combatProjectiles[0];
+  s.advanceSkillContacts(1/18);
+  const flames=s.l.fx.filter(fx=>fx.s?.f==='fx/advanced/m344_fly.webp');
+  assert.equal(flames.length,1);assert.equal(flames[0].x,dragon.x);
+  assert.equal(flames[0].y,dragon.y-(dragon.z+dragon.hz)*s.wf+12);
+  assert.equal(flames[0].life,6*56/1000);assert.ok(flames[0].cosmetic&&!flames[0].combat);
+  const core=s.l.fx.find(fx=>fx.s?.f==='fx/advanced/m363_fly.webp');
+  assert.ok(core&&core.cosmetic&&!core.combat);assert.ok(core.t<0&&flames[0].t<0);
+  const draws=[];s.Fa=(...args)=>draws.push(args);s.W={globalAlpha:1};
+  declaration(s,'app/render/arena-02.js','Ds');declaration(s,'app/render/arena-01.js','CP');
+  s.YP(dragon);s.CP(core);s.CP(flames[0]);
+  assert.ok(draws.some(args=>args[0].f==='fx/advanced/m335_fly.webp'));
+  assert.ok(!draws.some(args=>args[0].f==='fx/advanced/m363_fly.webp'||args[0].f==='fx/advanced/m344_fly.webp'),
+    'only the dragon is visible at first');
+  s.advanceSkillContacts(3/18);assert.equal(s.CP(core),false,'fire still waits behind the leading dragon');
+  s.advanceSkillContacts(2/18);draws.length=0;s.CP(core);
+  assert.equal(draws.length,1);assert.ok(draws[0][3]<dragon.x-90,'fire follows well behind the head');
+  assert.equal(draws[0][5],true);
+  assert.ok(manifest[1073].assets.includes(flames[0].s.f));
+  assert.equal(cast.emitted,1,'additional layers do not register extra combat missiles');
+  while(dragon.contactAlive!==false)s.advanceSkillContacts(1/60);
+  assert.ok(s.l.fx.includes(core),'delayed fire finishes its path after the dragon expires');
+  for(let i=0;i<120;i++)s.advanceSkillContacts(1/60);
+  assert.equal(hits,1);assert.equal(s.l.fx.filter(fx=>fx.s?.f==='fx/advanced/m344_fly.webp').length,0);
+});
+
+test('dragon fire respects quiet, FX budget, windup and cast cancellation',()=>{
+  for(const mode of ['quiet','budget','windup','zone']) {
+    const {s,skill}=advancedCombat();
+    const cast=s.queueSkillContact(s.v,{x:300,y:0,hp:100},skill(1073),()=>{},
+      {targets:()=>[],windup:mode==='windup'?1:0});
+    if(mode==='quiet')s.l.quiet=true;
+    if(mode==='budget')for(let i=0;i<165;i++)s.l.fx.push({k:'boom',t:0,life:5,x:0,y:0});
+    if(mode==='zone')s.l.zoneShown=99;
+    for(let i=0;i<12;i++)s.advanceSkillContacts(1/60);
+    assert.equal(s.l.fx.filter(fx=>fx.s?.f==='fx/advanced/m344_fly.webp').length,0,mode);
+    assert.equal(cast.emitted,1);
+  }
+});
+
 test('every faction skill grid exposes Lv120 and Lv150 while preserving level gates', () => {
   const s=catalog(),nodes=new Map();s.m=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id);};
   Object.assign(s,{document:{querySelectorAll:()=>[]},D:String,N:()=>0,z1:()=>0,SA:()=>false,GA:()=>s.o.lvl,

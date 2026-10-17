@@ -4,6 +4,7 @@ import { SKILL_RANGE_Y_RATIO } from './config';
 import { advanceActorActions } from './action-state';
 import { beginContactFrame, endContactFrame } from './spatial/contact-query';
 import { advanceIronLotusVisual } from '../render/iron-lotus';
+import { spawnDragonFlame } from '../render/dragon-fire';
 
 // dt luôn tính bằng giây. Riêng đạn sprite đổi sang frame bằng K3 như code cũ.
 export function advanceCombatMissile(effect: SpriteMissile & ContactEffect, dt: number): boolean {
@@ -33,6 +34,7 @@ export function advanceCombatMissile(effect: SpriteMissile & ContactEffect, dt: 
       effect.traveled += Math.min(distance, remaining);
     }
     if (!effect.combat.ignoreTerrain && Z0.g && effect.kind && (!R2(effect.x, effect.y + 14) || !mt(x, y + 14, effect.x, effect.y + 14))) return false;
+    spawnDragonFlame(effect, step);
     if (!(effect.za && effect.z > 20) && collideCombatEffect(effect, x, y, effect.x, effect.y - (effect.z + effect.hz) * wf)) return false;
     if (reachedLimit) return false;
   }

@@ -197,6 +197,7 @@
   - Icon: `img/s/1073.png`
   - Sprite đòn chính: `fx/advanced/m335_fly.webp`
   - Sprite đòn phụ: `fx/advanced/m363_fly.webp` | Hit FX: `fx/advanced/m363_hit.webp`
+  - Vệt lửa dưới đầu rồng: `fx/advanced/m344_fly.webp` (fly event 1103, phát dọc đường bay; lửa theo sau đầu rồng với độ trễ 4 frame, khoảng 0,22 giây)
   - Sprite tụ khí: `fx/advanced/p18.webp`
 
 - **tên skill**: Bổng Huýnh Lược Địa (Cấp 150 - Công kích ngoại công)
