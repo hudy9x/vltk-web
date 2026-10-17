@@ -18,6 +18,8 @@ function loadDeclaration(s,file,name) {
 function game(enabled=true, entries=new Map()) {
   const catalog={};catalog.window=catalog;
   vm.runInNewContext(fs.readFileSync(path.join(ROOT,'data.js'),'utf8'),catalog);
+  catalog.window.JFX = {m:{},c:{},f:{}};
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT,'app/data/advanced-skills-01.js'),'utf8'),catalog);
   for(const skill of Object.values(catalog.JX.skills)) if(skill.learn==='90') Object.assign(skill,{tier:90,req:80});
   const factions=catalog.JX.factions.filter(f=>f.skills?.length);
   for(const faction of factions)faction.starter=faction.skills[0];
@@ -724,4 +726,41 @@ test('monster hits on SIM reuse real defenses and transfer cold/poison without c
  assert.equal(actor.slowT,s.f8);assert.equal(actor.slowPower,.25);assert.ok(!(s.l.slowT>0));
  attacker.series=2;s.arenaSimulator.receiveMonsterHit(actor,attacker);assert.equal(actor.poison,3);assert.equal(actor.poisonDmg,40/3);
  assert.ok(!(s.l.hpDotT>0));assert.equal(s.o,player);assert.equal(s.l,world);assert.equal(s.v,hero);
+});
+
+test('arena masters 120/150 for all factions, exposes support info and selects every 150 skill across reloads',()=>{
+  const s=game(), manifest=require('../skill_assets_manifest.json');
+  for(const faction of Object.keys(s.I)) {
+    s.combatSandbox.switchFaction(faction);
+    const html=s.fields.get('.arena-skills').innerHTML;
+    for(const entry of Object.values(manifest).filter(skill=>skill.faction===faction)) {
+      assert.equal(s.o.sk[entry.id],s.T[entry.id].max);
+      assert.match(html,new RegExp(`Lv${entry.tier} · ${entry.name}`));
+      if(entry.tier===150) {
+        s.combatSandbox.selectSkill(entry.id);assert.equal(s.o.main,entry.id);
+      } else {
+        assert.match(html,new RegExp(`data-skill-info="${entry.id}"`));
+        assert.throws(()=>s.combatSandbox.selectSkill(entry.id),/không thuộc/);
+      }
+    }
+  }
+  s.combatSandbox.switchFaction('cuiyan');s.combatSandbox.selectSkill(1065);s.$();
+  const restored=game(true,s.entries);assert.equal(restored.o.main,1065);assert.equal(restored.o.sk[1065],25);
+  assert.equal(restored.o.skPts,s.o.skPts);
+});
+test('SIM exposes every active 150 skill and includes support 120 in the build table',()=>{
+  const s=simulatorGame(),manifest=require('../skill_assets_manifest.json');
+  for(const faction of Object.keys(s.I)) {
+    s.fields.get('#sim-faction').value=faction;
+    s.fields.get('#sim-faction').onchange();
+    const menu=s.fields.get('#sim-skill').innerHTML;
+    assert.match(menu,/Kỹ năng 150/);
+    for(const entry of Object.values(manifest).filter(skill=>skill.faction===faction&&skill.tier===150)) {
+      assert.match(menu,new RegExp(`value="${entry.id}"`));
+      const actor=s.arenaSimulator.create(faction,entry.id);
+      assert.equal(actor.stats.main.id,entry.id);assert.equal(actor.profile.sk[entry.id],25);
+      const support=Object.values(manifest).find(skill=>skill.faction===faction&&skill.tier===120);
+      assert.match(s.fields.get('#sim-build').innerHTML,new RegExp(`data-skill-level="${support.id}"`));
+    }
+  }
 });

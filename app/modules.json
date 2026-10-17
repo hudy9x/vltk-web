@@ -402,6 +402,11 @@
       "lines": 86
     },
     {
+      "file": "data/advanced-skills-01.js",
+      "symbols": [],
+      "lines": 12018
+    },
+    {
       "file": "core/helpers-and-config-01.js",
       "symbols": [
         "fa",
