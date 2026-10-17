@@ -2,6 +2,7 @@ import type { ContactEffect, CombatTarget } from './types';
 import { contactFraction, rectangleContactFraction } from './geometry';
 import { applyContactHit } from './damage';
 import { SKILL_RANGE_Y_RATIO, skillCastDistance } from './config';
+import { queryContactTargets } from './spatial/contact-query';
 
 /** Không gộp các đạn khác nhau đánh vào cùng quái; không phát lại qua mỗi tick. */
 function notifyProjectileImpact(effect: ContactEffect, target: CombatTarget): void {
@@ -32,11 +33,17 @@ export function collideCombatEffect(effect: ContactEffect, x0: number, y0: numbe
   const radius = staticArea
     ? Math.max(8, (geo.r || geo.area || 12) * QA)
     : 8;
-  const contacts = cast.targets()
+  const yScale = staticArea && geo.k === "self" ? 1 / SKILL_RANGE_Y_RATIO : 2;
+  const extent = geo.shape === "rect" ? geo.width! * QA / 2 : radius;
+  const candidates = queryContactTargets(cast, {
+    minX: Math.min(x0, x1) - extent, maxX: Math.max(x0, x1) + extent,
+    minY: Math.min(y0, y1) - extent / yScale, maxY: Math.max(y0, y1) + extent / yScale,
+  });
+  const contacts = candidates
     .filter(target => target && !target.dead && (target === v ? l.life > 0 : target.hp! > 0) && (cast.interval || !effect.contactHits.has(target)))
     .map(target => ({ target, fraction: geo.shape === "rect"
       ? rectangleContactFraction(x0, y0, x1, y1, target, geo.width! * QA / 2, cast.direction)
-      : contactFraction(x0, y0, x1, y1, target, radius, staticArea && geo.k === "self" ? 1 / SKILL_RANGE_Y_RATIO : 2) }))
+      : contactFraction(x0, y0, x1, y1, target, radius, yScale) }))
     .filter((contact): contact is { target: typeof contact.target; fraction: number } => contact.fraction != null)
     .sort((a, b) => a.fraction - b.fraction);
   for (const { target, fraction } of contacts) {
@@ -53,7 +60,10 @@ export function collideCombatEffect(effect: ContactEffect, x0: number, y0: numbe
       else if (effect.k === "contact") x8(cast.actor, target, cast.skill);
       // An explosion splashes only after its projectile actually collides.
       if (geo.area) {
-        for (const other of cast.targets()) {
+        for (const other of queryContactTargets(cast, {
+          minX: x - geo.area * QA, maxX: x + geo.area * QA,
+          minY: y - geo.area * QA / 2, maxY: y + geo.area * QA / 2,
+        })) {
           if (other !== target && contactFraction(x, y, x, y, other, geo.area * QA) != null && (cast.ignoreTerrain || mt(x, y + 14, other.x, other.y))) {
             if (applyContactHit(effect, other) && effect.k === "jm") gf(effect, other.x, other.y - 14);
           }

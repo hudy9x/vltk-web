@@ -1417,6 +1417,11 @@
       "lines": 668
     },
     {
+      "file": "render/crowd/index.ts",
+      "global": "CrowdVisibility",
+      "symbols": []
+    },
+    {
       "file": "render/arena-02.js",
       "symbols": [
         "NP",

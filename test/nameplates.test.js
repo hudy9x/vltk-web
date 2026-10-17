@@ -38,6 +38,8 @@ function scene() {
   };
   vm.createContext(s);
   s.coldSpeedFactor = require('./helpers/combat-engine').loadCombatEngine(s, { bridge: false }).coldSpeedFactor;
+  vm.runInContext(compileTypeScriptEntry('render/crowd/index.ts', 'CrowdVisibility').code, s);
+  s.crowdRenderer = s.CrowdVisibility.createCrowdVisibility();
   vm.runInContext(compileTypeScriptEntry('render/nameplates.ts', 'nameplateOffset').code, s);
   load(s, 'app/render/arena-01.js', 'L3');
   load(s, 'app/render/arena-01.js', 'IP');
@@ -110,4 +112,45 @@ test('party member anchors also ignore attack animation height and missing sprit
     s.uB(s.W, actor, 1 / 60); s.IP();
   }
   assert.ok(s.positions.every(p => p.y === s.positions[0].y));
+});
+
+test('offscreen text expires without draw calls while visible generic notifications still animate', () => {
+  const s = scene();
+  s.l.txt = [
+    { x: 2000, y: 200, t: 'offscreen', life: .1, size: 14, color: '#fff' },
+    { x: 200, y: 200, t: 'visible', life: .5, size: 14, color: '#fff' },
+    { x: 200, y: 200, t: 'expired', life: 0, size: 14, color: '#fff' },
+  ];
+  s.NP(.2);
+  assert.ok(!s.events.includes('label:offscreen'));assert.ok(!s.events.includes('label:expired'));
+  assert.ok(s.events.includes('label:visible'));assert.equal(s.l.txt.length,1);
+  assert.equal(s.l.txt[0].y,193.6);
+});
+
+test('crowded arena skips hidden body/nameplate draws while every monster animation still advances',()=>{
+ const s=scene();let animations=0;
+ s.H8=(actor,dt)=>{animations++;actor.actT=(actor.actT||0)+dt;};
+ const actors=Array.from({length:50},(_,i)=>({x:100,y:100,n:`mob-${i}`,tid:1,r:17,hp:100,max:100,cls:'normal',series:0,actT:0}));
+ s.l.enemies=actors;s.l.manTgt=actors[49];
+ s.l.txt=actors.map((target,i)=>({target,x:100,y:70,t:`damage-${i}`,life:1,size:14,color:'#fff'}));
+ const before=actors.map(actor=>({x:actor.x,y:actor.y,hp:actor.hp}));
+ s.NP(.02);
+ assert.equal(s.events.filter(event=>event.startsWith('body:monster-')).length,3);
+ assert.equal(s.events.filter(event=>event.startsWith('label:mob-')).length,3);
+ assert.ok(s.events.some(event=>event.startsWith('label:mob-49')));
+ assert.equal(s.events.filter(event=>event.includes('×50')).length,1);
+ assert.equal(s.events.filter(event=>event.startsWith('label:damage-')).length,5);
+ assert.equal(animations,51,'hero plus every monster must keep animation timing');
+ assert.ok(actors.every(actor=>actor.actT===.02));
+ assert.deepEqual(actors.map(actor=>({x:actor.x,y:actor.y,hp:actor.hp})),before);
+ assert.equal(s.l.enemies.length,50);
+});
+test('death-burst labels remain grouped after all recipients have left the enemy list',()=>{
+ const s=scene(),actors=Array.from({length:50},(_,i)=>({x:100,y:100,n:`mob-${i}`,tid:1,r:17,hp:100,max:100,cls:'normal',series:0}));
+ s.l.enemies=actors;s.NP(.02);s.events.length=0;
+ for(const actor of actors){actor.dead=true;actor.hp=0;}
+ s.l.enemies=[];s.l.txt=actors.map((target,i)=>({target,x:100,y:70,t:`final-${i}`,life:1,size:14,color:'#fff'}));
+ s.NP(.02);
+ assert.equal(s.events.filter(event=>event.startsWith('label:final-')).length,5);
+ assert.equal(s.events.filter(event=>event.startsWith('body:monster-')).length,0);
 });

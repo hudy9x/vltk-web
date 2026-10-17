@@ -1,6 +1,7 @@
 import type { CombatTarget, CombatSkill, ContactHitHandler, CastOptions, CombatCast, SpriteMissile, ContactEffect, FallbackContact } from './types';
 import { skillIgnoresTerrain } from './config';
 import { beginActorCast } from './action-state';
+import { defaultCombatTargets } from './spatial/contact-query';
 
 // Một cast giữ chung bộ đếm hit/pulse cho mọi đạn của cùng lần xuất chiêu.
 export function queueSkillContact(actor: CombatTarget, target: CombatTarget, skill: CombatSkill, onHit: ContactHitHandler, options: CastOptions = {}): CombatCast {
@@ -22,7 +23,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     onHit,
     onImpact: options.onImpact,
     duration: options.duration,
-    targets: options.targets || (() => _1()),
+    targets: options.targets || defaultCombatTargets,
     maxTargets: options.maxTargets || (skill.geo && skill.geo.pierce ? Infinity : Math.max(1, skill.targets || (skill.geo && skill.geo.n) || 1)),
     maxHits: options.maxHits || (() => +skill.id! === 368 && !skill.ev2 ? 3 : 1),
     hits: new Map(),

@@ -1,4 +1,6 @@
 // render/arena — shared IIFE scope; order is defined in modules.json.
+var crowdRenderer = CrowdVisibility.createCrowdVisibility();
+
 var NP = function (A) {
   const n = W;
   (n.setTransform(H1, 0, 0, H1, 0, 0),
@@ -64,8 +66,24 @@ var NP = function (A) {
       ((n.globalAlpha = i * 0.5), M8(a.img, a.sz, a.x, a.y, r, a.face < 0), (n.globalAlpha = 1));
   }
   ((l.corpses = l.corpses.filter((a) => a.actT < 1.6)), db(n, A), Vb(n, A));
-  const e = l.enemies
-    .filter((a) => !a.dead)
+  const living = l.enemies.filter((a) => !a.dead);
+  const crowd = crowdRenderer.update(living, A,
+    { x: B0.x, y: B0.y, width: M0.w, height: M0.h },
+    new Set([l.tgt, l.manTgt, l.clickedTarget].filter(Boolean)),
+    l.txt.filter((label) => label.life > 0 && label.target && label.target !== v &&
+      !label.target.arenaSim && ["normal", "elite", "boss"].includes(label.target.cls))
+      .map((label) => label.target));
+  // Animation clocks still advance for hidden bodies. Simulation never uses
+  // the representative set; only sprite/nameplate drawing is reduced.
+  for (const a of living) if (!a.arenaSim) {
+    a.animKey = r0[a.tid].anim;
+    H8(a, a.stun > 0 ? 0 : A * coldSpeedFactor(a), a.moving ? "run" : "st");
+    if (a.act !== "at" && a.act !== "hurt" && a.act !== "die")
+      ps(a, a.moving && !(a.stun > 0) ? "run" : "st");
+    if (!crowd.bodies.has(a) && a.hitT > 0) a.hitT -= A;
+  }
+  const e = living
+    .filter((a) => a.arenaSim || crowd.bodies.has(a))
     .concat(
       [{ hero: !0, y: v.y }],
       typeof othEnts == "function" ? othEnts() : [],
@@ -152,13 +170,7 @@ var NP = function (A) {
       (n.lineWidth = a.cls === "normal" ? 1.2 : 2.4),
       n.beginPath(),
       n.ellipse(a.x, a.y, a.r, a.r * 0.38, 0, 0, 7),
-      n.stroke(),
-      (a.animKey = r0[a.tid].anim),
-      H8(a, a.stun > 0 ? 0 : A * coldSpeedFactor(a), a.moving ? "run" : "st"),
-      a.act !== "at" &&
-        a.act !== "hurt" &&
-        a.act !== "die" &&
-        ps(a, a.moving && !(a.stun > 0) ? "run" : "st"));
+      n.stroke());
     const r = df(a.slowT > 0, a.poison > 0, a.stun > 0),
       c =
         a.animKey &&
@@ -208,7 +220,8 @@ var NP = function (A) {
     L3(
       a.x,
       d,
-      GP(a) + (typeof combatSandbox !== "undefined" && combatSandbox ? combatSandbox.healthLabel(a) : ""),
+      GP(a) + (crowd.counts.has(a) ? ` ×${crowd.counts.get(a)}` : "") +
+        (typeof combatSandbox !== "undefined" && combatSandbox ? combatSandbox.healthLabel(a) : ""),
       a.goldBoss ? Ps.gold : Ps[a.cls] || Ps.normal,
       a.cls === "boss" ? 12 : 11,
       a.hp / a.max,
@@ -242,9 +255,11 @@ var NP = function (A) {
   }
   ((n.globalAlpha = 1), (l.fx = l.fx.filter((a) => a.life > 0)), (n.textAlign = "center"));
   updateDamageLabels(l.txt, A, n);
-  for (const a of l.txt)
-    ((!a.target && ((a.life -= A), (a.y -= 32 * A))),
-      (n.globalAlpha = E(a.life / 0.5, 0, 1)),
+  for (const a of crowd.selectLabels(l.txt)) {
+    if (!a.target) { a.life -= A; a.y -= 32 * A; }
+    if (a.life <= 0 || a.x < B0.x - 64 || a.x > B0.x + M0.w + 64 ||
+      a.y < B0.y - 64 || a.y > B0.y + M0.h + 64) continue;
+    ((n.globalAlpha = E(a.life / 0.5, 0, 1)),
       (n.font = `${a.size}px "IBM Plex Mono", monospace`),
       (n.strokeStyle = "#111"),
       (n.lineWidth = 3),
@@ -252,6 +267,7 @@ var NP = function (A) {
       n.strokeText(a.t, a.x, a.y),
       (n.fillStyle = a.color),
       n.fillText(a.t, a.x, a.y));
+  }
   ((n.globalAlpha = 1),
     (l.txt = l.txt.filter((a) => a.life > 0)),
     n.setTransform(H1, 0, 0, H1, 0, 0),
