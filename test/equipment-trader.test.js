@@ -159,33 +159,6 @@ test('NPC can be placed, hidden and removed; arena mounts it and its shortcut; t
   npc.remove(); assert.equal(t.entities().length, 1);
   assert.equal(game().equipmentTrader.entities().length, 0);
 });
-test('Biện Kinh shows one trader beside arrival, supports taps, and hides it after leaving', () => {
-  for (const arena of [false, true]) {
-    const s = game(arena), t = s.equipmentTrader;
-    s.l.town = true;
-    s.O0.w = 3072; s.O0.h = 2048;
-    const [npc] = t.entities();
-    assert.equal(t.entities().length, 1);
-    assert.equal(npc.name, 'Thần Trang Sứ Giả');
-    assert.equal(npc.x, s.O0.w / 2 + 140);
-    assert.equal(npc.y, s.O0.h / 2 + 20);
-    let prevented = false, stopped = false;
-    s.tap({ clientX: npc.x, clientY: npc.y - 50,
-      preventDefault() { prevented = true; },
-      stopImmediatePropagation() { stopped = true; } });
-    assert.ok(prevented && stopped);
-    assert.match(s.html, /Thần Trang Sứ Giả/);
-    s.l.town = false;
-    assert.ok(!t.entities().includes(npc));
-    s.l.town = true;
-    s.O0.w = s.O0.h = 4096;
-    assert.equal(t.entities()[0], npc);
-    assert.equal(npc.x, 2188);
-    assert.equal(npc.y, 2068);
-    s.o.fac = null;
-    assert.equal(t.entities().length, 0);
-  }
-});
 test('NPC keeps its fixed boss019 sprite independently of player equipment and appearance', () => {
   const s = game(), draws = [];
   s.Jn = 1.35;

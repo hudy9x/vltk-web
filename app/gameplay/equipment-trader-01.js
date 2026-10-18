@@ -298,12 +298,6 @@ var equipmentTrader = (function () {
     @media(max-width:540px){.equipment-trader .trader-blue-options{grid-template-columns:1fr;gap:12px}.equipment-trader .trader-blue-layout{grid-template-columns:1fr}.equipment-trader .trader-item-list{max-height:230px}.equipment-trader .trader-badge{padding:6px 10px}}
   `;
   document.head.appendChild(style);
-  const townNpc = place({ x: 0, y: 0, visible: () => !!l.town });
-  // Map dimensions change when travelling; stay beside Biện Kinh's arrival point.
-  Object.defineProperties(townNpc, {
-    x: { get: () => O0.w / 2 + 140 },
-    y: { get: () => O0.h / 2 + 20 },
-  });
   if (typeof combatSandbox !== "undefined" && combatSandbox) {
     place({ x: O0.w / 2 - 350, y: O0.h / 2 - 160, visible: () => !l.town && !l.dg && !l.tower });
     const button = document.createElement("button");
