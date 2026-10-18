@@ -4,6 +4,7 @@ const vm = require('node:vm');
 const { createHash } = require('node:crypto');
 const esbuild = require('esbuild');
 const { decode, encode } = require('@jridgewell/sourcemap-codec');
+const { syncMapCatalog } = require('./maps/catalog.ts');
 const ROOT = path.resolve(__dirname, '..');
 const APP = path.join(ROOT, 'app');
 const compiledEntries = new Map();
@@ -12,8 +13,9 @@ let previousResult;
 // Imported TS files are dependencies, not separate legacy script entries. Their
 // contents participate in the hash so editing an imported file triggers reload.
 function readTypeScriptSources() {
+  syncMapCatalog(APP);
   return fs.readdirSync(APP, { recursive: true })
-    .filter(file => file.endsWith('.ts'))
+    .filter(file => file.endsWith('.ts') || file.endsWith('.json'))
     .sort()
     .map(file => ({ file: file.split(path.sep).join('/'), source: fs.readFileSync(path.join(APP, file), 'utf8') }));
 }

@@ -1,0 +1,860 @@
+[
+  {
+    "id": "map-140",
+    "mapId": 140,
+    "name": "Dược Vương Cốc",
+    "levelRange": [
+      1,
+      10
+    ],
+    "monsterIds": [
+      34,
+      42,
+      38
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-2",
+    "mapId": 2,
+    "name": "Hoa Sơn",
+    "levelRange": [
+      10,
+      20
+    ],
+    "monsterIds": [
+      12,
+      11,
+      33,
+      34
+    ],
+    "bossId": 543,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-3",
+    "mapId": 3,
+    "name": "Kiếm Các Tây Bắc",
+    "levelRange": [
+      20,
+      30
+    ],
+    "monsterIds": [
+      5,
+      6,
+      7
+    ],
+    "bossId": 552,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-92",
+    "mapId": 92,
+    "name": "Thục Cương sơn",
+    "levelRange": [
+      30,
+      40
+    ],
+    "monsterIds": [
+      17,
+      36,
+      37
+    ],
+    "bossId": 52,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-21",
+    "mapId": 21,
+    "name": "Thanh Thành sơn",
+    "levelRange": [
+      40,
+      50
+    ],
+    "monsterIds": [
+      24,
+      25,
+      26
+    ],
+    "bossId": 1,
+    "equipmentElementWeights": [
+      20,
+      0,
+      0,
+      0,
+      80
+    ]
+  },
+  {
+    "id": "map-42",
+    "mapId": 42,
+    "name": "Thiên Tâm động",
+    "levelRange": [
+      50,
+      60
+    ],
+    "monsterIds": [
+      154,
+      162,
+      149
+    ],
+    "bossId": 148,
+    "equipmentElementWeights": [
+      0,
+      80,
+      0,
+      20,
+      0
+    ]
+  },
+  {
+    "id": "map-56",
+    "mapId": 56,
+    "name": "Hoành Sơn Phái",
+    "levelRange": [
+      60,
+      70
+    ],
+    "monsterIds": [
+      24,
+      26,
+      37
+    ],
+    "bossId": 581,
+    "equipmentElementWeights": [
+      80,
+      0,
+      20,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "map-319",
+    "mapId": 319,
+    "name": "Lâm Du Quan",
+    "levelRange": [
+      70,
+      80
+    ],
+    "monsterIds": [
+      588,
+      589
+    ],
+    "bossId": 589,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-320",
+    "mapId": 320,
+    "name": "Chân núi Trường Bạch",
+    "levelRange": [
+      80,
+      90
+    ],
+    "monsterIds": [
+      591,
+      590,
+      592,
+      593
+    ],
+    "bossId": 592,
+    "equipmentElementWeights": [
+      0,
+      80,
+      0,
+      20,
+      0
+    ]
+  },
+  {
+    "id": "map-225",
+    "mapId": 225,
+    "name": "Sa Mạc 1",
+    "levelRange": [
+      90,
+      100
+    ],
+    "monsterIds": [
+      559,
+      561,
+      560
+    ],
+    "bossId": 566,
+    "equipmentElementWeights": [
+      0,
+      30,
+      70,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "map-226",
+    "mapId": 226,
+    "name": "Sa Mạc 2",
+    "levelRange": [
+      100,
+      110
+    ],
+    "monsterIds": [
+      561,
+      560,
+      559
+    ],
+    "bossId": 563,
+    "equipmentElementWeights": [
+      0,
+      20,
+      80,
+      0,
+      0
+    ]
+  },
+  {
+    "id": "map-93",
+    "mapId": 93,
+    "name": "Tiến Cúc động",
+    "levelRange": [
+      110,
+      120
+    ],
+    "monsterIds": [
+      146,
+      147,
+      148
+    ],
+    "bossId": 542,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-75",
+    "mapId": 75,
+    "name": "Khoả Lang động",
+    "levelRange": [
+      120,
+      130
+    ],
+    "monsterIds": [
+      155,
+      156,
+      157
+    ],
+    "bossId": 157,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-227",
+    "mapId": 227,
+    "name": "Sa Mạc 3",
+    "levelRange": [
+      130,
+      140
+    ],
+    "monsterIds": [
+      536,
+      535,
+      538,
+      537,
+      534
+    ],
+    "bossId": 565,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-321",
+    "mapId": 321,
+    "name": "Trường Bạch sơn Nam",
+    "levelRange": [
+      140,
+      150
+    ],
+    "monsterIds": [
+      598,
+      599,
+      601,
+      600
+    ],
+    "bossId": 598,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-322",
+    "mapId": 322,
+    "name": "Trường Bạch sơn Bắc",
+    "levelRange": [
+      150,
+      160
+    ],
+    "monsterIds": [
+      596,
+      595,
+      594,
+      597
+    ],
+    "bossId": 594,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-336",
+    "mapId": 336,
+    "name": "Phong Lăng độ",
+    "levelRange": [
+      160,
+      170
+    ],
+    "monsterIds": [
+      674,
+      708,
+      707
+    ],
+    "bossId": 708,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-340",
+    "mapId": 340,
+    "name": "Mạc Cao Quật",
+    "levelRange": [
+      170,
+      180
+    ],
+    "monsterIds": [
+      704,
+      703,
+      705,
+      706
+    ],
+    "bossId": 706,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-201",
+    "mapId": 201,
+    "name": "Băng Hà động",
+    "levelRange": [
+      180,
+      190
+    ],
+    "monsterIds": [
+      169,
+      159,
+      149
+    ],
+    "bossId": 149,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-205",
+    "mapId": 205,
+    "name": "Dương Trung động",
+    "levelRange": [
+      190,
+      200
+    ],
+    "monsterIds": [
+      159,
+      169,
+      149
+    ],
+    "bossId": 149,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-195",
+    "mapId": 195,
+    "name": "Nhạn Đãng sơn",
+    "levelRange": [
+      10,
+      20
+    ],
+    "monsterIds": [
+      9,
+      7,
+      37,
+      45
+    ],
+    "bossId": 45,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-7",
+    "mapId": 7,
+    "name": "Tần Lăng",
+    "levelRange": [
+      20,
+      30
+    ],
+    "monsterIds": [
+      12,
+      33,
+      11
+    ],
+    "bossId": 33,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-19",
+    "mapId": 19,
+    "name": "Kiếm Các Tây Nam",
+    "levelRange": [
+      20,
+      30
+    ],
+    "monsterIds": [
+      12,
+      11
+    ],
+    "bossId": 568,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-70",
+    "mapId": 70,
+    "name": "Vũ Lăng sơn",
+    "levelRange": [
+      20,
+      30
+    ],
+    "monsterIds": [
+      25,
+      26,
+      10
+    ],
+    "bossId": 10,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-43",
+    "mapId": 43,
+    "name": "Kiếm Các Trung Nguyên",
+    "levelRange": [
+      20,
+      30
+    ],
+    "monsterIds": [
+      6,
+      5,
+      7
+    ],
+    "bossId": 7,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-179",
+    "mapId": 179,
+    "name": "La Tiêu sơn",
+    "levelRange": [
+      20,
+      30
+    ],
+    "monsterIds": [
+      5,
+      4,
+      6
+    ],
+    "bossId": 545,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-90",
+    "mapId": 90,
+    "name": "Phục Ngưu Sơn Đông",
+    "levelRange": [
+      30,
+      40
+    ],
+    "monsterIds": [
+      7,
+      8,
+      10
+    ],
+    "bossId": 10,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-193",
+    "mapId": 193,
+    "name": "Vũ Di sơn",
+    "levelRange": [
+      30,
+      40
+    ],
+    "monsterIds": [
+      4,
+      6,
+      5
+    ],
+    "bossId": 158,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-74",
+    "mapId": 74,
+    "name": "Miêu Lĩnh",
+    "levelRange": [
+      30,
+      40
+    ],
+    "monsterIds": [
+      17,
+      35,
+      37
+    ],
+    "bossId": 37,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-145",
+    "mapId": 145,
+    "name": "Tuyết Báo động tầng 1",
+    "levelRange": [
+      30,
+      40
+    ],
+    "monsterIds": [
+      3,
+      4
+    ],
+    "bossId": 9,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-41",
+    "mapId": 41,
+    "name": "Phục Ngưu Sơn Tây",
+    "levelRange": [
+      40,
+      50
+    ],
+    "monsterIds": [
+      7,
+      8,
+      10
+    ],
+    "bossId": 10,
+    "equipmentElementWeights": [
+      20,
+      0,
+      0,
+      0,
+      80
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-122",
+    "mapId": 122,
+    "name": "Hoàng Hà Nguyên Đầu",
+    "levelRange": [
+      40,
+      50
+    ],
+    "monsterIds": [
+      2,
+      4,
+      26
+    ],
+    "bossId": 554,
+    "equipmentElementWeights": [
+      20,
+      0,
+      0,
+      0,
+      80
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-167",
+    "mapId": 167,
+    "name": "Điểm Thương sơn",
+    "levelRange": [
+      40,
+      50
+    ],
+    "monsterIds": [
+      32,
+      37,
+      20
+    ],
+    "bossId": 20,
+    "equipmentElementWeights": [
+      20,
+      0,
+      0,
+      0,
+      80
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-68",
+    "mapId": 68,
+    "name": "Thanh Loa đảo",
+    "levelRange": [
+      60,
+      70
+    ],
+    "monsterIds": [
+      161,
+      168,
+      141
+    ],
+    "bossId": 141,
+    "equipmentElementWeights": [
+      80,
+      0,
+      20,
+      0,
+      0
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-342",
+    "mapId": 342,
+    "name": "Vi sơn đảo",
+    "levelRange": [
+      60,
+      70
+    ],
+    "monsterIds": [
+      711,
+      712,
+      713
+    ],
+    "bossId": 711,
+    "equipmentElementWeights": [
+      80,
+      0,
+      20,
+      0,
+      0
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-341",
+    "mapId": 341,
+    "name": "Mạc Bắc Thảo Nguyên",
+    "levelRange": [
+      60,
+      70
+    ],
+    "monsterIds": [
+      709,
+      710
+    ],
+    "bossId": 709,
+    "equipmentElementWeights": [
+      80,
+      0,
+      20,
+      0,
+      0
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-224",
+    "mapId": 224,
+    "name": "Sa mạc địa biểu",
+    "levelRange": [
+      70,
+      80
+    ],
+    "monsterIds": [
+      558,
+      556,
+      557
+    ],
+    "bossId": 567,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "alternate": true
+  },
+  {
+    "id": "map-123",
+    "mapId": 123,
+    "name": "Lão Hổ động",
+    "levelRange": [
+      80,
+      90
+    ],
+    "monsterIds": [
+      140,
+      149,
+      150
+    ],
+    "bossId": 150,
+    "equipmentElementWeights": [
+      0,
+      80,
+      0,
+      20,
+      0
+    ],
+    "alternate": true
+  }
+]

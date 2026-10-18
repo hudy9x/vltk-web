@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": 42,
+  "name": "Thiên Tâm động",
+  "size": {
+    "width": 3584,
+    "height": 3584
+  },
+  "entry": {
+    "x": 1792,
+    "y": 1792
+  },
+  "layers": [
+    {
+      "id": "ground",
+      "type": "ground",
+      "image": "img/z/42.jpg"
+    }
+  ],
+  "navigation": {
+    "kind": "grid",
+    "cellSize": {
+      "width": 32,
+      "height": 16
+    },
+    "columns": 112,
+    "rows": 224,
+    "blockedBase64": "PwDgwP////////////8PAODA/////////////wAA4MD/////////////AAAAwP////////////8AAADg/////////////wAAAOD/////////////AAAA4P////////////8AAADg/////////////wAAAOD/////////////AAAA4P////////////8AAADA/////////////wAAAMD/////////////AAAAgP////////////8AAAAA/////////////wAAAAD+////////////hwcAAPz/////////////DwAA+P////////////8fAADA/wH+/////////x8AAIADAOD/////////HwAAgAMAwP////////8/AAAAAAAA/////////z8AAAAAAAD8////////fwD+AAAAAPj/f/j///9/AP4AAAAAAPwA/P////8A/gAAAAAAAAD+/////wB8AAAAAAAAAP7/////ALwDAAAAAAAAPoAf///hvQMAAAAAAAAAAAD//+G9AwAAAAAAAAAAAP//4T0AAAAAAAAAAAAA///hAQAAAAAAAAAAAAD//wMAAAAAAAAAAAAAAP//A8AAAAAAAAAAAAAA//8DzgAAAAAAAAAAAAD//wPOOAAAAMAfAAAAAP//AwA4AAAAwB8AAAAA//8DAHwAAADAHwAAAAD//wMA/AAAAIAPAAAAAP//AQD+AAAAgHcAAAAA//8AAP4/PAC8dwAAAAD//wAA//9/ALx3AAAAAP//AID///8AvAcAAAAA//8AgP///wA8AAAAAAD//wCA////AQAAAAAAAP//AID///8HABjgAQcA/38AgP///wfAGeCH//n/BwCA////B8AZ4N////8DAID///8HAADg/////wEAwP///wcAAOD/////AADA////BwAA4P////8OAMD///8HAADg/////w4AwP///wcAAPD/////DgDg////BwAA8P////8AAOD///8HAAD4/////wAA4P///wMAAPj/////AADg////AQAA+P////8AAOD///8BAAD8/////wAA8P///wAAAP7/////AADw////AAAA//////8AAPj///8AAAD//////wAA+P///wAAAP//////AAD4////AAAA//////8AAPj///8AAAD+////fwAA/P///wAAAP////8/AAD8//9/AACA/////z8AAPz//38AAID/////PwAA/P//fwAAgP////8+AAD+////AACA/////zgAAP7///8AAID/////MAAA/////wAAwP////8AAID/////AQDA/////wAAgP////8BAMD/////AADA/////wEAgP////8AAOD/////AwCA/////wAA8P////8PAID/////AADw/////w8AgP////8AAPD/////DwCA/////wAA8P////8HAID/////AADw/////wMAgP////8AAPD/////AwCA/////wAA8P////8DAID/////AADw/////wMAAPz////wAPD/////AQAA+P////gB8P////8AAAD4/////wHw////fwAAAAD/////AfD//z8AAAAAAAB/wP8D4P//BwAAAAAAAAAA/wPg//8HAAAAAAAAAAD/B8D//wcAAAAAAAAAAP8P8P//BwAAAH8AAAAA/w/w//97DgAAfwAAAAD/D/D//38OAAB/AAAAAP8P4P//fw4AAD4AAAAA/x/A//9/AAAA3gEAAAD/H8D///8AAPDeAQAAAP8fwP///wAA8N4BwAMA/z8A/P//AR7wHgDADwD/PwD4//8DP/AAAMAfAP8/APj///9/AAAAwD8A/z8A+P///38AZwDOPwD/PwD4/////wBnAP9/AP9/APj/////AGcA/////38A+P////8BAID/////fwDw/////wEAgP////8/APj/////AwDA/////x8A/v////8DAMD/////HwD+/////wMA4P////8fAP7/////BwDg/////w8A/v////8HAPD/////DwD+/////wcA8P////8DAP//////BwDw/////wEA//////8HAPj/////AID//////wMA+P////8AgP//////AQD4/////wCA//////8BAPz///9/AID//////wAA/P////8AgP//////AAD8/////wDA//////8AAPj/////AMD//////wAA+P////8AwP//////AAD4/////wDg//////8AAPj/////AOD//////wEA+P///z8A8P//////AQD4////HwD4//////8DAPz///8PAPz//////w8A/P///w8A/v//////DwD8////DwD+//////8POPj///8PAP///////w84+P///x+A////////Bzjw////H8D///////8PAPD///8fwP///////w8A4P///x/g////////DwDA////D+D///////8fAAD8//8P4P///////z8AAPj//wfg////////PwAA8P+fA+D///////9/AADg/48A8P///////38AAMD/AwDw/////////wAAAAAAAPD/////////AAAAAAAA8P////////8BAAAAAADw/////////wMAAAAAAPD/////////AwCAAQAA8P/////////HAYABAADg/////////+8PgAEAAADO/////////38AAAAAAAD//////////wAAAAAAAP7/////////AQAAAAAA/P////////8DAIAAAAD8/////////wMAgAAAAMD/////////AwCAAAAAgP////////8HAAAAAAAA/////////wcAAAAAAAD+////////jwEAAADuAPz////////fAwAAAO4A/v/////////vAAAA/gD+//////////8AAAA8AP7//////////wAAB74D/v//////////AQDnvwP///////////8BAOe/A////////////wEA4D+A////////////AQDgAMD///////////8BAAAA+P///////////wEHAOD4////////////Aw8A5/j///////////8DDwDn+P///////////wMPAAD8////////////Ax8AAPz///////////8DPwAA/P///////////wM/AAD8////////////A38AAPz///////////8D/wAA/v///////////wP/AAD+////////////A/8AAP7///////////8D/wAA/v///////////wP/AQD+////////////A/8BAP7///////////8D/wMA/v///////////wP/AwD/////////////A/8DAP////////////8D/wMA/////////////wP/BwD/////////////B/8HAPz///////////8H/wcA+P///////////wf/BwD4////////////B/8HAPD///////////8H/wcA4P///////////wP/BwDA////////////Af8HAID///////////8B/wcAAID//////////wD/AwAAAP7///////9/AP8BAAAA/v///////z8AfwAAAAD/////////PwAAAAAAgP////////8fAAAAAACA/////////wcAAAAAAIDn////////AwAAAAAAgMf/////fwAAAAAAAACAx/////8PAAAAAAAAAACA////PwAAAAAAAAAAAID///8fAAAAAAAAAAAAwP///w8AAAAAAAAAAADA////BwAAAAAAAAAAAMD///8DAAAAAAAAAAAA4P///wMAAAAA/AcAAADw////AwAAAAD8DwAAAPD///8BAAAAAPwfAAAA+P///wMAAAAA/B8AAAD4////AwAAAID8PwAAAPz///8DAAAAwP4/AAAA/P///wcAAODj/v8PAAD8////BwAA4P/+/38OB/z///8PAADg/////x///////w8AAOD/////v///////HwAA8P////+///////8fAADw/////////////x8AAPD//////////////wM4+P///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w=="
+  },
+  "spawns": []
+}

@@ -4,6 +4,7 @@ Chỉnh source tại đây; game được build từ các module trong `modules.
 
 ```text
 data/       cấu hình skill, map, monster, equipment, hiệu ứng
+maps/       runtime map TypeScript, JSON map, navigation, spawn và layer (xem maps/README.md)
 core/       khởi tạo, state, tiện ích, save và game loop
 combat/     index.ts -> combat TS (casting, simulation, collision, damage, render)
             skills-01.js -> các hàm skill/progression JS cũ

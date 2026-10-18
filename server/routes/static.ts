@@ -27,8 +27,10 @@ export function registerStaticRoutes(app: FastifyInstance, services: ServerServi
     try { relative = decodeURIComponent(url.pathname).replace(/^\//, '') || 'index.html'; }
     catch { return sendJson(reply, 400, { error: 'Invalid path' }); }
     const appFile = ['app/game.js', 'app/game.js.map', 'app/modules.json'].includes(relative) || services.moduleFiles.has(relative);
+    // Editor-authored map images are local assets; never fetch them from upstream.
+    const mapAsset = /^app\/maps\/(?:content\/[1-9]\d*|objects)\/[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp)$/i.test(relative);
     if (relative.split('/').some(part => part === '..' || part.startsWith('.')) || relative.includes('\\') ||
-      !(STATIC.has(relative) || appFile || isAssetPath(relative))) return sendJson(reply, 404, { error: 'Not found' });
+      !(STATIC.has(relative) || appFile || mapAsset || isAssetPath(relative))) return sendJson(reply, 404, { error: 'Not found' });
     // Cả game thường lẫn arena dùng cùng bundle. Imported TS edits được rebuild khi reload.
     if (relative === 'app/game.js') {
       for (const source of buildApp().map.sources) services.moduleFiles.add('app/' + source);

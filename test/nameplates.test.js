@@ -5,6 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const acorn = require('acorn');
 const { compileTypeScriptEntry } = require('../tools/build-app');
+const { loadMapsEngine } = require('./helpers/maps-engine');
 
 function load(s, file, name) {
   const source = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
@@ -37,6 +38,7 @@ function scene() {
     updateDamageLabels: noop, SP: noop, my: noop,
   };
   vm.createContext(s);
+  s.mapScene = loadMapsEngine(s).createMapScene(() => null);
   s.coldSpeedFactor = require('./helpers/combat-engine').loadCombatEngine(s, { bridge: false }).coldSpeedFactor;
   vm.runInContext(compileTypeScriptEntry('render/crowd/index.ts', 'CrowdVisibility').code, s);
   s.crowdRenderer = s.CrowdVisibility.createCrowdVisibility();
