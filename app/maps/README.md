@@ -17,7 +17,7 @@
 
 ## Dữ liệu và build
 
-`map.json` là nguồn chính; không chỉnh `catalog-data.ts` bằng tay. `tools/maps/catalog.ts` tự phát hiện thư mục map và sinh danh sách import trước typecheck/build. Builder đưa JSON vào dependency hash: sửa JSON, thêm/xóa thư mục map rồi reload sẽ rebuild. Chưa có API Save từ trình duyệt trong đợt refactor này.
+`map.json` là nguồn chính; không chỉnh `catalog-data.ts` bằng tay. `tools/maps/catalog.ts` tự phát hiện thư mục map và sinh danh sách import trước typecheck/build. Builder đưa JSON vào dependency hash: sửa JSON, thêm/xóa thư mục map rồi reload sẽ rebuild. Map editor desktop trong `map-tool/` lưu JSON, asset và tự build lại game qua Tauri.
 
 `schemaVersion: 1` định nghĩa trong `types.ts`. Mỗi map có đúng một ground; các layer khác tùy chọn. `./ground.jpg` resolve thành `app/maps/content/<id>/ground.jpg`; đường dẫn `img/z/...` vẫn hợp lệ.
 
@@ -31,14 +31,14 @@ Map đi tự do dùng `{ "kind": "open" }`. Lưới phải khai báo đủ `cell
 
 Khởi tạo field tải map và resolve player trước khi sinh bãi, sau đó mới chốt field key. Runtime dùng actor hiện có, không sao chép player, enemy list hoặc HP. Timer/ref quái sống nằm trong field state; record `x/y/cls/tid/t/e` là compatibility shape, không lưu vào JSON.
 
-HP, damage, cấp quái và ngũ hành vẫn do combat/progression hiện tại quyết định. `equipmentElementWeights` tương ứng `sw` cũ, không phải phân bố ngũ hành quái. Boss hồi sinh 180 giây; thường 20 giây với multiplier cũ; boss nhiệm vụ giữ shortcut 20 giây. Entry lưu cho editor; chuyển map legacy vẫn giữ/snap tọa độ hiện tại, chưa ép mọi lượt đổi map về entry.
+HP, damage, cấp quái và ngũ hành vẫn do combat/progression hiện tại quyết định. `equipmentElementWeights` tương ứng `sw` cũ, không phải phân bố ngũ hành quái. Boss hồi sinh 180 giây; thường 20 giây với multiplier cũ; boss nhiệm vụ giữ shortcut 20 giây. Về thành dùng `entry` của map thành, sau đó snap tới vị trí đi được gần nhất nếu cần. Chọn map luyện công chính/phụ, đổi map tự động hoặc quay lại từ thành dùng `entry` của map đích. Cập nhật lại cùng bãi giữ vị trí hiện tại; phó bản, tháp và thuyền giữ chính sách vị trí riêng.
 
 ## Render
 
 Thứ tự: ground → shadow → actor và world object sort chung theo Y → foreground → atmosphere. Các layer cùng loại dùng thứ tự trong mảng. Object dùng `position.y + depthOffsetY`, ảnh vẽ tại `position - anchor * scale`; culling xét cả sprite.
 
-Actor/nameplate/crowd renderer giữ code animation và combat hiện tại. Object chèn vào queue đó; không gom nameplate thành overlay mới. Cây cần đổi trước/sau thuộc world layer; foreground luôn phủ phía trước. Collision độc lập với hình ảnh, hiện lưu bằng bitmask; chưa tự suy ra collider từ sprite.
+Actor/nameplate/crowd renderer giữ code animation và combat hiện tại. Object chèn vào queue đó; không gom nameplate thành overlay mới. Cây cần đổi trước/sau thuộc world layer; foreground luôn phủ phía trước. Collision độc lập với hình ảnh, hiện lưu bằng bitmask; editor cho đặt collider quanh gốc object và compile cùng collision tô tay thành bitmask.
 
 ## Kiểm tra
 
-`npm run build` và `npm test`. `test/maps.test.js` kiểm tra catalog/progression, dữ liệu lỗi, navigation, đổi map phụ, fixed spawn, respawn, leash, layers, JSON reload và asset local. Test action-state/nameplates dùng runtime mới. Xem [spec editor](../../map-tool/SPEC.md).
+`npm run build` và `npm test`. `test/maps.test.js` kiểm tra catalog/progression, dữ liệu lỗi, navigation, đổi map phụ, fixed spawn, respawn, leash, layers, JSON reload và asset local. Test action-state/nameplates dùng runtime mới. Xem [spec editor](../../SPEC.md).

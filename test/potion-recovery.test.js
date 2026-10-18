@@ -20,7 +20,7 @@ function game(){
  C1:kind=>({1:s.stock[kind]}),
  $w(){},Sb(){},nP(){},Ab(){},cb(){},Oy(){},Gv(){},
  O0:{w:1000,h:1000},E0:{town:{bg:'town',id:'town',n:'Thành'}},X0:(x,y)=>[x,y],
- ma(){},M1(){},bA:()=>({}),o0(){},_e(){},C(){},d0:1,AA:()=>({id:'field'}),Gn(){},
+ mapAdapter:{entryPosition:()=>[400,600]},ma(){},M1(){},bA:()=>({}),o0(){},_e(){},C(){},d0:1,AA:()=>({id:'field'}),Gn(){},
  m:()=>({textContent:'',classList:{remove(){},add(){}}}),
  };
  s.ic=index=>{const p=s.selected[index?'mana':'life'];if(!p||s.stock[p.kind]<=0)return null;s.stock[p.kind]--;return {p,free:true};};

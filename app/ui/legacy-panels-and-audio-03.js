@@ -657,7 +657,7 @@ var nc = function () {
       (l.moveTo = null),
       (Y.target = null),
       ma("town"),
-      ([v.x, v.y] = X0(O0.w / 2, O0.h / 2)),
+      ([v.x, v.y] = mapAdapter.entryPosition()),
       M1(),
       (l.bgImg = bA(E0.town.bg)),
       o0("use"),

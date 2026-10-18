@@ -653,7 +653,7 @@ var yv = function () {
     ((o.mode === "quest" || o.mode === "dg") &&
       ((o.mode = "farm"), C("⚔ Chọn bãi luyện công: chuyển sang chế độ Luyện công.")),
       (o.autoMap = !1),
-      On(e, "Chọn bãi luyện công"),
+      On(e, "Chọn bãi luyện công", false, true),
       $(),
       V());
   };
@@ -663,11 +663,7 @@ var yv = function () {
         (e.onclick = () => {
           const [a, i] = e.dataset.za.split(":").map(Number);
           (((o.zalt || (o.zalt = {}))[a] = i),
-            DA(Math.min(o.stage, d0)) === a
-              ? ((o.wave = 1), (l.enemies = []), (l.spawnT = 0.3), (l.zoneShown = null))
-              : t(a),
-            $(),
-            V());
+            t(a));
         }),
     ));
 };

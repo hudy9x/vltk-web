@@ -3,6 +3,8 @@ import encountersJson from '../gameplay/encounters/catalog.json';
 import progressionJson from './progression.json';
 import { parseEncounterDefinition, parseMapDefinition } from './validate';
 import { canStandAt, decodeGrid } from './navigation/grid';
+import { resolveMapAsset } from './assets';
+export { resolveMapAsset } from './assets';
 import type { EncounterDefinition, LegacyNavigation, LegacyZone, MapDefinition, ProgressionEntry } from './types';
 
 const maps = new Map<number, MapDefinition>();
@@ -17,10 +19,6 @@ const encounterIndex = new Map(encounters.map(profile => [profile.id, profile]))
 export const getMap = (id: number): MapDefinition | undefined => maps.get(id);
 export const getEncounter = (id: string): EncounterDefinition | undefined => encounterIndex.get(id);
 export const listMaps = (): readonly MapDefinition[] => [...maps.values()];
-
-export function resolveMapAsset(mapId: number, asset: string): string {
-  return asset.startsWith('./') ? `app/maps/content/${mapId}/${asset.slice(2)}` : asset;
-}
 
 export function createLegacyZone(mapId: number): LegacyZone {
   const map = maps.get(mapId);

@@ -49,15 +49,18 @@ var Jo = function () {
     typeof Y < "u" && ((Y.target = null), (Y.tmp = !1)));
 };
 
-var On = function (A, n, t) {
+var On = function (A, n, t, enter = false) {
   if (!k0[A] || l.dg || l.tower) return !1;
-  l.town && en();
+  if (l.town) {
+    en();
+    if (l.town) return !1;
+  }
   const e = ol(A),
     a = DA(Math.min(o.stage, d0)) === A;
-  if (((o.stage = e), (o.wave = 1), !a)) {
+  if (((o.stage = e), (o.wave = 1), !a || enter)) {
     (t || ((l.enemies = []), (l.corpses = []), (l.spawnT = 0.6)), Jo());
     const i = AA(e);
-    ((l.zoneShown = i.id),
+    ((l.zoneShown = enter ? null : i.id),
       Gn(i),
       (l.banner = { t: 2.2, text: i.n, sub: n || `Cấp ${i.lo}–${i.hi}` }),
       n && C(`🗺 ${D(n)}: tới <b>${D(i.n)}</b>`));

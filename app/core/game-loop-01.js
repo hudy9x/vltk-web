@@ -145,7 +145,10 @@ var i5 = function (A) {
 };
 
 var Gn = function (A) {
-  ((l.traps = []), (l.unvoid = 1), (l.unvoidT = null), ma(A.id), ([v.x, v.y] = X0(v.x, v.y)));
+  const entering = Z0.key !== A.id || l.zoneShown !== A.id;
+  ((l.traps = []), (l.unvoid = 1), (l.unvoidT = null), ma(A.id),
+    ([v.x, v.y] = entering ? mapAdapter.entryPosition() : X0(v.x, v.y)),
+    (l.zoneShown = A.id));
   for (const n of l.enemies) [n.x, n.y] = X0(n.x, n.y);
   for (const n of l.ground) [n.x, n.y] = X0(n.x, n.y);
   (M1(), (l.bgImg = A.bg ? bA(A.bg) : null), _e(A.id), Tf(A), PA === "log" && V());

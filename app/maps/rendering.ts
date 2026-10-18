@@ -1,5 +1,5 @@
 import type { MapDefinition, MapObject } from './types';
-import { resolveMapAsset } from './catalog';
+import { resolveMapAsset } from './assets';
 
 export interface Viewport { x: number; y: number; width: number; height: number }
 export interface WorldObjectItem { mapObject: MapObject; y: number }

@@ -266,3 +266,117 @@ test('local map sprites are served while arbitrary source files remain private',
     }
   } finally { fs.rmSync(absolute, { force: true }); await app.close(); db.close(); }
 });
+
+function townTravelFixture() {
+  const effects = [];
+  const s = vm.createContext({ window: {}, MapsEngine: engine, E0: { town: { id: 37, n: 'Biện Kinh', bg: 'img/z/town.jpg' } },
+    actorActionLocked: () => false, bA: image => image,
+    l: { ground: [], enemies: [{ x: 1, y: 1 }], corpses: [{}], moveTo: {}, pickTarget: {} },
+    v: { x: 3000, y: 250 }, Y: { target: {} }, ih: 1,
+    M1: () => effects.push('camera'), o0: () => {}, _e: () => {}, C: () => {}, D: text => text, k: () => {},
+    m: () => ({ textContent: '', classList: { remove() {} } }) });
+  s.window.JMO = engine.createLegacyCatalog().navigation;
+  for (const name of ['mapAdapter', 'mapNavigation', 'mapScene', 'O0', 'X0', 'ma', 'Z0']) declaration(s, 'app/core/attributes-01.js', name);
+  declaration(s, 'app/ui/legacy-panels-and-audio-03.js', 'nc');
+  return { s, effects };
+}
+
+test('returning to town uses its saved map entry on every fresh game session', () => {
+  const map = engine.getMap(37), original = map.entry;
+  try {
+    // Use a reachable authored point away from the old hardcoded map center.
+    const fixture = townTravelFixture(); fixture.s.ma('town');
+    const [x, y] = fixture.s.X0(original.x, original.y);
+    map.entry = { x, y };
+    for (let restart = 0; restart < 2; restart++) {
+      const { s, effects } = townTravelFixture(); s.nc();
+      assert.equal(s.l.town, true); assert.equal(s.Z0.key, 'town');
+      assert.deepEqual([s.v.x, s.v.y], [x, y]);
+      assert.equal(s.l.enemies.length, 0); assert.equal(s.l.corpses.length, 0);
+      assert.equal(s.l.moveTo, null); assert.equal(s.Y.target, null); assert.deepEqual(effects, ['camera']);
+      // The normal town tick must not repeatedly teleport the player back to entry.
+      s.v.x += 1; s.nc(); assert.equal(s.v.x, x + 1);
+    }
+  } finally { map.entry = original; }
+});
+
+test('blocked town entry snaps to a reachable position and a failed load retains the previous entry', () => {
+  const map = engine.getMap(37), original = map.entry;
+  try {
+    map.entry = { x: 0, y: 0 };
+    const { s } = townTravelFixture(); s.nc();
+    assert.ok(engine.canStandAt(s.Z0.g, s.v.x, s.v.y)); assert.ok(s.v.x > 0 && s.v.y > 0);
+    const expected = [s.v.x, s.v.y];
+    s.window.JMO.bad = { w: 3584, h: 3584 };
+    assert.throws(() => s.ma('bad'));
+    assert.deepEqual(plain(s.mapAdapter.entryPosition()), expected);
+    s.ma(999999); assert.deepEqual(plain(s.mapAdapter.entryPosition()), [1536, 1536]);
+  } finally { map.entry = original; }
+});
+
+function trainingTravelFixture() {
+  const { s, effects } = townTravelFixture();
+  const catalog = engine.createLegacyCatalog();
+  Object.assign(s, { k0: catalog.zones, Un: catalog.alternates, o: { stage: 0, mode: 'farm', zalt: {} }, d0: catalog.zones.length - 1,
+    ol: index => index, DA: index => index, Jo: () => { s.l.moveTo = null; }, Tf() {}, PA: 'none',
+    m: () => ({ textContent: '', classList: { remove() {}, add() {} } }) });
+  s.AA = index => s.o.zalt[index] && s.Un[index]?.[s.o.zalt[index] - 1] || s.k0[index];
+  for (const [file, name] of [['app/core/game-loop-01.js', 'Gn'], ['app/ui/legacy-panels-and-audio-03.js', 'en'], ['app/systems/activities-and-stash-06.js', 'On']]) declaration(s, file, name);
+  const expected = id => { const map = engine.getMap(id), nav = engine.createNavigationRuntime(); nav.load(id, catalog.navigation[id], map.size); return plain(nav.resolvePosition(map.entry.x, map.entry.y)); };
+  return { s, effects, catalog, expected };
+}
+
+test('choosing primary/alternate training maps, including from town, uses each destination entry', () => {
+  const { s, catalog, expected } = trainingTravelFixture();
+  s.nc(); assert.equal(s.l.town, true); s.l.tpCd = 0;
+  assert.equal(s.On(1, 'Chọn map', false, true), true);
+  assert.equal(s.l.town, false); assert.equal(s.Z0.key, catalog.zones[1].id);
+  assert.deepEqual([s.v.x, s.v.y], expected(catalog.zones[1].id));
+  const index = Number(Object.keys(catalog.alternates).find(index => catalog.alternates[index].length));
+  s.o.zalt[index] = 1; s.On(index, 'Chọn map phụ', false, true);
+  assert.equal(s.Z0.key, catalog.alternates[index][0].id);
+  assert.deepEqual([s.v.x, s.v.y], expected(catalog.alternates[index][0].id));
+  s.o.zalt[index] = 0; s.On(index, 'Chọn map chính', false, true);
+  assert.equal(s.Z0.key, catalog.zones[index].id);
+  assert.deepEqual([s.v.x, s.v.y], expected(catalog.zones[index].id));
+});
+
+test('explicit reselection returns to entry while same-map refresh and field rebuilding retain player position', () => {
+  const { s, catalog, expected } = trainingTravelFixture(); const zone = catalog.zones[1];
+  s.On(1, 'Chọn map', false, true);
+  const [x, y] = s.X0(2700, 2400); s.v.x = x; s.v.y = y;
+  s.Gn(zone); assert.deepEqual([s.v.x, s.v.y], [x, y]);
+  s.On(1, 'Cập nhật cấp'); assert.deepEqual([s.v.x, s.v.y], [x, y]);
+  s.On(1, 'Chọn lại map', false, true); assert.deepEqual([s.v.x, s.v.y], expected(zone.id));
+  s.On(2, 'Tự đổi map'); assert.deepEqual([s.v.x, s.v.y], expected(catalog.zones[2].id));
+});
+
+for (const file of ['app/ui/world-panels-02.js', 'app/ui/legacy-panels-and-audio-01.js']) {
+  test(`map picker routes primary and alternate selection through entry-aware travel: ${file}`, () => {
+    const { s, catalog, expected } = trainingTravelFixture();
+    const index = Number(Object.keys(catalog.alternates).find(index => catalog.alternates[index].length));
+    const row = { dataset: { z: String(index) } }, chip = { dataset: { za: `${index}:1` } };
+    const panel = { innerHTML: '', style: { removeProperty() {} }, classList: { contains: () => true, add() {}, remove() {} },
+      querySelector: () => null, querySelectorAll: selector => selector === '.zrow' ? [row] : [chip] };
+    const elements = new Map(); s.m = selector => { if (!elements.has(selector)) elements.set(selector, { ...panel }); return elements.get(selector); };
+    s.document = { querySelectorAll: selector => selector === '.zrow' ? [row] : [chip] };
+    Object.assign(s, { Wo: () => true, Lf: () => '', Nf: () => '', Ok: () => '', pk: () => '', qt: () => '', I: {},
+      Ek() {}, Dk() {}, $() {}, V() {} }); s.l.logs = [];
+    const name = file.includes('world-panels') ? 'jB' : 'yv'; declaration(s, file, name); s[name](true);
+    row.onclick(); assert.deepEqual([s.v.x, s.v.y], expected(catalog.zones[index].id));
+    // Selecting an alternate in the current stage while still in town must leave town too.
+    s.l.tpCd = 0; s.nc(); s.l.tpCd = 0;
+    chip.onclick(); assert.equal(s.l.town, false); assert.equal(s.Z0.key, catalog.alternates[index][0].id);
+    assert.deepEqual([s.v.x, s.v.y], expected(catalog.alternates[index][0].id));
+  });
+}
+
+test('selecting a training map during town teleport cooldown cannot replace the town navigation', () => {
+  const { s, catalog, expected } = trainingTravelFixture(); s.nc();
+  const position = [s.v.x, s.v.y], stage = s.o.stage;
+  assert.equal(s.On(1, 'Chọn map', false, true), false);
+  assert.equal(s.l.town, true); assert.equal(s.Z0.key, 'town'); assert.equal(s.o.stage, stage);
+  assert.deepEqual([s.v.x, s.v.y], position);
+  s.l.tpCd = 0; assert.equal(s.On(1, 'Chọn map', false, true), true);
+  assert.equal(s.l.town, false); assert.deepEqual([s.v.x, s.v.y], expected(catalog.zones[1].id));
+});

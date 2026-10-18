@@ -35,7 +35,7 @@ var jB = function s(A) {
     ((o.mode === "quest" || o.mode === "dg") &&
       ((o.mode = "farm"), C("⚔ Chọn bãi luyện công: chuyển sang chế độ Luyện công.")),
       (o.autoMap = !1),
-      On(r, "Chọn bãi luyện công"),
+      On(r, "Chọn bãi luyện công", false, true),
       $(),
       V(),
       n.classList.add("hidden"));
@@ -46,11 +46,7 @@ var jB = function s(A) {
         (r.onclick = () => {
           const [c, d] = r.dataset.za.split(":").map(Number);
           (((o.zalt || (o.zalt = {}))[c] = d),
-            DA(Math.min(o.stage, d0)) === c
-              ? ((o.wave = 1), (l.enemies = []), (l.spawnT = 0.3), (l.zoneShown = null))
-              : i(c),
-            $(),
-            V(),
+            i(c),
             s(!0));
         }),
     ),
