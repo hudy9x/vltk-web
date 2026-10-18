@@ -359,4 +359,4 @@ window.JW["anim"]["pl_kunlun"] = {
   die: { f: "pl_kunlun_die.webp", n: 6, d: 8, w: 130, h: 75, ax: 65, ay: 53, ms: 100, fixed: 1 },
 };
 
-window.JW["town"] = { id: 37, n: "Biện Kinh", bg: "img/z/town.jpg" };
+window.JW["town"] = mapCatalog.town;

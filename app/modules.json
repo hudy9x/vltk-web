@@ -37,9 +37,18 @@
       "lines": 4440
     },
     {
+      "file": "maps/index.ts",
+      "global": "MapsEngine",
+      "symbols": [
+        "MapsEngine"
+      ]
+    },
+    {
       "file": "data/monsters-and-zones-01.js",
-      "symbols": [],
-      "lines": 887
+      "symbols": [
+        "mapCatalog"
+      ],
+      "lines": 729
     },
     {
       "file": "data/monsters-and-zones-02.js",
@@ -59,7 +68,7 @@
     {
       "file": "data/equipment-and-zone-patches-02.js",
       "symbols": [],
-      "lines": 1530
+      "lines": 1411
     },
     {
       "file": "data/audio-tables-01.js",
@@ -75,36 +84,6 @@
       "file": "data/projectile-effects-02.js",
       "symbols": [],
       "lines": 224
-    },
-    {
-      "file": "data/map-navigation-01.js",
-      "symbols": [],
-      "lines": 119
-    },
-    {
-      "file": "data/map-navigation-02.js",
-      "symbols": [],
-      "lines": 117
-    },
-    {
-      "file": "data/map-navigation-03.js",
-      "symbols": [],
-      "lines": 117
-    },
-    {
-      "file": "data/map-navigation-04.js",
-      "symbols": [],
-      "lines": 104
-    },
-    {
-      "file": "data/map-navigation-05.js",
-      "symbols": [],
-      "lines": 104
-    },
-    {
-      "file": "data/map-navigation-06.js",
-      "symbols": [],
-      "lines": 52
     },
     {
       "file": "data/skill-tables-01.js",
@@ -408,7 +387,10 @@
     },
     {
       "file": "gameplay/skill-progression-01.js",
-      "symbols": ["unlockSkillBook", "migrateAdvancedSkillTraining"]
+      "symbols": [
+        "unlockSkillBook",
+        "migrateAdvancedSkillTraining"
+      ]
     },
     {
       "file": "core/helpers-and-config-01.js",
@@ -533,6 +515,9 @@
         "Si",
         "M5",
         "ua",
+        "mapAdapter",
+        "mapNavigation",
+        "mapScene",
         "O0",
         "H5",
         "X0",
@@ -550,12 +535,9 @@
         "Mw",
         "wa",
         "Z0",
-        "Hw",
         "T5",
-        "C5",
         "wt",
         "EA",
-        "n4",
         "$w",
         "pt",
         "Y2",
@@ -573,7 +555,7 @@
         "L5",
         "Cw"
       ],
-      "lines": 836
+      "lines": 530
     },
     {
       "file": "core/attributes-02.js",
@@ -1280,9 +1262,11 @@
         "zd",
         "jD",
         "ye",
+        "groundProbe",
         "ke",
         "Qd",
         "zD",
+        "mapField",
         "QD",
         "Gd",
         "GD",
@@ -1292,24 +1276,16 @@
         "FD",
         "Kd",
         "VD",
-        "UD",
-        "XD",
-        "T3",
-        "C3",
-        "JD",
-        "WD",
         "ZD",
         "Ga",
         "Rd",
-        "Xn",
-        "AP",
         "Ka",
         "D8",
         "nP",
         "tP",
         "O3"
       ],
-      "lines": 870
+      "lines": 715
     },
     {
       "file": "core/state-and-save-03.js",
@@ -1382,7 +1358,9 @@
     },
     {
       "file": "render/nameplates.ts",
-      "symbols": ["nameplateOffset"],
+      "symbols": [
+        "nameplateOffset"
+      ],
       "global": "nameplateOffset",
       "lines": 1
     },
@@ -1432,6 +1410,7 @@
     {
       "file": "render/arena-02.js",
       "symbols": [
+        "crowdRenderer",
         "NP",
         "lA",
         "W",
@@ -1448,7 +1427,7 @@
         "yn",
         "z3"
       ],
-      "lines": 309
+      "lines": 353
     },
     {
       "file": "render/projectiles-01.js",
@@ -1643,7 +1622,9 @@
     },
     {
       "file": "ui/skill-150-effects-01.js",
-      "symbols": ["skill150EffectRows"]
+      "symbols": [
+        "skill150EffectRows"
+      ]
     },
     {
       "file": "ui/legacy-panels-and-audio-02.js",
@@ -2876,7 +2857,9 @@
     {
       "file": "status/index.ts",
       "global": "statusInspector",
-      "symbols": ["statusInspector"]
+      "symbols": [
+        "statusInspector"
+      ]
     }
   ]
 }

@@ -15,7 +15,8 @@ const TYPES: Record<string, string> = {
   '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.m4a': 'audio/mp4',
 };
 const STATIC = new Set(['index.html', 'data.js', 'setvi.js', 'jxlook.js', 'style.css', 'jx1ui.css',
-  'jx1ui2.css', 'ui20.css', 'manifest.json', 'sw.js', 'client/bootstrap.js', 'fonts/ibm-plex-mono.css']);
+  'jx1ui2.css', 'ui20.css', 'manifest.json', 'sw.js', 'client/bootstrap.js', 'fonts/ibm-plex-mono.css',
+  'app/maps/availability.json']);
 
 /** Không mở toàn bộ ROOT làm static: save SQLite, source server và .git vẫn riêng tư. */
 export function registerStaticRoutes(app: FastifyInstance, services: ServerServices): void {
@@ -26,9 +27,13 @@ export function registerStaticRoutes(app: FastifyInstance, services: ServerServi
     let relative: string;
     try { relative = decodeURIComponent(url.pathname).replace(/^\//, '') || 'index.html'; }
     catch { return sendJson(reply, 400, { error: 'Invalid path' }); }
+    // Retired map URLs must not make the asset proxy recreate img/z/.
+    if (relative.startsWith('img/z/')) return sendJson(reply, 404, { error: 'Map assets moved' });
     const appFile = ['app/game.js', 'app/game.js.map', 'app/modules.json'].includes(relative) || services.moduleFiles.has(relative);
+    // Editor-authored map images are local assets; never fetch them from upstream.
+    const mapAsset = /^app\/maps\/(?:content\/[1-9]\d*|objects)\/[a-zA-Z0-9_./-]+\.(?:png|jpe?g|webp)$/i.test(relative);
     if (relative.split('/').some(part => part === '..' || part.startsWith('.')) || relative.includes('\\') ||
-      !(STATIC.has(relative) || appFile || isAssetPath(relative))) return sendJson(reply, 404, { error: 'Not found' });
+      !(STATIC.has(relative) || appFile || mapAsset || isAssetPath(relative))) return sendJson(reply, 404, { error: 'Not found' });
     // Cả game thường lẫn arena dùng cùng bundle. Imported TS edits được rebuild khi reload.
     if (relative === 'app/game.js') {
       for (const source of buildApp().map.sources) services.moduleFiles.add('app/' + source);

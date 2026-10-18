@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": 3,
+  "name": "Kiếm Các Tây Bắc",
+  "size": {
+    "width": 3584,
+    "height": 3584
+  },
+  "entry": {
+    "x": 1651,
+    "y": 1837
+  },
+  "layers": [
+    {
+      "id": "ground",
+      "type": "ground",
+      "image": "./assets/ground.jpg"
+    }
+  ],
+  "navigation": {
+    "kind": "grid",
+    "cellSize": {
+      "width": 32,
+      "height": 16
+    },
+    "columns": 112,
+    "rows": 224,
+    "blockedBase64": "/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////9//////////////////j/////////////////8H/////////////////wP+////////////////Af7///////////////8B/P//////////////fwD8//////////////8DAPj//////////////wAA8P///////////79/AADw////////////Hx4AAID///////////8PAAAAAP7/////////BwAAAAAA/P////////8DAAAAAADA/////////wMAAAAAAID/////////AQAAAAAAAP///////38AAAAAAAAA/v//////PwAAAAAAAAD+//////8fAAAAAAAAAP7//////x8AAAAAAAAA/v//////BwAAAAAAAAD8//////8DAAAAAAAAAPz//////wEAAAAAAAAA/P//////AAAAAAAAAAD8/////38AAAAAAAAAAPz/////PwAAAAAAAAAA/P///+8/AAAAAAAAAAD8////xx8AAAAAAAAAAPz///8HDwAAAAAAAAAA/P///wMOAAAAAAAAAAD8////AwAAAAAAAAAAAPz///8DAAAAAAAAAAAA/P///wEAAAAAAAAAAAD8////AQAAAAAAAAAAAPz///8BAAAAAAAAAAAA/P///wAAAAAAAPgAAAD8////AAAAAAAA/AEAAPz///8AAAAAAP7/AQAA/P///wAAAAD+//8BAAD8////AADgP////wEAAPz///8AAPD/////AQAA/P///wAA/P////8BAAD8////AAD+/////wEAAPz///8AAP//////AQAA/P///wCA//////8BAAD8//9/AMD//////wEAAP7//38A4P//////AQAA/v//fwDg//////8BAAD+//9/AOD//////wEAAP7//38A4P//////AQAA/v//fwDw//////8BAAD+//9/APD//////wEAAP///38A8P//////AwAA////fwDw//////8DAAD///9/APD//////wMAAP///38A8P//////AwAA////fwDA//////8HAAD///9/AID//////wcAAP///z8AAP//////BwAA////PwAA/v////8PAAD///8/AAD+/////w8AAP///z8AAP7/////DwAA/v//HwAA/P////8fAAD+//8fAAD8/////x8AAP7//x8AAP7/////HwAA/v//HwAA/v////8fAAD+//8fAAD+/////x8AAP///x8AAP//////HwAA////HwAA//////8fAAD///8fAAD//////x8AAP///x8AgP//////HwAA////HwCA//////8/AAD///8fAID//////z8AAP///x8AgP//////PwAA////HwCA//////9/AAD///8fAID//////38AAP///x8AgP///////wAA////HwCA////////AAD///8fAID///////8AAP///x8AgP///////wAA////HwCA////////AAD+//8/AID///////8BAPz//z8AgP///////wEA/P//fwCA////////AQD8//9/AID///////8BAPz//38AgP///////wEA/P///wCA////////AQD4////AID///////8BAPj///8BgP///////wEA+P///wGA////////AQD4////A4D////P//8BAPj///8HgP///wf4/wEA8P///weA////A/D/AQDw////B4D///8B4P8BAPD///8HgP///wDg/wEA8P///weA//9/AOD/AwDw////B4D//38A4P8DAPD///8HgP//PwDg/wcA8P///weA//8fAOD/BwDw////B4D//x8A4P8HAPD///8HgP//HwDg/w8A4P///weA//8fAPD/DwDg////B4D//x8A8P8fAOD///8HgP//HwDw/x8AwP///weA//8fAPD/PwDA////B4D//x8A8P8/AID///8HgP//HwDw/38AAP///weA//8fAPD/fwAA/v//B4D//x8A8P9/AAD8//8HgP//DwDw/38AAPz//weA//8PAPj/fwAA/P//B4D//w8A+P9/AAD8//8HgP//DwD4/38AAPz//weA//8PAPj/fwAA+P//B8D//w8A+P9/AAD4//8DwP//DwD4/38AAPj//wPA//8PAPj/PwAA+P//A8D//w8A+P8/AAD4//8DwP//DwD4/z8AAPj//wPA//8PAPz/PwAA+P//A8D//w8A/P8fAAD4//8DwP//DwD8/x8AAPj//wMA/v8PAPz/HwAA+P//AwD8/w8A/P8fAAD4//8BAPj/DwD8/x8AAPj//wEA8P8PAPz/HwAA+P//AQDw/w8A/P8fAAD4//8BAOD/DwD8/x8AAPj//wEA4P8PAPz/HwAA/P//AQDg/w8A/P8fAAD8//8BAOD/DwD8/x8AAPz//wEAwP8PAP7/HwAA/P//AQAA/AcA/v8fAAD8//8BAAD4BwD+/x8AAPz//wEAAPgDAP7/HwAA/P//AQAA8AEA/v8fAAD8//8BAAAAAAD+/x8AAPz//wEAAAAAAP//HwAA/P//AQAAAAAA//8fAAD8//8BAAAAAAD//x8AAP7//wEAAAAAAP//HwAA/v//AQAAAAAA//8fAAD+//8DAAAAAID//x8AAP7//wMAAAAAgP//HwAA/P//AwAAAACA//8fAAD8//8HAAAAAID//x8AAPz//wcAAAAAgP//HwAA/P//DwAAAADA//8fAAD8//8fAAAAAMD//x8AAPz//z8AAAAAwP//HwAA/v///wAAAADg//8fAAD+////AwAAAPD//x8AAP7///8/AAAA8P//HwAA/v////8DAAD4//8fAAD+/////wcAYPz//x8AAP7/////DwDw////HwAA/v////8fAPj///8fAAD+/////38A/P///x8AAP7//////wf+////HwAA/v////////////8fAAD+/////////////x8AAP7/////////////HwAA/v////////////8fAAD+/////////////x8AAP7/////////////HwAA/v////////////8fAAD+/////////////x8AAP7/////////////HwAA/v////////////8fAAD8/////////////x8AAPz/////////////HwAA/P////////////8/AAD8/////////////z8AAPj/////////////PwAA+P////////////8/AAD4/////////////z8AAPj/////////////PwAA+P////////////8/AAD4/////////////z8AAPj//P//////////PwAA+P/w//////////8/AADw/+D//////////z8AAPD/gP//////////PwAA8P8A//////////8/AADw/wD+/////////z8AAOD/AP7/////////PwAA4P8A/P/f//////8/AADw/wD8/wfw/////z8AAPD/APz/A+D/////PwAA8P8A+P8BwP////8/AADw/wD4/wDA/////z8AAPD/APh/AMD/////PwAA8P8A+B8AgP////8/AADw/wDwBwCA/////x8AAPj/AOABAAD/////HwAA+P8AAAAAAPD///8fAAD4/wAAAAAA4P///w8AAPj/AAAAAADA////DwAA+P8AAAAAAMD///8HAAD4/wAAAAAAwP///wMAAPj/AAAAAACA////AwAA+P8AAAAAAID///8BAADw/wAAAAAAgP///wAAAPD/AAAAAACA//9/AAAA8P8AAAAAAAD//z8AAADw/wAAAAAAAP7/HwAAAPD/AAAAAAAA/P8PAAAA8P8AAAAAAADg/w8AAADw/w=="
+  },
+  "spawns": [],
+  "status": "available"
+}

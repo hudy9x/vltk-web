@@ -49,15 +49,22 @@ var Jo = function () {
     typeof Y < "u" && ((Y.target = null), (Y.tmp = !1)));
 };
 
-var On = function (A, n, t) {
+var On = function (A, n, t, enter = false) {
   if (!k0[A] || l.dg || l.tower) return !1;
-  l.town && en();
+  const candidates = [k0[A]].concat(Un[A] || []), selected = (o.zalt || {})[A] || 0;
+  const available = candidates[selected] && MapsEngine.isMapAvailable(candidates[selected].id) ? selected : candidates.findIndex(zone => MapsEngine.isMapAvailable(zone.id));
+  if (available < 0) { if (typeof mapAccess !== "undefined") mapAccess.require(candidates[selected]?.id || k0[A].id); return false; }
+  if (l.town) {
+    en(candidates[available]);
+    if (l.town) return !1;
+  }
+  (o.zalt || (o.zalt = {}))[A] = available;
   const e = ol(A),
     a = DA(Math.min(o.stage, d0)) === A;
-  if (((o.stage = e), (o.wave = 1), !a)) {
+  if (((o.stage = e), (o.wave = 1), !a || enter)) {
     (t || ((l.enemies = []), (l.corpses = []), (l.spawnT = 0.6)), Jo());
     const i = AA(e);
-    ((l.zoneShown = i.id),
+    ((l.zoneShown = enter ? null : i.id),
       Gn(i),
       (l.banner = { t: 2.2, text: i.n, sub: n || `Cấp ${i.lo}–${i.hi}` }),
       n && C(`🗺 ${D(n)}: tới <b>${D(i.n)}</b>`));
@@ -246,7 +253,7 @@ var rl = (s) => s * Kn + 1;
 
 var Pk = () => (v0() ? Q2 : o.lvl);
 
-var Wo = (s) => !!k0[s] && (k0[s].lo <= Pk() + 3 || o.maxStage >= rl(s));
+var Wo = (s) => !!k0[s] && [k0[s]].concat(Un[s] || []).some(zone => MapsEngine.isMapAvailable(zone.id)) && (k0[s].lo <= Pk() + 3 || o.maxStage >= rl(s));
 
 var vk = (s) => {
   const A = k0.findIndex((n) => s <= n.hi);

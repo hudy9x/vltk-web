@@ -5,6 +5,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const acorn=require('acorn');
 const {loadCombatEngine}=require('./helpers/combat-engine');
+const {loadMapsEngine}=require('./helpers/maps-engine');
 function declaration(s,file,name){
  const text=fs.readFileSync(path.join(__dirname,'..',file),'utf8');
  const node=acorn.parse(text,{ecmaVersion:'latest'}).body.find(n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>d.id.name===name));
@@ -14,7 +15,9 @@ function world(){
  const s={Math,Set,Map,v:{x:0,y:0},l:{fx:[],enemies:[],life:1000,zoneShown:1},Y:{target:{x:400,y:0},mouse:true},
  QA:.81,Z0:{g:false},R2:()=>true,mt:()=>true,A0:{m:{},f:{},s:{}},Hi:{phys:'#fff'},Y3:()=>0,G3(){},x8(){},
  ws:()=>.4,kn:()=>0,Qa:.5,Mw(){throw Error('movement during lock');},W3(){},r0:{1:{anim:'monster'}},q0:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),_1:()=>s.l.enemies};
- vm.createContext(s);loadCombatEngine(s);return s;
+ vm.createContext(s);loadCombatEngine(s);
+ s.mapNavigation=loadMapsEngine(s).createNavigationRuntime(actor=>s.actorActionLocked(actor));
+ return s;
 }
 function run(s,seconds){for(let t=0;t<seconds-1e-9;t+=.01)s.advanceSkillContacts(.01);}
 

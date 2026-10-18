@@ -461,11 +461,12 @@ var A2 = function () {
 var tb = function () {
   !window.JMO ||
     !window.JMO[String(Hn.id)] ||
+    !MapsEngine.isMapAvailable(Hn.id) ||
     ((l.zoneShown = "tower"),
     ma(Hn.id),
     ([v.x, v.y] = X0(O0.w / 2, O0.h / 2)),
     M1(),
-    (l.bgImg = bA(`img/z/${Hn.id}.jpg`)),
+    (l.bgImg = bA(MapsEngine.getMapBackground(Hn.id))),
     _e(Hn.mus || Hn.id));
 };
 

@@ -11,376 +11,78 @@ var M5 = (s) => 1 + Si * ((s && s.enh) || 0);
 
 var ua = (s) => 1 + Ei * ((s && s.enh) || 0) + A4 * ((s && !s.pv3 && s.plv) || 0);
 
-var O0 = { w: 3072, h: 3072, pad: 20 };
+var mapAccess = MapsEngine.createMapAvailabilityGuard({
+  currentMapId: () => {
+    if (typeof l === "undefined" || !l || l.town || !o || !o.fac) return null;
+    const key = typeof Z0 !== "undefined" && Z0.key;
+    return typeof key === "number" ? key : AA(Math.min(o.stage, d0)).id;
+  },
+  isAvailable: (id) => MapsEngine.isMapAvailable(id),
+  fetchManifest: async () => {
+    const response = await fetch("app/maps/availability.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Map manifest unavailable");
+    return response.json();
+  },
+  applyManifest: (value) => MapsEngine.updateMapAvailability(value),
+  showNotice: (message, acknowledge) => MapsEngine.showMapUnavailableNotice(message, acknowledge),
+  returnToTown: () => { o.autoMap = false; nc(true); },
+  now: () => Date.now(),
+});
 
-var H5 = (s, A) => [E(s, O0.pad, O0.w - O0.pad), E(A, O0.pad + 30, O0.h - O0.pad)];
+var mapAdapter = MapsEngine.createLegacyMapAdapter({
+  actionLocked: (actor) => actorActionLocked(actor),
+  imageFor: (path) => bA(path),
+  townId: () => E0.town.id,
+  obstaclesDisabled: () => !!window.NO_OBS,
+  navigationFor: (id) => window.JMO && window.JMO[id],
+  groundItems: () => typeof l !== "undefined" && l.ground ? l.ground : [],
+  unavailable: (id) => mapAccess.require(id),
+});
+var mapNavigation = mapAdapter.navigation;
+var mapScene = mapAdapter.scene;
+var O0 = mapNavigation.bounds;
 
-var X0 = (s, A) => {
-  const n = H5(s, A);
-  return typeof Z0 < "u" && Z0.g ? Ii(n[0], n[1]) : n;
-};
+var H5 = mapNavigation.clampPosition;
+
+var X0 = mapNavigation.resolvePosition;
 
 var sA = (s) => S.attr[s] || "#" + s;
 
 var ga = (s, A) =>
   r0[s] && /^Tiểu Boss/i.test(r0[s].n) ? `Bá Chủ ${A || ""}`.trim() : r0[s] ? r0[s].n : "";
 
-var ma = function (A) {
-  const n = !window.NO_OBS && window.JMO && window.JMO[String(A === "town" ? E0.town.id : A)];
-  if (((Z0.key = A), (Z0.g = null), !n)) return ((O0.w = O0.h = Hw), !1);
-  const t = atob(n.obs),
-    e = new Uint8Array(t.length);
-  for (let u = 0; u < t.length; u++) e[u] = t.charCodeAt(u);
-  const a = n.gw * n.gh,
-    i = new Uint8Array(a);
-  for (let u = 0; u < a; u++) i[u] = (e[u >> 3] >> (u & 7)) & 1 ? 0 : 1;
-  const r = new Int32Array(a).fill(-1),
-    c = new Int32Array(a);
-  let d = -1,
-    f = 0,
-    h = 0;
-  const g = [];
-  for (let u = 0; u < a; u++) {
-    if (!i[u] || r[u] >= 0) continue;
-    let w = 0,
-      x = 0;
-    for (c[x++] = u, r[u] = h; w < x;) {
-      const p = c[w++],
-        P = p % n.gw,
-        _ = (p / n.gw) | 0;
-      for (let y = -1; y <= 1; y++)
-        for (let M = -1; M <= 1; M++) {
-          if (!M && !y) continue;
-          const B = P + M,
-            O = _ + y;
-          if (B < 0 || O < 0 || B >= n.gw || O >= n.gh) continue;
-          const G = O * n.gw + B;
-          !i[G] ||
-            r[G] >= 0 ||
-            (M && y && (!i[_ * n.gw + B] || !i[O * n.gw + P])) ||
-            ((r[G] = h), (c[x++] = G));
-        }
-    }
-    (g.push(x), x > f && ((f = x), (d = h)), h++);
-  }
-  for (let u = 0; u < a; u++) i[u] = r[u] === d ? 1 : 0;
-  if (
-    ((Z0.g = {
-      gw: n.gw,
-      gh: n.gh,
-      cw: n.cw,
-      ch: n.ch,
-      w: n.w,
-      h: n.h,
-      ok: i,
-      free: f,
-      comp: r,
-      isl: g
-        .map((u, w) => [w, u])
-        .filter((u) => u[1] >= Math.max(300, f * 0.25))
-        .sort((u, w) => w[1] - u[1])
-        .map((u) => u[0]),
-    }),
-    (O0.w = n.w),
-    (O0.h = n.h),
-    typeof l < "u" && l.ground)
-  )
-    for (const u of l.ground) [u.x, u.y] = X0(u.x, u.y);
-  return !0;
-};
+// Compatibility boundary: all navigation algorithms live in maps/*.ts.
+var ma = mapAdapter.load;
 
-var xw = function (A) {
-  const n = Z0.g;
-  if (!n || !n.isl || n.isl.length < 2) return !1;
-  const t = n.isl[((A % n.isl.length) + n.isl.length) % n.isl.length];
-  let e = 0,
-    a = 0,
-    i = 0;
-  for (let r = 0; r < n.ok.length; r++)
-    ((n.ok[r] = n.comp[r] === t ? 1 : 0), n.ok[r] && ((e += r % n.gw), (a += (r / n.gw) | 0), i++));
-  return (
-    (n.free = i),
-    typeof EA < "u" && ((EA.cell = -1), (EA.g = null)),
-    Ii((e / i + 0.5) * n.cw, (a / i + 0.5) * n.ch)
-  );
-};
+var xw = mapNavigation.selectIsland;
 
-var R2 = function (A, n) {
-  const t = Z0.g;
-  if (!t) return !0;
-  const e = Math.floor(A / t.cw),
-    a = Math.floor(n / t.ch);
-  return e >= 0 && a >= 0 && e < t.gw && a < t.gh && t.ok[a * t.gw + e] === 1;
-};
+var R2 = mapNavigation.walkable;
 
-var Ii = function (A, n) {
-  const t = Z0.g;
-  if (!t || wt(A, n)) return [A, n];
-  const [e, a] = T5(E(A, 0, t.w - 1), E(n, 0, t.h - 1));
-  for (let i = 1; i < Math.max(t.gw, t.gh); i++) {
-    let r = 1e9,
-      c = null;
-    for (let d = -i; d <= i; d++)
-      for (let f = -i; f <= i; f++) {
-        if (Math.max(Math.abs(f), Math.abs(d)) !== i) continue;
-        const h = (e + f + 0.5) * t.cw,
-          g = (a + d + 0.5) * t.ch;
-        if (!wt(h, g)) continue;
-        const u = (h - A) ** 2 + (g - n) ** 2;
-        u < r && ((r = u), (c = [h, g]));
-      }
-    if (c) return c;
-  }
-  return [t.w / 2, t.h / 2];
-};
+var Ii = mapNavigation.nearest;
 
-var gt = function (A, n, t) {
-  return !Z0.g || wt(n, t)
-    ? ((A.x = n), (A.y = t), !0)
-    : wt(n, A.y)
-      ? ((A.x = n), !0)
-      : wt(A.x, t)
-        ? ((A.y = t), !0)
-        : !1;
-};
+var gt = mapNavigation.tryMove;
 
-var $5 = function (A, n, t, e) {
-  if (!Z0.g) return !0;
-  const a = Math.hypot(t - A, e - n),
-    i = Math.ceil(a / 8);
-  for (let r = 1; r <= i; r++) {
-    const c = r / i;
-    if (!wt(A + (t - A) * c, n + (e - n) * c)) return !1;
-  }
-  return !0;
-};
+var $5 = mapNavigation.clear;
 
-var mt = function (A, n, t, e) {
-  if (!Z0.g) return !0;
-  const a = Math.hypot(t - A, e - n),
-    i = Math.ceil(a / 10);
-  for (let r = 1; r < i; r++) {
-    const c = r / i;
-    if (!R2(A + (t - A) * c, n + (e - n) * c)) return !1;
-  }
-  return !0;
-};
+var mt = mapNavigation.sight;
 
-var Bw = function (A, n, t, e, a = 8e3) {
-  const i = Z0.g;
-  if (!i) return null;
-  const r = E(Math.floor(A / i.cw), 0, i.gw - 1),
-    c = E(Math.floor(n / i.ch), 0, i.gh - 1);
-  let d = E(Math.floor(t / i.cw), 0, i.gw - 1),
-    f = E(Math.floor(e / i.ch), 0, i.gh - 1);
-  const h = (M, B) => M >= 0 && B >= 0 && M < i.gw && B < i.gh && i.ok[B * i.gw + M] === 1;
-  if (!h(d, f)) {
-    const [M, B] = Ii(t, e);
-    ((d = Math.floor(M / i.cw)), (f = Math.floor(B / i.ch)));
-  }
-  const g = (M, B) => B * i.gw + M,
-    u = new Map(),
-    w = new Map([[g(r, c), 0]]),
-    x = (M, B) => Math.hypot((M - d) * i.cw, (B - f) * i.ch),
-    p = [[x(r, c), r, c]],
-    P = (M) => {
-      p.push(M);
-      let B = p.length - 1;
-      for (; B > 0;) {
-        const O = (B - 1) >> 1;
-        if (p[O][0] <= p[B][0]) break;
-        (([p[O], p[B]] = [p[B], p[O]]), (B = O));
-      }
-    },
-    _ = () => {
-      const M = p[0],
-        B = p.pop();
-      if (p.length) {
-        p[0] = B;
-        let O = 0;
-        for (;;) {
-          const G = 2 * O + 1,
-            j = G + 1;
-          let X = O;
-          if (
-            (G < p.length && p[G][0] < p[X][0] && (X = G),
-            j < p.length && p[j][0] < p[X][0] && (X = j),
-            X === O)
-          )
-            break;
-          (([p[X], p[O]] = [p[O], p[X]]), (O = X));
-        }
-      }
-      return M;
-    };
-  let y = 0;
-  for (; p.length && y++ < a;) {
-    const [, M, B] = _();
-    if (M === d && B === f) {
-      const G = [];
-      let j = g(M, B);
-      for (; j !== void 0;)
-        (G.push({ x: ((j % i.gw) + 0.5) * i.cw, y: (Math.floor(j / i.gw) + 0.5) * i.ch }),
-          (j = u.get(j)));
-      return G.reverse();
-    }
-    const O = w.get(g(M, B));
-    for (let G = -1; G <= 1; G++)
-      for (let j = -1; j <= 1; j++) {
-        if (!j && !G) continue;
-        const X = M + j,
-          $0 = B + G;
-        if (!h(X, $0) || (j && G && (!h(M + j, B) || !h(M, B + G)))) continue;
-        const I0 = O + Math.hypot(j * i.cw, G * i.ch);
-        I0 < (w.get(g(X, $0)) ?? 1e18) &&
-          (w.set(g(X, $0), I0), u.set(g(X, $0), g(M, B)), P([I0 + x(X, $0), X, $0]));
-      }
-  }
-  return null;
-};
+var Bw = mapNavigation.path;
 
-var _w = function (A, n) {
-  const t = Z0.g;
-  if (!t) return null;
-  const e = E(Math.floor(A / t.cw), 0, t.gw - 1),
-    a = E(Math.floor(n / t.ch), 0, t.gh - 1),
-    i = a * t.gw + e;
-  if (EA.g === t && EA.cell === i) return EA.d;
-  const r = t.gw * t.gh,
-    c = EA.g === t && EA.d ? EA.d : new Int32Array(r);
-  c.fill(-1);
-  const d = EA.q && EA.q.length === r ? EA.q : (EA.q = new Int32Array(r));
-  let f = 0,
-    h = 0,
-    g = i;
-  if (!t.ok[g]) {
-    const [u, w] = Ii(A, n);
-    g = E(Math.floor(w / t.ch), 0, t.gh - 1) * t.gw + E(Math.floor(u / t.cw), 0, t.gw - 1);
-  }
-  for (c[g] = 0, d[h++] = g; f < h;) {
-    const u = d[f++],
-      w = u % t.gw,
-      x = (u / t.gw) | 0,
-      p = c[u] + 1;
-    for (let P = -1; P <= 1; P++)
-      for (let _ = -1; _ <= 1; _++) {
-        if (!_ && !P) continue;
-        const y = w + _,
-          M = x + P;
-        if (y < 0 || M < 0 || y >= t.gw || M >= t.gh) continue;
-        const B = M * t.gw + y;
-        c[B] >= 0 ||
-          !t.ok[B] ||
-          (_ && P && (!t.ok[x * t.gw + y] || !t.ok[M * t.gw + w])) ||
-          ((c[B] = p), (d[h++] = B));
-      }
-  }
-  return ((EA.g = t), (EA.cell = i), (EA.d = c), c);
-};
+var _w = mapNavigation.distances;
 
-var Mw = function (A, n, t, e) {
-  if (actorActionLocked(A)) return;
-  const a = Z0.g;
-  if (!a) {
-    const _ = Math.hypot(n - A.x, t - A.y) || 1,
-      y = Math.min(1, e / _);
-    ((A.x += (n - A.x) * y), (A.y += (t - A.y) * y));
-    return;
-  }
-  const i = Math.hypot(n - A.x, t - A.y) || 1;
-  if (i < 260 && $5(A.x, A.y, n, t)) {
-    const _ = Math.min(1, e / i);
-    gt(A, A.x + (n - A.x) * _, A.y + (t - A.y) * _);
-    return;
-  }
-  const r = _w(n, t);
-  if (!r) return;
-  const c = E(Math.floor(A.x / a.cw), 0, a.gw - 1),
-    d = E(Math.floor(A.y / a.ch), 0, a.gh - 1),
-    f = r[d * a.gw + c];
-  if (f < 0) {
-    const _ = Math.min(1, e / i);
-    gt(A, A.x + (n - A.x) * _, A.y + (t - A.y) * _);
-    return;
-  }
-  let h = f,
-    g = c,
-    u = d;
-  for (let _ = -1; _ <= 1; _++)
-    for (let y = -1; y <= 1; y++) {
-      if (!y && !_) continue;
-      const M = c + y,
-        B = d + _;
-      if (M < 0 || B < 0 || M >= a.gw || B >= a.gh) continue;
-      const O = r[B * a.gw + M];
-      O < 0 ||
-        O >= h ||
-        (y && _ && (!a.ok[d * a.gw + M] || !a.ok[B * a.gw + c])) ||
-        ((h = O), (g = M), (u = B));
-    }
-  if (g === c && u === d) {
-    const _ = Math.min(1, e / i);
-    gt(A, A.x + (n - A.x) * _, A.y + (t - A.y) * _);
-    return;
-  }
-  const w = (g + 0.5) * a.cw,
-    x = (u + 0.5) * a.ch,
-    p = Math.hypot(w - A.x, x - A.y) || 1,
-    P = Math.min(1, e / p);
-  gt(A, A.x + (w - A.x) * P, A.y + (x - A.y) * P);
-};
+var Mw = mapNavigation.moveWithFlow;
 
-var wa = function (A, n, t, e) {
-  if (actorActionLocked(A)) return;
-  if (!Z0.g) {
-    const g = Math.hypot(n - A.x, t - A.y) || 1,
-      u = Math.min(1, e / g);
-    ((A.x += (n - A.x) * u), (A.y += (t - A.y) * u));
-    return;
-  }
-  if ($5(A.x, A.y, n, t)) {
-    A._pp = null;
-    const g = Math.hypot(n - A.x, t - A.y) || 1,
-      u = Math.min(1, e / g);
-    gt(A, A.x + (n - A.x) * u, A.y + (t - A.y) * u)
-      ? (A._stuck = 0)
-      : (A._stuck = (A._stuck || 0) + 1);
-    return;
-  }
-  const [a, i] = T5(n, t),
-    r = a + "," + i;
-  (A._pk !== r || (!A._pp && (A._pr = (A._pr || 0) - 1) < 0)) &&
-    n4 > 0 &&
-    (n4--, (A._pp = Bw(A.x, A.y, n, t)), (A._pk = r), (A._pi = 0), (A._pr = A._pp ? 0 : 30));
-  const c = A._pp;
-  if (!c || !c.length) return;
-  for (; A._pi < c.length - 1 && Math.hypot(c[A._pi].x - A.x, c[A._pi].y - A.y) < 10;) A._pi++;
-  const d = c[Math.min(A._pi, c.length - 1)],
-    f = Math.hypot(d.x - A.x, d.y - A.y) || 1,
-    h = Math.min(1, e / f);
-  gt(A, A.x + (d.x - A.x) * h, A.y + (d.y - A.y) * h);
-};
+var wa = mapNavigation.moveAlongPath;
 
-var Z0 = { g: null, key: null };
+var Z0 = mapNavigation.state;
 
-var Hw = 3072;
+var T5 = mapNavigation.cell;
 
-var T5 = (s, A) => {
-  const n = Z0.g;
-  return [Math.floor(s / n.cw), Math.floor(A / n.ch)];
-};
+var wt = mapNavigation.canStand;
 
-var C5 = 9;
+var EA = mapNavigation.flowCache;
 
-var wt = (s, A) => R2(s, A) && R2(s - C5, A) && R2(s + C5, A);
-
-var EA = { g: null, cell: -1, d: null };
-
-var n4 = 2;
-
-var $w = () => {
-  n4 = 2;
-};
+var $w = mapNavigation.beginTick;
 
 var pt = function (A, n, t, e = 1) {
   n = Rw[n] || n;

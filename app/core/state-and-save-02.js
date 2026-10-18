@@ -570,31 +570,8 @@ var jD = {
 
 var ye = 100;
 
-var ke = function (A, n) {
-  const t = l.bgImg;
-  if (!t || !t.complete || !t.naturalWidth) return !1;
-  if (Xn.key !== t.src)
-    try {
-      const c = Math.ceil(t.naturalWidth / 16),
-        d = Math.ceil(t.naturalHeight / 16),
-        f = document.createElement("canvas");
-      ((f.width = c), (f.height = d));
-      const h = f.getContext("2d");
-      (h.drawImage(t, 0, 0, c, d),
-        (Xn.d = h.getImageData(0, 0, c, d)),
-        (Xn.key = t.src),
-        (Xn.k = c / O0.w));
-    } catch {
-      ((Xn.key = t.src), (Xn.d = null));
-    }
-  const e = Xn.d;
-  if (!e) return !1;
-  const a = Math.floor(A * Xn.k),
-    i = Math.floor(n * Xn.k);
-  if (a < 0 || i < 0 || a >= e.width || i >= e.height) return !0;
-  const r = (i * e.width + a) * 4;
-  return e.data[r] + e.data[r + 1] + e.data[r + 2] < 75;
-};
+var groundProbe = MapsEngine.createGroundProbe();
+var ke = (x, y) => groundProbe.isVoid(l.bgImg, O0.w, O0.h, x, y);
 
 var Qd = function () {
   const A = l.bgImg,
@@ -608,24 +585,7 @@ var Qd = function () {
     return;
   }
   if (((l.unvoid = 0), (l.unvoidT = null), !ke(v.x, v.y))) return;
-  const t = Z0.g;
-  let e = null,
-    a = 1e18;
-  if (t)
-    for (let i = 0; i < t.ok.length; i++) {
-      if (!t.ok[i]) continue;
-      const r = ((i % t.gw) + 0.5) * t.cw,
-        c = (Math.floor(i / t.gw) + 0.5) * t.ch,
-        d = (r - v.x) ** 2 + (c - v.y) ** 2;
-      d < a &&
-        wt(r, c) &&
-        !ke(r, c) &&
-        !ke(r + 48, c) &&
-        !ke(r - 48, c) &&
-        !ke(r, c + 32) &&
-        !ke(r, c - 32) &&
-        ((a = d), (e = [r, c]));
-    }
+  const e = MapsEngine.findVisibleGround(mapNavigation, v, ke);
   e &&
     (([v.x, v.y] = e),
     (v._px = v.x),
@@ -640,149 +600,50 @@ var Qd = function () {
     typeof M1 == "function" && M1());
 };
 
-var zD = function (A, n, t) {
-  const e = [],
-    a = Z0.g;
-  for (let i = 0; i < A * 60 && e.length < A; i++) {
-    let r, c;
-    if (a) {
-      const d = N0(0, a.gw * a.gh - 1);
-      if (
-        !a.ok[d] ||
-        ((r = ((d % a.gw) + 0.5) * a.cw), (c = (Math.floor(d / a.gw) + 0.5) * a.ch), !wt(r, c))
-      )
-        continue;
-    } else ((r = Z(150, O0.w - 150)), (c = Z(150, O0.h - 150)));
-    e.some((d) => Math.hypot(d[0] - r, d[1] - c) < n) ||
-      ke(r, c) ||
-      (t && Math.hypot(t[0] - r, t[1] - c) < 220) ||
-      e.push([r, c]);
-  }
-  return e;
-};
+var zD = (count, spacing, avoid) => MapsEngine.generateCampCenters(
+  mapNavigation, count, spacing, avoid ? { x: avoid[0], y: avoid[1] } : undefined, ke, Math.random);
 
-var QD = function () {
-  const A = AA(Math.min(o.stage, d0)),
-    n = p8(),
-    t = zD(UD + 1, XD, [v.x, v.y]),
-    e = [],
-    a = new Set();
-  for (; a.size < Math.min(4, t.length - 1);) a.add(N0(1, t.length - 1));
-  const i = A.m.slice().sort(() => Math.random() - 0.5);
-  (t.forEach(([c, d], f) => {
-    if (f === 0) {
-      e.push({ x: c, y: d, cls: "boss", tid: A.boss, t: VD });
-      return;
+var mapField = MapsEngine.createFieldRuntime(mapNavigation, {
+  zone: () => AA(Math.min(o.stage, d0)),
+  key: () => Rd(),
+  player: () => v,
+  playerAlive: () => l.life > 0,
+  normalCountRange: () => { const range = p8(); return [range[1], range[2]]; },
+  ensureMap: (zone) => {
+    if (Z0.key !== zone.id || l.zoneShown !== zone.id) {
+      Gn(zone);
+      l.zoneShown = zone.id;
+      l.banner = { t: 2.4, text: zone.n, sub: `Cấp ${zone.lo}–${zone.hi}` };
     }
-    const h = (A.lo || 0) >= AP ? N0(5, 7) : Math.max(2, Math.round(N0(n[1], n[2]) / 2)),
-      g = N0(0, i.length - 1);
-    for (let u = 0; u < h; u++) {
-      const w = i[(g + u) % i.length],
-        [x, p] = X0(c + Z(-T3, T3), d + Z(-T3, T3) * 0.6);
-      e.push({
-        x,
-        y: p,
-        cls: u === 0 && (a.has(f) || Math.random() < 0.25) ? "elite" : "normal",
-        tid: w,
-        t: 0,
-      });
-    }
-  }),
-    (l.field = { key: Rd(), pts: e, kills: 0 }),
-    (l.enemies = l.enemies.filter((c) => (c.goldBoss || c.sat || c.satG) && !c.dead)));
-  for (const c of l.field.pts) c.t <= 0 && Gd(c);
-  const r = A;
-  r.id !== l.zoneShown &&
-    ((l.zoneShown = r.id),
-    (l.banner = { t: 2.4, text: r.n, sub: `Cấp ${r.lo}–${r.hi}` }),
-    typeof Gn == "function" && Gn(r));
-};
+  },
+  field: () => l.field,
+  setField: (field) => { l.field = field; },
+  enemies: () => l.enemies,
+  setEnemies: (enemies) => { l.enemies = enemies; },
+  createEnemy: (point) => n1(point.tid, De(o.stage) + (point.cls === "boss" ? 1 : 0), point.cls, point.x, point.y),
+  announceBoss: (enemy, point) => {
+    enemy.n = ga(point.tid, AA(Math.min(o.stage, d0)).n);
+    C(`<b class="boss">${D(enemy.n)}</b> xuất hiện!`);
+  },
+  normalRespawnSeconds: () => FD / du(),
+  questNeedsBoss: (id) => {
+    const task = o.dt && o.dt.task;
+    return !!task && task.t === "boss" && task.tid === id && task.have < task.need;
+  },
+  afterTick: () => { if (mh()) wh(); },
+  isVoid: (x, y) => ke(x, y),
+  distance: (a, b) => q0(a, b),
+  direction: (x, y) => kn(x, y),
+});
+var QD = mapField.initialize;
 
-var Gd = function (A) {
-  const n = De(o.stage) + (A.cls === "boss" ? 1 : 0),
-    t = n1(A.tid, n, A.cls, A.x, A.y);
-  (A.cls === "normal" && ((t.dens = !0), (t.dmg *= Ld)),
-    (t.home = A),
-    (t.aggro = !1),
-    (t.wT = Z(0, 3)),
-    (A.e = t),
-    (A.t = 0),
-    l.enemies.push(t),
-    A.cls === "boss" &&
-      ((t.n = ga(A.tid, AA(Math.min(o.stage, d0)).n)),
-      C(`<b class="boss">${D(t.n)}</b> xuất hiện!`)));
-};
+var Gd = mapField.spawn;
 
-var GD = function (A) {
-  const n = l.field;
-  if (!n || n.key !== Rd() || (!l.enemies.length && n.pts.some((t) => t.e && !t.e.dead))) {
-    QD();
-    return;
-  }
-  for (const t of n.pts) {
-    if (
-      (t.e && t.e.dead && ((t.e = null), (t.t = t.cls === "boss" ? Kd : FD / du())),
-      !t.e && t.cls === "boss" && t.t > 20)
-    ) {
-      const e = o.dt && o.dt.task;
-      e && e.t === "boss" && e.tid === t.tid && e.have < e.need && (t.t = 20);
-    }
-    if (!t.e && (t.t -= A) <= 0) {
-      if (Math.hypot(v.x - t.x, v.y - t.y) < 90) {
-        t.t = 1;
-        continue;
-      }
-      Gd(t);
-    }
-  }
-  ((l.enemies.length > 80 || l.enemies.some((t) => t.dead)) &&
-    (l.enemies = l.enemies.filter((t) => !t.dead)),
-    mh() && wh());
-};
+var GD = mapField.tick;
 
-var KD = function (A, n) {
-  const t = A.home,
-    e = q0(v, A);
-  if (
-    ((A.agT = (A.agT || 0) - n) <= 0 &&
-      ((A.agT = 0.4), e < (A.vis || JD) && l.life > 0 && mt(A.x, A.y, v.x, v.y) && (A.aggro = !0)),
-    A.aggro)
-  )
-    return !1;
-  if (A.backT > 0)
-    return (
-      (A.backT -= n),
-      (A.moving = !0),
-      wa(A, t.x, t.y, A.spd * 1.6 * n),
-      Math.hypot(t.x - A.x, t.y - A.y) < 12 && (A.backT = 0),
-      !0
-    );
-  (A.wT -= n) <= 0 &&
-    ((A.wT = Z(2, 5)), (A.wx = t.x + Z(-C3, C3)), (A.wy = t.y + Z(-C3, C3) * 0.6));
-  const a = A.wx != null ? Math.hypot(A.wx - A.x, A.wy - A.y) : 0;
-  return (
-    (A.moving = a > 4),
-    A.moving &&
-      (gt(
-        A,
-        A.x + ((A.wx - A.x) / a) * Math.min(a, A.spd * 0.4 * n),
-        A.y + ((A.wy - A.y) / a) * Math.min(a, A.spd * 0.4 * n),
-      ),
-      (A.face = A.wx >= A.x ? 1 : -1),
-      (A.dir = kn(A.wx - A.x, A.wy - A.y))),
-    !0
-  );
-};
+var KD = mapField.wander;
 
-var RD = function (A) {
-  const n = A.home;
-  !n ||
-    !A.aggro ||
-    A.cls === "boss" ||
-    (q0(n, A) > WD &&
-      q0(v, A) > 200 &&
-      ((A.aggro = !1), (A.backT = 6), (A.hp = A.max), (A.poison = 0), (A.slowT = 0)));
-};
+var RD = mapField.releaseAggro;
 
 var YD = function () {
   const A = l.field;
@@ -792,33 +653,17 @@ var YD = function () {
     ((l.round = (l.round || 0) + 1), _n("stages"), typeof Ut == "function" && Ut());
 };
 
-var FD = 20;
+var FD = MapsEngine.FIELD_POLICY.normalRespawn;
 
-var Kd = 180;
+var Kd = MapsEngine.FIELD_POLICY.bossRespawn;
 
-var VD = 60;
+var VD = MapsEngine.FIELD_POLICY.initialBossDelay;
 
-var UD = 14;
-
-var XD = 300;
-
-var T3 = 60;
-
-var C3 = 50;
-
-var JD = 400;
-
-var WD = 700;
-
-var ZD = 24;
+var ZD = MapsEngine.FIELD_POLICY.killsPerRound;
 
 var Ga = () => !l.dg && !l.tower && !l.town && !window.NO_FIELD;
 
 var Rd = () => `${Z0.key}|${AA(Math.min(o.stage, d0)).id}|${o.diff}|${v0()}`;
-
-var Xn = { key: null, d: null };
-
-var AP = 60;
 
 var Ka = function (A, n) {
   return (

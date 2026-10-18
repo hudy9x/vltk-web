@@ -878,8 +878,8 @@ var el = function (A) {
 var al = {
   id: 337,
   n: "Phong Lăng Độ · Thuyền",
-  bg: "img/z/337.jpg",
-  bgFb: "img/z/336.jpg",
+  bg: MapsEngine.getMapBackground(337),
+  bgFb: MapsEngine.getMapBackground(336),
   lo: 1,
   hi: 200,
   m: [674],

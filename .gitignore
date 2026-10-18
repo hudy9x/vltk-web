@@ -9,3 +9,4 @@ database/asset-report.json
 app/game.js
 app/game.js.map
 .gitnexus
+.map-tool/

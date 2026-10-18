@@ -8,7 +8,7 @@ var NP = function (A) {
     OP(A),
     n.setTransform(H1, 0, 0, H1, -Math.round(B0.x) * H1, -Math.round(B0.y) * H1));
   const t = l.bgImg;
-  (EP(n, t), (n.textAlign = "center"));
+  (EP(n, t), mapScene.drawShadows(n), (n.textAlign = "center"));
   if (typeof gameMaster !== "undefined" && gameMaster) gameMaster.drawSkillRange(n);
   const clicked = l.clickedTarget;
   const clickTime = (l.clickedUntil || 0) - (l.clock || 0);
@@ -86,6 +86,7 @@ var NP = function (A) {
     .filter((a) => a.arenaSim || crowd.bodies.has(a))
     .concat(
       [{ hero: !0, y: v.y }],
+      mapScene.worldObjects({ x: B0.x, y: B0.y, width: M0.w, height: M0.h }),
       typeof othEnts == "function" ? othEnts() : [],
       typeof rm == "function" ? rm() : [],
       typeof equipmentTrader !== "undefined" ? equipmentTrader.entities() : [],
@@ -95,6 +96,7 @@ var NP = function (A) {
     // Finish the previous entity's anchored nameplate before drawing the next
     // (closer) body. Never collect all nameplates into a foreground overlay.
     IP();
+    if (a.mapObject) { mapScene.drawObject(n, a.mapObject); continue; }
     if (a.equipmentTrader) {
       equipmentTrader.draw(n, a);
       continue;
@@ -254,6 +256,8 @@ var NP = function (A) {
           n.stroke()));
   }
   ((n.globalAlpha = 1), (l.fx = l.fx.filter((a) => a.life > 0)), (n.textAlign = "center"));
+  mapScene.drawForeground(n);
+  mapScene.drawAtmosphere(n);
   updateDamageLabels(l.txt, A, n);
   for (const a of crowd.selectLabels(l.txt)) {
     if (!a.target) { a.life -= A; a.y -= 32 * A; }

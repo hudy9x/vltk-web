@@ -8,18 +8,19 @@ var jB = function s(A) {
   const t = AA(Math.min(o.stage, d0)),
     e = k0
       .map((r, c) => {
+        if (![r].concat(Un[c] || []).some(zone => MapsEngine.isMapAvailable(zone.id))) return "";
         const d = Wo(c),
           f = DA(Math.min(o.stage, d0)) === c,
           h = Un[c],
           g = (o.zalt || {})[c] || 0,
-          u = (h && g && h[g - 1]) || r,
+          u = [r].concat(h || []).find((zone, index) => index === g && MapsEngine.isMapAvailable(zone.id)) || [r].concat(h || []).find(zone => MapsEngine.isMapAvailable(zone.id)) || r,
           w =
             h && d
               ? `<div class="zalt">${[r]
                   .concat(h)
                   .map(
                     (x, p) =>
-                      `<button class="chip2${p === g ? " on" : ""}" data-za="${c}:${p}">${D(x.n)}</button>`,
+                      MapsEngine.isMapAvailable(x.id) ? `<button class="chip2${p === g ? " on" : ""}" data-za="${c}:${p}">${D(x.n)}</button>` : "",
                   )
                   .join("")}</div>`
               : "";
@@ -35,7 +36,7 @@ var jB = function s(A) {
     ((o.mode === "quest" || o.mode === "dg") &&
       ((o.mode = "farm"), C("⚔ Chọn bãi luyện công: chuyển sang chế độ Luyện công.")),
       (o.autoMap = !1),
-      On(r, "Chọn bãi luyện công"),
+      On(r, "Chọn bãi luyện công", false, true),
       $(),
       V(),
       n.classList.add("hidden"));
@@ -46,11 +47,7 @@ var jB = function s(A) {
         (r.onclick = () => {
           const [c, d] = r.dataset.za.split(":").map(Number);
           (((o.zalt || (o.zalt = {}))[c] = d),
-            DA(Math.min(o.stage, d0)) === c
-              ? ((o.wave = 1), (l.enemies = []), (l.spawnT = 0.3), (l.zoneShown = null))
-              : i(c),
-            $(),
-            V(),
+            i(c),
             s(!0));
         }),
     ),

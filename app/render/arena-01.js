@@ -427,6 +427,7 @@ var OP = function (A) {
 };
 
 var EP = function (A, n) {
+  if (mapScene.drawGround(A, n)) return;
   if (!(n && n.complete && n.naturalWidth)) {
     ((A.fillStyle = "#26301f"), A.fillRect(B0.x - 2, B0.y - 2, M0.w + 4, M0.h + 4));
     return;
@@ -468,7 +469,7 @@ var SP = function (A) {
     A.fillRect(t - 2, e - 2, n + 4, n + 4));
   const i = l.bgImg;
   if (i && i.complete && i.naturalWidth)
-    if (Z0.g) A.drawImage(i, t, e, n, n);
+    if (Z0.g || mapScene.hasMap()) A.drawImage(i, t, e, n, n);
     else {
       const f = Math.round(O0.w / cf),
         h = n / f;
