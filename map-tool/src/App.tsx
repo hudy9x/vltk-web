@@ -1,3 +1,5 @@
+import { ZOOM_LEVELS, type ZoomAction } from "@/lib/zoom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ensureMapListed } from "@/lib/progression";
 import { deleteSpawnPoints } from "@/lib/spawn-selection";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -115,9 +117,10 @@ export default function App() {
     [showGrid, setShowGrid] = useState(false),
     [showCollision, setShowCollision] = useState(false),
     [showRegions, setShowRegions] = useState(false);
+  const [collisionOpacity, setCollisionOpacity] = useState(65);
   const [brush, setBrush] = useState(3),
     [zoomCommand, setZoomCommand] = useState<{
-      action: "fit" | "in" | "out";
+      action: ZoomAction;
       serial: number;
     }>({ action: "fit", serial: 0 });
   const [status, setStatus] = useState({ x: 0, y: 0, zoom: 100 }),
@@ -684,7 +687,18 @@ export default function App() {
                 >
                   <ZoomOut />
                 </IconButton>
-                <span className="zoom-value">{status.zoom}%</span>
+                <Select value={ZOOM_LEVELS.some(level => level === status.zoom) ? String(status.zoom) : "fit"}
+                  onValueChange={(value) => setZoomCommand(previous => ({
+                    action: value === "fit" ? "fit" : Number(value), serial: previous.serial + 1,
+                  }))}>
+                  <SelectTrigger aria-label="Mức zoom" size="sm" className="w-auto min-w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fit">Vừa khung{!ZOOM_LEVELS.some(level => level === status.zoom) ? ` (${status.zoom}%)` : ""}</SelectItem>
+                    {ZOOM_LEVELS.map(level => <SelectItem key={level} value={String(level)}>{level}%</SelectItem>)}
+                  </SelectContent>
+                </Select>
                 <IconButton
                   label="Phóng to"
                   onClick={() =>
@@ -724,6 +738,14 @@ export default function App() {
                 <span>Vật cản tô tay và collider được lưu riêng</span>
               </div>
             )}
+            {(showCollision || tool === "block" || tool === "erase" || tool === "rectangle") && (
+              <div className="brush-bar">
+                <Label htmlFor="collision-opacity">Độ đậm vật cản {collisionOpacity}%</Label>
+                <Slider id="collision-opacity" aria-label="Độ đậm vật cản" value={[collisionOpacity]}
+                  min={0} max={100} step={5} className="w-28"
+                  onValueChange={(value) => setCollisionOpacity(value[0])} />
+              </div>
+            )}
             {document ? (
               <MapCanvas
                 document={document}
@@ -735,6 +757,7 @@ export default function App() {
                 hidden={hidden}
                 showGrid={showGrid}
                 showCollision={showCollision}
+                collisionOpacity={collisionOpacity}
                 showRegions={showRegions}
                 zoomCommand={zoomCommand}
                 onChange={change}

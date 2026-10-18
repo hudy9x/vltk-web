@@ -366,6 +366,14 @@
   margin-left: auto;
   font-size: 10px;
 }
+.map-editor-viewport {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
 .map-canvas {
   flex: 1;
   min-height: 0;
@@ -396,17 +404,16 @@
 .tool-path canvas {
   cursor: crosshair;
 }
-.canvas-corner {
-  position: absolute;
-  left: 15px;
-  bottom: 12px;
-  pointer-events: none;
+.canvas-hint {
+  flex: none;
   font-size: 10px;
   color: #b1b5b9;
-  background: #111416dd;
-  padding: 6px 9px;
-  border-radius: 5px;
-  border: 1px solid #ffffff0a;
+  background: #171b1e;
+  padding: 6px 14px;
+  border-top: 1px solid #ffffff0a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .inspector {
   width: 310px;
@@ -744,25 +751,30 @@
   border: none;
   background: #11141680;
 }
-.spawn-preview-panel {
-  position: absolute;
-  right: 12px;
-  top: 12px;
+.spawn-preview-toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 9px;
-  background: #171b1ee8;
-  border: 1px solid #ffffff15;
-  border-radius: 7px;
-  padding: 12px;
-  box-shadow: 0 3px 16px #0003;
-  max-width: 270px;
+  align-items: center;
+  flex: none;
+  gap: 14px;
+  padding: 7px 14px;
+  min-height: 40px;
+  background: #171b1e;
+  border-bottom: 1px solid #ffffff15;
+  white-space: nowrap;
+  overflow-x: auto;
 }
-.spawn-preview-panel small {
+.spawn-preview-toolbar > * {
+  flex: none;
+}
+.spawn-preview-toolbar .check-row {
+  margin: 0;
+  font-size: 11px;
+}
+.spawn-preview-toolbar small {
   font-size: 10px;
   color: #9ca4a8;
 }
-.spawn-preview-panel button {
+.spawn-preview-toolbar button {
   font-size: 10px;
   height: 25px;
 }
@@ -772,11 +784,11 @@
   font-size: 10px;
 }
 .spawn-normal {
-  color: #93d6a5;
+  color: #2dff79;
 }
 .spawn-elite {
-  color: #e7c47a;
+  color: #ffe000;
 }
 .spawn-boss {
-  color: #ff9a81;
+  color: #ff49c5;
 }

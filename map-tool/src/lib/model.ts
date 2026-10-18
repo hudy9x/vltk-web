@@ -76,8 +76,28 @@ export function paint(
   brush: number,
   rectangle = false,
 ): void {
-  const grid = ensureGrid(document),
-    bytes = bytesFor(grid);
+  const grid = ensureGrid(document), bytes = bytesFor(grid);
+  paintBits(grid, bytes, from, to, blocked, brush, rectangle);
+  grid.blockedBase64 = encodeBytes(bytes);
+}
+/** One decoded mask per gesture; serialize only once when committing history. */
+export function beginPaintStroke(document: EditorDocument) {
+  const grid = ensureGrid(document), bytes = bytesFor(grid);
+  const colliderDocument = { ...document, project: { ...document.project,
+    paintedNavigation: { ...grid, blockedBase64: encodeBytes(new Uint8Array(bytes.length)) } } };
+  const navigation = compileMap(colliderDocument).navigation;
+  const colliderBytes = navigation.kind === "grid" ? bytesFor(navigation) : new Uint8Array(bytes.length);
+  return {
+    grid,
+    blocked(cell: number) { return !!((bytes[cell >> 3] | colliderBytes[cell >> 3]) & (1 << (cell & 7))); },
+    paint(from: Point, to: Point, blocked: boolean, brush: number) {
+      paintBits(grid, bytes, from, to, blocked, brush, false);
+    },
+    commit() { grid.blockedBase64 = encodeBytes(bytes); },
+  };
+}
+function paintBits(grid: GridDefinition, bytes: Uint8Array, from: Point, to: Point,
+  blocked: boolean, brush: number, rectangle: boolean): void {
   const x0 = Math.floor(from.x / grid.cellSize.width),
     y0 = Math.floor(from.y / grid.cellSize.height);
   const x1 = Math.floor(to.x / grid.cellSize.width),
@@ -101,8 +121,8 @@ export function paint(
         for (let dx = -radius; dx <= radius; dx++) set(x + dx, y + dy);
     }
   }
-  grid.blockedBase64 = encodeBytes(bytes);
 }
+
 export function objects(
   map: MapDefinition,
 ): Array<{ layerId: string; object: MapObject }> {
