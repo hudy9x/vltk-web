@@ -35,6 +35,8 @@ cargo test --manifest-path src-tauri/Cargo.toml
 - **Gameplay** sửa quái/boss/level/trọng số trang bị. Bộ chọn quái/boss có ảnh local, tìm theo tên/ID và lọc theo khoảng cấp bãi; quái xuất hiện ở nhiều bãi có thể thuộc nhiều nhóm cấp. Asset thiếu hiển thị ảnh thay thế, không tự tải từ mạng. UI liệt kê map bị ảnh hưởng; nhân bản profile riêng để tránh sửa chung. HP và damage vẫn do gameplay tính.
 - **Tiến trình** thêm map mới vào cuối danh sách chính hoặc làm map phụ. Thứ tự map chính cũ được giữ để tương thích save.
 - **Lưu map** validate → compile navigation → ghi JSON/asset theo transaction → tự sinh catalog và build game. Reload game để áp dụng. Nếu file bị sửa từ ngoài, tool chặn Save; bản nháp vẫn còn để bạn đối chiếu trước khi tải lại.
+- **Thay ảnh nền**: ảnh hiện tại được giữ nguyên byte dưới tên `assets/default.<ext>` ở lần thay đầu tiên. Ảnh mới dùng `assets/ground.<ext>` và các lần sau ghi đè cùng tên. Map mới giữ ảnh tải lên đầu tiên làm default. Khi đổi định dạng, transaction dọn file ground ở định dạng trước; nếu Save/build lỗi thì khôi phục cả ảnh cũ. Ảnh layer khác có slot riêng theo ID; ảnh object không ghi đè lẫn nhau. Undo/Redo khôi phục đúng nội dung ảnh ngay cả khi tên file không đổi. Các file lịch sử khác đã có sẵn không được tự động xóa.
+
 
 | Phím | Thao tác |
 | --- | --- |
@@ -68,17 +70,19 @@ src/
   components/ui/       shadcn/ui
   editor/              Canvas, sidebar, inspector, gameplay panel, trường nhập dùng chung
   lib/model.ts         Document, brush/collider compiler, validation
+  lib/image-editing.ts  Ảnh gốc, slot ảnh thay thế và phiên bản Undo/Redo
   lib/native.ts        IPC + image cache
   lib/types.ts         Kiểu dữ liệu riêng của editor
   App.tsx              Workspace, lịch sử, save/import và shell
 src-tauri/src/
   workspace.rs         Native commands, revision, validation/build bridge
-  transactions.rs      Allowlist, staging, journal, rollback/recovery
+  image_assets.rs      Quy tắc giữ ảnh gốc, ghi đè và dọn ảnh thay thế
+  transactions.rs      Allowlist, staging, journal, rollback/recovery (ghi/xóa)
 ../tools/maps/
   editor-data.ts       Node bridge dùng model/validation và catalog quái thật
 ../app/maps/            Runtime/renderer/navigation dùng chung
 ```
 
-`project.json` giữ `schemaVersion`, `mapId`, `paintedNavigation`, `colliders` theo khóa `<layer-id>/<object-id>`. Game chỉ đọc `map.json` với navigation đã compile. Save lỗi rollback dữ liệu nguồn; journal trong `.map-tool/transactions/` phục hồi khi mở workspace sau lần lưu bị ngắt. Build artifacts không nằm trong transaction; build lại từ nguồn được phục hồi.
+`project.json` giữ `schemaVersion`, `mapId`, `paintedNavigation`, `colliders` theo khóa `<layer-id>/<object-id>`, `originalImages` theo layer và `imageRevision` để nhận diện phiên bản ảnh khi lưu. Game chỉ đọc `map.json` với navigation đã compile. Save lỗi rollback dữ liệu nguồn; journal trong `.map-tool/transactions/` phục hồi khi mở workspace sau lần lưu bị ngắt. Build artifacts không nằm trong transaction; build lại từ nguồn được phục hồi.
 
 Kiểm tra từ root: `npm run build`, `npm test`. Đặc tả gốc: [SPEC.md](../SPEC.md).

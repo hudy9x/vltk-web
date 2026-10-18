@@ -24,10 +24,13 @@ export interface EditorProject {
   mapId: number;
   paintedNavigation: NavigationDefinition;
   colliders: Record<string, Collider>;
+  originalImages?: Record<string, string>;
+  imageRevision?: string;
 }
 export interface PendingAsset {
   readonly path: string;
   readonly data: string;
+  readonly revision?: string;
 }
 export interface Monster {
   id: number;

@@ -1,5 +1,6 @@
-import { ZOOM_LEVELS, type ZoomAction } from "@/lib/zoom";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { stageLayerImage } from "@/lib/image-editing";
+import { deleteMapLayer } from "@/lib/layer-editing";
+import type { ZoomAction } from "@/lib/zoom";
 import { ensureMapListed } from "@/lib/progression";
 import { deleteSpawnPoints } from "@/lib/spawn-selection";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -11,8 +12,6 @@ import {
   Save,
   Plus,
   FolderOpen,
-  Layers,
-  Grid2X2,
   MousePointer2,
   Hand,
   Paintbrush,
@@ -21,6 +20,7 @@ import {
   MapPin,
   Route,
   Play,
+  BrickWall,
   Undo2,
   Redo2,
   ZoomIn,
@@ -101,7 +101,7 @@ const tools: { id: Tool; label: string; key: string; icon: typeof Hand }[] = [
   { id: "spawn", label: "Đặt spawn", key: "S", icon: CircleDot },
   { id: "spawn-select", label: "Chọn vùng spawn", key: "Q", icon: LassoSelect },
   { id: "path", label: "Thử đường đi", key: "P", icon: Route },
-  { id: "preview", label: "Nhân vật thử", key: "T", icon: Play },
+  { id: "preview", label: "Thử di chuyển", key: "T", icon: Play },
 ];
 export default function App() {
   const [workspace, setWorkspace] = useState<Workspace | null>(null),
@@ -114,9 +114,7 @@ export default function App() {
   const [search, setSearch] = useState(""),
     [leftTab, setLeftTab] = useState<"maps" | "layers">("maps");
   const [hidden, setHidden] = useState<Set<string>>(new Set()),
-    [showGrid, setShowGrid] = useState(false),
-    [showCollision, setShowCollision] = useState(false),
-    [showRegions, setShowRegions] = useState(false);
+    [showCollision, setShowCollision] = useState(false);
   const [collisionOpacity, setCollisionOpacity] = useState(65);
   const [brush, setBrush] = useState(3),
     [zoomCommand, setZoomCommand] = useState<{
@@ -190,6 +188,9 @@ export default function App() {
     }
     return () => assets.dispose();
   }, [connect, assets]);
+  useEffect(() => {
+    if (document) assets.syncPending(document.map.id, document.assets);
+  }, [document, assets]);
   const change = useCallback((next: EditorDocument) => {
     const previous = state.current.document;
     if (
@@ -286,18 +287,7 @@ export default function App() {
         deleteSpawnPoints(next, [selection.id]);
       }
       if (selection.kind === "spawns") deleteSpawnPoints(next, selection.ids);
-      if (selection.kind === "layer") {
-        const layer = next.map.layers.find(
-          (layer) => layer.id === selection.id,
-        );
-        if (layer?.type === "ground") return;
-        next.map.layers = next.map.layers.filter(
-          (layer) => layer.id !== selection.id,
-        );
-        for (const key of Object.keys(next.project.colliders))
-          if (key.startsWith(`${selection.id}/`))
-            delete next.project.colliders[key];
-      }
+      if (selection.kind === "layer") deleteMapLayer(next, selection.id);
     });
     setSelection(null);
   };
@@ -387,24 +377,29 @@ export default function App() {
         file.size > 50 * 1024 * 1024
       )
         throw new Error("Chọn ảnh PNG, JPEG hoặc WebP dưới 50 MB.");
-      const data = base64(await file.arrayBuffer()),
-        path = `./assets/${crypto.randomUUID().slice(0, 8)}-${file.name
-          .toLowerCase()
-          .replace(/[^a-z0-9._-]/g, "_")
-          .replace(/^\.+/, "")}`;
+      const target = importTarget.current;
+      const data = base64(await file.arrayBuffer());
       const image = new Image();
       const url = URL.createObjectURL(file);
       image.src = url;
       await image.decode();
       URL.revokeObjectURL(url);
-      assets.addPending(document.map.id, path, data);
-      const next = cloneDocument(document),
-        target = importTarget.current;
-      next.assets.push({ path, data });
+      const next = cloneDocument(document);
       if (target.kind === "layer") {
-        const layer = next.map.layers.find((layer) => layer.id === target.id);
-        if (layer && "image" in layer) layer.image = path;
+        const layer = next.map.layers.find(layer => layer.id === target.id);
+        if (!layer || !("image" in layer)) throw new Error("Layer không có ảnh.");
+        let originalData: string | undefined;
+        if (!next.project.originalImages?.[target.id]) {
+          originalData = next.assets.find(asset => asset.path === layer.image)?.data;
+          if (!originalData) {
+            try { originalData = base64(await readAsset(resolveMapAsset(next.map.id, layer.image))); }
+            catch (error) { if (!String(error).includes("Không tìm thấy ảnh")) throw error; }
+          }
+        }
+        stageLayerImage(next, target.id, data, crypto.randomUUID(), originalData);
       } else {
+        const path = `./assets/${crypto.randomUUID().slice(0, 8)}-${file.name.toLowerCase().replace(/[^a-z0-9._-]/g, "_").replace(/^\.+/, "")}`;
+        next.assets.push({ path, data, revision: crypto.randomUUID() });
         let layer = next.map.layers.find((layer) => layer.type === "world");
         if (!layer) {
           layer = {
@@ -476,6 +471,7 @@ export default function App() {
                   ? layer.objects.map((object) => object.image)
                   : [],
             )
+            .concat(Object.values(source.project.originalImages ?? {}))
             .filter((image) => image.startsWith("./")),
         );
         next.assets = [];
@@ -624,6 +620,11 @@ export default function App() {
             startNew={startNew}
             selectMap={selectMap}
             addLayer={addLayer}
+            onDeleteLayer={(id) => {
+              edit(next => { deleteMapLayer(next, id); });
+              setSelection(null);
+              setHidden(previous => { const next = new Set(previous); next.delete(id); return next; });
+            }}
             onReload={() =>
               requestTransition(() => {
                 void connect(workspace!.root);
@@ -635,10 +636,10 @@ export default function App() {
             }}
           />
           <section className="canvas-area">
-            <div className="canvas-toolbar">
+            <div className="canvas-toolbar" role="toolbar" aria-label="Công cụ bản đồ" aria-orientation="vertical">
               <div className="tools">
                 {tools.map((item) => (
-                  <IconButton
+                  <IconButton tooltipSide="right"
                     key={item.id}
                     label={`${item.label} · ${item.key}`}
                     active={tool === item.id}
@@ -654,29 +655,16 @@ export default function App() {
                 ))}
               </div>
               <div className="view-tools">
-                <IconButton
-                  label="Lưới"
-                  active={showGrid}
-                  onClick={() => setShowGrid(!showGrid)}
-                >
-                  <Grid2X2 />
-                </IconButton>
-                <IconButton
+                <IconButton tooltipSide="right"
                   label="Vật cản"
                   active={showCollision}
                   onClick={() => setShowCollision(!showCollision)}
                 >
-                  <RectangleHorizontal />
+                  <BrickWall />
                 </IconButton>
-                <IconButton
-                  label="Vùng liên thông"
-                  active={showRegions}
-                  onClick={() => setShowRegions(!showRegions)}
-                >
-                  <Layers />
-                </IconButton>
-                <span className="toolbar-divider" />
-                <IconButton
+              </div>
+              <div className="zoom-tools">
+                <IconButton tooltipSide="right"
                   label="Thu nhỏ"
                   onClick={() =>
                     setZoomCommand((previous) => ({
@@ -687,19 +675,9 @@ export default function App() {
                 >
                   <ZoomOut />
                 </IconButton>
-                <Select value={ZOOM_LEVELS.some(level => level === status.zoom) ? String(status.zoom) : "fit"}
-                  onValueChange={(value) => setZoomCommand(previous => ({
-                    action: value === "fit" ? "fit" : Number(value), serial: previous.serial + 1,
-                  }))}>
-                  <SelectTrigger aria-label="Mức zoom" size="sm" className="w-auto min-w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fit">Vừa khung{!ZOOM_LEVELS.some(level => level === status.zoom) ? ` (${status.zoom}%)` : ""}</SelectItem>
-                    {ZOOM_LEVELS.map(level => <SelectItem key={level} value={String(level)}>{level}%</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <IconButton
+
+                <span className="zoom-value" aria-label={`Mức zoom ${status.zoom}%`}>{status.zoom}%</span>
+                <IconButton tooltipSide="right"
                   label="Phóng to"
                   onClick={() =>
                     setZoomCommand((previous) => ({
@@ -710,7 +688,7 @@ export default function App() {
                 >
                   <ZoomIn />
                 </IconButton>
-                <IconButton
+                <IconButton tooltipSide="right"
                   label="Vừa khung"
                   onClick={() =>
                     setZoomCommand((previous) => ({
@@ -721,29 +699,25 @@ export default function App() {
                 >
                   <Maximize />
                 </IconButton>
+
               </div>
             </div>
-            {(tool === "block" || tool === "erase") && (
-              <div className="brush-bar">
-                <Paintbrush size={13} />
-                <span>Cọ {brush} ô</span>
-                <Slider
-                  value={[brush]}
-                  min={1}
-                  max={15}
-                  step={2}
-                  onValueChange={(value) => setBrush(value[0])}
-                  className="w-28"
-                />
-                <span>Vật cản tô tay và collider được lưu riêng</span>
-              </div>
-            )}
-            {(showCollision || tool === "block" || tool === "erase" || tool === "rectangle") && (
-              <div className="brush-bar">
-                <Label htmlFor="collision-opacity">Độ đậm vật cản {collisionOpacity}%</Label>
-                <Slider id="collision-opacity" aria-label="Độ đậm vật cản" value={[collisionOpacity]}
-                  min={0} max={100} step={5} className="w-28"
-                  onValueChange={(value) => setCollisionOpacity(value[0])} />
+            <div className="canvas-workspace">
+            {(["block", "erase", "rectangle"].includes(tool)) && (
+              <div className="brush-bar" role="toolbar" aria-label="Tùy chọn vật cản">
+                {(tool === "block" || tool === "erase") && (
+                  <div className="brush-option">
+                    <Label htmlFor="brush-size">Cọ {brush}</Label>
+                    <Slider id="brush-size" aria-label="Cỡ cọ" value={[brush]} min={1} max={15} step={2}
+                      onValueChange={value => setBrush(value[0])} className="w-28" />
+                  </div>
+                )}
+                <div className="brush-option">
+                  <Label htmlFor="collision-opacity">Đậm {collisionOpacity}%</Label>
+                  <Slider id="collision-opacity" aria-label="Độ đậm vật cản" value={[collisionOpacity]}
+                    min={0} max={100} step={5} className="w-28"
+                    onValueChange={value => setCollisionOpacity(value[0])} />
+                </div>
               </div>
             )}
             {document ? (
@@ -755,10 +729,11 @@ export default function App() {
                 brush={brush}
                 selection={selection}
                 hidden={hidden}
-                showGrid={showGrid}
+                showGrid={false}
+                showActor={true}
                 showCollision={showCollision}
                 collisionOpacity={collisionOpacity}
-                showRegions={showRegions}
+                showRegions={false}
                 zoomCommand={zoomCommand}
                 onChange={change}
                 onSelect={setSelection}
@@ -811,6 +786,7 @@ export default function App() {
                 <span>{busy}</span>
               </div>
             )}
+            </div>
           </section>
           {document && workspace && (
             <Inspector

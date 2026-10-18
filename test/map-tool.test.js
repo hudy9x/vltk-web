@@ -102,7 +102,7 @@ test('editor history shares immutable image payloads and compares pending paths 
 
 function loadEditorModule(entry) {
   const output = buildSync({ entryPoints: [path.join(root, entry)], bundle: true, platform: 'node', format: 'cjs', write: false, alias: { '@game': path.join(root, 'app/maps') } });
-  const context = vm.createContext({ module: { exports: {} }, atob, btoa, structuredClone, Uint8Array, Map, Set });
+  const context = vm.createContext({ module: { exports: {} }, atob, btoa, structuredClone, Uint8Array, TextEncoder, Map, Set });
   vm.runInContext(output.outputFiles[0].text, context); return context.module.exports;
 }
 const presentation = loadEditorModule('map-tool/src/lib/presentation.ts');
@@ -353,7 +353,7 @@ test('canvas reuses large-image background and defers navigation work throughout
   vm.runInContext(output.outputFiles[0].text, context);
   const doc = document(); doc.assets.push({ path: './assets/large.png', data: 'x'.repeat(28 * 1024 * 1024) });
   context.module.exports.MapCanvas({ document: doc, assets: { imageFor: () => image, errors: new Map(), subscribe: () => () => {} },
-    monsters: [], tool: 'block', brush: 3, selection: null, hidden: new Set(), showGrid: false,
+    monsters: [], tool: 'block', brush: 3, selection: null, hidden: new Set(), showGrid: false, showActor: true,
     showCollision: true, collisionOpacity: 65, showRegions: false, zoomCommand: { action: 'fit', serial: 0 },
     onChange: value => commits.push(value), onSelect() {}, onStatus() {}, onError(message) { throw new Error(message); } });
   effects.forEach(effect => effect());
@@ -383,4 +383,90 @@ test('zoom buttons follow the exact preset list in both directions and clamp at 
   assert.equal(stepZoom(18, 'out'), 20);
   assert.equal(stepZoom(120.00000000001, 'out'), 100);
   assert.equal(stepZoom(119.99999999999, 'in'), 150);
+});
+
+test('layer deletion protects ground, cleans only owned colliders and remains undoable', () => {
+  const { deleteMapLayer } = loadEditorModule('map-tool/src/lib/layer-editing.ts');
+  const doc = document(), groundId = doc.map.layers.find(layer => layer.type === 'ground').id;
+  doc.map.layers.push({ id: 'trees', type: 'world', objects: [{ id: 'oak', image: './assets/tree.png', position: { x: 80, y: 40 }, anchor: { x: 16, y: 32 }, scale: 1, depthOffsetY: 0 }] });
+  doc.project.colliders['trees/oak'] = { radiusX: 12, radiusY: 6, offsetX: 0, offsetY: 0 };
+  doc.project.colliders['trees-other/rock'] = { radiusX: 8, radiusY: 4, offsetX: 0, offsetY: 0 };
+  const before = model.cloneDocument(doc), initial = model.documentKey(doc);
+  assert.equal(deleteMapLayer(doc, groundId), false);
+  assert.equal(deleteMapLayer(doc, 'missing'), false);
+  assert.equal(model.documentKey(doc), initial);
+  assert.equal(deleteMapLayer(doc, 'trees'), true);
+  assert.equal(doc.map.layers.some(layer => layer.id === 'trees'), false);
+  assert.equal(doc.project.colliders['trees/oak'], undefined);
+  assert.ok(doc.project.colliders['trees-other/rock']);
+  assert.equal(model.documentKey(before), initial, 'undo snapshot retains the layer, objects and collider');
+  for (const type of ['shadow', 'foreground', 'atmosphere']) {
+    doc.map.layers.push(type === 'atmosphere' ? { id: type, type, color: '#ffffff', opacity: .2 }
+      : { id: type, type, image: './assets/overlay.png', opacity: 1 });
+    assert.equal(deleteMapLayer(doc, type), true);
+  }
+});
+
+test('image imports keep immutable default bytes and one replaceable layer path across formats and history', () => {
+  const { stageLayerImage } = loadEditorModule('map-tool/src/lib/image-editing.ts');
+  const jpg = Buffer.from([255, 216, 255, 1]).toString('base64');
+  const png = value => Buffer.concat([Buffer.from('\x89PNG\r\n\x1a\n', 'binary'), Buffer.from(value)]).toString('base64');
+  const doc = document();
+  stageLayerImage(doc, 'ground', png('first'), 'first', jpg);
+  assert.equal(doc.project.originalImages.ground, './assets/default.jpg');
+  assert.equal(doc.map.layers[0].image, './assets/ground.png');
+  assert.equal(doc.assets.find(asset => asset.path === './assets/default.jpg').data, jpg);
+  const before = model.cloneDocument(doc), key = model.documentKey(before);
+  stageLayerImage(doc, 'ground', png('second'), 'second');
+  assert.notEqual(model.documentKey(doc), key, 'replacing the same filename must be dirty');
+  assert.equal(doc.assets.length, 2);
+  assert.equal(before.assets.find(asset => asset.path === './assets/ground.png').data, png('first'));
+  assert.equal(doc.assets.find(asset => asset.path === './assets/ground.png').data, png('second'));
+  stageLayerImage(doc, 'ground', jpg, 'third');
+  assert.deepEqual(plain(doc.assets.map(asset => asset.path).sort()), ['./assets/default.jpg', './assets/ground.jpg']);
+  assert.equal(doc.project.imageRevision, 'third');
+  const saved = model.cloneDocument(doc); saved.assets = [];
+  stageLayerImage(saved, 'ground', png('after reopening'), 'fourth');
+  assert.equal(saved.assets.length, 1, 'saved original is never staged again');
+  assert.equal(saved.project.originalImages.ground, './assets/default.jpg');
+  const fresh = document(); stageLayerImage(fresh, 'ground', png('first upload'), 'new');
+  assert.equal(fresh.map.layers[0].image, './assets/default.png');
+  stageLayerImage(fresh, 'ground', png('replacement'), 'next');
+  assert.equal(fresh.assets.length, 2);
+});
+
+test('fixed image paths restore the correct preview on Undo/Redo and invalidate the disk cache after save', async () => {
+  const output = buildSync({ entryPoints: [path.join(root, 'map-tool/src/lib/native.ts')], bundle: true, platform: 'node',
+    format: 'cjs', write: false, external: ['@tauri-apps/api/core'], alias: { '@game': path.join(root, 'app/maps') } });
+  const context = vm.createContext({ module: { exports: {} }, Uint8Array, Map, Set, Blob,
+    require: () => ({ invoke: async () => new ArrayBuffer(1) }),
+    Image: class { src = ''; }, URL: { createObjectURL: () => 'blob:disk', revokeObjectURL() {} } });
+  vm.runInContext(output.outputFiles[0].text, context);
+  const store = new context.module.exports.AssetStore(), assetPath = 'app/maps/content/2/assets/ground.png';
+  let changes = 0; store.subscribe(() => changes++);
+  const first = [{ path: './assets/ground.png', data: 'first' }], second = [{ path: './assets/ground.png', data: 'second' }];
+  store.syncPending(2, first); const a = store.imageFor(assetPath); assert.match(a.src, /first$/);
+  store.syncPending(2, second); const b = store.imageFor(assetPath); assert.notEqual(a, b); assert.match(b.src, /second$/);
+  store.syncPending(2, first); assert.match(store.imageFor(assetPath).src, /first$/);
+  const count = changes; store.syncPending(2, first); assert.equal(changes, count);
+  store.syncPending(2, []); const disk = store.imageFor(assetPath); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(disk.src, 'blob:disk');
+});
+
+test('each image layer has an independent slot and preserves other imported object assets', () => {
+  const { stageLayerImage, layerImageStem } = loadEditorModule('map-tool/src/lib/image-editing.ts');
+  const jpg = Buffer.from([255, 216, 255, 1]).toString('base64');
+  const doc = document();
+  doc.map.layers.push({ id: 'bóng', type: 'shadow', image: './missing-layer.png', opacity: 1 },
+    { id: 'front', type: 'foreground', image: './missing-layer.png', opacity: 1 });
+  const object = { path: './assets/object.jpg', data: jpg }; doc.assets.push(object);
+  stageLayerImage(doc, 'bóng', jpg, 'one');
+  stageLayerImage(doc, 'front', jpg, 'two');
+  stageLayerImage(doc, 'bóng', jpg, 'three');
+  const stem = `./assets/${layerImageStem('bóng', false)}`;
+  assert.equal(doc.map.layers.find(layer => layer.id === 'bóng').image, `${stem}.jpg`);
+  assert.equal(doc.project.originalImages['bóng'], `${stem}-default.jpg`);
+  assert.notEqual(doc.project.originalImages['bóng'], doc.project.originalImages.front);
+  assert.equal(doc.assets[0], object);
+  assert.equal(doc.assets.length, 4);
 });

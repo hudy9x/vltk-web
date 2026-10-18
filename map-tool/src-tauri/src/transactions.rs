@@ -82,7 +82,7 @@ fn durable_write(path: &Path, bytes: &[u8]) -> Result<()> {
 struct Entry {
     path: String,
     old_hash: Option<String>,
-    new_hash: String,
+    new_hash: Option<String>,
 }
 #[derive(Serialize, Deserialize)]
 struct Journal {
@@ -95,7 +95,7 @@ fn rollback(root: &Path, directory: &Path, journal: &Journal) -> Result<()> {
         if current == entry.old_hash {
             continue;
         }
-        if current.as_deref() != Some(&entry.new_hash) {
+        if current.as_deref() != entry.new_hash.as_deref() {
             return Err(format!(
                 "File đã bị sửa ngoài tool; cần phục hồi thủ công: {}",
                 entry.path
@@ -140,6 +140,14 @@ pub fn commit(
     writes: Vec<(String, Vec<u8>)>,
     after_write: impl FnOnce() -> Result<()>,
 ) -> Result<()> {
+    commit_changes(root, writes, Vec::new(), after_write)
+}
+pub fn commit_changes(
+    root: &Path,
+    writes: Vec<(String, Vec<u8>)>,
+    removals: Vec<String>,
+    after_write: impl FnOnce() -> Result<()>,
+) -> Result<()> {
     let stamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| e.to_string())?
@@ -166,7 +174,26 @@ pub fn commit(
         journal.entries.push(Entry {
             path: relative.clone(),
             old_hash: old.as_ref().map(|bytes| hash(bytes)),
-            new_hash: hash(bytes),
+            new_hash: Some(hash(bytes)),
+        });
+    }
+    for relative in removals {
+        if journal.entries.iter().any(|entry| entry.path == relative) {
+            return Err(format!("Đường dẫn transaction bị trùng: {relative}"));
+        }
+        let target = safe_target(root, &relative)?;
+        if !target.exists() {
+            continue;
+        }
+        let old = fs::read(&target).map_err(|e| e.to_string())?;
+        durable_write(
+            &directory.join(format!("old-{}", journal.entries.len())),
+            &old,
+        )?;
+        journal.entries.push(Entry {
+            path: relative,
+            old_hash: Some(hash(&old)),
+            new_hash: None,
         });
     }
     durable_write(
@@ -178,8 +205,12 @@ pub fn commit(
             let target = safe_target(root, &entry.path)?;
             fs::create_dir_all(target.parent().ok_or("Thiếu thư mục cha")?)
                 .map_err(|e| e.to_string())?;
-            fs::rename(directory.join(format!("new-{index}")), target)
-                .map_err(|e| e.to_string())?;
+            if entry.new_hash.is_some() {
+                fs::rename(directory.join(format!("new-{index}")), target)
+                    .map_err(|e| e.to_string())?;
+            } else {
+                fs::remove_file(target).map_err(|e| e.to_string())?;
+            }
         }
         after_write()?;
         durable_write(&directory.join("committed"), b"ok")?;
@@ -288,7 +319,7 @@ mod recovery_tests {
             entries: vec![Entry {
                 path: "app/maps/content/2/map.json".into(),
                 old_hash: Some(hash(b"old")),
-                new_hash: hash(b"new"),
+                new_hash: Some(hash(b"new")),
             }],
         };
         fs::write(
@@ -321,5 +352,42 @@ mod recovery_tests {
         assert!(safe_target(&root, "app/maps/content/2/assets/tree.png").is_err());
         fs::remove_dir_all(root).unwrap();
         fs::remove_dir_all(outside).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod removal_recovery_tests {
+    use super::*;
+    #[test]
+    fn restores_deleted_image_after_interrupted_transaction() {
+        let root = std::env::temp_dir().join(format!(
+            "map-delete-recover-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let directory = root.join(".map-tool/transactions/interrupted");
+        fs::create_dir_all(&directory).unwrap();
+        fs::create_dir_all(root.join("app/maps/content/2/assets")).unwrap();
+        fs::write(directory.join("old-0"), b"old-image").unwrap();
+        let journal = Journal {
+            entries: vec![Entry {
+                path: "app/maps/content/2/assets/ground.png".into(),
+                old_hash: Some(hash(b"old-image")),
+                new_hash: None,
+            }],
+        };
+        fs::write(
+            directory.join("journal.json"),
+            serde_json::to_vec(&journal).unwrap(),
+        )
+        .unwrap();
+        recover(&root.canonicalize().unwrap()).unwrap();
+        assert_eq!(
+            fs::read(root.join("app/maps/content/2/assets/ground.png")).unwrap(),
+            b"old-image"
+        );
+        fs::remove_dir_all(root).unwrap();
     }
 }

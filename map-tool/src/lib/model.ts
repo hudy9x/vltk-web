@@ -16,11 +16,11 @@ export function cloneDocument(document: EditorDocument): EditorDocument {
     assets: [...document.assets],
   };
 }
-/** Imported paths are unique, so history need not serialize large Base64 payloads. */
+/** Revision tokens identify overwritten images without serializing large Base64 payloads. */
 export function documentKey(document: EditorDocument): string {
   return JSON.stringify({
     ...document,
-    assets: document.assets.map((asset) => asset.path),
+    assets: document.assets.map((asset) => asset.revision ? `${asset.path}:${asset.revision}` : asset.path),
   });
 }
 export function createDocument(

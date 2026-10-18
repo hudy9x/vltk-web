@@ -13,11 +13,13 @@ import {
   EyeOff,
   Eye,
   ImagePlus,
+  Moon,
+  PanelsTopLeft,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Choice } from "./Fields";
 import { IconButton } from "./IconButton";
 import type {
   Workspace,
@@ -40,6 +42,7 @@ interface Props {
   startNew(kind: "new" | "clone"): void;
   selectMap(map: MapDefinition): void;
   addLayer(type: string): void;
+  onDeleteLayer(id: string): void;
   onReload(): void;
   onImportObject(): void;
 }
@@ -58,6 +61,7 @@ export function MapSidebar({
   startNew,
   selectMap,
   addLayer,
+  onDeleteLayer,
   onReload,
   onImportObject,
 }: Props) {
@@ -172,21 +176,18 @@ export function MapSidebar({
         </>
       ) : (
         <>
-          <div className="sidebar-command">
-            <Choice
-              value=""
-              label="Thêm layer"
-              options={[
-                { value: "world", label: "World · object theo độ sâu" },
-                { value: "shadow", label: "Shadow · bóng mặt đất" },
-                {
-                  value: "foreground",
-                  label: "Foreground · luôn che trước",
-                },
-                { value: "atmosphere", label: "Atmosphere · lớp màu" },
-              ]}
-              onChange={addLayer}
-            />
+          <div className="sidebar-command layer-create" role="group" aria-label="Thêm layer">
+            {[
+              { type: "world", label: "Thêm World · Object theo độ sâu", icon: TreePine },
+              { type: "shadow", label: "Thêm Shadow · Bóng mặt đất", icon: Moon },
+              { type: "foreground", label: "Thêm Foreground · Che phía trước", icon: PanelsTopLeft },
+              { type: "atmosphere", label: "Thêm Atmosphere · Lớp màu", icon: Sun },
+            ].map(item => (
+              <IconButton key={item.type} label={item.label} variant="outline"
+                disabled={!document || !!busy} onClick={() => addLayer(item.type)}>
+                <item.icon />
+              </IconButton>
+            ))}
           </div>
           <ScrollArea className="map-list">
             {document?.map.layers.map((layer) => (
@@ -221,6 +222,12 @@ export function MapSidebar({
                 >
                   {hidden.has(layer.id) ? <EyeOff /> : <Eye />}
                 </IconButton>
+                {layer.type !== "ground" && (
+                  <IconButton label={`Xóa layer ${layer.type}`} className="layer-delete"
+                    disabled={!!busy} onClick={() => onDeleteLayer(layer.id)}>
+                    <Trash2 />
+                  </IconButton>
+                )}
                 {layer.type === "world" &&
                   layer.objects.map((object) => (
                     <Button

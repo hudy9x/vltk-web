@@ -35,6 +35,7 @@ interface Props {
   selection: Selection;
   hidden: Set<string>;
   showGrid: boolean;
+  showActor: boolean;
   showCollision: boolean;
   collisionOpacity: number;
   showRegions: boolean;
@@ -50,7 +51,6 @@ interface Props {
   onError(message: string): void;
 }
 export function MapCanvas(props: Props) {
-  const [showActor, setShowActor] = useState(true);
   const [showSpawns, setShowSpawns] = useState(true),
     [spawnSeed, setSpawnSeed] = useState(0);
   const [spawnCounts, setSpawnCounts] = useState({
@@ -61,8 +61,8 @@ export function MapCanvas(props: Props) {
   });
   const canvas = useRef<HTMLCanvasElement>(null),
     container = useRef<HTMLDivElement>(null);
-  const latest = useRef({ ...props, showSpawns, spawnSeed, showActor });
-  latest.current = { ...props, showSpawns, spawnSeed, showActor };
+  const latest = useRef({ ...props, showSpawns, spawnSeed });
+  latest.current = { ...props, showSpawns, spawnSeed };
   const controls = useRef<{ zoom(action: ZoomAction): void } | null>(
     null,
   );
@@ -774,7 +774,7 @@ export function MapCanvas(props: Props) {
     props.showGrid,
     props.showCollision,
     props.collisionOpacity,
-    showActor,
+    props.showActor,
     props.showRegions,
     props.tool,
     showSpawns,
@@ -786,11 +786,8 @@ export function MapCanvas(props: Props) {
   }, [props.zoomCommand]);
   return (
     <div className="map-editor-viewport">
-      <div className="spawn-preview-toolbar" role="toolbar" aria-label="Hiển thị nhân vật và spawn">
-        <Label className="check-row" title="Tỷ lệ trong game · Chân là tọa độ · Phím T để thử di chuyển">
-          <Checkbox checked={showActor} onCheckedChange={(value) => setShowActor(!!value)} />
-          Nhân vật thật · Thiếu Lâm
-        </Label>
+      {props.tool === "spawn" && (
+      <div className="spawn-preview-toolbar" role="toolbar" aria-label="Tùy chọn spawn">
         <Label className="check-row" title="Chọn (V) để sửa từng điểm · Chọn vùng (Q), kéo khung rồi Delete để xóa nhiều điểm">
           <Checkbox
             checked={showSpawns}
@@ -827,6 +824,7 @@ export function MapCanvas(props: Props) {
           </>
         )}
       </div>
+      )}
       <div ref={container} className={`map-canvas tool-${props.tool}`}>
         <canvas ref={canvas} aria-label="Canvas chỉnh sửa bản đồ" />
       </div>

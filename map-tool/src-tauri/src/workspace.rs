@@ -1,5 +1,5 @@
+use crate::image_assets::plan_assets;
 use crate::transactions::{self, hash};
-use base64::Engine;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
@@ -239,35 +239,7 @@ fn save(request: SaveRequest, workspace: &Workspace) -> Result<Snapshot> {
     if request.is_new && workspace.root.join(format!("{prefix}/map.json")).exists() {
         return Err("Map ID đã tồn tại".into());
     }
-    let mut writes = Vec::new();
-    let mut asset_paths = Vec::new();
-    if let Some(assets) = request.document["assets"].as_array() {
-        for asset in assets {
-            let relative = asset["path"].as_str().ok_or("Thiếu đường dẫn asset")?;
-            let path = format!(
-                "{prefix}/{}",
-                relative
-                    .strip_prefix("./")
-                    .ok_or("Asset mới phải nằm trong map")?
-            );
-            let target = transactions::safe_target(&workspace.root, &path)?;
-            if target.exists() || asset_paths.contains(&path) {
-                return Err(format!("Asset đã tồn tại: {relative}"));
-            }
-            let bytes = base64::engine::general_purpose::STANDARD
-                .decode(asset["data"].as_str().ok_or("Thiếu dữ liệu ảnh")?)
-                .map_err(|e| e.to_string())?;
-            if bytes.len() > 50 * 1024 * 1024
-                || !(bytes.starts_with(b"\x89PNG\r\n\x1a\n")
-                    || bytes.starts_with(b"\xff\xd8")
-                    || (bytes.starts_with(b"RIFF") && bytes.get(8..12) == Some(b"WEBP")))
-            {
-                return Err("Asset không phải PNG/JPEG/WebP hợp lệ hoặc vượt quá 50 MB".into());
-            }
-            asset_paths.push(path.clone());
-            writes.push((path, bytes));
-        }
-    }
+    let (mut writes, removals, asset_paths) = plan_assets(&workspace.root, id, &request.document)?;
     let input =
         serde_json::to_vec(&json!({"document":request.document,"availableAssets":asset_paths}))
             .map_err(|e| e.to_string())?;
@@ -295,9 +267,12 @@ fn save(request: SaveRequest, workspace: &Workspace) -> Result<Snapshot> {
     if snapshot(workspace)?.revision != request.expected_revision {
         return Err("Workspace vừa thay đổi trong lúc validate. Hãy tải lại.".into());
     }
-    let result = transactions::commit(&workspace.root, writes, || {
-        node(&workspace.root, &["tools/build-app.js"], None).map(|_| ())
-    });
+    let build = || node(&workspace.root, &["tools/build-app.js"], None).map(|_| ());
+    let result = if removals.is_empty() {
+        transactions::commit(&workspace.root, writes, build)
+    } else {
+        transactions::commit_changes(&workspace.root, writes, removals, build)
+    };
     if let Err(error) = result {
         let _ = node(&workspace.root, &["tools/build-app.js"], None);
         return Err(format!(

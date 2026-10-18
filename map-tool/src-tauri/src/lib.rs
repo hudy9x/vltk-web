@@ -1,3 +1,4 @@
+mod image_assets;
 mod transactions;
 mod workspace;
 

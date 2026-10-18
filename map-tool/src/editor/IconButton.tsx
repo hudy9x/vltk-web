@@ -9,8 +9,9 @@ export function IconButton({
   label,
   children,
   active,
+  tooltipSide = "bottom",
   ...props
-}: React.ComponentProps<typeof Button> & { label: string; active?: boolean }) {
+}: React.ComponentProps<typeof Button> & { label: string; active?: boolean; tooltipSide?: "top" | "right" | "bottom" | "left" }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -24,7 +25,7 @@ export function IconButton({
           {children}
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="bottom">{label}</TooltipContent>
+      <TooltipContent side={tooltipSide}>{label}</TooltipContent>
     </Tooltip>
   );
 }

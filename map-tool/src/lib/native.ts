@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { resolveMapAsset } from "@game/assets";
-import type { EditorDocument, Workspace } from "./types";
+import type { EditorDocument, PendingAsset, Workspace } from "./types";
 export const openWorkspace = (root?: string) =>
   invoke<Workspace>("open_workspace", { root: root || null });
 export const saveDocument = (
@@ -35,6 +35,19 @@ export class AssetStore {
   }
   addPending(mapId: number, path: string, data: string) {
     this.pending.set(resolveMapAsset(mapId, path), data);
+  }
+  /** Restore the image version belonging to the current Undo/Redo snapshot. */
+  syncPending(mapId: number, assets: PendingAsset[]) {
+    const next = new Map(assets.map(asset => [resolveMapAsset(mapId, asset.path), asset.data]));
+    let changed = false;
+    for (const path of new Set([...this.pending.keys(), ...next.keys()])) {
+      if (this.pending.get(path) === next.get(path)) continue;
+      this.images.delete(path);
+      this.errors.delete(path);
+      changed = true;
+    }
+    this.pending = next;
+    if (changed) this.notify();
   }
   imageFor = (path: string): HTMLImageElement => {
     const cached = this.images.get(path);
