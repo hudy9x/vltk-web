@@ -1,3 +1,4 @@
+export { resolveMapAsset } from "@game/assets";
 import { parseMapDefinition, parseEncounterDefinition } from "@game/validate";
 import { canStandAt, decodeGrid } from "@game/navigation/grid";
 import type { GridDefinition, MapObject, Point } from "@game/types";
@@ -215,6 +216,7 @@ export function newMap(
     schemaVersion: 1,
     id,
     name,
+    status: "test",
     size: { width, height },
     entry: { x: width / 2, y: height / 2 },
     layers: [

@@ -23,7 +23,7 @@ export function validate(document: EditorInput, availableAssets: string[]): void
   const exports: Record<string, unknown> = {};
   const sandbox = vm.createContext({ module: { exports }, exports, atob, btoa, structuredClone, Uint8Array, Map, Set });
   vm.runInContext(compiled.outputFiles[0].text, sandbox);
-  const model = sandbox.module.exports as { validateProject(project: unknown, id: number): void; validateDocument(document: EditorInput): MapDefinition };
+  const model = sandbox.module.exports as { validateProject(project: unknown, id: number): void; validateDocument(document: EditorInput): MapDefinition; resolveMapAsset(id: number, asset: string): string };
   model.validateProject(document.project, document.map.id);
   const compiledMap = model.validateDocument(document);
   const actual = compiledMap.navigation, expected = document.map.navigation;
@@ -47,9 +47,14 @@ export function validate(document: EditorInput, availableAssets: string[]): void
   }
   const assets = [...document.map.layers.flatMap(layer => 'image' in layer ? [layer.image] : layer.type === 'world' ? layer.objects.map(object => object.image) : [])];
   for (const asset of assets) {
-    const relative = asset.startsWith('./') ? `app/maps/content/${document.map.id}/${asset.slice(2)}` : asset;
-    if (!/^(?:img\/|app\/maps\/(?:content\/[1-9]\d*\/|objects\/))[a-zA-Z0-9_./-]+\.(png|jpe?g|webp)$/i.test(relative) || relative.split('/').some(part => part === '..' || part.startsWith('.'))) throw new Error(`Đường dẫn ảnh không hợp lệ: ${asset}`);
-    if (!availableAssets.includes(relative) && !fs.existsSync(path.join(root, relative))) throw new Error(`Không tìm thấy ảnh: ${asset}`);
+    let relative: string;
+    try { relative = model.resolveMapAsset(document.map.id, asset); }
+    catch { throw new Error(`Đường dẫn ảnh phải nằm trong thư mục map: ${asset}`); }
+    const target = path.join(root, relative), mapRoot = path.join(root, 'app/maps/content');
+    if (fs.existsSync(target)) {
+      const resolved = fs.realpathSync(target);
+      if (!resolved.startsWith(fs.realpathSync(mapRoot) + path.sep)) throw new Error(`Đường dẫn ảnh nằm ngoài thư mục map: ${asset}`);
+    } else if (document.map.status !== 'test' && !availableAssets.includes(relative)) throw new Error(`Không tìm thấy ảnh: ${asset}`);
   }
 }
 if (path.resolve(process.argv[1] || '') === fileURLToPath(import.meta.url)) {

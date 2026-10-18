@@ -216,7 +216,7 @@ var Ir = function () {
 var u0 = { on: !1, sel: 0, del: -1, raf: 0, t0: 0, st: [] };
 
 var a_ = `#csel{position:fixed;inset:0;z-index:55;display:flex;flex-direction:column;align-items:center;justify-content:space-between;color:#e8dcc0;
-  background:radial-gradient(ellipse at 50% 60%,#0000 30%,#000d 100%),linear-gradient(#000a,#000d),url(img/z/town.jpg) center/cover #120d08;font-family:inherit;overflow:hidden;padding:14px 10px 18px}
+  background:radial-gradient(ellipse at 50% 60%,#0000 30%,#000d 100%),linear-gradient(#000a,#000d),url(app/maps/content/37/assets/ground.jpg) center/cover #120d08;font-family:inherit;overflow:hidden;padding:14px 10px 18px}
 #csel h1{margin:6px 0 0;font-size:clamp(22px,5vw,34px);letter-spacing:3px;color:#f3d27a;text-shadow:0 0 12px #c8902a,0 2px 0 #000}
 #csel .cs-sub{font-size:12px;color:#bba;letter-spacing:1px;margin-top:2px}
 #csel .cs-row{display:flex;gap:clamp(6px,2vw,28px);justify-content:center;align-items:flex-end;width:100%;max-width:820px;flex:1;min-height:0;padding-top:8px}

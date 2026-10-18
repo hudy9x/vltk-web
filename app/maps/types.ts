@@ -31,6 +31,7 @@ export interface MapSpawn {
 }
 export interface MapDefinition {
   schemaVersion: 1;
+  status?: 'available' | 'test';
   id: number;
   name: string;
   size: Size;

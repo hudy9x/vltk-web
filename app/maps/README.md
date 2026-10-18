@@ -19,9 +19,9 @@
 
 `map.json` là nguồn chính; không chỉnh `catalog-data.ts` bằng tay. `tools/maps/catalog.ts` tự phát hiện thư mục map và sinh danh sách import trước typecheck/build. Builder đưa JSON vào dependency hash: sửa JSON, thêm/xóa thư mục map rồi reload sẽ rebuild. Map editor desktop trong `map-tool/` lưu JSON, asset và tự build lại game qua Tauri.
 
-`schemaVersion: 1` định nghĩa trong `types.ts`. Mỗi map có đúng một ground; các layer khác tùy chọn. `./ground.jpg` resolve thành `app/maps/content/<id>/ground.jpg`; đường dẫn `img/z/...` vẫn hợp lệ.
+`schemaVersion: 1` định nghĩa trong `types.ts`. Mỗi map có đúng một ground; các layer khác tùy chọn. `./ground.jpg` resolve thành `app/maps/content/<id>/ground.jpg`; ảnh chỉ được tham chiếu tương đối bên trong thư mục map; `img/z/...` không còn hợp lệ.
 
-47 navigation map đã chuyển vào JSON. Ảnh cũ tiếp tục ở `img/z/` để giữ URL/cơ chế sửa asset; chưa tách cây hay phục dựng nền. Asset map mới có thể đặt ngay trong thư mục map. Vùng liên thông được tính từ bitmask, không lưu thêm metadata dễ lệch.
+Toàn bộ ảnh cũ đã chuyển nguyên byte vào `content/<id>/assets/`. Map mới cũng import ảnh vào đây. Chưa tách cây hay phục dựng nền. Vùng liên thông được tính từ bitmask, không lưu thêm metadata dễ lệch.
 
 Map đi tự do dùng `{ "kind": "open" }`. Lưới phải khai báo đủ `cellSize`, `columns`, `rows`, `blockedBase64`, đúng kích thước và số byte. Thiếu/hỏng dữ liệu hoặc map chặn toàn bộ bị từ chối trước khi thay navigation. Giữ clearance ngang 9px và thuật toán đường đi cũ trên dữ liệu hợp lệ.
 
@@ -42,3 +42,5 @@ Actor/nameplate/crowd renderer giữ code animation và combat hiện tại. Obj
 ## Kiểm tra
 
 `npm run build` và `npm test`. `test/maps.test.js` kiểm tra catalog/progression, dữ liệu lỗi, navigation, đổi map phụ, fixed spawn, respawn, leash, layers, JSON reload và asset local. Test action-state/nameplates dùng runtime mới. Xem [spec editor](../../SPEC.md).
+
+`status` nhận `available` hoặc `test` (dữ liệu cũ bỏ trống mặc định Available). Build chỉ import JSON của Available, giữ metadata tối thiểu cho Test để không lệch stage/index map phụ. `availability.json` được tạo cùng catalog, dùng cho kiểm tra trạng thái mỗi 5 giây khi game đang chạy; mất mạng không tính là map bị tắt. Biện Kinh #37 luôn Available.

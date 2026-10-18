@@ -145,6 +145,7 @@ var i5 = function (A) {
 };
 
 var Gn = function (A) {
+  if (typeof mapAccess !== "undefined" && !mapAccess.require(A.id)) return false;
   const entering = Z0.key !== A.id || l.zoneShown !== A.id;
   ((l.traps = []), (l.unvoid = 1), (l.unvoidT = null), ma(A.id),
     ([v.x, v.y] = entering ? mapAdapter.entryPosition() : X0(v.x, v.y)),
@@ -234,7 +235,7 @@ var P_ = function s(A) {
       !document.hidden &&
       !window.NET_GATE &&
       !i0.blocked &&
-      (ra("mo phong", () => p_(n)), (!Pi().saver || (Vm = !Vm)) && ra("ve", () => D_(n))),
+      (ra("mo phong", () => { if (mapAccess.tick()) p_(n); }), (!Pi().saver || (Vm = !Vm)) && ra("ve", () => D_(n))),
     (c5 += n),
     c5 > 0.1 &&
       o.fac &&

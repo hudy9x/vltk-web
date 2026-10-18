@@ -145,7 +145,7 @@ export function MapSidebar({
                     <div>
                       <span>{map.name}</span>
                       <small>
-                        #{map.id} <span>·</span>{" "}
+                        #{map.id} · {map.status === "test" ? "Test" : "Available"} ·{" "}
                         {levelRange
                           ? `Cấp ${levelRange[0]}–${levelRange[1]}`
                           : "Chưa gán cấp"}

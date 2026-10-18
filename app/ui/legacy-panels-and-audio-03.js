@@ -640,16 +640,17 @@ var Ms = function (A) {
     k(n.free ? `${t.n} (còn ${C1(t.kind)[t.tier] || 0})` : `${t.n} (-${q(Ot(t))} lượng)`));
 };
 
-var nc = function () {
+var nc = function (force = false) {
   if (!l.town) {
-    if (l.dg) {
+    if (l.dg && !force) {
       k("Đang trong phó bản / boss tuần");
       return;
     }
-    if ((l.tpCd || 0) > 0) {
+    if (!force && (l.tpCd || 0) > 0) {
       k(`Thổ Địa Phù hồi sau ${Math.ceil(l.tpCd * 1000)} ms`);
       return;
     }
+    if (force) { l.dg = null; l.tower = null; o.mode = "farm"; o.autoMap = false; }
     ((l.tpCd = ih), (l.town = !0),
       (l.enemies = []),
       (l.corpses = []),
@@ -669,12 +670,13 @@ var nc = function () {
   }
 };
 
-var en = function () {
+var en = function (destination = AA(Math.min(o.stage, d0))) {
   if (l.town) {
+    if (!MapsEngine.isMapAvailable(destination.id)) { k(MapsEngine.MISSING_MAP_MESSAGE); return; }
     if ((l.tpCd || 0) > 0) { k(`Thổ Địa Phù hồi sau ${Math.ceil(l.tpCd * 1000)} ms`); return; }
     l.town = !1;
     {
-      const A = AA(Math.min(o.stage, d0));
+      const A = destination;
       (ma(A.id), ([v.x, v.y] = X0(v.x, v.y)), M1(), (l.unvoid = 1), (l.unvoidT = null));
     }
     ((l.tpCd = ih),
@@ -682,7 +684,7 @@ var en = function () {
       (l.spawnT = 0.5),
       (l.zoneShown = null),
       m("#townBar").classList.add("hidden"),
-      Gn(AA(Math.min(o.stage, d0))));
+      Gn(destination));
   }
 };
 

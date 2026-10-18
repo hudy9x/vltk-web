@@ -650,7 +650,13 @@
   opacity: 0.75;
 }
 .map-row small {
+  display: block;
   white-space: normal;
+  line-height: 1.4;
+}
+.map-row {
+  min-height: 64px;
+  height: auto !important;
 }
 .monster-thumbnail {
   width: 38px;

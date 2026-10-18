@@ -1,4 +1,4 @@
-import { getMap } from '../catalog';
+import { getMap, isMapAvailable } from '../catalog';
 import type { NavigationRuntime } from '../runtime';
 import { FIELD_POLICY as policy, generateFieldPoints, randomBetween } from './generate';
 import type { FieldEnemy, FieldHost, FieldPoint } from './types';
@@ -6,6 +6,7 @@ import type { FieldEnemy, FieldHost, FieldPoint } from './types';
 /** Owns map population rules; actors and combat stats are supplied by the game. */
 export function createFieldRuntime(navigation: NavigationRuntime, host: FieldHost, random: () => number = Math.random) {
   function spawn(point: FieldPoint): void {
+    if (!isMapAvailable(host.zone().id)) return;
     const enemy = host.createEnemy(point);
     if (point.cls === 'normal') { enemy.dens = true; enemy.dmg *= policy.normalDamageScale; }
     enemy.home = point; enemy.aggro = false; enemy.wT = randomBetween(random, 0, 3);
@@ -14,6 +15,7 @@ export function createFieldRuntime(navigation: NavigationRuntime, host: FieldHos
   }
   function initialize(): void {
     const zone = host.zone();
+    if (!isMapAvailable(zone.id)) return;
     // Navigation, player and image must be switched before any spawn sampling.
     host.ensureMap(zone);
     const points = generateFieldPoints(navigation, zone, host.player(), host.normalCountRange(), host.isVoid, random, getMap(zone.id));
@@ -22,6 +24,7 @@ export function createFieldRuntime(navigation: NavigationRuntime, host: FieldHos
     for (const point of points) if (point.t <= 0) spawn(point);
   }
   function tick(dt: number): void {
+    if (!isMapAvailable(host.zone().id)) return;
     const field = host.field();
     if (!field || field.key !== host.key() || (!host.enemies().length && field.pts.some(point => point.e && !point.e.dead))) {
       initialize(); return;

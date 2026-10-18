@@ -1,3 +1,4 @@
+import { Switch } from "@/components/ui/switch";
 import { ensureMapListed } from "@/lib/progression";
 import { useEffect, useState } from "react";
 import { setSpawnMonster } from "@/lib/spawn-editing";
@@ -71,6 +72,14 @@ export function Inspector({
       <div className="pane-heading">
         <span>Thuộc tính</span>
         <Badge variant="outline">#{map.id}</Badge>
+      </div>
+      <div className="px-4 py-3 border-b space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="map-status">{map.status === "test" ? "Test" : "Available"}</Label>
+          <Switch id="map-status" checked={map.status !== "test"} disabled={map.id === 37}
+            onCheckedChange={(available) => onEdit((next) => { next.map.status = available ? "available" : "test"; })} />
+        </div>
+        <p className="help-text">{map.id === 37 ? "Biện Kinh luôn Available để nhận nhân vật dùng Thổ địa phù." : map.status === "test" ? "Chỉ chỉnh sửa trong tool. Game không tải map này." : "Sẵn sàng trong game sau khi Save. Game đang mở sẽ kiểm tra trạng thái mỗi 5 giây."}</p>
       </div>
       <Tabs value={tab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
         <TabsList className="inspector-tabs">
@@ -592,7 +601,7 @@ export function Inspector({
               <Separator />
               <div className="section-heading">Sau khi Save</div>
               <p className="help-text">
-                Tool cập nhật JSON, danh sách map và build lại game. Map chính hoặc map phụ sẽ xuất hiện trong menu bản đồ luyện công. Reload game local để dùng dữ liệu mới.
+                Tool cập nhật JSON, danh sách map và build lại game. Map Available được gán làm map chính hoặc map phụ sẽ xuất hiện trong menu bản đồ luyện công. Reload game local để dùng dữ liệu mới.
               </p>
               <div className="quiet-code">
                 app/maps/content/{map.id}/map.json

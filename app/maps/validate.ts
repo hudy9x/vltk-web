@@ -20,6 +20,8 @@ export function parseMapDefinition(value: unknown): MapDefinition {
   const map = record(value, 'map');
   const path = `map ${String(map.id)}`;
   if (map.schemaVersion !== 1) throw new Error(`${path}: unsupported schemaVersion`);
+  if (map.status !== undefined && !['available', 'test'].includes(String(map.status))) throw new Error(`${path}: invalid status`);
+  if (map.id === 37 && map.status === 'test') throw new Error('Biện Kinh phải Available để sử dụng Thổ địa phù.');
   positive(map.id, `${path}.id`);
   if (!Number.isInteger(map.id)) throw new Error(`${path}.id: expected integer`);
   text(map.name, `${path}.name`);

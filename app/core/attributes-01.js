@@ -11,6 +11,24 @@ var M5 = (s) => 1 + Si * ((s && s.enh) || 0);
 
 var ua = (s) => 1 + Ei * ((s && s.enh) || 0) + A4 * ((s && !s.pv3 && s.plv) || 0);
 
+var mapAccess = MapsEngine.createMapAvailabilityGuard({
+  currentMapId: () => {
+    if (typeof l === "undefined" || !l || l.town || !o || !o.fac) return null;
+    const key = typeof Z0 !== "undefined" && Z0.key;
+    return typeof key === "number" ? key : AA(Math.min(o.stage, d0)).id;
+  },
+  isAvailable: (id) => MapsEngine.isMapAvailable(id),
+  fetchManifest: async () => {
+    const response = await fetch("app/maps/availability.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Map manifest unavailable");
+    return response.json();
+  },
+  applyManifest: (value) => MapsEngine.updateMapAvailability(value),
+  showNotice: (message, acknowledge) => MapsEngine.showMapUnavailableNotice(message, acknowledge),
+  returnToTown: () => { o.autoMap = false; nc(true); },
+  now: () => Date.now(),
+});
+
 var mapAdapter = MapsEngine.createLegacyMapAdapter({
   actionLocked: (actor) => actorActionLocked(actor),
   imageFor: (path) => bA(path),
@@ -18,6 +36,7 @@ var mapAdapter = MapsEngine.createLegacyMapAdapter({
   obstaclesDisabled: () => !!window.NO_OBS,
   navigationFor: (id) => window.JMO && window.JMO[id],
   groundItems: () => typeof l !== "undefined" && l.ground ? l.ground : [],
+  unavailable: (id) => mapAccess.require(id),
 });
 var mapNavigation = mapAdapter.navigation;
 var mapScene = mapAdapter.scene;

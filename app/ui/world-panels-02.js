@@ -8,18 +8,19 @@ var jB = function s(A) {
   const t = AA(Math.min(o.stage, d0)),
     e = k0
       .map((r, c) => {
+        if (![r].concat(Un[c] || []).some(zone => MapsEngine.isMapAvailable(zone.id))) return "";
         const d = Wo(c),
           f = DA(Math.min(o.stage, d0)) === c,
           h = Un[c],
           g = (o.zalt || {})[c] || 0,
-          u = (h && g && h[g - 1]) || r,
+          u = [r].concat(h || []).find((zone, index) => index === g && MapsEngine.isMapAvailable(zone.id)) || [r].concat(h || []).find(zone => MapsEngine.isMapAvailable(zone.id)) || r,
           w =
             h && d
               ? `<div class="zalt">${[r]
                   .concat(h)
                   .map(
                     (x, p) =>
-                      `<button class="chip2${p === g ? " on" : ""}" data-za="${c}:${p}">${D(x.n)}</button>`,
+                      MapsEngine.isMapAvailable(x.id) ? `<button class="chip2${p === g ? " on" : ""}" data-za="${c}:${p}">${D(x.n)}</button>` : "",
                   )
                   .join("")}</div>`
               : "";

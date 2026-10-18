@@ -1,5 +1,6 @@
 /** Map runtime entry. Only this boundary is exported into the legacy bundle. */
-export { getMap, getEncounter, listMaps, encounters, progression, createLegacyCatalog, resolveMapAsset } from './catalog';
+export { getMap, getEncounter, listMaps, encounters, progression, createLegacyCatalog, resolveMapAsset, getMapBackground, isMapAvailable, updateMapAvailability } from './catalog';
+export { createMapAvailability, createMapAvailabilityGuard, showMapUnavailableNotice, MISSING_MAP_MESSAGE } from './availability';
 export { parseMapDefinition } from './validate';
 export { decodeGrid, isWalkable, canStandAt, nearestWalkable, clearSegment } from './navigation/grid';
 export { findPath } from './navigation/pathfinding';

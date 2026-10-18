@@ -24,7 +24,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 ## Dùng editor
 
-- Danh sách map theo khoảng cấp luyện công; map phụ nằm ngay dưới map chính, các map ngoài tiến trình ở cuối. Chọn map, tạo mới hoặc nhân bản. Asset mới import vào `app/maps/content/<id>/assets/`; ảnh cũ tiếp tục dùng `img/z/`.
+- Danh sách map theo khoảng cấp luyện công; map phụ nằm ngay dưới map chính, các map ngoài tiến trình ở cuối. Chọn map, tạo mới hoặc nhân bản. Toàn bộ ảnh map nằm trong `app/maps/content/<id>/assets/`, được tham chiếu bằng đường dẫn `./assets/...`. Tool từ chối ảnh map ngoài thư mục này; preview quái chỉ đọc ảnh có trong catalog quái.
 - **Layers** thêm shadow, world, foreground hoặc atmosphere. Chọn layer để thay ảnh/opacity. Thêm PNG/WebP trong suốt vào world, kéo object trên canvas hoặc chỉnh anchor/scale/depth bên phải.
 - **Collision** tô/chặn/xóa theo ô 32×16 (map cũ giữ kích thước ô hiện có). Collider ellipse quanh gốc object được compile cùng vùng tô tay; kéo/xóa object không phá vùng đã tô.
 - **Điểm vào** được dùng khi chọn map luyện công chính/phụ hoặc về thành (Biện Kinh); nếu bị chặn, game chọn vị trí đi được gần nhất. Làm mới cùng bãi giữ tọa độ hiện tại; phó bản/tháp/thuyền giữ vị trí riêng.
@@ -50,7 +50,16 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 Preview dùng chung renderer và navigation/A* với game. Nhân vật thử là hình đại diện để kiểm tra đường đi/che khuất; chưa chạy combat hay hoạt ảnh quái. Canvas hiển thị mẫu vị trí procedural; chu kỳ chết/hồi sinh kiểm tra trong game. Ảnh nền cũ chưa tách cây: muốn che khuất đúng phải thay nền sạch và thêm object/layer riêng; tool không tự tách ảnh.
 
-Map tạo mới hoặc nhân bản mặc định được thêm cuối danh sách map chính, giữ nguyên stage index của các map cũ. Trước lần Save đầu tiên, tab **Tiến trình** cho phép chuyển thành map phụ hoặc **Ẩn khỏi danh sách luyện công**. Save cập nhật `progression.json`, tạo lại catalog imports và build game; reload game local để thấy map trong menu.
+Map tạo mới hoặc nhân bản mặc định được thêm cuối danh sách map chính, giữ nguyên stage index của các map cũ. Trước lần Save đầu tiên, tab **Tiến trình** cho phép chuyển thành map phụ hoặc **Ẩn khỏi danh sách luyện công**. Map mới mặc định **Test**. Bật **Available** rồi Save để xuất hiện trong game. Save cập nhật `progression.json`, tạo lại catalog imports và build game; reload game local để thấy nội dung map mới.
+
+## Available / Test
+
+- Switch nằm ngay đầu panel Thuộc tính, áp dụng sau khi Save. Biện Kinh luôn Available để làm điểm về thành.
+- **Available**: game có thể tải map; map được gán vào progression sẽ hiện trong menu luyện công.
+- **Test**: chỉ editor đọc nội dung; game build không import JSON/layers/navigation của map, không tải ảnh, ẩn khỏi cả hai menu. Progression và chỉ số map phụ được giữ nguyên để tương thích save nhân vật.
+- Game kiểm tra `app/maps/availability.json` mỗi 5 giây. Nếu map đang ở bị tắt/xóa khỏi manifest, game dừng mô phỏng và hiện “Map không tồn tại. sử dụng Thổ địa phù ngay”. Chỉ khi bấm **OK**, game dùng luồng Thổ địa phù về Biện Kinh, bỏ qua hồi chiêu, dừng tự đổi map/quest và thoát phó bản/tháp nếu cần.
+- Mạng lỗi hoặc manifest không hợp lệ không làm nhân vật bị đẩy về thành. Bật lại một map đã Test từ lúc game khởi động cần reload game để tải nội dung mới.
+- 5 map cũ chưa có ảnh trên ổ đĩa (#8, #50, #141, #206, #212) được giữ ở Test; thêm ảnh trước khi chuyển Available.
 
 ## Tổ chức code
 

@@ -20,7 +20,7 @@ function game(){
  C1:kind=>({1:s.stock[kind]}),
  $w(){},Sb(){},nP(){},Ab(){},cb(){},Oy(){},Gv(){},
  O0:{w:1000,h:1000},E0:{town:{bg:'town',id:'town',n:'Thành'}},X0:(x,y)=>[x,y],
- mapAdapter:{entryPosition:()=>[400,600]},ma(){},M1(){},bA:()=>({}),o0(){},_e(){},C(){},d0:1,AA:()=>({id:'field'}),Gn(){},
+ MapsEngine:{isMapAvailable:()=>true},mapAdapter:{entryPosition:()=>[400,600]},ma(){},M1(){},bA:()=>({}),o0(){},_e(){},C(){},d0:1,AA:()=>({id:'field'}),Gn(){},
  m:()=>({textContent:'',classList:{remove(){},add(){}}}),
  };
  s.ic=index=>{const p=s.selected[index?'mana':'life'];if(!p||s.stock[p.kind]<=0)return null;s.stock[p.kind]--;return {p,free:true};};
@@ -30,6 +30,14 @@ function game(){
  for(const name of ['Ms','nc','en'])declaration(s,'app/ui/legacy-panels-and-audio-03.js',name);
  declaration(s,'app/core/state-and-save-02.js','Td');return s;
 }
+
+test('disabled-map recovery uses the real town teleport despite cooldown or dungeon state', () => {
+ const s=game();s.l.town=false;s.l.tpCd=100;s.l.dg={kind:'dg'};s.l.tower={floor:3};s.o.mode='quest';s.o.autoMap=true;
+ s.nc(true);
+ assert.equal(s.l.town,true);assert.equal(s.l.dg,null);assert.equal(s.l.tower,null);
+ assert.equal(s.o.mode,'farm');assert.equal(s.o.autoMap,false);
+ assert.deepEqual([s.v.x,s.v.y],[400,600]);assert.equal(s.l.enemies.length,0);
+});
 
 test('HP and mana potions restore their complete amounts immediately, without a later healing tick',()=>{
  const s=game();s.Ms('life');s.Ms('mana');

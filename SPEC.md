@@ -2,7 +2,7 @@
 
 ## Mục tiêu và phạm vi
 
-Quản lý map qua một tool: tạo mới, sửa nền/layer/object/collision/spawn, bấm Save rồi kiểm tra trong game. Người dùng không phải chỉnh TS hoặc registry thủ công. Đợt hiện tại chỉ refactor runtime và đặt spec; chưa xây giao diện hay endpoint ghi file.
+Quản lý map qua một tool: tạo mới, sửa nền/layer/object/collision/spawn, bấm Save rồi kiểm tra trong game. Người dùng không phải chỉnh TS hoặc registry thủ công. Tool desktop hiện dùng Tauri + React/TypeScript + shadcn/ui; lưu trực tiếp qua native commands, có validation/build và rollback.
 
 | Thành phần đã có | Nguồn thật |
 | --- | --- |
@@ -15,7 +15,7 @@ Quản lý map qua một tool: tạo mới, sửa nền/layer/object/collision/s
 | Progression | `app/maps/progression.json` |
 | Phát hiện map/rebuild JSON | `tools/maps/catalog.ts`, `tools/build-app.js` |
 
-Ảnh cũ giữ URL `img/z/`. Asset mới có thể nằm trong `app/maps/content/<id>/` hoặc `app/maps/objects/`; server phục vụ local, không tải những URL này từ upstream.
+Toàn bộ ảnh map nằm trong `app/maps/content/<id>/assets/`, tham chiếu tương đối bằng `./assets/...`. Tool từ chối ảnh map ngoài thư mục map (kể cả symlink thoát thư mục). Preview quái chỉ đọc ảnh có trong catalog quái.
 
 ## Các màn hình tối thiểu
 
@@ -45,7 +45,7 @@ Registry tự sinh → rebuild → reload preview/game
 
 Endpoint ghi file chỉ bật development/local. Kiểm tra ID, đường dẫn, phần mở rộng; giới hạn trong thư mục cho phép. Dùng version/hash phát hiện sửa đồng thời. Validate và chuẩn bị toàn bộ file trước khi áp dụng; Save nhiều file cần staging/rollback, không để map tham chiếu dữ liệu chưa tồn tại. Lưu lỗi không làm mất project đang sửa.
 
-Map mới tự vào registry sau Save. Để xuất hiện trong UI luyện công, Save cần tạo/update progression theo lựa chọn người dùng. Không reorder stage/index cũ; thay đổi thứ tự cần migration save riêng.
+Map mới mặc định Test. Switch Available / Test lưu trong `map.json`; chỉ Available được import vào runtime sau Save. Để xuất hiện trong UI luyện công, Save cần tạo/update progression theo lựa chọn người dùng. Không reorder stage/index cũ; thay đổi thứ tự cần migration save riêng.
 
 ## Format hiện tại và phần cần xây tiếp
 
@@ -85,3 +85,10 @@ Khi sửa encounter dùng chung, UI hiển thị map bị ảnh hưởng và cho
 | Save lỗi giữa chừng | Không để bộ dữ liệu nửa cũ nửa mới |
 
 Chạy `npm run build`, `npm test` và browser smoke test cho mỗi giai đoạn.
+
+## Trạng thái map
+
+- Available: sẵn sàng tải trong game; chỉ các map gán progression hiện ở menu luyện công. Test: chỉ editor đọc nội dung, không có trong hai menu game và không import layers/navigation vào bundle. Giữ metadata tối thiểu để bảo toàn chỉ số stage/map phụ của save cũ.
+- `app/maps/availability.json` được tạo tự động khi build. Game kiểm tra mỗi 5 giây, dùng cache no-store; lỗi mạng/manifest không hợp lệ không làm mất map đang chơi.
+- Khi map đang chơi bị tắt, dừng mô phỏng và hiện “Map không tồn tại. sử dụng Thổ địa phù ngay”, chỉ có nút OK. Nhấn OK dùng luồng Thổ địa phù thật về Biện Kinh, bỏ qua hồi chiêu, dừng tự đổi map/quest và thoát phó bản/tháp.
+- Biện Kinh luôn Available để bảo đảm điểm về thành. Bật lại map chưa được import trong phiên game hiện tại cần reload game.

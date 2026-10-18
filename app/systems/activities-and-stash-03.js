@@ -242,13 +242,13 @@ var mu = function () {
 };
 
 var ly = function (A) {
-  const n = A && A.map && window.JMO && window.JMO[String(A.map)] ? A.map : null;
+  const n = A && A.map && MapsEngine.isMapAvailable(Number(A.map)) && window.JMO && window.JMO[String(A.map)] ? A.map : null;
   n &&
     ((l.zoneShown = "dg"),
     ma(n),
     ([v.x, v.y] = X0(O0.w / 2, O0.h / 2)),
     M1(),
-    (l.bgImg = bA(`img/z/${n}.jpg`)),
+    (l.bgImg = bA(MapsEngine.getMapBackground(Number(n)))),
     _e(n));
 };
 

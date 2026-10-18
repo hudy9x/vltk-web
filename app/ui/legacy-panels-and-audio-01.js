@@ -624,18 +624,19 @@ var yv = function () {
   const A = AA(Math.min(o.stage, d0)),
     n = k0
       .map((e, a) => {
+        if (![e].concat(Un[a] || []).some(zone => MapsEngine.isMapAvailable(zone.id))) return "";
         const i = Wo(a),
           r = DA(Math.min(o.stage, d0)) === a,
           c = Un[a],
           d = (o.zalt || {})[a] || 0,
-          f = (c && d && c[d - 1]) || e,
+          f = [e].concat(c || []).find((zone, index) => index === d && MapsEngine.isMapAvailable(zone.id)) || [e].concat(c || []).find(zone => MapsEngine.isMapAvailable(zone.id)) || e,
           h =
             c && i
               ? `<div class="zalt">${[e]
                   .concat(c)
                   .map(
                     (g, u) =>
-                      `<button class="chip2${u === d ? " on" : ""}" data-za="${a}:${u}">${D(g.n)}</button>`,
+                      MapsEngine.isMapAvailable(g.id) ? `<button class="chip2${u === d ? " on" : ""}" data-za="${a}:${u}">${D(g.n)}</button>` : "",
                   )
                   .join("")}</div>`
               : "";

@@ -258,7 +258,7 @@ export default function App() {
         !workspace.maps.some((map) => map.id === compiled.id),
       );
       accept(next, compiled.id);
-      setMessage("Đã lưu và build game. Reload game để cập nhật.");
+      setMessage(compiled.status === "test" ? "Đã lưu Test · map không được tải trong game." : "Đã lưu Available và build game. Reload game để cập nhật nội dung.");
     } catch (error) {
       setError(String(error));
       setMessage("Chưa lưu · bản sửa vẫn được giữ");
@@ -487,6 +487,7 @@ export default function App() {
       const oldId = next.map.id;
       next.map.id = id;
       next.map.name = newName.trim();
+      next.map.status = "test";
       next.project.mapId = id;
       const sourceProfile =
         next.encounters.find((profile) => profile.mapId === oldId) ||
@@ -512,7 +513,7 @@ export default function App() {
       setSelection(null);
       setHidden(new Set());
       setNewDialog(null);
-      setMessage("Map mới chưa lưu · sẽ xuất hiện trong danh sách luyện công sau khi Save");
+      setMessage("Map mới ở trạng thái Test · bật Available rồi Save để đưa vào game");
       setError("");
     } catch (error) {
       setError(String(error));

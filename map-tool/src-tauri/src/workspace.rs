@@ -191,28 +191,42 @@ pub async fn open_workspace(
 }
 #[tauri::command]
 pub fn read_asset(path: String, state: State<'_, WorkspaceState>) -> Result<Response> {
-    if !transactions::image_path(&path)
-        || !(path.starts_with("img/")
-            || path.starts_with("app/maps/content/")
-            || path.starts_with("app/maps/objects/"))
-    {
-        return Err("Đường dẫn ảnh không được phép".into());
-    }
     let guard = state.0.lock().map_err(|e| e.to_string())?;
     let workspace = guard.as_ref().ok_or("Chưa mở workspace")?;
+    let target = asset_target(workspace, &path)?;
+    Ok(Response::new(fs::read(target).map_err(|e| e.to_string())?))
+}
+fn asset_target(workspace: &Workspace, path: &str) -> Result<PathBuf> {
+    let map_asset = path.starts_with("app/maps/content/");
+    // Shared monster previews are explicitly catalogued; map images cannot use img/.
+    let monster_asset = workspace.monsters.as_array().is_some_and(|monsters| {
+        monsters
+            .iter()
+            .any(|monster| monster["image"].as_str() == Some(path))
+    });
+    if !transactions::image_path(&path) || (!map_asset && !monster_asset) {
+        return Err("Ảnh map phải nằm trong app/maps/content".into());
+    }
     let target = workspace
         .root
-        .join(&path)
+        .join(path)
         .canonicalize()
         .map_err(|_| format!("Không tìm thấy ảnh: {path}"))?;
-    if !target.starts_with(&workspace.root) {
-        return Err("Ảnh nằm ngoài workspace".into());
+    let allowed_root = if map_asset {
+        workspace.root.join("app/maps/content")
+    } else {
+        workspace.root.clone()
+    };
+    let allowed_root = allowed_root.canonicalize().map_err(|e| e.to_string())?;
+    if !target.starts_with(&allowed_root) {
+        return Err("Ảnh nằm ngoài thư mục được phép".into());
     }
     if fs::metadata(&target).map_err(|e| e.to_string())?.len() > 50 * 1024 * 1024 {
         return Err("Ảnh vượt quá 50 MB".into());
     }
-    Ok(Response::new(fs::read(target).map_err(|e| e.to_string())?))
+    Ok(target)
 }
+
 fn save(request: SaveRequest, workspace: &Workspace) -> Result<Snapshot> {
     if snapshot(workspace)?.revision != request.expected_revision {
         return Err("Workspace đã thay đổi bên ngoài tool. Hãy tải lại trước khi Save; bản đang sửa vẫn được giữ.".into());
@@ -301,4 +315,36 @@ pub async fn save_map(request: SaveRequest, state: State<'_, WorkspaceState>) ->
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+#[cfg(test)]
+mod asset_tests {
+    use super::*;
+    #[test]
+    fn reads_map_local_artwork_and_catalogued_monsters_only() {
+        let root = std::env::temp_dir().join(format!("map-assets-{}", std::process::id()));
+        fs::create_dir_all(root.join("app/maps/content/2/assets")).unwrap();
+        fs::create_dir_all(root.join("img/z")).unwrap();
+        fs::write(root.join("app/maps/content/2/assets/ground.jpg"), b"image").unwrap();
+        fs::write(root.join("img/monster.png"), b"monster").unwrap();
+        fs::write(root.join("img/z/2.jpg"), b"legacy").unwrap();
+        let workspace = Workspace {
+            root: root.canonicalize().unwrap(),
+            monsters: json!([{ "image": "img/monster.png" }]),
+        };
+        assert!(asset_target(&workspace, "app/maps/content/2/assets/ground.jpg").is_ok());
+        assert!(asset_target(&workspace, "img/monster.png").is_ok());
+        assert!(asset_target(&workspace, "img/z/2.jpg").is_err());
+        assert!(asset_target(&workspace, "app/maps/content/2/../../../../img/z/2.jpg").is_err());
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(
+                root.join("img/z/2.jpg"),
+                root.join("app/maps/content/2/assets/outside.jpg"),
+            )
+            .unwrap();
+            assert!(asset_target(&workspace, "app/maps/content/2/assets/outside.jpg").is_err());
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
 }

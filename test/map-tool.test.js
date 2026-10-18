@@ -60,16 +60,34 @@ test('legacy documents preserve their collision and encounter data when opened',
   }
 });
 
+test('map status persists through editor save validation and only Available maps require local artwork', () => {
+  const doc = document(); assert.equal(doc.map.status, 'test');
+  doc.encounters.push({ ...encounters[0], id: 'new-status', mapId: doc.map.id });
+  let result = bridge({ ...doc, map: model.validateDocument(doc) });
+  assert.equal(result.status, 0, result.stderr);
+  doc.map.status = 'available'; result = bridge(doc);
+  assert.notEqual(result.status, 0); assert.match(result.stderr, /Không tìm thấy ảnh/);
+  doc.map.layers[0].image = './assets/local.png';
+  const resolved = `app/maps/content/${doc.map.id}/assets/local.png`;
+  result = bridge(doc, [resolved]); assert.equal(result.status, 0, result.stderr);
+  doc.map.layers[0].image = 'img/z/2.jpg'; result = bridge(doc, ['img/z/2.jpg']);
+  assert.notEqual(result.status, 0); assert.match(result.stderr, /thư mục map/);
+  doc.map.status = 'invalid'; assert.throws(() => model.validateDocument(doc), /invalid status/);
+  const town = JSON.parse(fs.readFileSync(path.join(root, 'app/maps/content/37/map.json')));
+  town.status = 'test'; const townDoc = model.createDocument({ projects: {}, encounters, progression }, town);
+  assert.throws(() => model.validateDocument(townDoc), /Biện Kinh phải Available/);
+});
+
 test('native validation accepts reordered JSON keys and rejects stale compilation, paths and progression changes', () => {
-  const doc = document(); doc.map.layers[0].image = 'img/z/2.jpg';
+  const doc = document(); doc.map.layers[0].image = './assets/test.jpg';
   model.paint(doc, { x: 16, y: 8 }, { x: 16, y: 8 }, true, 1);
   doc.map = model.compileMap(doc); doc.map.navigation = Object.fromEntries(Object.entries(doc.map.navigation).reverse());
-  let result = bridge(doc, ['img/z/2.jpg']); assert.equal(result.status, 0, result.stderr);
+  let result = bridge(doc, [`app/maps/content/${doc.map.id}/assets/test.jpg`]); assert.equal(result.status, 0, result.stderr);
   doc.map.navigation.blockedBase64 = Buffer.alloc(8).toString('base64');
   result = bridge(doc); assert.notEqual(result.status, 0); assert.match(result.stderr, /chưa được compile/);
   doc.map = model.compileMap(doc); doc.map.layers[0].image = '../secret.png';
   result = bridge(doc); assert.notEqual(result.status, 0); assert.match(result.stderr, /Đường dẫn/);
-  doc.map.layers[0].image = 'img/z/2.jpg'; doc.progression.reverse();
+  doc.map.layers[0].image = './assets/test.jpg'; doc.progression.reverse();
   result = bridge(doc); assert.notEqual(result.status, 0); assert.match(result.stderr, /thứ tự progression/);
 });
 
@@ -95,7 +113,7 @@ const mapProgression = loadEditorModule('map-tool/src/lib/progression.ts');
 
 test('new maps register for the game menu without reordering or duplicating existing stage indices', () => {
   const doc = document(), before = plain(doc.progression);
-  doc.map.layers[0].image = 'img/z/2.jpg';
+  doc.map.layers[0].image = './assets/test.jpg';
   doc.encounters.push({ ...encounters[0], id: `map-${doc.map.id}`, mapId: doc.map.id, alternate: true });
   mapProgression.ensureMapListed(doc);
   assert.deepEqual(plain(doc.progression.slice(0, before.length)), before);
@@ -104,7 +122,7 @@ test('new maps register for the game menu without reordering or duplicating exis
   mapProgression.ensureMapListed(doc); assert.equal(doc.progression.length, before.length + 1);
   const saved = model.validateDocument(doc), reloaded = model.createDocument({ projects: {}, encounters: doc.encounters, progression: doc.progression }, plain(saved));
   assert.equal(reloaded.progression.at(-1).mapId, saved.id);
-  const result = bridge({ ...doc, map: saved }, ['img/z/2.jpg']); assert.equal(result.status, 0, result.stderr);
+  const result = bridge({ ...doc, map: saved }, [`app/maps/content/${doc.map.id}/assets/test.jpg`]); assert.equal(result.status, 0, result.stderr);
 });
 
 test('registering a map already assigned as an alternate keeps its existing menu location', () => {

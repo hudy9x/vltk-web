@@ -26,11 +26,56 @@ function randomSource(seed = 42) {
   return () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
 }
 
+test('all map artwork is local to its map folder and Test maps are excluded from runtime loading', () => {
+  const oldFolder = path.join(__dirname, '../img/z');
+  assert.ok(!fs.existsSync(oldFolder) || fs.readdirSync(oldFolder).length === 0);
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../app/maps/availability.json')));
+  const catalog = engine.createLegacyCatalog();
+  for (const id of fs.readdirSync(path.join(__dirname, '../app/maps/content'))) {
+    const map = JSON.parse(fs.readFileSync(path.join(__dirname, `../app/maps/content/${id}/map.json`)));
+    for (const layer of map.layers) for (const image of 'image' in layer ? [layer.image] : layer.type === 'world' ? layer.objects.map(object => object.image) : []) {
+      assert.ok(image.startsWith('./'), `${id}: ${image}`);
+      const resolved = engine.resolveMapAsset(map.id, image);
+      assert.ok(resolved.startsWith(`app/maps/content/${id}/`));
+      if (map.status !== 'test') assert.ok(fs.existsSync(path.join(__dirname, '..', resolved)), resolved);
+    }
+    assert.equal(manifest.maps[id], map.status || 'available');
+    if (map.status === 'test') { assert.equal(engine.getMap(map.id), undefined); assert.equal(catalog.navigation[id], undefined); }
+    else assert.ok(engine.getMap(map.id));
+  }
+  assert.throws(() => engine.resolveMapAsset(2, 'img/z/2.jpg'), /thư mục map/);
+  assert.throws(() => engine.resolveMapAsset(2, './../37/ground.jpg'), /thư mục map/);
+});
+
+test('live availability hides revoked maps and pauses until the player acknowledges town teleport', async () => {
+  const state = engine.createMapAvailability([37, 2, 7]);
+  let current = 2, time = 0, notice, returned = 0, fetches = 0;
+  const disabled = { schemaVersion: 1, maps: { 37: 'available', 2: 'test', 7: 'available' } };
+  const guard = engine.createMapAvailabilityGuard({ currentMapId: () => current, isAvailable: state.has,
+    now: () => time, fetchManifest: async () => { fetches++; return disabled; }, applyManifest: value => state.update(value),
+    showNotice: (message, acknowledge) => { assert.equal(notice, undefined); notice = { message, acknowledge }; },
+    returnToTown: () => { returned++; current = null; } });
+  assert.equal(guard.tick(), true);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(guard.tick(), false);
+  assert.equal(notice.message, 'Map không tồn tại. sử dụng Thổ địa phù ngay');
+  assert.equal(returned, 0); assert.equal(guard.tick(), false);
+  notice.acknowledge(); assert.equal(returned, 1); assert.equal(guard.tick(), true);
+  notice.acknowledge(); assert.equal(returned, 1);
+  assert.equal(fetches, 1); time = 5000; guard.tick(); await new Promise(resolve => setImmediate(resolve)); assert.equal(fetches, 2);
+  assert.equal(state.update({ schemaVersion: 1, maps: { 37: 'test' } }), false);
+  assert.equal(state.update({ schemaVersion: 1, maps: {} }), false);
+  assert.equal(state.has(37), true);
+  const offline = engine.createMapAvailabilityGuard({ currentMapId: () => 7, isAvailable: state.has, now: () => 0,
+    fetchManifest: async () => { throw new Error('offline'); }, applyManifest() {}, showNotice() { assert.fail('Network failure must not evict players'); }, returnToTown() {} });
+  assert.equal(offline.tick(), true); await new Promise(resolve => setImmediate(resolve)); assert.equal(offline.tick(), true);
+});
+
 test('all migrated maps validate, retain navigation dimensions and legacy progression indices', () => {
   const catalog = engine.createLegacyCatalog();
   const originalOrder = [140, 2, 3, 92, 21, 42, 56, 319, 320, 225, 226, 93, 75, 227, 321, 322, 336, 340, 201, 205];
   assert.deepEqual(plain(catalog.zones.slice(0, originalOrder.length).map(zone => zone.id)), originalOrder);
-  assert.ok(engine.listMaps().length >= 47);
+  assert.ok(engine.listMaps().length >= 42);
   for (const map of engine.listMaps()) {
     assert.equal(engine.parseMapDefinition(map), map);
     const source = JSON.parse(fs.readFileSync(path.join(__dirname, `../app/maps/content/${map.id}/map.json`)));
@@ -124,6 +169,18 @@ function fieldFixture() {
     get field() { return field; }, get enemies() { return enemies; }, get loads() { return loads; }, get created() { return created; } };
 }
 
+test('Test maps cannot initialize navigation or spawn actors through direct field runtime calls', () => {
+  const fixture = fieldFixture();
+  const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, '../app/maps/availability.json'))), disabled = plain(baseline);
+  disabled.maps[2] = 'test';
+  engine.updateMapAvailability(disabled);
+  try {
+    fixture.runtime.initialize(); fixture.runtime.tick(1);
+    fixture.runtime.spawn({ x: 400, y: 600, cls: 'boss', tid: 543, t: 0 });
+    assert.equal(fixture.field, null); assert.equal(fixture.created, 0); assert.equal(fixture.loads, 0); assert.equal(fixture.enemies.length, 0);
+  } finally { engine.updateMapAvailability(baseline); }
+});
+
 test('switching to alternate map 195 loads its navigation before generating homes and stays stable next tick', () => {
   const fixture = fieldFixture();
   fixture.setZone(fixture.catalog.alternates[1][0]);
@@ -205,7 +262,7 @@ test('map render phases preserve actor/object depth and cull by sprite bounds ra
 });
 
 test('actual JS map loading bridge retains the active world after a bad navigation load', () => {
-  const s = vm.createContext({ window: {}, MapsEngine: engine, E0: { town: { id: 37 } }, actorActionLocked: () => false,
+  const s = vm.createContext({ window: {}, MapsEngine: engine, mapAccess: { require: id => engine.isMapAvailable(id) }, E0: { town: { id: 37 } }, actorActionLocked: () => false,
     l: { ground: [] }, bA: () => null });
   s.window.JMO = engine.createLegacyCatalog().navigation;
   for (const name of ['mapAdapter', 'mapNavigation', 'mapScene', 'O0', 'X0', 'ma', 'Z0']) declaration(s, 'app/core/attributes-01.js', name);
@@ -244,6 +301,11 @@ test('saving JSON or adding a map folder is detected by the real build without e
     assert.equal(read().name, 'Editor reload probe');
     map.name = 'Updated in JSON'; fs.writeFileSync(path.join(directory, 'map.json'), JSON.stringify(map));
     assert.equal(read().name, 'Updated in JSON');
+    map.status = 'test'; fs.writeFileSync(path.join(directory, 'map.json'), JSON.stringify(map));
+    assert.equal(read(), undefined);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(__dirname, '../app/maps/availability.json'))).maps[id], 'test');
+    map.status = 'available'; fs.writeFileSync(path.join(directory, 'map.json'), JSON.stringify(map));
+    assert.equal(read().name, 'Updated in JSON');
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
     require('../tools/maps/catalog.ts').syncMapCatalog(path.join(__dirname, '../app'));
@@ -269,12 +331,13 @@ test('local map sprites are served while arbitrary source files remain private',
 
 function townTravelFixture() {
   const effects = [];
-  const s = vm.createContext({ window: {}, MapsEngine: engine, E0: { town: { id: 37, n: 'Biện Kinh', bg: 'img/z/town.jpg' } },
+  const s = vm.createContext({ window: {}, MapsEngine: engine, E0: { town: { id: 37, n: 'Biện Kinh', bg: 'app/maps/content/37/assets/ground.jpg' } },
     actorActionLocked: () => false, bA: image => image,
     l: { ground: [], enemies: [{ x: 1, y: 1 }], corpses: [{}], moveTo: {}, pickTarget: {} },
     v: { x: 3000, y: 250 }, Y: { target: {} }, ih: 1,
     M1: () => effects.push('camera'), o0: () => {}, _e: () => {}, C: () => {}, D: text => text, k: () => {},
     m: () => ({ textContent: '', classList: { remove() {} } }) });
+  s.mapAccess = { require: id => engine.isMapAvailable(id) };
   s.window.JMO = engine.createLegacyCatalog().navigation;
   for (const name of ['mapAdapter', 'mapNavigation', 'mapScene', 'O0', 'X0', 'ma', 'Z0']) declaration(s, 'app/core/attributes-01.js', name);
   declaration(s, 'app/ui/legacy-panels-and-audio-03.js', 'nc');
@@ -310,7 +373,7 @@ test('blocked town entry snaps to a reachable position and a failed load retains
     s.window.JMO.bad = { w: 3584, h: 3584 };
     assert.throws(() => s.ma('bad'));
     assert.deepEqual(plain(s.mapAdapter.entryPosition()), expected);
-    s.ma(999999); assert.deepEqual(plain(s.mapAdapter.entryPosition()), [1536, 1536]);
+    assert.equal(s.ma(999999), false); assert.deepEqual(plain(s.mapAdapter.entryPosition()), expected);
   } finally { map.entry = original; }
 });
 
@@ -352,6 +415,26 @@ test('explicit reselection returns to entry while same-map refresh and field reb
 });
 
 for (const file of ['app/ui/world-panels-02.js', 'app/ui/legacy-panels-and-audio-01.js']) {
+  test(`Test maps are hidden while available alternates retain their saved selection indices: ${file}`, () => {
+    const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, '../app/maps/availability.json')));
+    const manifest = plain(baseline); manifest.maps[2] = 'test'; manifest.maps[398] = 'test';
+    engine.updateMapAvailability(manifest);
+    try {
+      const { s, catalog, expected } = trainingTravelFixture(), index = catalog.zones.findIndex(zone => zone.id === 2);
+      const row = { dataset: { z: String(index) } };
+      const panel = { innerHTML: '', style: { removeProperty() {} }, classList: { contains: () => true, add() {}, remove() {} },
+        querySelector: () => null, querySelectorAll: selector => selector === '.zrow' ? [row] : [] };
+      const elements = new Map(); s.m = selector => { if (!elements.has(selector)) elements.set(selector, { ...panel }); return elements.get(selector); };
+      s.document = { querySelectorAll: selector => selector === '.zrow' ? [row] : [] };
+      Object.assign(s, { Wo: () => true, Lf: () => '', Nf: () => '', Ok: () => '', pk: () => '', qt: () => '', I: {}, Ek() {}, Dk() {}, $() {}, V() {} }); s.l.logs = [];
+      const name = file.includes('world-panels') ? 'jB' : 'yv'; declaration(s, file, name); s[name](true);
+      const html = [...elements.values()].map(element => element.innerHTML).join('');
+      assert.ok(!html.includes('Bến đò Thanh Loan')); assert.ok(!html.includes('Hoa Sơn'));
+      assert.ok(html.includes(`data-za="${index}:1"`));
+      row.onclick(); assert.equal(s.Z0.key, 195); assert.equal(s.o.zalt[index], 1);
+      assert.deepEqual([s.v.x, s.v.y], expected(195));
+    } finally { engine.updateMapAvailability(baseline); }
+  });
   test(`saved editor map is listed and can be selected from the game menu: ${file}`, () => {
     const { s, catalog, expected } = trainingTravelFixture();
     const index = catalog.zones.findIndex(zone => zone.id === 398);
