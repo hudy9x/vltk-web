@@ -1,3 +1,5 @@
+import { MonsterPicker, MonsterImage } from "./MonsterPicker";
+import type { AssetStore } from "@/lib/native";
 import { useEffect, useState } from "react";
 import { Copy, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,9 +17,10 @@ import type {
 interface Props {
   document: EditorDocument;
   workspace: Workspace;
+  assets: AssetStore;
   onEdit(edit: (document: EditorDocument) => void): void;
 }
-export function GameplayPanel({ document, workspace, onEdit }: Props) {
+export function GameplayPanel({ document, workspace, assets, onEdit }: Props) {
   const map = document.map;
   const [profileId, setProfileId] = useState("");
   useEffect(() => setProfileId(""), [map.id]);
@@ -27,10 +30,6 @@ export function GameplayPanel({ document, workspace, onEdit }: Props) {
   const profileOptions = document.encounters.map((profile) => ({
     value: profile.id,
     label: `${profile.name} · ${profile.id}`,
-  }));
-  const monsterOptions = workspace.monsters.map((monster) => ({
-    value: String(monster.id),
-    label: `${monster.name} #${monster.id}`,
   }));
   const editProfile = (edit: (profile: EncounterDefinition) => void) => {
     if (profile)
@@ -123,13 +122,15 @@ export function GameplayPanel({ document, workspace, onEdit }: Props) {
               }
             />
           </div>
-          <Choice
+          <MonsterPicker
             label="Boss"
-            value={String(profile.bossId)}
-            options={monsterOptions}
+            value={profile.bossId}
+            monsters={workspace.monsters}
+            encounters={document.encounters}
+            assets={assets}
             onChange={(value) =>
               editProfile((profile) => {
-                profile.bossId = Number(value);
+                profile.bossId = value;
               })
             }
           />
@@ -137,6 +138,12 @@ export function GameplayPanel({ document, workspace, onEdit }: Props) {
           <div className="monster-pool">
             {profile.monsterIds.map((id) => (
               <Badge key={id} variant="secondary">
+                <MonsterImage
+                  monster={workspace.monsters.find(
+                    (monster) => monster.id === id,
+                  )}
+                  assets={assets}
+                />
                 {workspace.monsters.find((monster) => monster.id === id)
                   ?.name || `#${id}`}
                 <Button
@@ -157,15 +164,15 @@ export function GameplayPanel({ document, workspace, onEdit }: Props) {
               </Badge>
             ))}
           </div>
-          <Choice
+          <MonsterPicker
             label="Thêm loại quái"
-            value=""
-            options={monsterOptions.filter(
-              (option) => !profile.monsterIds.includes(Number(option.value)),
-            )}
+            monsters={workspace.monsters}
+            encounters={document.encounters}
+            assets={assets}
+            exclude={profile.monsterIds}
             onChange={(value) =>
               editProfile((profile) => {
-                profile.monsterIds.push(Number(value));
+                profile.monsterIds.push(value);
               })
             }
           />

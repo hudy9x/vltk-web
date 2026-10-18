@@ -37,6 +37,8 @@ export interface MapDefinition {
   entry: Point;
   layers: MapLayer[];
   navigation: NavigationDefinition;
+  /** Omitted: legacy auto mode (fixed when spawns is nonempty). */
+  spawnMode?: 'procedural' | 'fixed';
   spawns: MapSpawn[];
 }
 /** Combat balance lives outside map documents. Equipment weights are NOT monster elements. */

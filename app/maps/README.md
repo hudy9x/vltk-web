@@ -27,7 +27,7 @@ Map đi tự do dùng `{ "kind": "open" }`. Lưới phải khai báo đủ `cell
 
 ## Spawn và combat
 
-`spawns: []` giữ bãi ngẫu nhiên. Điểm cố định dùng `id`, `position`, `encounterId`, `rank`, `initialDelaySeconds`. Encounter phải tồn tại; điểm phải trong map và đi được. Mỗi điểm sinh một actor, chọn từ pool hoặc lấy `bossId`.
+`spawns: []` giữ bãi ngẫu nhiên trên map cũ (không có `spawnMode`). `spawnMode: "fixed"` dùng đúng danh sách điểm, kể cả khi rỗng sau khi xóa hết; `spawnMode: "procedural"` yêu cầu danh sách rỗng. Điểm cố định dùng `id`, `position`, `encounterId`, `rank`, `initialDelaySeconds`. Encounter phải tồn tại; điểm phải trong map và đi được. Mỗi điểm sinh một actor, chọn từ pool hoặc lấy `bossId`.
 
 Khởi tạo field tải map và resolve player trước khi sinh bãi, sau đó mới chốt field key. Runtime dùng actor hiện có, không sao chép player, enemy list hoặc HP. Timer/ref quái sống nằm trong field state; record `x/y/cls/tid/t/e` là compatibility shape, không lưu vào JSON.
 

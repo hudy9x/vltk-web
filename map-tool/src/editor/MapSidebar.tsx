@@ -1,3 +1,4 @@
+import { mapListForDraft } from "@/lib/presentation";
 import type React from "react";
 import {
   Map as MapIcon,
@@ -119,17 +120,22 @@ export function MapSidebar({
           </div>
           <ScrollArea className="map-list">
             <nav aria-label="Danh sách bản đồ">
-              {workspace?.maps
-                .filter((map) =>
+              {mapListForDraft(
+                workspace?.maps ?? [],
+                document,
+                workspace?.encounters ?? [],
+                workspace?.progression ?? [],
+              )
+                .filter(({ map }) =>
                   `${map.id} ${map.name}`
                     .toLocaleLowerCase("vi")
                     .includes(search.toLocaleLowerCase("vi")),
                 )
-                .map((map) => (
+                .map(({ map, kind, levelRange }) => (
                   <Button
                     key={map.id}
                     variant="ghost"
-                    className={`map-row ${document?.map.id === map.id ? "selected" : ""}`}
+                    className={`map-row ${kind} ${document?.map.id === map.id ? "selected" : ""}`}
                     disabled={!!busy}
                     onClick={() => selectMap(map)}
                   >
@@ -139,8 +145,15 @@ export function MapSidebar({
                     <div>
                       <span>{map.name}</span>
                       <small>
-                        #{map.id} <span>·</span> {map.size.width} ×{" "}
-                        {map.size.height}
+                        #{map.id} <span>·</span>{" "}
+                        {levelRange
+                          ? `Cấp ${levelRange[0]}–${levelRange[1]}`
+                          : "Chưa gán cấp"}
+                        {kind === "alternate"
+                          ? " · Map phụ"
+                          : kind === "standalone"
+                            ? " · Ngoài tiến trình"
+                            : ""}
                       </small>
                     </div>
                     {document?.map.id === map.id && (

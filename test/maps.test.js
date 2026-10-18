@@ -352,6 +352,20 @@ test('explicit reselection returns to entry while same-map refresh and field reb
 });
 
 for (const file of ['app/ui/world-panels-02.js', 'app/ui/legacy-panels-and-audio-01.js']) {
+  test(`saved editor map is listed and can be selected from the game menu: ${file}`, () => {
+    const { s, catalog, expected } = trainingTravelFixture();
+    const index = catalog.zones.findIndex(zone => zone.id === 398);
+    assert.ok(index >= 0, 'Saved map 398 must be registered in progression');
+    const row = { dataset: { z: String(index) } };
+    const panel = { innerHTML: '', style: { removeProperty() {} }, classList: { contains: () => true, add() {}, remove() {} },
+      querySelector: () => null, querySelectorAll: selector => selector === '.zrow' ? [row] : [] };
+    const elements = new Map(); s.m = selector => { if (!elements.has(selector)) elements.set(selector, { ...panel }); return elements.get(selector); };
+    s.document = { querySelectorAll: selector => selector === '.zrow' ? [row] : [] };
+    Object.assign(s, { Wo: () => true, Lf: () => '', Nf: () => '', Ok: () => '', pk: () => '', qt: () => '', I: {}, Ek() {}, Dk() {}, $() {}, V() {} }); s.l.logs = [];
+    const name = file.includes('world-panels') ? 'jB' : 'yv'; declaration(s, file, name); s[name](true);
+    assert.ok([...elements.values()].some(element => element.innerHTML.includes('Bến đò Thanh Loan') && element.innerHTML.includes(`data-z="${index}"`)));
+    row.onclick(); assert.equal(s.Z0.key, 398); assert.deepEqual([s.v.x, s.v.y], expected(398));
+  });
   test(`map picker routes primary and alternate selection through entry-aware travel: ${file}`, () => {
     const { s, catalog, expected } = trainingTravelFixture();
     const index = Number(Object.keys(catalog.alternates).find(index => catalog.alternates[index].length));

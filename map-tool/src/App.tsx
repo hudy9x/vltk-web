@@ -1,3 +1,5 @@
+import { ensureMapListed } from "@/lib/progression";
+import { deleteSpawnPoints } from "@/lib/spawn-selection";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { isTauri } from "@tauri-apps/api/core";
@@ -27,6 +29,7 @@ import {
   AlertCircle,
   Check,
   CircleDot,
+  LassoSelect,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -94,6 +97,7 @@ const tools: { id: Tool; label: string; key: string; icon: typeof Hand }[] = [
   },
   { id: "entry", label: "Đặt điểm vào", key: "I", icon: MapPin },
   { id: "spawn", label: "Đặt spawn", key: "S", icon: CircleDot },
+  { id: "spawn-select", label: "Chọn vùng spawn", key: "Q", icon: LassoSelect },
   { id: "path", label: "Thử đường đi", key: "P", icon: Route },
   { id: "preview", label: "Nhân vật thử", key: "T", icon: Play },
 ];
@@ -275,10 +279,10 @@ export default function App() {
           );
         delete next.project.colliders[`${selection.layerId}/${selection.id}`];
       }
-      if (selection.kind === "spawn")
-        next.map.spawns = next.map.spawns.filter(
-          (point) => point.id !== selection.id,
-        );
+      if (selection.kind === "spawn") {
+        deleteSpawnPoints(next, [selection.id]);
+      }
+      if (selection.kind === "spawns") deleteSpawnPoints(next, selection.ids);
       if (selection.kind === "layer") {
         const layer = next.map.layers.find(
           (layer) => layer.id === selection.id,
@@ -500,6 +504,7 @@ export default function App() {
           if (spawn.encounterId === sourceProfile.id)
             spawn.encounterId = profile.id;
       }
+      ensureMapListed(next);
       setDocument(next);
       setBaseline("");
       setPast([]);
@@ -507,7 +512,7 @@ export default function App() {
       setSelection(null);
       setHidden(new Set());
       setNewDialog(null);
-      setMessage("Map mới chưa lưu");
+      setMessage("Map mới chưa lưu · sẽ xuất hiện trong danh sách luyện công sau khi Save");
       setError("");
     } catch (error) {
       setError(String(error));
@@ -722,6 +727,7 @@ export default function App() {
               <MapCanvas
                 document={document}
                 assets={assets}
+                monsters={workspace?.monsters ?? []}
                 tool={tool}
                 brush={brush}
                 selection={selection}
@@ -784,6 +790,7 @@ export default function App() {
           </section>
           {document && workspace && (
             <Inspector
+              assets={assets}
               document={document}
               selection={selection}
               workspace={workspace}

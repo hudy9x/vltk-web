@@ -856,5 +856,29 @@
       0
     ],
     "alternate": true
+  },
+  {
+    "id": "map-398",
+    "mapId": 398,
+    "name": "Bến đò Thanh Loan",
+    "levelRange": [
+      180,
+      200
+    ],
+    "monsterIds": [
+      156,
+      565,
+      52,
+      588,
+      709
+    ],
+    "bossId": 148,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
   }
 ]

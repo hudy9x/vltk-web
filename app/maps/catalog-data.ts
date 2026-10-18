@@ -46,5 +46,6 @@ import map340 from './content/340/map.json';
 import map341 from './content/341/map.json';
 import map342 from './content/342/map.json';
 import map397 from './content/397/map.json';
+import map398 from './content/398/map.json';
 
-export const mapDocuments: readonly unknown[] = [map2, map3, map4, map7, map8, map19, map21, map37, map41, map42, map43, map50, map56, map68, map70, map74, map75, map90, map92, map93, map122, map123, map140, map141, map145, map167, map179, map193, map195, map201, map205, map206, map212, map224, map225, map226, map227, map319, map320, map321, map322, map336, map337, map340, map341, map342, map397];
+export const mapDocuments: readonly unknown[] = [map2, map3, map4, map7, map8, map19, map21, map37, map41, map42, map43, map50, map56, map68, map70, map74, map75, map90, map92, map93, map122, map123, map140, map141, map145, map167, map179, map193, map195, map201, map205, map206, map212, map224, map225, map226, map227, map319, map320, map321, map322, map336, map337, map340, map341, map342, map397, map398];

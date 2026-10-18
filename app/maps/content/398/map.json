@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": 398,
+  "name": "Bến đò Thanh Loan",
+  "size": {
+    "width": 3584,
+    "height": 3584
+  },
+  "entry": {
+    "x": 1863,
+    "y": 1848
+  },
+  "layers": [
+    {
+      "id": "ground",
+      "type": "ground",
+      "image": "./assets/6c1ae4d4-gemini_generated_image_lzc8vblzc8vblzc8_1__1_.webp"
+    },
+    {
+      "id": "world",
+      "type": "world",
+      "objects": []
+    }
+  ],
+  "navigation": {
+    "kind": "grid",
+    "cellSize": {
+      "width": 32,
+      "height": 16
+    },
+    "columns": 112,
+    "rows": 224,
+    "blockedBase64": "+P//x/////////8/AAD8//////////////8BAP7//////////////x8A/v///////////////w//////////////////f/////////////////9//////////////////3//////////////////f/////////////////9//////////////////3//+///////////////f//77/////////////9///3v/////////////3///f//////////////f//9//////////////9///z//////////////3///P//////////////f//8//////////////8/f/z//////////////x9//P//////////////H3/8//////////////8ff/z//////////////z9//P//////////////f3/+////////////////f/7///////////////9//v///////////////3/+//3/////////////f/7//f///f///////////v/4///9///////////+//j///////////////5/4P///////////////j/g///////////////+H8D///////////////8PwP///////////v///w+A/////////z/+////BwD/////////B/j///8HAP7///////8BwP///wMAAP//////DwCA////AwAA/v////8HAID///8DAAD+/////wMAgP///wMAAPz/////AQCA////AwAA+P////8AAID///8DAAAA4P//fwAAgP///wMAAADg//8/AACA////AwAAAOD//z8AAAD///8DAAAAAMD/HwAAAP///wMAAAAA4P8PAAAA//7/AwAAAAD4/wAAAAD//v8DAAAAAPz/AAAAAP/+/wMAAAAA/v8AAAAA//z/AwAAAAD//wAAAAD//P8DAAAAAP9/AAAAAP/8/wcAAACA/38AAAAA//z/BwAAAID/PwAAAAD//P8HAAAAwP8fAAAAAP/8/wcAAAD4/w/w/38A//z/BwAAAPj/B/z//wH//P8HAAAA+P8D/v//A//+/wcAAAD4/wD///8P//7/B/AfAPz/AP///x////8H8B8A/H8A////P/7/DwDw/wf8HwD///////8PAPD/P/wfAP///////w8A+P8//B8A////////BwD+/z/8D+D///////8HAP//P/AH4P///////wOA//8/8Afg////////A8D//z/wA+D///////8B4P//PwAA4P///////wHw//8/AADg////////APj//z8AAOD///////8A/P//PwAA4P//////fwD+//8/AADg//////9/AP7///8PAOD//////wAA/////z8A4P//h///AID/////fwDg//+P//8AwP////9/AOD//8///wDg/////38AwP//z///AOD//////wCA//////8A8P/3////AAD//////wDw//P///8AAP//////APD/+////wEA/v////8A8P/7////AQD8/////wDw//////8BAPj/////APD//////z8A+P////8A8P//////PwDg/////wDw////3/8/AMD/////APD//////z8AgP////8A8P//////PwCA/////wDA//////8/AID/////AAD//////z8AAP/////gAPz/////PwAA/////+AB+P////8/AAD/////8AHg/////x8AAP7////4A8D/////HwAA/v////gDAP////8PAAD8/////gMA////fwAAAPj///++AwD+//9/AAAAAP///78DAPz//z8AAAAA////vwMA8P//HwAAAAD///+/AwDw//8PAAAAAP////8HAOD//wcAAAAA/////x8AwP//AwAAAAD+////HwCA//8BAAAAAPz///8fAID//wEAAAAA/P///x8AAP//AAAAAAD4////HwAA/j8AAAAAAPD///8PAAD+PwAAAAAA4P///wcAAPx/AAAAAADA////AwAA/P8AAAAAAMD///8BAAD4/wAAAAAAgP///wAAAPj/AQAAAAAA//9/AAcA8P8BAAAAAAD+/38ABwDw/wEAAAAAAPz/P4AHAOD/AQAAAAAA8P8f4A8A4P8BAAAAAADg/w/gDwDA/wEAAAAAAOD/B/AfAMD/AQAAAAAAwP8D+B8AgP8BAAAAAADA/wP8HwAA/wEAAP8fAID/APz/AAD/AQDA/z8AgP8A/v8AAAAAAOD//wAA/wD//wEAAAAA8P//AQD/gP//BwAAAAD4//8BAP/A//8PAAAAAPz//wMA/uD7/x8AAAAA/P//AwD+8P//HwAAAAD+//8DAP78//8fAAAAAP7//wcAAP7//x8fAAAA////BwAA/v//3x8A4P////8HAADv////HwDg//8f/x8AAP////8/AOD//w//HwAA/////z8A4P//x/8fAAD/////PwDg/////x8AAP////9/AOD/////HwAA/////38A4P////8fAAD/////fwDg/////x8AAP////9/AOD/////HwAA/////38A4P////8fAAD//////wDA/////w8AAP//////A4D/////BwAA//////8HAP////8DAAD//////w8A/v///wEAAP//////DwD8//8HAPAf//////8fAPj//wMA+D///////z8A8P//AwD8P///9///PwDg//8BAP9////3/58/AMD//wGA/3///+P/Dz8AwP//AMD/////4f8PPwCA//8A4P//v//g/wcAAAD/fwDw////f4D/AwAAAP9/APD///8fAP8BAAAA/j8A8P///g8A/gEAAAD+HwDw///+DwD+BwAAAPwPAPD///7/AP4HAAAA+A8A8P///v8A/A8AAAAAAADw///8/wP8HwAAAAAAAPD///j/A/gfAAAAAAAA8P//+P8H+B8AwA8AAADA///4/wf4HwDgPwAAAMD///j/H/AfAOA/AAAAwP///P8/8B8A8H8AAACA///83z/gHwD4fwAAAAD///z//+AfAPx/AAAAAP7//L//4A8A/P8AAAAA/v/8P/7ADwD+/QAAAAD+//w//sAHAP//AAAAAPz//H/8AACA//8BAAAA/P/8//4AAID//wEAAADA//z//gAAwP//AQAAAMD/+P//AADg//8BAAAAwP/w/38AAOD//wMAAADA//D/PwAA8D//BwAAAMD/4P8/AAD4P/4PAAAAwP/g/x8AAPgf/B8AAACA/8D/DwAA/D/8HwAAAID/wP8PAAD+//8/AAAAAP+A/wcAAP///3/A/wEA/wD/AwDA////f/D/AQD+AP4DAPD/////+P8DAP4A/AMA+P/////7/wMA/AD8AwD8////////AwD8H/wBAP7///////8DAP4fAAAA///3/////wMA/h8AAAD///P/////A4D/HwAAgP///X/+//8DwP8fAADA///8f/j//wPA/x8AAOD///x//v//P8D/HwAA8P///v////8/wP8fAAD4///////////h/x8AAPz/////////////HwAA//////////////8fAMD//////////////x8AwP//////////////HwDg//////////////8fAOD//////////////z8A8P//////////////PwDw//////////////9/APj//////////////38A+P///////////////wD8////////////////APz///////////////8A/P///////////////wH8////////////////Afz///////////////8DAP///////////////wMA/////////////v//BwD//////////8////8HAP///////////////w8A////////////////DwD///////////////8fAP///////////////x8A////////////////HwD///////////////8/AP///////////////38A/////////////////w//////////////////D///////////////////////////////////////////////////f/////////////////9//////////////////3//////////////////Pw=="
+  },
+  "spawns": []
+}

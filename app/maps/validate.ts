@@ -70,6 +70,8 @@ export function parseMapDefinition(value: unknown): MapDefinition {
   }
   if (grounds !== 1) throw new Error(`${path}: expected exactly one ground layer`);
   if (!Array.isArray(map.spawns)) throw new Error(`${path}.spawns: expected array`);
+  if (map.spawnMode !== undefined && !['procedural', 'fixed'].includes(String(map.spawnMode))) throw new Error(`${path}: invalid spawnMode`);
+  if (map.spawnMode === 'procedural' && map.spawns.length) throw new Error(`${path}: procedural mode cannot contain fixed spawns`);
   const spawnIds = new Set<string>();
   for (const value of map.spawns) {
     const spawn = record(value, `${path}.spawn`);

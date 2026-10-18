@@ -13,7 +13,7 @@ export default defineConfig({
   },
   clearScreen: false,
   server: {
-    port: 1420,
+    port: 2420,
     strictPort: true,
     host: process.env.TAURI_DEV_HOST || "127.0.0.1",
     fs: { allow: [".."] },

@@ -1,3 +1,8 @@
+import { ensureMapListed } from "@/lib/progression";
+import { useEffect, useState } from "react";
+import { setSpawnMonster } from "@/lib/spawn-editing";
+import { MonsterPicker } from "./MonsterPicker";
+import type { AssetStore } from "@/lib/native";
 import { Choice, NumberField } from "./Fields";
 import { GameplayPanel } from "./GameplayPanel";
 import { ImagePlus, Trash2 } from "lucide-react";
@@ -17,6 +22,7 @@ interface Props {
   document: EditorDocument;
   selection: Selection;
   workspace: Workspace;
+  assets: AssetStore;
   onEdit(edit: (document: EditorDocument) => void): void;
   onImport(target: { kind: "layer"; id: string } | { kind: "object" }): void;
   onDelete(): void;
@@ -25,10 +31,13 @@ export function Inspector({
   document,
   selection,
   workspace,
+  assets,
   onEdit,
   onImport,
   onDelete,
 }: Props) {
+  const [tab, setTab] = useState("space");
+  useEffect(() => { if (selection) setTab("space"); }, [selection]);
   const map = document.map;
   const selectedObject =
     selection?.kind === "object"
@@ -42,6 +51,7 @@ export function Inspector({
     selection?.kind === "spawn"
       ? map.spawns.find((point) => point.id === selection.id)
       : undefined;
+  const spawnProfile = document.encounters.find((profile) => profile.id === spawn?.encounterId);
   const layer =
     selection?.kind === "layer"
       ? map.layers.find((layer) => layer.id === selection.id)
@@ -62,7 +72,7 @@ export function Inspector({
         <span>Thuộc tính</span>
         <Badge variant="outline">#{map.id}</Badge>
       </div>
-      <Tabs defaultValue="space" className="min-h-0 flex-1 gap-0">
+      <Tabs value={tab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
         <TabsList className="inspector-tabs">
           <TabsTrigger value="space">Không gian</TabsTrigger>
           <TabsTrigger value="gameplay">Gameplay</TabsTrigger>
@@ -71,7 +81,16 @@ export function Inspector({
         <ScrollArea className="min-h-0 flex-1">
           <div className="inspector-body">
             <TabsContent value="space" className="space-y-5 mt-0">
-              {selectedObject ? (
+              {selection?.kind === "spawns" ? (
+                <>
+                  <div className="section-heading">Chọn vùng spawn</div>
+                  <p className="help-text">Đã chọn {selection.ids.length} điểm spawn. Chỉ các điểm trong khung được xóa; các điểm khác được giữ nguyên.</p>
+                  <Button variant="destructive" className="w-full" onClick={onDelete}>
+                    <Trash2 /> Xóa {selection.ids.length} điểm đã chọn
+                  </Button>
+                  <p className="help-text">Delete / Backspace để xóa · ⌘/Ctrl+Z để hoàn tác. Kéo khung mới để chọn vùng khác.</p>
+                </>
+              ) : selectedObject ? (
                 <>
                   <div className="section-heading">
                     <span>World object</span>
@@ -297,6 +316,19 @@ export function Inspector({
                       })
                     }
                   />
+                  {spawnProfile && (
+                    <MonsterPicker
+                      label={spawn.rank === "boss" ? "Boss tại điểm này" : "Quái tại điểm này"}
+                      value={spawn.rank === "boss" ? spawnProfile.bossId : spawnProfile.monsterIds.length === 1 ? spawnProfile.monsterIds[0] : undefined}
+                      monsters={workspace.monsters}
+                      encounters={document.encounters}
+                      assets={assets}
+                      onChange={(id) => onEdit((next) => setSpawnMonster(next, spawn.id, id))}
+                    />
+                  )}
+                  <Button variant="destructive" className="w-full" onClick={onDelete}>
+                    <Trash2 /> Xóa điểm spawn
+                  </Button>
                   <NumberField
                     label="Xuất hiện sau (giây)"
                     min={0}
@@ -310,8 +342,7 @@ export function Inspector({
                     }
                   />
                   <p className="help-text">
-                    Mỗi điểm sinh một actor. Hồi sinh thường/boss theo policy
-                    game hiện tại.
+                    Đổi quái/boss ở đây chỉ áp dụng cho điểm đang chọn. Dùng nút Xóa hoặc phím Delete để xóa điểm này.
                   </p>
                 </>
               ) : layer ? (
@@ -488,21 +519,22 @@ export function Inspector({
                   <Separator />
                   <div className="section-heading">Spawn</div>
                   <p className="help-text">
-                    {map.spawns.length
+                    {(map.spawnMode === "fixed" || map.spawns.length)
                       ? `${map.spawns.length} điểm cố định. Dùng công cụ Spawn để thêm điểm.`
-                      : "Đang dùng bãi ngẫu nhiên của game. Thêm điểm Spawn sẽ chuyển sang danh sách cố định."}
+                      : "Đang dùng bãi ngẫu nhiên. Thêm hoặc chọn một điểm sẽ giữ toàn bộ mẫu hiện tại để chỉnh sửa."}
                   </p>
                 </>
               )}
             </TabsContent>
             <GameplayPanel
+              assets={assets}
               document={document}
               workspace={workspace}
               onEdit={onEdit}
             />
             <TabsContent value="progression" className="space-y-4 mt-0">
               <div className="section-heading">Vị trí trong tiến trình</div>
-              {primaryIndex >= 0 ? (
+              {primaryIndex >= 0 && workspace.progression.some((entry) => entry.mapId === map.id) ? (
                 <>
                   <Badge variant="secondary">
                     Map chính · vị trí {primaryIndex + 1}
@@ -515,11 +547,11 @@ export function Inspector({
               ) : (
                 <Choice
                   label="Phân loại map"
-                  value={alternate ? `alt-${alternate.mapId}` : "standalone"}
+                  value={primaryIndex >= 0 ? "primary" : alternate ? `alt-${alternate.mapId}` : "standalone"}
                   options={[
                     {
                       value: "standalone",
-                      label: "Map độc lập / chưa vào progression",
+                      label: "Ẩn khỏi danh sách luyện công",
                     },
                     {
                       value: "primary",
@@ -532,15 +564,14 @@ export function Inspector({
                   ]}
                   onChange={(value) =>
                     onEdit((next) => {
+                      // Only unsaved primary registrations are editable here.
+                      next.progression = next.progression.filter((entry) => entry.mapId !== map.id);
                       for (const entry of next.progression)
                         entry.alternateMapIds = entry.alternateMapIds.filter(
                           (id) => id !== map.id,
                         );
                       if (value === "primary")
-                        next.progression.push({
-                          mapId: map.id,
-                          alternateMapIds: [],
-                        });
+                        ensureMapListed(next);
                       else if (value.startsWith("alt-"))
                         next.progression
                           .find(
@@ -561,8 +592,7 @@ export function Inspector({
               <Separator />
               <div className="section-heading">Sau khi Save</div>
               <p className="help-text">
-                Tool cập nhật JSON và build lại game. Mở game local rồi reload
-                để dùng dữ liệu mới.
+                Tool cập nhật JSON, danh sách map và build lại game. Map chính hoặc map phụ sẽ xuất hiện trong menu bản đồ luyện công. Reload game local để dùng dữ liệu mới.
               </p>
               <div className="quiet-code">
                 app/maps/content/{map.id}/map.json

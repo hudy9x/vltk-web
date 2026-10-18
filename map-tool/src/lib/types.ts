@@ -58,10 +58,12 @@ export type Tool =
   | "rectangle"
   | "entry"
   | "spawn"
+  | "spawn-select"
   | "path"
   | "preview";
 export type Selection =
   | { kind: "object"; layerId: string; id: string }
   | { kind: "spawn"; id: string }
+  | { kind: "spawns"; ids: string[] }
   | { kind: "layer"; id: string }
   | null;

@@ -1,4 +1,12 @@
-import { useEffect, useRef } from "react";
+import { spawnIdsInRegion } from "@/lib/spawn-selection";
+import { retainSpawnPoints } from "@/lib/spawn-editing";
+import { spawnPreview, type SpawnPreview } from "@/lib/spawn-preview";
+import { createGroundProbe } from "@game/ground";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { createMapScene } from "@game/rendering";
 import { resolveMapAsset } from "@game/assets";
 import { createNavigationRuntime } from "@game/runtime";
@@ -12,11 +20,12 @@ import {
   objects,
   paint,
 } from "@/lib/model";
-import type { EditorDocument, Selection, Tool } from "@/lib/types";
+import type { EditorDocument, Monster, Selection, Tool } from "@/lib/types";
 
 interface Props {
   document: EditorDocument;
   assets: AssetStore;
+  monsters: Monster[];
   tool: Tool;
   brush: number;
   selection: Selection;
@@ -36,10 +45,18 @@ interface Props {
   onError(message: string): void;
 }
 export function MapCanvas(props: Props) {
+  const [showSpawns, setShowSpawns] = useState(true),
+    [spawnSeed, setSpawnSeed] = useState(0);
+  const [spawnCounts, setSpawnCounts] = useState({
+    normal: 0,
+    elite: 0,
+    boss: 0,
+    total: 0,
+  });
   const canvas = useRef<HTMLCanvasElement>(null),
     container = useRef<HTMLDivElement>(null);
-  const latest = useRef(props);
-  latest.current = props;
+  const latest = useRef({ ...props, showSpawns, spawnSeed });
+  latest.current = { ...props, showSpawns, spawnSeed };
   const controls = useRef<{ zoom(action: "fit" | "in" | "out"): void } | null>(
     null,
   );
@@ -59,6 +76,7 @@ export function MapCanvas(props: Props) {
         document: EditorDocument;
         pan: boolean;
         selection: Selection;
+        regionPoints?: SpawnPreview[];
       } | null = null;
     let currentId = -1,
       hover: Point = { x: 0, y: 0 },
@@ -69,7 +87,9 @@ export function MapCanvas(props: Props) {
     let displayGrid: NavigationGrid | null = null;
     let navigation = createNavigationRuntime(),
       prepared: EditorDocument | null = null;
-    const scene = createMapScene(props.assets.imageFor);
+    const scene = createMapScene(props.assets.imageFor),
+      groundProbe = createGroundProbe();
+    let spawnPoints: SpawnPreview[] = [];
     const world = (event: { clientX: number; clientY: number }): Point => {
       const rect = element.getBoundingClientRect();
       return {
@@ -148,6 +168,32 @@ export function MapCanvas(props: Props) {
       } catch {
         navigation = createNavigationRuntime();
       }
+      try {
+        const ground = map.layers.find((layer) => layer.type === "ground");
+        const image =
+          ground && "image" in ground
+            ? props.assets.imageFor(resolveMapAsset(map.id, ground.image))
+            : null;
+        spawnPoints = spawnPreview(
+          document,
+          map,
+          latest.current.spawnSeed,
+          (x, y) =>
+            groundProbe.isVoid(image, map.size.width, map.size.height, x, y),
+        );
+      } catch {
+        spawnPoints = [];
+      }
+      const counts = {
+        normal: 0,
+        elite: 0,
+        boss: 0,
+        total: spawnPoints.length,
+      };
+      for (const point of spawnPoints) counts[point.rank]++;
+      setSpawnCounts((previous) =>
+        JSON.stringify(previous) === JSON.stringify(counts) ? previous : counts,
+      );
     }
     function marker(point: Point, color: string, label: string) {
       context.strokeStyle = color;
@@ -312,12 +358,29 @@ export function MapCanvas(props: Props) {
         context.stroke();
       }
       marker(map.entry, "#8cd5dd", "Điểm vào");
-      for (const spawn of map.spawns)
-        marker(
-          spawn.position,
-          spawn.rank === "boss" ? "#ee9b84" : "#93d6a5",
-          spawn.id,
-        );
+      if (p.showSpawns || p.tool === "spawn" || p.tool === "spawn-select")
+        for (const spawn of spawnPoints) {
+          const color =
+            spawn.rank === "boss"
+              ? "#ff9a81"
+              : spawn.rank === "elite"
+                ? "#e7c47a"
+                : "#93d6a5";
+          const near =
+            Math.hypot(spawn.x - hover.x, spawn.y - hover.y) < 14 / camera.zoom;
+          const name =
+            p.monsters.find((monster) => monster.id === spawn.monsterId)
+              ?.name || `#${spawn.monsterId}`;
+          const label =
+            near || camera.zoom > 0.65 || spawn.rank === "boss"
+              ? `${spawn.rank === "boss" ? "Boss · " : spawn.rank === "elite" ? "Tinh anh · " : ""}${name}${near && spawn.delay ? ` · ${spawn.delay}s` : ""}`
+              : "";
+          marker(spawn, color, spawn.fixed ? label || spawn.id : label);
+          const selected = p.selection?.kind === "spawn" ? p.selection.id === spawn.id :
+            p.selection?.kind === "spawns" && p.selection.ids.includes(spawn.id);
+          const inRegion = drag?.regionPoints && spawnIdsInRegion([spawn], drag.start, hover).length > 0;
+          if (selected || inRegion) marker(spawn, "#ffffff", selected ? "Đang chọn" : "");
+        }
       for (const { layerId, object } of objects(map)) {
         const collider = document.project.colliders[`${layerId}/${object.id}`];
         if (collider && p.showCollision) {
@@ -366,6 +429,15 @@ export function MapCanvas(props: Props) {
         context.stroke();
       }
       if (pathStart) marker(pathStart, "#8ad2e4", "Bắt đầu");
+      if (drag?.regionPoints) {
+        context.fillStyle = "#8ad2e426";
+        context.strokeStyle = "#8ad2e4";
+        context.lineWidth = 1.5 / camera.zoom;
+        context.setLineDash([6 / camera.zoom, 4 / camera.zoom]);
+        context.fillRect(drag.start.x, drag.start.y, hover.x - drag.start.x, hover.y - drag.start.y);
+        context.strokeRect(drag.start.x, drag.start.y, hover.x - drag.start.x, hover.y - drag.start.y);
+        context.setLineDash([]);
+      }
       if (drag && p.tool === "rectangle") {
         context.fillStyle = "#ef666640";
         context.strokeStyle = "#ed8888";
@@ -461,6 +533,15 @@ export function MapCanvas(props: Props) {
         return;
       }
       const next = cloneDocument(p.document);
+      if (p.tool === "spawn-select") {
+        prepare(p.document);
+        hover = position;
+        drag = { start: position, last: position, screen: { x: event.clientX, y: event.clientY },
+          document: next, pan: false, selection: null, regionPoints: [...spawnPoints] };
+        p.onSelect(null);
+        invalidate();
+        return;
+      }
       if (p.tool === "entry") {
         next.map.entry = position;
         p.onChange(next);
@@ -475,6 +556,7 @@ export function MapCanvas(props: Props) {
           return;
         }
         const id = `spawn-${crypto.randomUUID().slice(0, 8)}`;
+        retainSpawnPoints(next, spawnPoints);
         next.map.spawns.push({
           id,
           position,
@@ -488,17 +570,13 @@ export function MapCanvas(props: Props) {
       }
       let selection: Selection = null;
       if (p.tool === "select") {
-        const spawn = [...next.map.spawns]
+        const spawn = (p.showSpawns ? [...spawnPoints] : [])
           .reverse()
-          .find(
-            (spawn) =>
-              Math.hypot(
-                spawn.position.x - position.x,
-                spawn.position.y - position.y,
-              ) <
-              14 / camera.zoom,
-          );
-        if (spawn) selection = { kind: "spawn", id: spawn.id };
+          .find((point) => Math.hypot(point.x - position.x, point.y - position.y) < 14 / camera.zoom);
+        if (spawn) {
+          retainSpawnPoints(next, spawnPoints);
+          selection = { kind: "spawn", id: spawn.id };
+        }
         else
           for (const item of objects(next.map).reverse()) {
             const object = item.object,
@@ -552,7 +630,7 @@ export function MapCanvas(props: Props) {
               (item) =>
                 item.layerId ===
                   (drag!.selection as { layerId: string }).layerId &&
-                item.object.id === drag!.selection?.id,
+                item.object.id === (drag!.selection as { id: string }).id,
             )?.object;
             if (object) {
               object.position.x += hover.x - drag.last.x;
@@ -561,7 +639,7 @@ export function MapCanvas(props: Props) {
           }
           if (drag.selection?.kind === "spawn") {
             const spawn = drag.document.map.spawns.find(
-              (spawn) => spawn.id === drag!.selection?.id,
+              (spawn) => spawn.id === (drag!.selection as { id: string }).id,
             );
             if (spawn) spawn.position = hover;
           }
@@ -575,7 +653,14 @@ export function MapCanvas(props: Props) {
       if (!drag) return;
       const current = drag;
       drag = null;
-      if (!current.pan) {
+      if (current.regionPoints) {
+        const ids = event.type === "pointercancel" ? [] : spawnIdsInRegion(current.regionPoints, current.start, bounded(world(event)));
+        if (ids.length) {
+          retainSpawnPoints(current.document, current.regionPoints);
+          if (documentKey(current.document) !== documentKey(latest.current.document)) latest.current.onChange(current.document);
+          latest.current.onSelect({ kind: "spawns", ids });
+        } else latest.current.onSelect(null);
+      } else if (!current.pan) {
         if (latest.current.tool === "rectangle")
           paint(
             current.document,
@@ -625,7 +710,10 @@ export function MapCanvas(props: Props) {
     element.addEventListener("pointerup", up);
     element.addEventListener("pointercancel", up);
     element.addEventListener("wheel", wheel, { passive: false });
-    const unsubscribe = props.assets.subscribe(invalidate);
+    const unsubscribe = props.assets.subscribe(() => {
+      prepared = null;
+      invalidate();
+    });
     const redraw = () => {
       prepared = null;
       invalidate();
@@ -655,6 +743,9 @@ export function MapCanvas(props: Props) {
     props.showCollision,
     props.showRegions,
     props.tool,
+    showSpawns,
+    spawnSeed,
+    props.monsters,
   ]);
   useEffect(() => {
     controls.current?.zoom(props.zoomCommand.action);
@@ -662,6 +753,44 @@ export function MapCanvas(props: Props) {
   return (
     <div ref={container} className={`map-canvas tool-${props.tool}`}>
       <canvas ref={canvas} aria-label="Canvas chỉnh sửa bản đồ" />
+      <div className="spawn-preview-panel">
+        <Label className="check-row">
+          <Checkbox
+            checked={showSpawns}
+            onCheckedChange={(value) => setShowSpawns(!!value)}
+          />
+          Hiện điểm spawn
+        </Label>
+        {showSpawns && (
+          <>
+            <p className="help-text">Chọn (V) để sửa từng điểm · Chọn vùng (Q), kéo khung rồi Delete để xóa nhiều điểm.</p>
+            <div className="spawn-legend">
+              <span className="spawn-normal">
+                ● {spawnCounts.normal} thường
+              </span>
+              <span className="spawn-elite">
+                ● {spawnCounts.elite} tinh anh
+              </span>
+              <span className="spawn-boss">● {spawnCounts.boss} boss</span>
+            </div>
+            <small>
+              {(props.document.map.spawnMode === "fixed" || props.document.map.spawns.length)
+                ? `${spawnCounts.total} điểm cố định · lưu trong map`
+                : `${spawnCounts.total} điểm · mẫu bãi ngẫu nhiên`}
+            </small>
+            {props.document.map.spawnMode !== "fixed" && !props.document.map.spawns.length && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSpawnSeed((value) => value + 1)}
+              >
+                <RefreshCw size={12} />
+                Tạo mẫu khác
+              </Button>
+            )}
+          </>
+        )}
+      </div>
       <div className="canvas-corner">
         {props.tool === "preview"
           ? "Bấm để nhân vật thử di chuyển"

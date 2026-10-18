@@ -391,6 +391,7 @@
 .tool-erase canvas,
 .tool-entry canvas,
 .tool-spawn canvas,
+.tool-spawn-select canvas,
 .tool-rectangle canvas,
 .tool-path canvas {
   cursor: crosshair;
@@ -629,4 +630,147 @@
   .brush-bar > span:last-child {
     display: none;
   }
+}
+.map-row.alternate {
+  margin-left: 17px;
+  width: calc(100% - 23px);
+  min-height: 51px;
+  border-left: 1px solid #ddbd7e38;
+  border-radius: 0 5px 5px 0;
+}
+.map-row.alternate .map-row-icon {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+}
+.map-row.alternate > div:nth-child(2) > span {
+  font-size: 11px;
+}
+.map-row.standalone {
+  opacity: 0.75;
+}
+.map-row small {
+  white-space: normal;
+}
+.monster-thumbnail {
+  width: 38px;
+  height: 44px;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  background: #111416;
+  border: 1px solid #ffffff10;
+  border-radius: 5px;
+  color: #646c70;
+  overflow: hidden;
+}
+.monster-thumbnail img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: auto;
+}
+.monster-picker-trigger {
+  height: auto !important;
+  min-height: 48px;
+  justify-content: flex-start;
+  gap: 9px;
+  text-align: left;
+  padding: 5px 8px !important;
+}
+.monster-picker-trigger > span:not(.monster-thumbnail) {
+  flex: 1;
+  white-space: normal;
+}
+.monster-picker-trigger small {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.monster-picker-trigger > svg {
+  margin-left: auto;
+}
+.monster-picker-popover {
+  width: 360px;
+  padding: 0;
+}
+.monster-filter {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.monster-filter p {
+  font-size: 10px;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+.monster-option {
+  gap: 10px;
+  cursor: pointer;
+  min-height: 59px;
+}
+.monster-option > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.monster-option strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+.monster-option small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  white-space: normal;
+  line-height: 1.6;
+}
+.monster-picker-count {
+  font-size: 10px;
+  padding: 8px 12px;
+  color: var(--muted-foreground);
+  border-top: 1px solid var(--border);
+}
+.monster-pool .monster-thumbnail {
+  width: 26px;
+  height: 30px;
+  border: none;
+  background: #11141680;
+}
+.spawn-preview-panel {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  background: #171b1ee8;
+  border: 1px solid #ffffff15;
+  border-radius: 7px;
+  padding: 12px;
+  box-shadow: 0 3px 16px #0003;
+  max-width: 270px;
+}
+.spawn-preview-panel small {
+  font-size: 10px;
+  color: #9ca4a8;
+}
+.spawn-preview-panel button {
+  font-size: 10px;
+  height: 25px;
+}
+.spawn-legend {
+  display: flex;
+  gap: 10px;
+  font-size: 10px;
+}
+.spawn-normal {
+  color: #93d6a5;
+}
+.spawn-elite {
+  color: #e7c47a;
+}
+.spawn-boss {
+  color: #ff9a81;
 }
