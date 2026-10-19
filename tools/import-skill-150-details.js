@@ -111,7 +111,7 @@ function importDetails(bundlePath) {
     `      skill.attr[existing || key] = rows;\n` +
     `    }\n` +
     `  }\n})();\n`;
-  fs.writeFileSync(path.join(ROOT,'app/data/skill-150-details-01.js'),output);
+  fs.writeFileSync(path.join(ROOT,'src/client/data/skill-150-details-01.js'),output);
   return { skills: expected, supportLinks: Object.values(details).reduce((n,s)=>n+s.support.length,0) };
 }
 if (require.main === module) {

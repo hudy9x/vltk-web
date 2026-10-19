@@ -2,8 +2,8 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const vm = require('node:vm');
-const { ROOT } = require('../server/database.ts');
-const { createAssetCache, isAssetPath } = require('../server/assets.ts');
+const { ROOT, PUBLIC_ROOT } = require('../src/server/paths.ts');
+const { createAssetCache, isAssetPath } = require('../src/server/assets.ts');
 const { assemble } = require('./build-app');
 async function walk(directory) {
   const entries = await fs.readdir(directory,{ withFileTypes:true }).catch(() => []);
@@ -13,14 +13,14 @@ async function walk(directory) {
 async function collectAssets({ allSprites = false, existingOnly = false } = {}) {
   const assets = new Set();
   for (const folder of ['img','fx','ui','fonts','snd','music']) {
-    for (const file of await walk(path.join(ROOT,folder))) {
-      const relative = path.relative(ROOT,file).split(path.sep).join('/');
+    for (const file of await walk(path.join(PUBLIC_ROOT,folder))) {
+      const relative = path.relative(PUBLIC_ROOT,file).split(path.sep).join('/');
       if (isAssetPath(relative)) assets.add(relative);
     }
   }
   if (existingOnly) return [...assets].sort();
   const sources = [assemble().code];
-  for (const file of ['data.js','sw.js','manifest.json']) sources.push(await fs.readFile(path.join(ROOT,file),'utf8'));
+  for (const file of ['data.js','sw.js','manifest.json']) sources.push(await fs.readFile(path.join(PUBLIC_ROOT,file),'utf8'));
   for (const text of sources) {
     for (const match of text.matchAll(/["']([A-Za-z0-9_./-]+\.(?:png|jpe?g|webp|gif|mp3|ogg|wav|m4a|woff2?|ttf|svg))["']/gi)) {
       let relative = match[1];
@@ -29,7 +29,7 @@ async function collectAssets({ allSprites = false, existingOnly = false } = {}) 
     }
   }
   for (const file of ['style.css','jx1ui.css','jx1ui2.css','ui20.css','fonts/ibm-plex-mono.css']) {
-    const text = await fs.readFile(path.join(ROOT,file),'utf8');
+    const text = await fs.readFile(path.join(PUBLIC_ROOT,file),'utf8');
     for (const match of text.matchAll(/url\(\s*["']?([^\s"')]+)["']?\s*\)/g)) {
       const url = new URL(match[1],new URL(file,'https://volamidle.pages.dev/'));
       const relative = url.pathname.slice(1);
@@ -38,7 +38,7 @@ async function collectAssets({ allSprites = false, existingOnly = false } = {}) 
   }
   if (allSprites) {
     const sandbox = {}; sandbox.window=sandbox; vm.createContext(sandbox);
-    vm.runInContext(await fs.readFile(path.join(ROOT,'jxlook.js'),'utf8'),sandbox,{ timeout:10000 });
+    vm.runInContext(await fs.readFile(path.join(PUBLIC_ROOT,'jxlook.js'),'utf8'),sandbox,{ timeout:10000 });
     for (const key of Object.keys(sandbox.JXLOOK.sheets)) {
       const relative = `img/jx/${key}.webp`;
       if (isAssetPath(relative)) assets.add(relative);
@@ -49,9 +49,9 @@ async function collectAssets({ allSprites = false, existingOnly = false } = {}) 
 async function main() {
   const options = new Set(process.argv.slice(2));
   const assets = await collectAssets({ existingOnly:options.has('--existing'),allSprites:options.has('--all-sprites') });
-  const cache = createAssetCache({ root:ROOT });
+  const cache = createAssetCache({ root:PUBLIC_ROOT });
   let next=0, completed=0;
-  console.log(`Checking ${assets.length} assets in repo root; 8 concurrent workers.`);
+  console.log(`Checking ${assets.length} assets in public/; 8 concurrent workers.`);
   async function worker() {
     while (next < assets.length) {
       const relative=assets[next++];
