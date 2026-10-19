@@ -4,7 +4,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import type { MapDefinition, EncounterDefinition, ProgressionEntry } from '../../app/maps/types.ts';
+import type { MapDefinition, EncounterDefinition, ProgressionEntry } from '../../src/client/maps/types.ts';
 interface EditorInput { map: MapDefinition; project: unknown; encounters: EncounterDefinition[]; progression: ProgressionEntry[] }
 const require = createRequire(import.meta.url);
 const { buildSync } = require('esbuild') as typeof import('esbuild');
@@ -13,13 +13,13 @@ const root = process.cwd();
 export function monsterCatalog(): { id: number; name: string; image?: string }[] {
   const sandbox = vm.createContext({ window: {}, MapsEngine: { createLegacyCatalog: () => ({ zones: [], alternates: {}, navigation: {} }) } });
   for (const name of ['monsters-and-zones-01', 'monsters-and-zones-02', 'monsters-and-zones-03', 'monsters-and-zones-04', 'equipment-and-zone-patches-02']) {
-    vm.runInContext(fs.readFileSync(path.join(root, `app/data/${name}.js`), 'utf8'), sandbox);
+    vm.runInContext(fs.readFileSync(path.join(root, `src/client/data/${name}.js`), 'utf8'), sandbox);
     sandbox.JW = sandbox.window.JW;
   }
   return Object.entries(sandbox.JW.mon as Record<string, { n: string; img?: string }>).map(([id, monster]) => ({ id: Number(id), name: monster.n, image: monster.img }));
 }
 export function validate(document: EditorInput, availableAssets: string[]): void {
-  const compiled = buildSync({ entryPoints: [path.join(root, 'map-tool/src/lib/model.ts')], bundle: true, platform: 'node', format: 'cjs', write: false, alias: { '@game': path.join(root, 'app/maps') } });
+  const compiled = buildSync({ entryPoints: [path.join(root, 'tools/map-tool/src/lib/model.ts')], bundle: true, platform: 'node', format: 'cjs', write: false, alias: { '@game': path.join(root, 'src/client/maps') } });
   const exports: Record<string, unknown> = {};
   const sandbox = vm.createContext({ module: { exports }, exports, atob, btoa, structuredClone, Uint8Array, Map, Set });
   vm.runInContext(compiled.outputFiles[0].text, sandbox);
@@ -35,9 +35,9 @@ export function validate(document: EditorInput, availableAssets: string[]): void
     profiles.add(profile.id);
     for (const id of [...profile.monsterIds, profile.bossId]) if (!monsters.has(id)) throw new Error(`Không tìm thấy quái #${id}.`);
   }
-  const oldProgression = JSON.parse(fs.readFileSync(path.join(root, 'app/maps/progression.json'), 'utf8')) as { mapId: number; alternateMapIds: number[] }[];
+  const oldProgression = JSON.parse(fs.readFileSync(path.join(root, 'src/client/maps/progression.json'), 'utf8')) as { mapId: number; alternateMapIds: number[] }[];
   for (let i = 0; i < oldProgression.length; i++) if (document.progression[i]?.mapId !== oldProgression[i].mapId) throw new Error('Không được đảo hoặc xóa thứ tự progression đang có.');
-  const mapIds = new Set(fs.readdirSync(path.join(root, 'app/maps/content')).filter(id => /^\d+$/.test(id)).map(Number));
+  const mapIds = new Set(fs.readdirSync(path.join(root, 'src/client/maps/content')).filter(id => /^\d+$/.test(id)).map(Number));
   mapIds.add(document.map.id);
   const seen = new Set<number>();
   for (const entry of document.progression) {
@@ -50,7 +50,7 @@ export function validate(document: EditorInput, availableAssets: string[]): void
     let relative: string;
     try { relative = model.resolveMapAsset(document.map.id, asset); }
     catch { throw new Error(`Đường dẫn ảnh phải nằm trong thư mục map: ${asset}`); }
-    const target = path.join(root, relative), mapRoot = path.join(root, 'app/maps/content');
+    const target = path.join(root, relative.replace(/^app\//, 'src/client/')), mapRoot = path.join(root, 'src/client/maps/content');
     if (fs.existsSync(target)) {
       const resolved = fs.realpathSync(target);
       if (!resolved.startsWith(fs.realpathSync(mapRoot) + path.sep)) throw new Error(`Đường dẫn ảnh nằm ngoài thư mục map: ${asset}`);

@@ -6,7 +6,7 @@ const esbuild = require('esbuild');
 const { decode, encode } = require('@jridgewell/sourcemap-codec');
 const { syncMapCatalog } = require('./maps/catalog.ts');
 const ROOT = path.resolve(__dirname, '..');
-const APP = path.join(ROOT, 'app');
+const APP = path.join(ROOT, 'src/client');
 const compiledEntries = new Map();
 let previousResult;
 
@@ -54,7 +54,7 @@ function assemble() {
   const hash = createHash('sha256').update(JSON.stringify([modules, dependencies,
     fs.readFileSync(path.join(ROOT, 'tsconfig.json'), 'utf8')])).digest('hex');
   if (previousResult?.hash === hash) return previousResult;
-  let code = '// Generated from app/modules.json. Edit the source modules, then rebuild.\n(function () {\n';
+  let code = '// Generated from src/client/modules.json. Edit the source modules, then rebuild.\n(function () {\n';
   const mappings = [[], []], sources = [], sourcesContent = [], inputs = new Set();
   function addSource(file, source) {
     let index = sources.indexOf(file);
@@ -80,7 +80,7 @@ function assemble() {
       module.source.replace(/\n$/, '').split('\n').forEach((line, number) => {
         code += line + '\n'; mappings.push([[0, index, number, 0]]);
       });
-      inputs.add('app/' + module.file);
+      inputs.add('src/client/' + module.file);
     }
   }
   code += '})();\n//# sourceMappingURL=game.js.map\n';
@@ -104,6 +104,6 @@ function buildApp() {
 }
 if (require.main === module) {
   const result = buildApp();
-  console.log(`Built app/game.js from ${result.modules.length} entries (${Buffer.byteLength(result.code)} bytes).`);
+  console.log(`Built src/client/game.js from ${result.modules.length} entries (${Buffer.byteLength(result.code)} bytes).`);
 }
 module.exports = { assemble, buildApp, compileTypeScriptEntry };

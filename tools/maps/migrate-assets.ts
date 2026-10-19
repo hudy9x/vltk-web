@@ -4,15 +4,15 @@ import { createHash } from 'node:crypto';
 
 /** One-time, idempotent move. Existing destination bytes must match exactly. */
 export function migrateMapAssets(root: string): void {
-  const content = path.join(root, 'app/maps/content');
+  const content = path.join(root, 'src/client/maps/content');
   for (const id of fs.readdirSync(content).filter(name => /^[1-9]\d*$/.test(name))) {
     const filename = path.join(content, id, 'map.json');
     const map = JSON.parse(fs.readFileSync(filename, 'utf8'));
     let missing = false;
     const migrate = (image: string): string => {
       if (!image.startsWith('img/z/')) return image;
-      const target = `app/maps/content/${id}/assets/ground${path.extname(image)}`;
-      const source = path.join(root, image), destination = path.join(root, target);
+      const target = `src/client/maps/content/${id}/assets/ground${path.extname(image)}`;
+      const source = path.join(root, 'public', image), destination = path.join(root, target);
       if (fs.existsSync(source)) {
         fs.mkdirSync(path.dirname(destination), { recursive: true });
         const hash = (file: string) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
