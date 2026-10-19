@@ -579,6 +579,41 @@ var eD = function (A, n, t, e, a, context) {
   // the temporary player globals in delayed contact callbacks.
   const caster = context ? context.actor : v;
   const draw = action => context ? context.visual(action) : action();
+  // Keep separate physical recipients, but render one storm at the original
+  // cast target so an earlier contact with a neighbour cannot split the layers.
+  if (+A.id === 1081 && +a.sid === 1109) {
+    const recipients = [...new Set(e || [n])].filter(target => target && !target.dead && target.hp > 0).slice(0, Qi(A, a));
+    const missile = A0.m[A0.f[a.sid] && A0.f[a.sid].c], sprite = missile && missile.fly;
+    const delay = a.delay, life = missile && missile.life || 1.67;
+    const visualAnchor = A.visualAnchor || { x: n.x, y: n.y - 14 };
+    let visualShown = false;
+    const ability = Object.assign({}, A, {
+      id: a.sid, n: a.n, parts: S5(A, a), ev: false, ev2: true,
+      stun: a.stun || 0, crit: 0, useAR: false,
+      geo: { k: "spot", r: 12, pierce: true },
+    });
+    for (const recipient of recipients) {
+      const field = { k: "boom", s: sprite, x: recipient.x, y: recipient.y - 14,
+        t: 0, life, sp: sprite ? yn(sprite) / life : 1, dir: 0, visualAnchor };
+      const hidden = visualShown || l.quiet || !sprite || l.fx.length > 160;
+      if (!hidden) visualShown = true;
+      queueSkillContact(caster, recipient, ability, target => {
+        const damage = context ? context.hit(ability, target) : hs(ability, target);
+        if (!context) Ls(damage, ability);
+        if (!hidden && missile.hit) draw(() => {
+          (l.fxQ || (l.fxQ = [])).push({ k: "boom", s: missile.hit,
+            x: visualAnchor.x, y: visualAnchor.y, t: 0, life: yn(missile.hit), dir: 0, cosmetic: true });
+        });
+      }, {
+        windup: delay, maxTargets: 1,
+        targets: () => (context ? context.targets() : _1()).includes(recipient) ? [recipient] : [],
+        // Register the physical field even when its image/FX budget is unavailable.
+        visual: () => draw(() => l.fx.push(field)),
+      });
+      if (hidden) l.fx = l.fx.filter(effect => effect !== field);
+    }
+    return;
+  }
   // Băng Tâm Tuyết Liên đã được tạo theo từng va chạm, không tạo lại ở hit đầu.
   if (+A.id === 336 && +a.sid === 382 && A.impactLotusHandled) return;
   if (+A.id === 337 && +a.sid === 338 && A.snowTrailHandled) return;
@@ -794,6 +829,7 @@ var oD = function () {
   if (snowEvent) e = Object.assign({}, e, { snowTrailHandled: true });
   if (lotusEvent) e = Object.assign({}, e, { impactLotusHandled: true });
   if (+e.id === 339) e = Object.assign({}, e, { impactVisualTargets: new Set() });
+  if (+e.id === 1081) e = Object.assign({}, e, { visualAnchor: { x: t.x, y: t.y - 14 } });
   queueSkillContact(v, t, e, (target) => {
     const damage = hs(e, target);
     Ls(damage, e);

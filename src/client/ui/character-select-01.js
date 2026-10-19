@@ -134,9 +134,11 @@ var Sr = function s() {
     ));
 };
 
+var sectPortraits = ["shaolin", "tianwang", "tangmen", "wudu", "emei", "cuiyan", "gaibang", "tianren", "wudang", "kunlun"];
+
 var e_ = function s(A) {
   if (!u0.on) return;
-  u0.raf = requestAnimationFrame(s);
+  let loading = !1;
   const n = (A - u0.t0) / 1e3;
   document.querySelectorAll("#csel .cs-slot canvas").forEach((t) => {
     const e = +t.dataset.i,
@@ -147,10 +149,22 @@ var e_ = function s(A) {
     const r = u0.look[e],
       c = W;
     let d = !1;
+    // Portraits retain sharp faces and sect costumes; sprites remain a loading fallback.
+    const portrait = sectPortraits.includes(a.fac) ? bA(`img/portraits/${a.fac}.webp`) : null;
+    if (!portrait || !portrait.complete) loading = !0;
+    if (portrait && portrait.complete && portrait.naturalWidth) {
+      const scale = Math.max(t.width / portrait.naturalWidth, t.height / portrait.naturalHeight);
+      i.imageSmoothingEnabled = !0;
+      i.imageSmoothingQuality = "high";
+      i.drawImage(portrait, (t.width - portrait.naturalWidth * scale) / 2,
+        (t.height - portrait.naturalHeight * scale) / 2,
+        portrait.naturalWidth * scale, portrait.naturalHeight * scale);
+      return;
+    }
     if (r && typeof It == "function") {
       W = i;
       try {
-        d = It("st", 0, e === u0.sel ? n : 0, t.width / 2, t.height - 20, 4.6, 1, null, r);
+        d = It("st", 0, e === u0.sel ? n : 0, t.width / 2, t.height - 40, 9.2, 1, null, r);
       } catch {
         d = !1;
       } finally {
@@ -172,6 +186,7 @@ var e_ = function s(A) {
       }
     }
   });
+  if (loading) u0.raf = requestAnimationFrame(s);
 };
 
 var Ir = function () {
@@ -192,7 +207,7 @@ var Ir = function () {
     <div class="cs-row">${u0.st
       .map((e, a) => {
         const i = e && I[e.fac];
-        return `<div class="cs-slot${e ? "" : " empty"}" data-i="${a}"><canvas data-i="${a}" width="300" height="380"></canvas><div class="ped"></div>
+        return `<div class="cs-slot${e ? "" : " empty"}" data-i="${a}"><canvas data-i="${a}" width="600" height="760" role="img" aria-label="${i ? D(i.n) : "Ô nhân vật trống"}"></canvas><div class="ped"></div>
         <div class="nm" style="${i ? `color:${w0[i.series]}` : ""}">${e && i ? D(e.name || i.n) : "Trống"}</div><div class="lv">${e && i ? `Cấp ${e.lvl | 0 || 1} · ${D(i.n)}` : "Tạo nhân vật mới"}</div></div>`;
       })
       .join("")}</div>
@@ -220,9 +235,11 @@ var a_ = `#csel{position:fixed;inset:0;z-index:55;display:flex;flex-direction:co
 #csel h1{margin:6px 0 0;font-size:clamp(22px,5vw,34px);letter-spacing:3px;color:#f3d27a;text-shadow:0 0 12px #c8902a,0 2px 0 #000}
 #csel .cs-sub{font-size:12px;color:#bba;letter-spacing:1px;margin-top:2px}
 #csel .cs-row{display:flex;gap:clamp(6px,2vw,28px);justify-content:center;align-items:flex-end;width:100%;max-width:820px;flex:1;min-height:0;padding-top:8px}
-#csel .cs-slot{flex:1;max-width:240px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;transition:filter .2s,transform .2s;filter:brightness(.55) saturate(.7)}
+#csel .cs-slot{flex:1;max-width:240px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;transition:filter .2s,transform .2s;filter:brightness(.9)}
 #csel .cs-slot.on{filter:none;transform:translateY(-4px)}
-#csel .cs-slot canvas{width:100%;max-height:52vh;aspect-ratio:30/38;display:block}
+#csel .cs-slot canvas{width:100%;max-height:52vh;aspect-ratio:30/38;display:block;image-rendering:auto;border-radius:8px;border:1px solid #74603d}
+#csel .cs-slot.on canvas{border-color:#f0c36a;box-shadow:0 0 18px #c8902a55}
+#csel .cs-panel.cs-login{text-align:center;margin:auto;color:#e8dcc0}
 #csel .cs-slot .ped{width:80%;height:22px;margin-top:-14px;border-radius:50%;background:radial-gradient(ellipse,#d9a54a99 0%,#7a521c55 45%,#0000 70%)}
 #csel .cs-slot.on .ped{background:radial-gradient(ellipse,#ffe08acc 0%,#d08a2a77 45%,#0000 72%);box-shadow:0 0 24px #f0b04a55}
 #csel .cs-slot .nm{margin-top:6px;font-weight:bold;font-size:clamp(12px,3vw,16px);text-align:center;text-shadow:0 1px 2px #000;min-height:1.3em}

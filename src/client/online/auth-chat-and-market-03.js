@@ -647,17 +647,9 @@ var Yg = async function () {
 };
 
 var Fg = function () {
-  if (!(typeof h0 == "function" && h0() && b.user)) {
-    J(
-      '<h3>Về màn hình chọn nhân vật?</h3><p class="desc">Tiến trình đã được lưu trên máy này.</p><div class="btnrow"><button class="btn red" id="loY">Đồng ý</button><button class="btn" id="loN">Hủy</button></div>',
-      () => {
-        ((m("#loY").onclick = () => rP()), (m("#loN").onclick = () => n0()));
-      },
-    );
-    return;
-  }
+  const online = typeof h0 == "function" && h0() && b.user;
   J(
-    `<h3>⏻ Đăng xuất?</h3><p class="desc">Tài khoản <b>${D(ri())}</b>. Nhân vật sẽ được lưu lên máy chủ trước khi đăng xuất, sau đó về màn hình Đăng nhập / Đăng ký.</p><p class="desc dim" id="loMsg"></p><div class="btnrow"><button class="btn red" id="loY">Đăng xuất</button><button class="btn" id="loN">Hủy</button></div>`,
+    `<h3>⏻ Thoát game?</h3><p class="desc">${online ? `Tài khoản <b>${D(ri())}</b> sẽ được đăng xuất. ` : ""}Tiến trình sẽ được lưu trước khi chuyển về màn hình đăng nhập.</p><p class="desc dim" id="loMsg"></p><div class="btnrow"><button class="btn red" id="loY">Thoát game</button><button class="btn" id="loN">Hủy</button></div>`,
     () => {
       ((m("#loY").onclick = () => jx(!1)), (m("#loN").onclick = () => n0()));
     },
@@ -671,8 +663,16 @@ var qx = async function () {
   };
   try {
     $();
-  } catch {}
+    if (window.localGameStorage) {
+      await window.localGameStorage.flush();
+      if (window.localGameStorage.pending) throw new Error("Chưa đồng bộ được SQLite");
+    }
+  } catch (error) {
+    A("Chưa lưu được: " + (error.message || error));
+    return !1;
+  }
   if (!o || !o.fac || (typeof i0 < "u" && i0.blocked)) return !0;
+  if (!(typeof h0 == "function" && h0() && b.user)) return !0;
   let n = !1,
     t = "";
   for (let e = 0; e < 3 && !n; e++) {
@@ -699,22 +699,40 @@ var jx = async function s(A) {
   const n = m("#loY"),
     t = m("#loN");
   if ((n && (n.disabled = !0), t && (t.disabled = !0), !(A || (await qx())))) {
-    (n && ((n.disabled = !1), (n.textContent = "Vẫn đăng xuất"), (n.onclick = () => s(!0))),
+    (n && ((n.disabled = !1), (n.textContent = "Vẫn thoát game"), (n.onclick = () => s(!0))),
       t && ((t.disabled = !1), (t.textContent = "Ở lại")));
     const i = m("#loMsg");
     i &&
-      (i.innerHTML +=
-        "<br>Tiến trình vẫn còn trên máy này và sẽ tự tải lên ở lần đăng nhập sau (cùng máy).");
+      (i.innerHTML += h0()
+        ? "<br>Tiến trình vẫn còn trên máy này và sẽ tự tải lên ở lần đăng nhập sau (cùng máy)."
+        : "<br>Tiến trình vẫn còn trong trình duyệt và sẽ được đồng bộ lại khi kết nối máy chủ.");
     return;
   }
   const a = m("#loMsg");
   (a && (a.textContent = "Đã lưu. Đang đăng xuất…"), (HA = !0));
   try {
-    (localStorage.setItem(f1, "menu"), sessionStorage.removeItem("jxidle_in"));
+    (localStorage.setItem(f1, h0() ? "menu" : "login"), sessionStorage.removeItem("jxidle_in"));
   } catch {}
   try {
-    ((b.loggingOut = !0), await b.sb.auth.signOut());
-  } catch {}
+    if (window.localGameAuth) {
+      // Finish the navigation-marker write before revoking the storage session.
+      await window.localGameStorage.flush();
+      if (!A && window.localGameStorage.pending) throw new Error("Chưa đồng bộ được SQLite");
+      await window.localGameAuth.logout();
+    }
+    if (b.sb && b.user) {
+      b.loggingOut = !0;
+      const result = await b.sb.auth.signOut();
+      if (result && result.error) throw result.error;
+    }
+  } catch (error) {
+    b.loggingOut = !1;
+    HA = typeof i0 < "u" && i0.blocked;
+    a && (a.textContent = "Chưa thoát được: " + (error.message || error));
+    n && (n.disabled = !1);
+    t && (t.disabled = !1);
+    return;
+  }
   ((b.user = null), location.reload());
 };
 

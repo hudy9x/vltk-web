@@ -60,6 +60,9 @@ export function reset(db: DatabaseSync): void {
   db.exec('BEGIN IMMEDIATE');
   try {
     db.exec('DELETE FROM storage; DELETE FROM applied_batches;');
+    if (db.prepare("SELECT 1 FROM sqlite_master WHERE name='account_storage'").get()) {
+      db.exec('DELETE FROM account_storage; DELETE FROM account_batches; UPDATE accounts SET initialized=1;');
+    }
     db.prepare("UPDATE metadata SET value=? WHERE key='generation'").run(randomUUID());
     db.prepare("INSERT OR REPLACE INTO metadata VALUES ('initialized','1')").run();
     db.exec('COMMIT');

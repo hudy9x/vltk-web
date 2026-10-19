@@ -4,11 +4,16 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
-const { openDatabase, snapshot, reset } = require('../src/server/database.ts');
+const { openDatabase, reset } = require('../src/server/database.ts');
 const { createServer } = require('../src/server/index.ts');
 const source = fs.readFileSync(path.join(__dirname,'../src/client/bootstrap.js'),'utf8');
+const { accountSnapshot: snapshot } = require('./helpers/accounts.js');
 const OUTBOX = '__volam_sqlite_outbox';
 async function boot(base, values, { failWrites = false, search = '' } = {}) {
+  const authResponse = await fetch(base + '/api/auth/login', { method:'POST', body:JSON.stringify({ username:'test_user', password:'secret123' }) });
+  const response = authResponse.ok ? authResponse : await fetch(base + '/api/auth/register', { method:'POST', body:JSON.stringify({ username:'test_user', password:'secret123' }) });
+  assert.equal(response.status, 200);
+  const cookie = response.headers.get('set-cookie').split(';')[0];
   class Storage {
     getItem(key) { return values.get(String(key)) ?? null; }
     setItem(key,value) { values.set(String(key),String(value)); }
@@ -17,12 +22,12 @@ async function boot(base, values, { failWrites = false, search = '' } = {}) {
   }
   const storage = new Proxy(new Storage(), { ownKeys:() => [...values.keys()], getOwnPropertyDescriptor:() => ({ enumerable:true,configurable:true }) });
   const sandbox = {
-    Storage, localStorage:storage, crypto:{ randomUUID }, AbortSignal,
+    Storage, localStorage:storage, sessionStorage:new Storage(), crypto:{ randomUUID }, AbortSignal,
     location:{ search }, URLSearchParams, loadedScripts:[],
     setInterval:() => {}, console:{ error:() => {} }, addEventListener:() => {},
     fetch:(url,options) => {
       if (failWrites && url === '/api/storage' && options?.method === 'POST') return Promise.reject(new Error('Network disconnected'));
-      return fetch(base+url,options);
+      return fetch(base+url,{ ...options, headers:{ ...options?.headers, cookie } });
     },
     document:{
       createElement:() => ({ style:{}, hidden:false }),
@@ -35,6 +40,37 @@ async function boot(base, values, { failWrites = false, search = '' } = {}) {
   assert.ok(sandbox.localGameStorage, 'bootstrap must finish before starting the game');
   return sandbox;
 }
+test('flush waits for an already running SQLite write and drains later queued saves', async () => {
+  const db = openDatabase(':memory:');
+  const { app, server } = createServer({ db, downloadAssets:false });
+  await app.ready();
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const nativeFetch = globalThis.fetch;
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  try {
+    const client = await boot(base, new Map());
+    globalThis.fetch = async (url, options) => {
+      if (url === base + '/api/storage' && options?.method === 'POST') await gate;
+      return nativeFetch(url, options);
+    };
+    client.localStorage.setItem('jxidle', 'first');
+    client.localStorage.setItem('jxidle', 'latest');
+    let finished = false;
+    const flush = client.localGameStorage.flush().then(() => { finished = true; });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(finished, false, 'navigation must wait for the active autosave');
+    release();
+    await flush;
+    assert.equal(client.localGameStorage.pending, 0);
+    assert.equal(snapshot(db).entries.jxidle, 'latest');
+  } finally {
+    release();
+    globalThis.fetch = nativeFetch;
+    await app.close(); db.close();
+  }
+});
 test('browser outbox survives interrupted writes and reload; SQLite reset rejects old browser saves', async () => {
   const db = openDatabase(':memory:');
   const { app, server } = createServer({ db, downloadAssets:false });

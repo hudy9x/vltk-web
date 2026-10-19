@@ -686,3 +686,105 @@ test('150 tiers use source coefficients and gates while legacy 90 tier tables re
   assert.deepEqual(s.Gf(s.T[337],20),legacy);s.skill150EffectRows=previous;
   assert.equal(s.skill150EffectRows(s.T[713],20),null);
 });
+
+function kunlunThunderCombat(level=27, options={}) {
+  const {s}=advancedCombat();
+  for(const name of ['l1','l4','d4','A7','Uw','Jw','F5','f4','n7','Qi'])
+    declaration(s,'src/client/combat/skills-01.js',name);
+  for(const name of ['Tw','I5','S5']) declaration(s,'src/client/core/attributes-01.js',name);
+  for(const name of ['tD','eD']) declaration(s,'src/client/core/state-and-save-01.js',name);
+  const stats=supportStats(s,options.support?{172:25,179:25,182:25,375:25}:{});
+  s.l.P=stats;s.l.quiet=!!options.quiet;s.o.lowFx=!!options.lowFx;
+  s.q0=(a,b)=>Math.hypot(a.x-b.x,(a.y-b.y)*2);
+  const targets=(options.positions||[[180,100],[195,100],[210,100]]).map(([x,y])=>({x,y,hp:100000,r:10}));
+  s._1=()=>targets;const hits=[];
+  s.hs=(ability,target)=>{hits.push({id:ability.id,secondary:!!ability.ev2,damage:ability.parts.light,target});return ability.parts.light;};
+  s.Ls=()=>{};
+  if(options.budget)s.l.fx=Array.from({length:170},()=>({k:'ring'}));
+  if(options.missing)s.A0.m['advanced-343']={};
+  const ability=s.F2(stats,s.T[1081],level);let triggered=false;
+  const context=options.sim?{actor:{x:40,y:40,hp:100},targets:()=>targets,hit:s.hs,visual:fn=>fn()}:null;
+  const selected=targets[options.selected||0];
+  if(options.world) {
+    Object.assign(s,{hA:()=>true,iD:()=>selected,Z9:()=>ability,gs:-1,aD:()=>0,S3:()=>false,
+      tP:()=>false,o4(){},nD:(_skill,target,list)=>list.filter(other=>other!==target),l8:()=>0,
+      G8(){},kn:()=>0,$1:()=>false});
+    s.l.manTgt=selected;
+    declaration(s,'src/client/core/state-and-save-01.js','oD');s.oD();
+  } else if(options.sim) {
+    s.nD=(_skill,target,list)=>list.filter(other=>other!==target);s.l8=()=>0;
+    const {compileTypeScriptEntry}=require('../tools/build-app');
+    vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','SkillCastTest').code,s);
+    s.SkillCastTest.castSimulatorSkill(context.actor,selected,ability,()=>true,()=>targets,s.hs,fn=>fn());
+  } else s.queueSkillContact(s.v,selected,ability,target=>{
+    s.hs(ability,target);
+    if(ability.ev&&!triggered){triggered=true;
+      for(const event of s.F5(ability))s.eD(ability,target,targets,targets,event,context);
+    }
+  },{targets:()=>targets,windup:0});
+  return {s,ability,hits,targets,selected,advance(seconds){for(let t=0;t<seconds-1e-9;t+=1/60)s.advanceSkillContacts(1/60);}};
+}
+
+test('Thiên Lôi Chấn Nhạc unlocks its real secondary at 11 and max level casts sky lightning after 0.3s',()=>{
+  const locked=kunlunThunderCombat(10);locked.advance(2);
+  assert.equal(locked.hits.filter(hit=>hit.secondary).length,0);
+  for(const level of [11,25,27]) {
+    const game=kunlunThunderCombat(level),{s,ability,hits}=game;
+    assert.equal(s.F5(ability).length,1,'runtime must register the tier advertised by the tooltip');
+    assert.equal(s.F5(ability)[0].sid,1109);
+    game.advance(.2);assert.equal(hits.filter(hit=>hit.secondary).length,0);
+    const bolts=s.l.combatProjectiles.filter(fx=>fx.combat.skill.ev2);
+    assert.equal(bolts.length,2,'pair the follow-up with at most two primary recipients');
+    assert.ok(bolts.every(fx=>fx.s===s.A0.m['advanced-343'].fly&&fx.t<0));
+    assert.ok(bolts.every(fx=>Math.abs(fx.sp*fx.life-60*.056)<1e-9),'play the entire lightning sheet');
+    game.advance(.15);assert.equal(hits.filter(hit=>hit.secondary).length,2,'secondary lands after 0.3s, not a double windup');
+    game.advance(4);assert.equal(hits.filter(hit=>hit.secondary).length,2,'animation must not multiply damage');
+  }
+});
+
+test('Kunlun tier 2 applies its own +252% support and retains damage with quiet, low FX or missing sprites',()=>{
+  for(const options of [{},{quiet:true},{lowFx:true},{budget:true},{missing:true},{sim:true}]) {
+    const game=kunlunThunderCombat(27,{...options,support:true});game.advance(.7);
+    const secondary=game.hits.filter(hit=>hit.secondary);
+    assert.equal(secondary.length,2,JSON.stringify(options));
+    assert.ok(secondary.every(hit=>Math.abs(hit.damage/game.ability.parts.light-.55*3.52)<1e-9));
+    assert.ok(secondary.every(hit=>game.targets.includes(hit.target)));
+  }
+});
+
+test('Kunlun tier 2 respects cast interruption, zone changes and dead recipients',()=>{
+  const interrupted=kunlunThunderCombat();interrupted.s.v.actionRevision=(interrupted.s.v.actionRevision||0)+1;
+  // A new cast with a windup can be interrupted before its primary contact.
+  interrupted.s.l.combatProjectiles[0].combat.windup=.12;
+  interrupted.advance(1);assert.equal(interrupted.hits.length,0);
+  const changed=kunlunThunderCombat();changed.advance(.2);changed.s.l.zoneShown=2;changed.advance(1);
+  assert.equal(changed.hits.filter(hit=>hit.secondary).length,0);
+  const dead=kunlunThunderCombat();dead.advance(.2);dead.targets.forEach(target=>{target.hp=0;target.dead=true;});dead.advance(1);
+  assert.equal(dead.hits.filter(hit=>hit.secondary).length,0);
+});
+
+test('Kunlun tooltip distinguishes primary support from the +252% secondary support',()=>{
+  const s=normalizedSkillUi();s.o.sk={172:20,179:20,182:20,375:20};s.z1=()=>5;
+  const html=s.Kf(1081,25,2,27,27,0);
+  assert.match(html,/Được hỗ trợ \(chiêu chính: \+0%, tầng 2: \+252%\)/);
+});
+
+test('Kunlun ring and lightning share the chosen target when an offset neighbour is contacted first',()=>{
+  for(const mode of [{world:true},{sim:true}]) {
+    const game=kunlunThunderCombat(27,{...mode,selected:1,positions:[[160,80],[260,130]]}),{s,selected}=game;
+    game.advance(.2);
+    const main=s.l.combatProjectiles.find(fx=>!fx.combat.skill.ev2);
+    assert.equal(main.x,selected.x);assert.equal(main.y,selected.y-14);
+    assert.equal(game.hits[0].target,game.targets[0],'neighbour reaches the hit callback before the selected target');
+    const sky=s.l.fx.filter(fx=>fx.s===s.A0.m['advanced-343'].fly);
+    assert.equal(sky.length,1,'draw one lightning storm, not one at each recipient');
+    const draws=[];s.Fa=(sprite,dir,time,x,y)=>{draws.push({sprite,x,y});return true;};
+    declaration(s,'src/client/render/arena-01.js','CP');
+    s.CP({...sky[0],t:0});
+    assert.deepEqual(draws.map(({x,y})=>[x,y]),[[main.x,main.y]]);
+    game.advance(.3);
+    assert.equal(game.hits.filter(hit=>hit.secondary).length,2,'visual placement does not change secondary damage recipients');
+    const impact=s.l.fx.filter(fx=>fx.s===s.A0.m['advanced-343'].hit);
+    assert.ok(impact.length<=1);assert.ok(impact.every(fx=>fx.x===main.x&&fx.y===main.y));
+  }
+});

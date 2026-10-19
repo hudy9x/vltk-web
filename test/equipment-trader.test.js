@@ -3,9 +3,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const acorn = require('acorn');
-function game(arena = false) {
+function game(arena = false, development = arena) {
   const s = { document: { currentScript: null, createElement: () => ({}), head: { appendChild() {} } }, Math: Object.create(Math) };
   s.window = s;
+  s.localGameConfig = { development };
   vm.createContext(s);
   for (const file of ['public/data.js', 'public/setvi.js', 'src/client/core/item-sets-01.js', 'src/client/data/equipment-and-zone-patches-01.js']) vm.runInContext(fs.readFileSync(file, 'utf8'), s);
   s.S = s.JX;
@@ -243,4 +244,39 @@ test('compatible action is visible only for blue weapons and rings are always of
   assert.match(s.html, /data-trader-compatible/); assert.match(s.html, /Bộ ngũ hành tương thích/);
   click({ traderKind: 'gold' });
   assert.doesNotMatch(s.html, /data-trader-compatible/); assert.match(s.html, /data-trader-rings/);
+});
+
+
+test('dev places the equipment trader on a walkable Biện Kinh arrival route and captures its trade tap', async () => {
+  const { decodeGrid, canStandAt } = await import('../src/client/maps/navigation/grid.ts');
+  const town = JSON.parse(fs.readFileSync('src/client/maps/content/37/map.json', 'utf8'));
+  const s = game(false, true), trader = s.equipmentTrader;
+  assert.equal(trader.entities().length, 0, 'ordinary training maps have no dev trader');
+  s.l.town = true;
+  const [npc] = trader.entities();
+  assert.equal(trader.entities().length, 1);
+  assert.equal(npc.name, 'Thần Trang Sứ Giả');
+  assert.ok(canStandAt(decodeGrid(town.navigation, town.size), npc.x, npc.y));
+  assert.ok(Math.hypot(npc.x - town.entry.x, npc.y - town.entry.y) < 200);
+  let captured = false;
+  s.tap({ clientX:npc.x, clientY:npc.y - 50, preventDefault() {}, stopImmediatePropagation() { captured = true; } });
+  assert.ok(captured);
+  assert.match(s.html, /Thần Trang Sứ Giả/);
+  s.l.town = false; assert.equal(trader.entities().length, 0);
+  s.l.town = true; s.l.dg = {}; assert.equal(trader.entities().length, 0);
+  s.l.dg = null; s.l.tower = true; assert.equal(trader.entities().length, 0);
+  const production = game(false, false); production.l.town = true;
+  assert.equal(production.equipmentTrader.entities().length, 0);
+});
+
+test('arena retains its field trader and shows only the town placement when visiting Biện Kinh', () => {
+  const s = game(true, true), trader = s.equipmentTrader;
+  assert.equal(trader.entities().length, 1);
+  assert.ok(s.shortcut);
+  s.l.town = true;
+  assert.equal(trader.entities().length, 1);
+  assert.equal(trader.entities()[0].x, 1240);
+  s.l.town = false;
+  assert.equal(trader.entities().length, 1);
+  assert.equal(trader.entities()[0].x, s.O0.w / 2 - 350);
 });

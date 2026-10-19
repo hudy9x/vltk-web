@@ -1,0 +1,72 @@
+[
+  {
+    "key": "shaolin",
+    "name": "Thiếu Lâm",
+    "tool": "built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: one high-resolution character portrait for Vietnamese wuxia RPG character selection, Thiếu Lâm sect (shaolin). Subject: Male shaved-head Shaolin Buddhist monk, six small ordination dots on forehead, simple saffron orange monk robe, dark wooden prayer beads, plain wooden staff. Composition: single adult East Asian character facing directly forward, looking at viewer, centered waist-up portrait, head fully visible with ample margin, shoulders and defining weapon visible. Style: crisp polished hand-painted classic wuxia game illustration, clean defined edges, simple readable costume, natural adult anatomy, consistent art direction across a ten-sect portrait set. Soft even frontal lighting, face bright and sharply focused, no fog or bloom or blur. Background: simple warm charcoal studio gradient, subtle muted colors. No text, lettering, watermark, borders, extra people, elaborate ornaments, glowing effects. Portrait aspect ratio 4:5.",
+    "file": "public/img/portraits/shaolin.webp"
+  },
+  {
+    "key": "tianwang",
+    "name": "Thiên Vương",
+    "tool": "built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: one high-resolution character portrait for Vietnamese wuxia RPG character selection, Thiên Vương sect (tianwang). Subject: Strong male Tian Wang spear warrior, tied black hair, simple brass gold lamellar chest armor over ochre tunic, red headband, straight spear held vertically. Composition: single adult East Asian character facing directly forward, looking at viewer, centered waist-up portrait, head fully visible with ample margin, shoulders and defining weapon visible. Style: crisp polished hand-painted classic wuxia game illustration, clean defined edges, simple readable costume, natural adult anatomy, consistent art direction across a ten-sect portrait set. Soft even frontal lighting, face bright and sharply focused, no fog or bloom or blur. Background: simple warm charcoal studio gradient, subtle muted colors. No text, lettering, watermark, borders, extra people, elaborate ornaments, glowing effects. Portrait aspect ratio 4:5.",
+    "file": "public/img/portraits/tianwang.webp"
+  },
+  {
+    "key": "tangmen",
+    "name": "Đường Môn",
+    "tool": "built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: one high-resolution character portrait for Vietnamese wuxia RPG character selection, Đường Môn sect (tangmen). Subject: Male Tang Men hidden-weapons fighter, black hair tied neatly, simple dark navy and teal tunic, leather wrist guards, three visible small throwing knives held at chest, uncovered face. Composition: single adult East Asian character facing directly forward, looking at viewer, centered waist-up portrait, head fully visible with ample margin, shoulders and defining weapon visible. Style: crisp polished hand-painted classic wuxia game illustration, clean defined edges, simple readable costume, natural adult anatomy, consistent art direction across a ten-sect portrait set. Soft even frontal lighting, face bright and sharply focused, no fog or bloom or blur. Background: simple warm charcoal studio gradient, subtle muted colors. No text, lettering, watermark, borders, extra people, elaborate ornaments, glowing effects. Portrait aspect ratio 4:5.",
+    "file": "public/img/portraits/tangmen.webp"
+  },
+  {
+    "key": "wudu",
+    "name": "Ngũ Độc",
+    "tool": "built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: one high-resolution character portrait for Vietnamese wuxia RPG character selection, Ngũ Độc sect (wudu). Subject: Female Five Poisons Wudu fighter, simple purple and deep green robe, modest silver tribal head ornament, small green poison flask and curved dagger, uncovered face. Composition: single adult East Asian character facing directly forward, looking at viewer, centered waist-up portrait, head fully visible with ample margin, shoulders and defining weapon visible. Style: crisp polished hand-painted classic wuxia game illustration, clean defined edges, simple readable costume, natural adult anatomy, consistent art direction across a ten-sect portrait set. Soft even frontal lighting, face bright and sharply focused, no fog or bloom or blur. Background: simple warm charcoal studio gradient, subtle muted colors. No text, lettering, watermark, borders, extra people, elaborate ornaments, glowing effects. Portrait aspect ratio 4:5.",
+    "file": "public/img/portraits/wudu.webp"
+  },
+  {
+    "key": "emei",
+    "name": "Nga My",
+    "tool": "built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: one high-resolution character portrait for Vietnamese wuxia RPG character selection, Nga My sect (emei). Subject: Female Emei Buddhist sword disciple, simple ivory white and pale pink martial robe, neat dark hair with a plain hairpin, thin straight sword held vertically, calm expression. Composition: single adult East Asian character facing directly forward, looking at viewer, centered waist-up portrait, head fully visible with ample margin, shoulders and defining weapon visible. Style: crisp polished hand-painted classic wuxia game illustration, clean defined edges, simple readable costume, natural adult anatomy, consistent art direction across a ten-sect portrait set. Soft even frontal lighting, face bright and sharply focused, no fog or bloom or blur. Background: simple warm charcoal studio gradient, subtle muted colors. No text, lettering, watermark, borders, extra people, elaborate ornaments, glowing effects. Portrait aspect ratio 4:5.",
+    "file": "public/img/portraits/emei.webp"
+  },
+  {
+    "key": "cuiyan",
+    "name": "Thúy Yên",
+    "tool": "built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: one high-resolution character portrait for Vietnamese wuxia RPG character selection, Thúy Yên sect (cuiyan). Subject: Female Cui Yan disciple, simple turquoise and white robe, long dark hair with small blue ribbon, open pale blue silk folding fan held at chest. Composition: single adult East Asian character facing directly forward, looking at viewer, centered waist-up portrait, head fully visible with ample margin, shoulders and defining weapon visible. Style: crisp polished hand-painted classic wuxia game illustration, clean defined edges, simple readable costume, natural adult anatomy, consistent art direction across a ten-sect portrait set. Soft even frontal lighting, face bright and sharply focused, no fog or bloom or blur. Background: simple warm charcoal studio gradient, subtle muted colors. No text, lettering, watermark, borders, extra people, elaborate ornaments, glowing effects. Portrait aspect ratio 4:5.",
+    "file": "public/img/portraits/cuiyan.webp"
+  },
+  {
+    "key": "gaibang",
+    "name": "Cái Bang",
+    "tool": "built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: one high-resolution character portrait for Vietnamese wuxia RPG character selection, Cái Bang sect (gaibang). Subject: Male Beggar Sect martial artist, tousled black hair and short beard, simple patched brown and olive tunic, cloth belt, green bamboo staff and small wine gourd. Composition: single adult East Asian character facing directly forward, looking at viewer, centered waist-up portrait, head fully visible with ample margin, shoulders and defining weapon visible. Style: crisp polished hand-painted classic wuxia game illustration, clean defined edges, simple readable costume, natural adult anatomy, consistent art direction across a ten-sect portrait set. Soft even frontal lighting, face bright and sharply focused, no fog or bloom or blur. Background: simple warm charcoal studio gradient, subtle muted colors. No text, lettering, watermark, borders, extra people, elaborate ornaments, glowing effects. Portrait aspect ratio 4:5.",
+    "file": "public/img/portraits/gaibang.webp"
+  },
+  {
+    "key": "tianren",
+    "name": "Thiên Nhẫn",
+    "tool": "built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: one high-resolution character portrait for Vietnamese wuxia RPG character selection, Thiên Nhẫn sect (tianren). Subject: Male Tian Ren martial cult warrior, simple dark crimson and black tunic with minimal leather shoulder guards, high black ponytail, red forehead band, curved saber held vertically, uncovered face. Composition: single adult East Asian character facing directly forward, looking at viewer, centered waist-up portrait, head fully visible with ample margin, shoulders and defining weapon visible. Style: crisp polished hand-painted classic wuxia game illustration, clean defined edges, simple readable costume, natural adult anatomy, consistent art direction across a ten-sect portrait set. Soft even frontal lighting, face bright and sharply focused, no fog or bloom or blur. Background: simple warm charcoal studio gradient, subtle muted colors. No text, lettering, watermark, borders, extra people, elaborate ornaments, glowing effects. Portrait aspect ratio 4:5.",
+    "file": "public/img/portraits/tianren.webp"
+  },
+  {
+    "key": "wudang",
+    "name": "Võ Đang",
+    "tool": "built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: one high-resolution character portrait for Vietnamese wuxia RPG character selection, Võ Đang sect (wudang). Subject: Male Wudang Taoist swordsman, neat topknot with simple Taoist hair crown, simple white and dark blue robe with small yin yang emblem, straight sword held vertically, composed expression. Composition: single adult East Asian character facing directly forward, looking at viewer, centered waist-up portrait, head fully visible with ample margin, shoulders and defining weapon visible. Style: crisp polished hand-painted classic wuxia game illustration, clean defined edges, simple readable costume, natural adult anatomy, consistent art direction across a ten-sect portrait set. Soft even frontal lighting, face bright and sharply focused, no fog or bloom or blur. Background: simple warm charcoal studio gradient, subtle muted colors. No text, lettering, watermark, borders, extra people, elaborate ornaments, glowing effects. Portrait aspect ratio 4:5.",
+    "file": "public/img/portraits/wudang.webp"
+  },
+  {
+    "key": "kunlun",
+    "name": "Côn Lôn",
+    "tool": "built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: one high-resolution character portrait for Vietnamese wuxia RPG character selection, Côn Lôn sect (kunlun). Subject: Male Kunlun mountain Taoist warrior, long dark hair half tied, simple violet and slate gray robe, broad cloth belt, straight sword and small Taoist talisman pendant. Composition: single adult East Asian character facing directly forward, looking at viewer, centered waist-up portrait, head fully visible with ample margin, shoulders and defining weapon visible. Style: crisp polished hand-painted classic wuxia game illustration, clean defined edges, simple readable costume, natural adult anatomy, consistent art direction across a ten-sect portrait set. Soft even frontal lighting, face bright and sharply focused, no fog or bloom or blur. Background: simple warm charcoal studio gradient, subtle muted colors. No text, lettering, watermark, borders, extra people, elaborate ornaments, glowing effects. Portrait aspect ratio 4:5.",
+    "file": "public/img/portraits/kunlun.webp"
+  }
+]
