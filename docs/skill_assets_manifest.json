@@ -217,7 +217,9 @@
       "img/s/323.png",
       "snd/sound_k005.mp3",
       "fx/m139_hit.webp",
-      "fx/m139_hitb.webp"
+      "fx/m139_hitb.webp",
+      "fx/advanced/m353_fly.webp",
+      "fx/advanced/m353_hit.webp"
     ]
   },
   "1062": {

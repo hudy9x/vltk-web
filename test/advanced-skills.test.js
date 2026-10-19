@@ -788,3 +788,53 @@ test('Kunlun ring and lightning share the chosen target when an offset neighbour
     assert.ok(impact.length<=1);assert.ok(impact.every(fx=>fx.x===main.x&&fx.y===main.y));
   }
 });
+
+test('Kiếm Hoa plays eight cosmetic opening rays then ice pillars at every skill level',()=>{
+  for(const level of [1,10,11,25]) {
+    const {s,skill}=advancedCombat(),caster={x:500,y:500,hp:100},target={x:800,y:500,hp:100,r:10};
+    const cast=s.queueSkillContact(caster,target,skill(1061,level),()=>{},{targets:()=>[],windup:0});
+    const rays=s.l.fx.filter(fx=>fx.s===s.A0.m['advanced-325'].fly);
+    assert.equal(rays.length,8,'opening event 1089 is independent of damage-tier unlock');
+    assert.ok(rays.every(fx=>fx.cosmetic&&!fx.combat&&fx.x1===caster.x&&fx.y1===caster.y-20));
+    assert.equal(s.l.combatProjectiles.filter(fx=>fx.combat!==cast).length,1,'opening adds no damaging fields');
+    for(let i=0;i<12;i++)s.advanceSkillContacts(1/60);
+    assert.equal(s.l.fx.filter(fx=>fx.s===s.A0.m['advanced-353'].fly).length,8);
+    for(let i=0;i<75;i++)s.advanceSkillContacts(1/60);
+    assert.ok(rays.every(fx=>!s.l.fx.includes(fx)),'opening chain must expire');
+  }
+});
+
+test('Kiếm Hoa opening obeys windup, interruption, quiet, FX budget and zone changes',()=>{
+  for(const mode of ['quiet','budget','interrupted','zone']) {
+    const {s,skill}=advancedCombat(),caster={x:500,y:500,hp:100};
+    if(mode==='quiet')s.l.quiet=true;
+    if(mode==='budget')s.l.fx=Array.from({length:170},()=>({k:'ring'}));
+    s.queueSkillContact(caster,{x:800,y:500,hp:100,r:10},skill(1061),()=>{},{targets:()=>[],windup:.12});
+    if(mode==='interrupted')caster.actionRevision=(caster.actionRevision||0)+1;
+    if(mode==='zone')s.l.zoneShown=2;
+    s.advanceSkillContacts(1/60);
+    assert.equal(s.l.fx.filter(fx=>fx.s===s.A0.m['advanced-325'].fly).length,0,mode);
+  }
+});
+
+test('Kiếm Hoa registers tier 1091 from level 11 and applies one delayed 30% cold hit per paired recipient',()=>{
+  for(const level of [10,11,25])for(const quiet of [false,true]) {
+    const {s,skill}=advancedCombat();
+    for(const name of ['l1','l4','d4','A7','Uw','Jw','F5','f4','n7','Qi'])declaration(s,'src/client/combat/skills-01.js',name);
+    for(const name of ['Tw','I5','S5'])declaration(s,'src/client/core/attributes-01.js',name);
+    declaration(s,'src/client/core/state-and-save-01.js','eD');
+    s.l.P=supportStats(s,{});s.l.quiet=quiet;
+    const ability=skill(1061,level),events=s.F5(ability);
+    assert.equal(events.length,level<11?0:1);
+    if(level<11)continue;
+    assert.equal(events[0].sid,1091);
+    const targets=[180,200,220,240].map(x=>({x,y:100,hp:10000,r:10})),hits=[];
+    s._1=()=>targets;s.hs=(a,t)=>{hits.push({a,t});return 1;};s.Ls=()=>{};
+    s.eD(ability,targets[0],targets,targets,events[0]);
+    for(let i=0;i<12;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.length,0,'respect the 0.22s secondary delay');
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.length,3,'secondary hits at most three paired targets once');
+    assert.ok(hits.every(({a})=>a.ev2&&a.id===1091&&Math.abs(a.parts.cold/ability.tot-.3)<1e-9));
+  }
+});
