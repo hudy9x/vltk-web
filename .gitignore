@@ -6,7 +6,7 @@ database/*.sqlite
 database/*.sqlite-*
 database/asset-report.json
 *.download
-app/game.js
-app/game.js.map
+src/client/game.js
+src/client/game.js.map
 .gitnexus
 .map-tool/

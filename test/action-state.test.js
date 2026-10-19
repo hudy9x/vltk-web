@@ -38,8 +38,8 @@ test('hurt starts at 15 percent of maximum HP per hit, interrupts actions and la
 
 test('a primary cast stops movement and all locomotion APIs reject input until the pose ends',()=>{
  const s=world(),a=s.v;s.l.moveTo={x:300,y:0};s.l.pickTarget={};a.moving=true;
- for(const name of ['wa','Mw'])declaration(s,'app/core/attributes-01.js',name);
- declaration(s,'app/ui/legacy-panels-and-audio-03.js','Ah');
+ for(const name of ['wa','Mw'])declaration(s,'src/client/core/attributes-01.js',name);
+ declaration(s,'src/client/ui/legacy-panels-and-audio-03.js','Ah');
  const target={x:50,y:0,hp:100,r:17};s.l.enemies=[target];
  s.queueSkillContact(a,target,{parts:{phys:10},melee:true},()=>{});
  assert.equal(a.act,'at');assert.equal(a.moving,false);assert.equal(s.Y.target,null);assert.equal(s.l.moveTo,null);
@@ -58,7 +58,7 @@ test('hurt cancels an unreleased windup but preserves launched projectiles',()=>
 
 test('monster AI waits for hurt to end before attacking',()=>{
  const s=world(),monster={x:50,y:0,hp:100,max:100,r:17,tid:1,spd:100,ar:10,reach:100,atkCd:0,cd:1};
- s.v.x=70;s.l.enemies=[monster];declaration(s,'app/core/state-and-save-01.js','$d');
+ s.v.x=70;s.l.enemies=[monster];declaration(s,'src/client/core/state-and-save-01.js','$d');
  s.applyActorHurt(monster,60,100);s.$d(monster,.1);assert.ok(!s.l.combatProjectiles?.length);
  run(s,.51);s.$d(monster,.1);assert.ok(s.l.combatProjectiles.length>0);
 });
@@ -67,7 +67,7 @@ test('hurt blocks automatic buffs until recovery',()=>{
  const s=world(),buffs={buff:{},cd:{}};
  Object.assign(s,{o:{fac:'test',sk:{1:1}},v7(){},k4:0,ya:()=>1,ba:()=>buffs,T:{1:{n:'Buff'}},wn:()=> 'buff',zi:()=>1,M7:()=>10,ae:()=>10,i4:()=>false,b4:()=>false});
  s.l.P={life:1000,mana:1000};s.l.mana=1000;
- declaration(s,'app/gameplay/shop-and-books-01.js','A6');
+ declaration(s,'src/client/gameplay/shop-and-books-01.js','A6');
  s.applyActorHurt(s.v,500,1000);s.v.moving=true;s.A6(.5);
  assert.equal(s.l.mana,1000);assert.equal(buffs.buff[1],undefined);run(s,.51);s.A6(.5);
  assert.equal(s.l.mana,990);assert.equal(s.v.moving,false);assert.ok(s.v.castT>0);assert.equal(buffs.buff[1],11);
@@ -76,15 +76,15 @@ test('hurt blocks automatic buffs until recovery',()=>{
 test('allies enter hurt on large hits and continue taking damage',()=>{
  const s=world(),ally={x:100,y:0,n:'ally',owner:'ally',hp:100,hpMax:100,def:0,res:0,se:0,t:0,atkT:0,act:'st',mv:true};
  Object.assign(s,{Pe:()=>100,Z:()=>1,y1:()=>false,showDamageNumber(){},Dw:['phys']});
- s.l.allies=[ally];declaration(s,'app/online/party-01.js','hB');
+ s.l.allies=[ally];declaration(s,'src/client/online/party-01.js','hB');
  s.hB(ally,{ar:100,dmg:60,series:0});assert.equal(ally.hp,40);
  assert.equal(ally.act,'hurt');assert.equal(ally.mv,false);assert.equal(ally.hurtT,.5);
  s.hB(ally,{ar:100,dmg:15,series:0});assert.equal(ally.hp,25);assert.equal(ally.hurtT,.5);
 });
 
 test('hurt blocks keyboard, joystick and path movement until recovery',()=>{
- const s=world();for(const name of ['wa','Mw'])declaration(s,'app/core/attributes-01.js',name);
- declaration(s,'app/ui/legacy-panels-and-audio-03.js','Ah');
+ const s=world();for(const name of ['wa','Mw'])declaration(s,'src/client/core/attributes-01.js',name);
+ declaration(s,'src/client/ui/legacy-panels-and-audio-03.js','Ah');
  Object.assign(s,{hA:()=>false,Qv:()=>[1,0],Ra:()=>1,H5:(x,y)=>[x,y],gt:(a,x,y)=>Object.assign(a,{x,y})});
  s.applyActorHurt(s.v,500,1000);s.wa(s.v,300,0,100);assert.equal(s.v.x,0);
  assert.equal(s.Ah(.1),false);s.Mw(s.v,300,0,100);assert.equal(s.v.x,0);

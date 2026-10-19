@@ -18,19 +18,19 @@ function game(){
     Q:()=>s.o.rw||(s.o.rw={stat:{reborn:0}}),G1:[],es:()=>true,
     m:id=>{if(!nodes.has(id))nodes.set(id,{classList:{add(){}}});return nodes.get(id);},document:{querySelectorAll:()=>[]},z1:()=>0,nodes};
   s.window=s;vm.createContext(s);
-  for(const file of ['data.js','app/data/projectile-effects-01.js','app/data/projectile-effects-02.js','app/data/advanced-skills-01.js'])load(s,file);
+  for(const file of ['public/data.js','src/client/data/projectile-effects-01.js','src/client/data/projectile-effects-02.js','src/client/data/advanced-skills-01.js'])load(s,file);
   s.T=s.JX.skills;s.I=Object.fromEntries(s.JX.factions.map(f=>[f.key,f]));
-  load(s,'app/gameplay/skill-progression-01.js');
-  for(const name of ['ee','SA','va','v4','P4','_4','h6','u6','l6'])decl(s,'app/gameplay/shop-and-books-01.js',name);
-  for(const name of ['m4','W2','Yi','Fi','w7','Z5','p7','D7','p4'])decl(s,'app/combat/skills-01.js',name);
-  for(const name of ['Ni','Q1'])decl(s,'app/core/attributes-02.js',name);
-  for(const name of ['H4','$4','Q7','G7','j7','J0'])decl(s,'app/gameplay/shop-and-books-02.js',name);
+  load(s,'src/client/gameplay/skill-progression-01.js');
+  for(const name of ['ee','SA','va','v4','P4','_4','h6','u6','l6'])decl(s,'src/client/gameplay/shop-and-books-01.js',name);
+  for(const name of ['m4','W2','Yi','Fi','w7','Z5','p7','D7','p4'])decl(s,'src/client/combat/skills-01.js',name);
+  for(const name of ['Ni','Q1'])decl(s,'src/client/core/attributes-02.js',name);
+  for(const name of ['H4','$4','Q7','G7','j7','J0'])decl(s,'src/client/gameplay/shop-and-books-02.js',name);
   // Execute the real post-catalog price scaling as well as the entries.
-  const shop=fs.readFileSync(path.join(ROOT,'app/gameplay/shop-and-books-02.js'),'utf8');
+  const shop=fs.readFileSync(path.join(ROOT,'src/client/gameplay/shop-and-books-02.js'),'utf8');
   const scaling=acorn.parse(shop,{ecmaVersion:'latest'}).body.find(n=>n.type==='ForOfStatement'&&shop.slice(n.start,n.end).includes('s.knb *= H4'));
   vm.runInContext(shop.slice(scaling.start,scaling.end),s);
-  for(const name of ['ts','ie'])decl(s,'app/gameplay/equipment-01.js',name);
-  decl(s,'app/ui/legacy-panels-and-audio-01.js','qf');
+  for(const name of ['ts','ie'])decl(s,'src/client/gameplay/equipment-01.js',name);
+  decl(s,'src/client/ui/legacy-panels-and-audio-01.js','qf');
   return s;
 }
 test('120 and 150 books each cost exactly 5000 KNB through real purchase flow',()=>{
@@ -66,7 +66,7 @@ test('120 consumes its book only once and remains point-based; rebirth does not 
 test('automatic point allocation can unlock 150 but cannot level it past one or spend points on it',()=>{
   const s=game();s.o.mats.misc.bk150=1;
   Object.assign(s,{te:()=>false,d7:0,G0:value=>value,j0:()=>Object.values(s.o.sk).reduce((sum,n)=>sum+n,0)});
-  decl(s,'app/core/attributes-02.js','Nw');s.Nw({skills:[1055]});
+  decl(s,'src/client/core/attributes-02.js','Nw');s.Nw({skills:[1055]});
   assert.equal(s.o.sk[1055],1);assert.equal(s.o.skPts,500);assert.equal(s.N('misc','bk150'),0);
   s.Nw({skills:[1055]});assert.equal(s.o.sk[1055],1);assert.equal(s.o.skPts,500);
 });
@@ -80,7 +80,7 @@ test('level 90 training and Đại Thành remain supported alongside 150',()=>{
 });
 test('150 XP comes from eligible killed monsters and only the participating attack skill trains',()=>{
   const s=game();s.o.mats.misc.bk150=2;s.Yi(1055);s.Yi(1056);
-  decl(s,'app/core/state-and-save-01.js','hs');s.Pe=()=>0;s.showDamageNumber=()=>{};
+  decl(s,'src/client/core/state-and-save-01.js','hs');s.Pe=()=>0;s.showDamageNumber=()=>{};
   const monster={L:150,cls:'normal',def:0};s.hs({id:1055,useAR:true},monster);
   assert.equal(monster.hitSk[1055],1);
   for(let i=0;i<s.v4(1);i++)s.p7(monster);
@@ -107,7 +107,7 @@ test('clearing/relearning or resetting trained 150 skills cannot create points o
 });
 test('real save normalization preserves new books and migrates allocated 150 points once',()=>{
   const s=game();Object.assign(s,{b8:1,d0:100,Q2:1000,gP:[],INV_MAX:100,$i:0,_5:()=>100,iP(){}});
-  for(const name of ['I3','v8'])decl(s,'app/core/state-and-save-03.js',name);
+  for(const name of ['I3','v8'])decl(s,'src/client/core/state-and-save-03.js',name);
   const original={fac:'shaolin',lvl:150,sk:{1055:12},skPts:488,sk9Free:1,sk9m:1,mats:{misc:{bk120:2,bk150:3,bk90:4}}};
   const migrated=s.v8(JSON.parse(JSON.stringify(original)));
   assert.equal(migrated.sk[1055],12);assert.equal(migrated.skL[1055].lv,12);assert.equal(migrated.skPts,500);
@@ -120,14 +120,14 @@ test('real save normalization preserves new books and migrates allocated 150 poi
 });
 test('actual skill grid and shop expose the new books and 150 mastery action',()=>{
   const s=game();s.o.mats.misc.bk150=1;s.Yi(1055);s.o.mats.misc.dtbk=1;
-  decl(s,'app/ui/world-panels-01.js','$B');s.$B();
+  decl(s,'src/client/ui/world-panels-01.js','$B');s.$B();
   const grid=s.nodes.get('#t-skill').innerHTML;
   assert.match(grid,/data-dt="1055"/);assert.doesNotMatch(grid,/class="plus" data-id="1055"/);
   assert.match(grid,/120 ×0 · 150 ×0/);
   let html='';Object.assign(s,{J:text=>html=text,wi:1,Tr:String,q:String,qt:()=>'',m6:()=>''});
-  for(const name of ['z7','K7','pn','XA','Bt','ns'])decl(s,'app/gameplay/shop-and-books-02.js',name);
-  for(const name of ['F7','E4','g6','w6'])decl(s,'app/gameplay/equipment-01.js',name);
-  decl(s,'app/ui/world-panels-02.js','e5');decl(s,'app/ui/world-panels-01.js','IB');s.IB();
+  for(const name of ['z7','K7','pn','XA','Bt','ns'])decl(s,'src/client/gameplay/shop-and-books-02.js',name);
+  for(const name of ['F7','E4','g6','w6'])decl(s,'src/client/gameplay/equipment-01.js',name);
+  decl(s,'src/client/ui/world-panels-02.js','e5');decl(s,'src/client/ui/world-panels-01.js','IB');s.IB();
   assert.match(html,/Bí Kíp 120/);assert.match(html,/Bí Kíp 150/);
   assert.match(html,/data-ktc="mt120"/);assert.match(html,/data-ktc="mt150"/);
   assert.equal((html.match(/5000 KNB/g)||[]).length,2);
@@ -135,7 +135,7 @@ test('actual skill grid and shop expose the new books and 150 mastery action',()
 test('changing faction does not refund trained 150 levels as points and keeps their progress for relearning',()=>{
   const s=game();s.o.sk={1055:7,10:3};s.o.skL={1055:{lv:7,xp:12}};s.o.skPts=497;s.o.mats.misc.ldp=1;
   Object.assign(s,{hn:()=>true,Kr:()=>[0,0],_A:()=>null,w0:['#fff'],g0:['Kim']});
-  decl(s,'app/gameplay/shop-and-books-02.js','N7');s.N7('tianwang');
+  decl(s,'src/client/gameplay/shop-and-books-02.js','N7');s.N7('tianwang');
   const starterCost=s.I.tianwang.starter?1:0;
   assert.equal(s.o.skPts,500-starterCost);assert.equal(s.o.fac,'tianwang');
   assert.equal(s.o.skL[1055].lv,7);assert.equal(s.o.skL[1055].xp,12);assert.equal(s.o.bkOk[1055],1);
@@ -143,7 +143,7 @@ test('changing faction does not refund trained 150 levels as points and keeps th
 test('rebirth keeps trained 150 skill levels and XP instead of converting them into skill points',async()=>{
   const s=game();s.o.sk={1055:7,10:3};s.o.skL={1055:{lv:7,xp:12}};
   Object.assign(s,{Ee:150,n2:10,Do:10,po:50,Lh:.1,qh:.1,X1:async()=>true,e4:()=>({total:0}),Mn(){}});
-  decl(s,'app/systems/rewards-01.js','ob');await s.ob();
+  decl(s,'src/client/systems/rewards-01.js','ob');await s.ob();
   assert.equal(s.o.lvl,1);assert.equal(s.o.sk[1055],7);assert.equal(s.o.skL[1055].xp,12);
   assert.equal(s.o.skPts,10);assert.equal(s.o.bkOk[1055],1);
 });

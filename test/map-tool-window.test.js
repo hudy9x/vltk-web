@@ -5,8 +5,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { buildSync } = require('esbuild');
 const root = path.resolve(__dirname, '..');
-const capability = JSON.parse(fs.readFileSync(path.join(root, 'map-tool/src-tauri/capabilities/default.json')));
-const source = buildSync({ entryPoints: [path.join(root, 'map-tool/node_modules/@tauri-apps/api/window.js')],
+const capability = JSON.parse(fs.readFileSync(path.join(root, 'tools/map-tool/src-tauri/capabilities/default.json')));
+const source = buildSync({ entryPoints: [path.join(root, 'tools/map-tool/node_modules/@tauri-apps/api/window.js')],
   bundle: true, platform: 'node', format: 'cjs', write: false }).outputFiles[0].text;
 function windowFixture() {
   const calls = [];

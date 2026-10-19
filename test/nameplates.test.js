@@ -43,9 +43,9 @@ function scene() {
   vm.runInContext(compileTypeScriptEntry('render/crowd/index.ts', 'CrowdVisibility').code, s);
   s.crowdRenderer = s.CrowdVisibility.createCrowdVisibility();
   vm.runInContext(compileTypeScriptEntry('render/nameplates.ts', 'nameplateOffset').code, s);
-  load(s, 'app/render/arena-01.js', 'L3');
-  load(s, 'app/render/arena-01.js', 'IP');
-  load(s, 'app/render/arena-02.js', 'NP');
+  load(s, 'src/client/render/arena-01.js', 'L3');
+  load(s, 'src/client/render/arena-01.js', 'IP');
+  load(s, 'src/client/render/arena-02.js', 'NP');
   const drawActor = actor => {
     events.push(`body:${actor.n}`);
     s.L3(actor.x, actor.y - 60, actor.n, '#fff', 12, 1, '#0f0');
@@ -106,7 +106,7 @@ test('ordinary game hero and monster anchors stay fixed across attack sizes and 
 
 test('party member anchors also ignore attack animation height and missing sprite frames', () => {
   const s = scene();
-  load(s, 'app/online/party-01.js', 'uB');
+  load(s, 'src/client/online/party-01.js', 'uB');
   s.I = { faction: { series: 0 } };
   const actor = { n: 'ally', f: 'faction', x: 100, y: 200, hp: 100, hpMax: 100 };
   for (const height of [80, 200, false]) {

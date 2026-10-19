@@ -8,11 +8,11 @@ function game(){
  SA:()=>false,GA:()=>s.o.lvl,W2:skill=>s.o.lvl>=skill.req,m4:skill=>skill.tier===90,P4:()=>true,Z2(){},va:()=>s.o.skL||(s.o.skL={}),
  D0(){},tn(){},Zn(){},qA(){},_s(){},$(){},k(){}};
  vm.createContext(s);
- for(const name of ['Ni','Q1'])declaration(s,'app/core/attributes-02.js',name);
- declaration(s,'app/gameplay/skill-progression-01.js','unlockSkillBook');
- declaration(s,'app/combat/skills-01.js','Yi');
- declaration(s,'app/ui/legacy-panels-and-audio-01.js','qf');
- declaration(s,'app/ui/legacy-panels-and-audio-02.js','bulkSkillPoints');
+ for(const name of ['Ni','Q1'])declaration(s,'src/client/core/attributes-02.js',name);
+ declaration(s,'src/client/gameplay/skill-progression-01.js','unlockSkillBook');
+ declaration(s,'src/client/combat/skills-01.js','Yi');
+ declaration(s,'src/client/ui/legacy-panels-and-audio-01.js','qf');
+ declaration(s,'src/client/ui/legacy-panels-and-audio-02.js','bulkSkillPoints');
  return s;
 }
 test('bulk max spends only the required skill points, and clear refunds all allocated points and unlocks the removed main skill',()=>{

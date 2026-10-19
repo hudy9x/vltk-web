@@ -25,10 +25,10 @@ function game(){
  };
  s.ic=index=>{const p=s.selected[index?'mana':'life'];if(!p||s.stock[p.kind]<=0)return null;s.stock[p.kind]--;return {p,free:true};};
  vm.createContext(s);loadCombatEngine(s);
- for(const name of ['ao','ih'])declaration(s,'app/ui/legacy-panels-and-audio-04.js',name);
- for(const name of ['Hd','X9'])declaration(s,'app/core/state-and-save-01.js',name);
- for(const name of ['Ms','nc','en'])declaration(s,'app/ui/legacy-panels-and-audio-03.js',name);
- declaration(s,'app/core/state-and-save-02.js','Td');return s;
+ for(const name of ['ao','ih'])declaration(s,'src/client/ui/legacy-panels-and-audio-04.js',name);
+ for(const name of ['Hd','X9'])declaration(s,'src/client/core/state-and-save-01.js',name);
+ for(const name of ['Ms','nc','en'])declaration(s,'src/client/ui/legacy-panels-and-audio-03.js',name);
+ declaration(s,'src/client/core/state-and-save-02.js','Td');return s;
 }
 
 test('disabled-map recovery uses the real town teleport despite cooldown or dungeon state', () => {

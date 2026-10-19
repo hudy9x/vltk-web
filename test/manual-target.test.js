@@ -39,11 +39,11 @@ function game() {
   const combat = loadCombatEngine(s, { bridge: false });
   // Keep the cast/tick spies; use the real migrated range/terrain functions.
   for (const name of ['skillIgnoresTerrain', 'SKILL_RANGE_Y_RATIO', 'skillCastDistance', 'actorActionLocked', 'advanceConsumableCooldowns', 'coldSpeedFactor', 'applyColdSlow']) s[name] = combat[name];
-  const ui = 'app/ui/legacy-panels-and-audio-04.js';
+  const ui = 'src/client/ui/legacy-panels-and-audio-04.js';
   for (const name of ['Y','$1','hA','Rv']) declaration(s, ui, name);
-  for (const name of ['eh','Wa','Qv','Ah']) declaration(s, 'app/ui/legacy-panels-and-audio-03.js', name);
-  declaration(s, 'app/core/state-and-save-01.js', 'oD');
-  declaration(s, 'app/core/state-and-save-02.js', 'Td');
+  for (const name of ['eh','Wa','Qv','Ah']) declaration(s, 'src/client/ui/legacy-panels-and-audio-03.js', name);
+  declaration(s, 'src/client/core/state-and-save-01.js', 'oD');
+  declaration(s, 'src/client/core/state-and-save-02.js', 'Td');
   s.Rv();
   return s;
 }

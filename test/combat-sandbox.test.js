@@ -4,8 +4,8 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const acorn = require('acorn');
-const { createServer } = require('../server/index.ts');
-const { openDatabase } = require('../server/database.ts');
+const { createServer } = require('../src/server/index.ts');
+const { openDatabase } = require('../src/server/database.ts');
 const { loadCombatEngine } = require('./helpers/combat-engine');
 const { compileTypeScriptEntry } = require('../tools/build-app');
 function loadSimulator(s) { vm.runInContext(compileTypeScriptEntry('simulator/index.ts','arenaSimulator').code,s); }
@@ -17,9 +17,9 @@ function loadDeclaration(s,file,name) {
 }
 function game(enabled=true, entries=new Map()) {
   const catalog={};catalog.window=catalog;
-  vm.runInNewContext(fs.readFileSync(path.join(ROOT,'data.js'),'utf8'),catalog);
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT,'public/data.js'),'utf8'),catalog);
   catalog.window.JFX = {m:{},c:{},f:{}};
-  vm.runInNewContext(fs.readFileSync(path.join(ROOT,'app/data/advanced-skills-01.js'),'utf8'),catalog);
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT,'src/client/data/advanced-skills-01.js'),'utf8'),catalog);
   for(const skill of Object.values(catalog.JX.skills)) if(skill.learn==='90') Object.assign(skill,{tier:90,req:80});
   const factions=catalog.JX.factions.filter(f=>f.skills?.length);
   for(const faction of factions)faction.starter=faction.skills[0];
@@ -41,9 +41,9 @@ function game(enabled=true, entries=new Map()) {
   };
   vm.createContext(s);
   loadCombatEngine(s);
-  for(const name of ['I3','Yd','bn','t1'])loadDeclaration(s,'app/core/state-and-save-03.js',name);
-  for(const name of ['ee','SA'])loadDeclaration(s,'app/gameplay/shop-and-books-01.js',name);
-  vm.runInContext(fs.readFileSync(path.join(ROOT,'app/dev/combat-sandbox-01.js'),'utf8'),s);
+  for(const name of ['I3','Yd','bn','t1'])loadDeclaration(s,'src/client/core/state-and-save-03.js',name);
+  for(const name of ['ee','SA'])loadDeclaration(s,'src/client/gameplay/shop-and-books-01.js',name);
+  vm.runInContext(fs.readFileSync(path.join(ROOT,'src/client/dev/combat-sandbox-01.js'),'utf8'),s);
   s.entries=entries;s.fields=fields;return s;
 }
 test('arena creates ten independent level 150 profiles with 500 skill points and saves their progress across swaps/restarts',()=>{
@@ -180,9 +180,9 @@ function simulatorGame(entries) {
       main:{id:s.o.main==='basic'?0:s.o.main,n:'Test skill',parts:{phys:100},rad:1000,rate:2,cost:0,crit:0,series:0,series5:0},
       basic:{parts:{phys:100},rad:1000,rate:2,series:0}}),
   });
-  for(const name of ['Pe','ja','hs'])loadDeclaration(s,'app/core/state-and-save-01.js',name);
+  for(const name of ['Pe','ja','hs'])loadDeclaration(s,'src/client/core/state-and-save-01.js',name);
   s.l.P=s.j0();for(const enemy of s.l.enemies)Object.assign(enemy,{n:"Quái",res:s.l.P.res,def:0,series:0,act:"at"});s.l.life=1000;s.l.mana=100;s.l.zoneShown=1;s.l.quiet=false;
-  vm.runInContext(fs.readFileSync(path.join(ROOT,'app/ui/combat-log-01.js'),'utf8'),s);
+  vm.runInContext(fs.readFileSync(path.join(ROOT,'src/client/ui/combat-log-01.js'),'utf8'),s);
   loadSimulator(s);
   return s;
 }
@@ -383,7 +383,7 @@ test('manual potential and skill allocation is isolated, budgeted and live for t
 });
 test('SIM templates preserve exact builds and survive SQLite close/reopen before creating more actors',async()=>{
   const os=require('node:os'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'sim-template-')),filename=path.join(dir,'save.sqlite');
-  const {initialize,snapshot}=require('../server/database.ts');
+  const {initialize,snapshot}=require('../src/server/database.ts');
   const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');
   s.arenaSimulator.setAttribute('str',120);
   const id=s.I.wudang.skills.find(id=>(actor.profile.sk[id]||0)<s.T[id].max);
@@ -499,7 +499,7 @@ test('large hits do not block SIM casting after mode changes',()=>{
 });
 
 test('native monster damage no longer freezes the player above five percent',()=>{
- const s=simulatorGame();loadDeclaration(s,'app/core/state-and-save-01.js','U9');
+ const s=simulatorGame();loadDeclaration(s,'src/client/core/state-and-save-01.js','U9');
  Object.assign(s,{Dw:['phys'],Yr:75,Pe:()=>100});s.l.life=1000;s.v.act='at';
  const attacker={...s.l.enemies[0],dmg:50,ar:100,series:0};
  s.U9(attacker);assert.equal(s.l.life,950);assert.ok(!(s.v.hurtT>0));assert.equal(s.v.act,'at');
@@ -566,7 +566,7 @@ test('cold intensity uses only the cold component after resistance, not physical
 });
 
 test('native monster cold applies the same strength curve while freeze reduction changes only duration',()=>{
- const s=simulatorGame();loadDeclaration(s,'app/core/state-and-save-01.js','U9');
+ const s=simulatorGame();loadDeclaration(s,'src/client/core/state-and-save-01.js','U9');
  Object.assign(s,{Dw:['cold'],Yr:75,Pe:()=>100});s.l.life=10000;s.l.P.freezeRed=50;
  const attacker={...s.l.enemies[0],dmg:500,ar:100,series:0};s.U9(attacker);
  assert.equal(s.l.slowT,s.f8*.5);assert.equal(s.l.slowPower,s.CombatEngine.coldSlowPower(500));
@@ -586,7 +586,7 @@ test('SIM PK transfers resolved cold strength and defender duration reduction, k
 });
 
 test('monster and SIM movement and attack cooldowns use the same cold speed factor',()=>{
- const s=simulatorGame();loadDeclaration(s,'app/core/state-and-save-01.js','$d');
+ const s=simulatorGame();loadDeclaration(s,'src/client/core/state-and-save-01.js','$d');
  s.q0=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);s.r0[0].anim='monster';
  let moved=0;s.Mw=(_actor,_x,_y,distance)=>moved=distance;
  const monster={x:0,y:0,hp:1000,max:1000,r:17,tid:0,spd:100,reach:40,atkCd:2,cd:1,ar:1};
@@ -602,7 +602,7 @@ test('allied cold attacks use resisted cold damage for slow intensity',()=>{
  Object.assign(s,{H2:()=>1,L:{},jh:1000,_1:()=>[target],q0:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),fB(){},
   queueSkillContact:(_actor,_target,_skill,onHit)=>onHit(target)});
  const ally={x:500,y:500,t:0,hp:1000,hpMax:1000,owner:'ally',pf:{cold:1},dps:100,rt:1,atkT:0,atT:0,se:0,ct:2};
- s.l.allies=[ally];loadDeclaration(s,'app/online/party-01.js','Am');s.Am(.1);
+ s.l.allies=[ally];loadDeclaration(s,'src/client/online/party-01.js','Am');s.Am(.1);
  assert.equal(target.slowT,2);assert.equal(target.slowPower,s.CombatEngine.coldSlowPower(50));
 });
 
@@ -615,7 +615,7 @@ test('SIM animation follows its cold speed and returns to normal after expiry',(
 });
 
 test('native hits hurt at fifteen percent after shields and further damage still lands during hurt',()=>{
- const s=simulatorGame();loadDeclaration(s,'app/core/state-and-save-01.js','U9');
+ const s=simulatorGame();loadDeclaration(s,'src/client/core/state-and-save-01.js','U9');
  Object.assign(s,{Dw:['phys'],Yr:75,Pe:()=>100});s.l.life=1000;
  const attacker={...s.l.enemies[0],dmg:150,ar:100,series:0};
  s.l.P.sorb=50;s.U9(attacker);assert.equal(s.l.life,925);assert.ok(!(s.v.hurtT>0));
@@ -706,7 +706,7 @@ test('arena monsters continuously choose the nearest living player or SIM, exclu
 
 test('native monster AI pursues its nearest SIM and damages it only at physical contact',()=>{
  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang'),monster=s.l.enemies.find(e=>e.arenaMonster);
- loadDeclaration(s,'app/core/state-and-save-01.js','$d');
+ loadDeclaration(s,'src/client/core/state-and-save-01.js','$d');
  Object.assign(s,{q0:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),ws:()=>.4});s.r0[monster.tid].anim='monster';
  Object.assign(s.v,{x:400,y:0});Object.assign(actor,{x:40,y:0,r:17});
  Object.assign(monster,{x:0,y:0,r:17,atkCd:0,reach:60,ranged:false,ar:100,cd:1});
@@ -717,7 +717,7 @@ test('native monster AI pursues its nearest SIM and damages it only at physical 
 });
 
 test('monster hits on SIM reuse real defenses and transfer cold/poison without changing the player context',()=>{
- const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');loadDeclaration(s,'app/core/state-and-save-01.js','U9');
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');loadDeclaration(s,'src/client/core/state-and-save-01.js','U9');
  Object.assign(s,{Dw:['phys','cold','poison'],Yr:75,Pe:()=>100});
  const attacker={...s.l.enemies.find(e=>e.arenaMonster),hp:100000,max:100000,dmg:100,ar:100,series:0,ranged:true};
  const player=s.o,world=s.l,hero=s.v;actor.stats.sorb=80;
@@ -729,7 +729,7 @@ test('monster hits on SIM reuse real defenses and transfer cold/poison without c
 });
 
 test('arena masters 120/150 for all factions, exposes support info and selects every 150 skill across reloads',()=>{
-  const s=game(), manifest=require('../skill_assets_manifest.json');
+  const s=game(), manifest=require('../docs/skill_assets_manifest.json');
   for(const faction of Object.keys(s.I)) {
     s.combatSandbox.switchFaction(faction);
     const html=s.fields.get('.arena-skills').innerHTML;
@@ -749,7 +749,7 @@ test('arena masters 120/150 for all factions, exposes support info and selects e
   assert.equal(restored.o.skPts,s.o.skPts);
 });
 test('SIM exposes every active 150 skill and includes support 120 in the build table',()=>{
-  const s=simulatorGame(),manifest=require('../skill_assets_manifest.json');
+  const s=simulatorGame(),manifest=require('../docs/skill_assets_manifest.json');
   for(const faction of Object.keys(s.I)) {
     s.fields.get('#sim-faction').value=faction;
     s.fields.get('#sim-faction').onchange();

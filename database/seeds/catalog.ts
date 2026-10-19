@@ -3,10 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
-import { isMainModule } from '../../server/paths.ts';
-import { ROOT, openDatabase } from '../../server/database.ts';
+import { PUBLIC_ROOT, isMainModule } from '../../src/server/paths.ts';
+import { openDatabase } from '../../src/server/database.ts';
 export function seedCatalog(db: DatabaseSync): void {
-  const files = ['data.js', 'setvi.js'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8'));
+  const files = ['data.js', 'setvi.js'].map(f => fs.readFileSync(path.join(PUBLIC_ROOT, f), 'utf8'));
   const hash = createHash('sha256').update(files.join('\n')).digest('hex');
   if (db.prepare("SELECT value FROM metadata WHERE key='catalog_hash'").get()?.value === hash) return;
   const sandbox: { window?: unknown; JX?: Record<string, unknown>; SET_VI?: unknown } = {}; sandbox.window = sandbox;

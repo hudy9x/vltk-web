@@ -6,12 +6,12 @@ const vm = require('node:vm');
 const { buildSync } = require('esbuild');
 const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
-const source = buildSync({ entryPoints: [path.join(root, 'map-tool/src/lib/model.ts')], bundle: true, platform: 'node', format: 'cjs', write: false, alias: { '@game': path.join(root, 'app/maps') } });
+const source = buildSync({ entryPoints: [path.join(root, 'tools/map-tool/src/lib/model.ts')], bundle: true, platform: 'node', format: 'cjs', write: false, alias: { '@game': path.join(root, 'src/client/maps') } });
 const sandbox = vm.createContext({ module: { exports: {} }, atob, btoa, structuredClone, Uint8Array, Map, Set });
 vm.runInContext(source.outputFiles[0].text, sandbox);
 const model = sandbox.module.exports;
-const encounters = JSON.parse(fs.readFileSync(path.join(root, 'app/gameplay/encounters/catalog.json')));
-const progression = JSON.parse(fs.readFileSync(path.join(root, 'app/maps/progression.json')));
+const encounters = JSON.parse(fs.readFileSync(path.join(root, 'src/client/gameplay/encounters/catalog.json')));
+const progression = JSON.parse(fs.readFileSync(path.join(root, 'src/client/maps/progression.json')));
 const plain = value => JSON.parse(JSON.stringify(value));
 function document() { return model.createDocument({ projects: {}, encounters, progression }, model.newMap(999997, 'Editor test', 256, 128)); }
 function blocked(map, x, y) { const grid = map.navigation; const cell = Math.floor(y / grid.cellSize.height) * grid.columns + Math.floor(x / grid.cellSize.width); return !!(Buffer.from(grid.blockedBase64, 'base64')[cell >> 3] & (1 << (cell & 7))); }
@@ -53,8 +53,8 @@ test('editor refuses blocked worlds, invalid bitmasks and blocked fixed spawns',
 });
 
 test('legacy documents preserve their collision and encounter data when opened', () => {
-  for (const id of fs.readdirSync(path.join(root, 'app/maps/content'))) {
-    const file = path.join(root, 'app/maps/content', id, 'map.json'); if (!fs.existsSync(file)) continue;
+  for (const id of fs.readdirSync(path.join(root, 'src/client/maps/content'))) {
+    const file = path.join(root, 'src/client/maps/content', id, 'map.json'); if (!fs.existsSync(file)) continue;
     const map = JSON.parse(fs.readFileSync(file)); const doc = model.createDocument({ projects: {}, encounters, progression }, map);
     assert.deepEqual(plain(model.validateDocument(doc)), map);
   }
@@ -73,7 +73,7 @@ test('map status persists through editor save validation and only Available maps
   doc.map.layers[0].image = 'img/z/2.jpg'; result = bridge(doc, ['img/z/2.jpg']);
   assert.notEqual(result.status, 0); assert.match(result.stderr, /thư mục map/);
   doc.map.status = 'invalid'; assert.throws(() => model.validateDocument(doc), /invalid status/);
-  const town = JSON.parse(fs.readFileSync(path.join(root, 'app/maps/content/37/map.json')));
+  const town = JSON.parse(fs.readFileSync(path.join(root, 'src/client/maps/content/37/map.json')));
   town.status = 'test'; const townDoc = model.createDocument({ projects: {}, encounters, progression }, town);
   assert.throws(() => model.validateDocument(townDoc), /Biện Kinh phải Available/);
 });
@@ -101,15 +101,15 @@ test('editor history shares immutable image payloads and compares pending paths 
 });
 
 function loadEditorModule(entry) {
-  const output = buildSync({ entryPoints: [path.join(root, entry)], bundle: true, platform: 'node', format: 'cjs', write: false, alias: { '@game': path.join(root, 'app/maps') } });
+  const output = buildSync({ entryPoints: [path.join(root, entry)], bundle: true, platform: 'node', format: 'cjs', write: false, alias: { '@game': path.join(root, 'src/client/maps') } });
   const context = vm.createContext({ module: { exports: {} }, atob, btoa, structuredClone, Uint8Array, TextEncoder, Map, Set });
   vm.runInContext(output.outputFiles[0].text, context); return context.module.exports;
 }
-const presentation = loadEditorModule('map-tool/src/lib/presentation.ts');
-const previews = loadEditorModule('map-tool/src/lib/spawn-preview.ts');
-const spawnEditing = loadEditorModule('map-tool/src/lib/spawn-editing.ts');
-const spawnSelection = loadEditorModule('map-tool/src/lib/spawn-selection.ts');
-const mapProgression = loadEditorModule('map-tool/src/lib/progression.ts');
+const presentation = loadEditorModule('tools/map-tool/src/lib/presentation.ts');
+const previews = loadEditorModule('tools/map-tool/src/lib/spawn-preview.ts');
+const spawnEditing = loadEditorModule('tools/map-tool/src/lib/spawn-editing.ts');
+const spawnSelection = loadEditorModule('tools/map-tool/src/lib/spawn-selection.ts');
+const mapProgression = loadEditorModule('tools/map-tool/src/lib/progression.ts');
 
 test('new maps register for the game menu without reordering or duplicating existing stage indices', () => {
   const doc = document(), before = plain(doc.progression);
@@ -167,7 +167,7 @@ test('bulk deleting a procedural sample retains every point outside the selected
 });
 
 test('editor orders progression maps by training level and keeps alternates directly after their primary', () => {
-  const maps = fs.readdirSync(path.join(root, 'app/maps/content')).flatMap(id => { const file = path.join(root, 'app/maps/content', id, 'map.json'); return fs.existsSync(file) ? [JSON.parse(fs.readFileSync(file))] : []; });
+  const maps = fs.readdirSync(path.join(root, 'src/client/maps/content')).flatMap(id => { const file = path.join(root, 'src/client/maps/content', id, 'map.json'); return fs.existsSync(file) ? [JSON.parse(fs.readFileSync(file))] : []; });
   const original = JSON.stringify(progression), result = presentation.mapList(maps, encounters, progression);
   assert.equal(result.length, maps.length); assert.equal(new Set(result.map(item => item.map.id)).size, maps.length);
   const primary = result.filter(item => item.kind === 'primary');
@@ -204,7 +204,7 @@ test('spawn preview uses current draft encounters, remains deterministic, and ne
 });
 
 test('shared spawn generation resolves draft fixed encounters without depending on the game catalog', () => {
-  const generation = loadEditorModule('app/maps/spawn/generation.ts');
+  const generation = loadEditorModule('src/client/maps/spawn/generation.ts');
   const doc = document(); const profile = { ...encounters[0], id: 'not-in-catalog', monsterIds: [12], bossId: 543 };
   doc.map.spawns = [{ id: 'fixed', position: { x: 80, y: 40 }, rank: 'boss', encounterId: profile.id, initialDelaySeconds: 5 }];
   const points = generation.generateFieldPoints({ canStand: () => true }, {}, {}, [6, 8], () => false, () => .5, doc.map, id => id === profile.id ? profile : undefined);
@@ -242,7 +242,7 @@ test('delete one spawn preserves neighbors and deleting the last stays empty aft
   const reloaded = model.createDocument({ projects: {}, encounters: doc.encounters, progression }, plain(saved));
   assert.equal(reloaded.map.spawnMode, 'fixed');
   assert.equal(previews.spawnPreview(reloaded, reloaded.map).length, 0);
-  const generation = loadEditorModule('app/maps/spawn/generation.ts');
+  const generation = loadEditorModule('src/client/maps/spawn/generation.ts');
   assert.equal(generation.generateFieldPoints({}, {}, {}, [6, 8], () => false, () => .5, saved).length, 0);
   reloaded.map.spawnMode = 'invalid'; assert.throws(() => model.validateDocument(reloaded), /invalid spawnMode/);
   reloaded.map.spawnMode = 'procedural'; reloaded.map.spawns = [neighbor];
@@ -258,7 +258,7 @@ test('reselecting a boss isolates the chosen point and runtime uses the new boss
   assert.equal(doc.encounters.length, 2); assert.equal(base.bossId, 543);
   assert.equal(previews.spawnPreview(doc, doc.map)[0].monsterId, 545);
   assert.equal(previews.spawnPreview(doc, doc.map)[1].monsterId, 543);
-  const generation = loadEditorModule('app/maps/spawn/generation.ts');
+  const generation = loadEditorModule('src/client/maps/spawn/generation.ts');
   const points = generation.generateFieldPoints({ canStand: () => true }, {}, {}, [6, 8], () => false, () => .5, doc.map, id => doc.encounters.find(profile => profile.id === id));
   assert.deepEqual(plain(points.map(point => point.tid)), [545, 543]);
   doc.map.spawns[0].rank = 'elite'; spawnEditing.setSpawnMonster(doc, 'boss-a', 11);
@@ -306,12 +306,12 @@ test('live erase preserves object colliders while allowing painted cells to be r
 });
 
 test('preview uses the real standing sprite, renderer scale and foot anchor', () => {
-  const actor = loadEditorModule('map-tool/src/lib/preview-actor.ts');
+  const actor = loadEditorModule('tools/map-tool/src/lib/preview-actor.ts');
   const catalog = { JW: { anim: {} } };
-  vm.runInNewContext(fs.readFileSync(path.join(root, 'app/data/monsters-and-zones-04.js'), 'utf8').split('window.JW["town"]')[0], { window: catalog });
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'src/client/data/monsters-and-zones-04.js'), 'utf8').split('window.JW["town"]')[0], { window: catalog });
   const frame = catalog.JW.anim.pl_shaolin.st;
   assert.deepEqual(plain(actor.previewActor), { width: frame.w, height: frame.h, anchorX: frame.ax, anchorY: frame.ay, scale: 1.35 });
-  assert.match(fs.readFileSync(path.join(root, 'app/render/arena-02.js'), 'utf8'), /var Jn = 1\.35/);
+  assert.match(fs.readFileSync(path.join(root, 'src/client/render/arena-02.js'), 'utf8'), /var Jn = 1\.35/);
   const image = { complete: true, naturalWidth: frame.w * frame.n }, calls = [];
   actor.drawPreviewActor({ drawImage: (...args) => calls.push(args) }, image, { x: 200, y: 150 });
   assert.deepEqual(calls[0], [image, 0, 0, 64, 47, 156.8, 89.25, 86.4, 63.45]);
@@ -319,10 +319,10 @@ test('preview uses the real standing sprite, renderer scale and foot anchor', ()
 
 test('canvas reuses large-image background and defers navigation work throughout a drag', async () => {
   const output = await require('esbuild').build({
-    entryPoints: [path.join(root, 'map-tool/src/editor/MapCanvas.tsx')], bundle: true,
+    entryPoints: [path.join(root, 'tools/map-tool/src/editor/MapCanvas.tsx')], bundle: true,
     platform: 'node', format: 'cjs', write: false, jsx: 'automatic',
     external: ['react', 'react/jsx-runtime'], loader: { '.webp': 'text' },
-    alias: { '@': path.join(root, 'map-tool/src'), '@game': path.join(root, 'app/maps') },
+    alias: { '@': path.join(root, 'tools/map-tool/src'), '@game': path.join(root, 'src/client/maps') },
     plugins: [{ name: 'headless-controls', setup(build) {
       build.onResolve({ filter: /^(lucide-react|@\/components\/ui\/)/ }, args => ({ path: args.path, namespace: 'controls' }));
       build.onLoad({ filter: /.*/, namespace: 'controls' }, () => ({ contents: 'export const Checkbox=()=>null,Label=()=>null,Button=()=>null,RefreshCw=()=>null;' }));
@@ -371,7 +371,7 @@ test('canvas reuses large-image background and defers navigation work throughout
 });
 
 test('zoom buttons follow the exact preset list in both directions and clamp at limits', () => {
-  const { ZOOM_LEVELS, stepZoom } = loadEditorModule('map-tool/src/lib/zoom.ts');
+  const { ZOOM_LEVELS, stepZoom } = loadEditorModule('tools/map-tool/src/lib/zoom.ts');
   assert.deepEqual(plain(ZOOM_LEVELS), [20, 30, 50, 70, 80, 90, 100, 120, 150, 200, 300, 400]);
   for (let i = 0; i < ZOOM_LEVELS.length; i++) {
     assert.equal(stepZoom(ZOOM_LEVELS[i], 'in'), ZOOM_LEVELS[Math.min(i + 1, ZOOM_LEVELS.length - 1)]);
@@ -386,7 +386,7 @@ test('zoom buttons follow the exact preset list in both directions and clamp at 
 });
 
 test('layer deletion protects ground, cleans only owned colliders and remains undoable', () => {
-  const { deleteMapLayer } = loadEditorModule('map-tool/src/lib/layer-editing.ts');
+  const { deleteMapLayer } = loadEditorModule('tools/map-tool/src/lib/layer-editing.ts');
   const doc = document(), groundId = doc.map.layers.find(layer => layer.type === 'ground').id;
   doc.map.layers.push({ id: 'trees', type: 'world', objects: [{ id: 'oak', image: './assets/tree.png', position: { x: 80, y: 40 }, anchor: { x: 16, y: 32 }, scale: 1, depthOffsetY: 0 }] });
   doc.project.colliders['trees/oak'] = { radiusX: 12, radiusY: 6, offsetX: 0, offsetY: 0 };
@@ -408,7 +408,7 @@ test('layer deletion protects ground, cleans only owned colliders and remains un
 });
 
 test('image imports keep immutable default bytes and one replaceable layer path across formats and history', () => {
-  const { stageLayerImage } = loadEditorModule('map-tool/src/lib/image-editing.ts');
+  const { stageLayerImage } = loadEditorModule('tools/map-tool/src/lib/image-editing.ts');
   const jpg = Buffer.from([255, 216, 255, 1]).toString('base64');
   const png = value => Buffer.concat([Buffer.from('\x89PNG\r\n\x1a\n', 'binary'), Buffer.from(value)]).toString('base64');
   const doc = document();
@@ -436,8 +436,8 @@ test('image imports keep immutable default bytes and one replaceable layer path 
 });
 
 test('fixed image paths restore the correct preview on Undo/Redo and invalidate the disk cache after save', async () => {
-  const output = buildSync({ entryPoints: [path.join(root, 'map-tool/src/lib/native.ts')], bundle: true, platform: 'node',
-    format: 'cjs', write: false, external: ['@tauri-apps/api/core'], alias: { '@game': path.join(root, 'app/maps') } });
+  const output = buildSync({ entryPoints: [path.join(root, 'tools/map-tool/src/lib/native.ts')], bundle: true, platform: 'node',
+    format: 'cjs', write: false, external: ['@tauri-apps/api/core'], alias: { '@game': path.join(root, 'src/client/maps') } });
   const context = vm.createContext({ module: { exports: {} }, Uint8Array, Map, Set, Blob,
     require: () => ({ invoke: async () => new ArrayBuffer(1) }),
     Image: class { src = ''; }, URL: { createObjectURL: () => 'blob:disk', revokeObjectURL() {} } });
@@ -454,7 +454,7 @@ test('fixed image paths restore the correct preview on Undo/Redo and invalidate 
 });
 
 test('each image layer has an independent slot and preserves other imported object assets', () => {
-  const { stageLayerImage, layerImageStem } = loadEditorModule('map-tool/src/lib/image-editing.ts');
+  const { stageLayerImage, layerImageStem } = loadEditorModule('tools/map-tool/src/lib/image-editing.ts');
   const jpg = Buffer.from([255, 216, 255, 1]).toString('base64');
   const doc = document();
   doc.map.layers.push({ id: 'bóng', type: 'shadow', image: './missing-layer.png', opacity: 1 },

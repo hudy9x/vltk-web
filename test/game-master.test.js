@@ -5,10 +5,10 @@ const vm = require("node:vm");
 const path = require("node:path");
 const acorn = require("acorn");
 const { loadCombatEngine } = require('./helpers/combat-engine');
-const { createServer } = require("../server/index.ts");
-const { openDatabase } = require("../server/database.ts");
+const { createServer } = require("../src/server/index.ts");
+const { openDatabase } = require("../src/server/database.ts");
 const ROOT = path.resolve(__dirname, "..");
-const source = fs.readFileSync(path.join(ROOT, "app/dev/game-master-01.js"), "utf8");
+const source = fs.readFileSync(path.join(ROOT, "src/client/dev/game-master-01.js"), "utf8");
 function declaration(file, name) {
   const code = fs.readFileSync(path.join(ROOT, file), "utf8");
   const node = acorn
@@ -105,11 +105,11 @@ function game(development = true) {
   vm.createContext(s);
   s.SKILL_RANGE_Y_RATIO = loadCombatEngine(s, { bridge: false }).SKILL_RANGE_Y_RATIO;
   for (const [file, name] of [
-    ["app/gameplay/shop-and-books-01.js", "se"],
-    ["app/gameplay/shop-and-books-01.js", "B4"],
-    ["app/core/state-and-save-02.js", "d8"],
-    ["app/gameplay/equipment-01.js", "x0"],
-    ["app/ui/legacy-panels-and-audio-01.js", "Ef"],
+    ["src/client/gameplay/shop-and-books-01.js", "se"],
+    ["src/client/gameplay/shop-and-books-01.js", "B4"],
+    ["src/client/core/state-and-save-02.js", "d8"],
+    ["src/client/gameplay/equipment-01.js", "x0"],
+    ["src/client/ui/legacy-panels-and-audio-01.js", "Ef"],
   ])
     vm.runInContext(declaration(file, name), s);
   vm.runInContext(source, s);
@@ -187,14 +187,14 @@ test("GM finds real level 90 skills for every faction, preserves learning progre
   const s = game();
   const catalog = {};
   catalog.window = catalog;
-  vm.runInNewContext(fs.readFileSync(path.join(ROOT, "data.js"), "utf8"), catalog);
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT, "public/data.js"), "utf8"), catalog);
   s.T = catalog.JX.skills;
   for (const skill of Object.values(s.T)) {
     if (skill.learn === "90") Object.assign(skill, { tier: 90, req: 80, book: "bk90" });
   }
   s.I = Object.fromEntries(catalog.JX.factions.filter(faction => faction.skills?.length).map(faction => [faction.key, faction]));
-  vm.runInContext(declaration("app/gameplay/shop-and-books-01.js", "va"), s);
-  vm.runInContext(declaration("app/combat/skills-01.js", "W2"), s);
+  vm.runInContext(declaration("src/client/gameplay/shop-and-books-01.js", "va"), s);
+  vm.runInContext(declaration("src/client/combat/skills-01.js", "W2"), s);
   for (const faction of Object.values(s.I)) {
     const ids = faction.skills.filter(id => s.T[id]?.tier === 90);
     assert.ok(ids.length, faction.key);
