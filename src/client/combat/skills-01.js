@@ -72,6 +72,7 @@ var l1 = {
   375: { n: "Bình Địa Hám Lôi", col: 1, k: 0.35, el: "light", max: 3 },
   372: { n: "Khiếu Phong Tam Liên Kích", col: 1, sid: 373, k: 0.35, el: "light", max: 3 },
   1081: { n: "Lôi Động Càn Khôn", sid: 1109, k: 0.55, el: "light", max: 2, delay: 0.3 },
+  1061: { n: "Lưu Phong Hồi Tuyết Băng Trụ", sid: 1091, k: 0.3, el: "cold", max: 3, delay: 0.22 },
 };
 
 var Vw = Array.from({ length: 20 }, (s, A) => [4 + 7 * (A + 1), 0, 296 + 59 * (A + 1)]);

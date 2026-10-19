@@ -579,13 +579,14 @@ var eD = function (A, n, t, e, a, context) {
   // the temporary player globals in delayed contact callbacks.
   const caster = context ? context.actor : v;
   const draw = action => context ? context.visual(action) : action();
-  // Keep separate physical recipients, but render one storm at the original
-  // cast target so an earlier contact with a neighbour cannot split the layers.
-  if (+A.id === 1081 && +a.sid === 1109) {
+  // Both secondaries keep delayed, independent damage for paired recipients.
+  // Kunlun draws one storm at its chosen target; Emei draws ice at each recipient.
+  const thunder = +A.id === 1081 && +a.sid === 1109;
+  if (thunder || (+A.id === 1061 && +a.sid === 1091)) {
     const recipients = [...new Set(e || [n])].filter(target => target && !target.dead && target.hp > 0).slice(0, Qi(A, a));
     const missile = A0.m[A0.f[a.sid] && A0.f[a.sid].c], sprite = missile && missile.fly;
     const delay = a.delay, life = missile && missile.life || 1.67;
-    const visualAnchor = A.visualAnchor || { x: n.x, y: n.y - 14 };
+    const castAnchor = A.visualAnchor || { x: n.x, y: n.y - 14 };
     let visualShown = false;
     const ability = Object.assign({}, A, {
       id: a.sid, n: a.n, parts: S5(A, a), ev: false, ev2: true,
@@ -593,9 +594,10 @@ var eD = function (A, n, t, e, a, context) {
       geo: { k: "spot", r: 12, pierce: true },
     });
     for (const recipient of recipients) {
+      const visualAnchor = thunder ? castAnchor : { x: recipient.x, y: recipient.y - 14 };
       const field = { k: "boom", s: sprite, x: recipient.x, y: recipient.y - 14,
         t: 0, life, sp: sprite ? yn(sprite) / life : 1, dir: 0, visualAnchor };
-      const hidden = visualShown || l.quiet || !sprite || l.fx.length > 160;
+      const hidden = (thunder && visualShown) || l.quiet || !sprite || l.fx.length > 160;
       if (!hidden) visualShown = true;
       queueSkillContact(caster, recipient, ability, target => {
         const damage = context ? context.hit(ability, target) : hs(ability, target);

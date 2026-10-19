@@ -139,7 +139,8 @@
 - **path**:
   - Icon: `img/s/1061.png`
   - Sprite đòn chính: `fx/advanced/m323_fly.webp` | Hit FX: `fx/advanced/m323_hit.webp`
-  - Sprite đòn phụ: `fx/advanced/m325_fly.webp` | Hit FX: `fx/advanced/m325_hit.webp`
+  - Sprite mở đầu (event 1089): `fx/advanced/m325_fly.webp` — 8 tia tỏa quanh người; Hit FX: `fx/advanced/m325_hit.webp`
+  - Sprite băng trụ tiếp nối (event 1091): `fx/advanced/m353_fly.webp` | Hit FX: `fx/advanced/m353_hit.webp`
   - Sprite tụ khí: `fx/advanced/p6.webp`
 
 - **tên skill**: Băng Vũ Lạc Tinh (Cấp 150 - Công kích nội công)

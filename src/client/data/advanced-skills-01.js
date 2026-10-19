@@ -11257,6 +11257,11 @@
       "spd": 0,
       "life": 2
     },
+    "advanced-353": {
+      "fly": { "f": "fx/advanced/m353_fly.webp", "n": 10, "d": 1, "w": 100, "h": 123, "ax": 51, "ay": 91, "ms": 56 },
+      "hit": { "f": "fx/advanced/m353_hit.webp", "n": 6, "d": 1, "w": 101, "h": 92, "ax": 51, "ay": 85, "ms": 56 },
+      "spd": 0, "life": 1
+    },
     "advanced-325": {
       "fly": {
         "f": "fx/advanced/m325_fly.webp",
@@ -11919,7 +11924,8 @@
       "c": "advanced-323",
       "form": 0,
       "num": 5,
-      "pre": "advanced-6"
+      "pre": "advanced-6",
+      "es": 1089
     },
     "1062": {
       "c": "advanced-324",
@@ -12017,6 +12023,8 @@
       "form": 7,
       "num": 1
     },
+    "1089": { "c": "advanced-325", "form": 3, "num": 8, "ev": 1091 },
+    "1091": { "c": "advanced-353", "form": 6, "num": 1 },
     "1114": {
       "c": "advanced-375",
       "form": 6,
