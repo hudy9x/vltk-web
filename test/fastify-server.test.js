@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { createServer } = require('../server/index.ts');
-const { openDatabase, snapshot } = require('../server/database.ts');
+const { createServer } = require('../src/server/index.ts');
+const { openDatabase, snapshot } = require('../src/server/database.ts');
 
 function fixture() {
   const db = openDatabase(':memory:');

@@ -39,16 +39,16 @@ function world(options = {}) {
   s._1 = () => s.l.enemies.filter(enemy => !enemy.dead && enemy.hp > 0);
   s.q0 = (a, b) => Math.hypot(a.x - b.x, (a.y - b.y) * 2) / s.QA;
   vm.createContext(s);
-  load(s, 'data.js');
-  load(s, 'app/data/projectile-effects-01.js');
-  load(s, 'app/data/projectile-effects-02.js');
+  load(s, 'public/data.js');
+  load(s, 'src/client/data/projectile-effects-01.js');
+  load(s, 'src/client/data/projectile-effects-02.js');
   s.A0 = s.JFX; s.T = s.JX.skills;
-  for (const name of ['t7', 'U2', 'r4', 'Y5', 'e7', 'a7']) declaration(s, 'app/combat/skills-01.js', name);
-  declaration(s, 'app/core/attributes-01.js', 'N5');
+  for (const name of ['t7', 'U2', 'r4', 'Y5', 'e7', 'a7']) declaration(s, 'src/client/combat/skills-01.js', name);
+  declaration(s, 'src/client/core/attributes-01.js', 'N5');
   loadCombatEngine(s);
-  load(s, 'app/render/projectiles-01.js');
-  for (const name of ['TP', 'Ya', 'x8']) declaration(s, 'app/render/arena-01.js', name);
-  declaration(s, 'app/core/state-and-save-01.js', 'oD');
+  load(s, 'src/client/render/projectiles-01.js');
+  for (const name of ['TP', 'Ya', 'x8']) declaration(s, 'src/client/render/arena-01.js', name);
+  declaration(s, 'src/client/core/state-and-save-01.js', 'oD');
   Object.assign(s.l, options.state); Object.assign(s.o, options.preferences);
   return s;
 }
@@ -199,9 +199,9 @@ test('contacts advance without rendering and give the same result at different t
 
 test('secondary rays wait for their own physical contact instead of applying damage on emission', () => {
   const s = world(), target = enemy(s);
-  for (const name of ['LP', 'qP', 'Ds']) declaration(s, 'app/render/arena-02.js', name);
-  for (const name of ['$P', 'B8', 'Be']) declaration(s, 'app/render/arena-01.js', name);
-  declaration(s, 'app/core/state-and-save-01.js', 'eD');
+  for (const name of ['LP', 'qP', 'Ds']) declaration(s, 'src/client/render/arena-02.js', name);
+  for (const name of ['$P', 'B8', 'Be']) declaration(s, 'src/client/render/arena-01.js', name);
+  declaration(s, 'src/client/core/state-and-save-01.js', 'eD');
   s.Qi = () => 1; s.S5 = () => ({ cold: 10 });
   const skill = shaolin(s, { id: 380, L: 20 });
   s.eD(skill, target, s.l.enemies, [target], { rays: () => 1, sid: 331, max: 1 });
@@ -215,7 +215,7 @@ test('an enemy ranged attack also waits for contact and can be dodged by the pla
   Object.assign(attacker, { ar: 10, reach: 300, ranged: true, dmg: 10, atkCd: 0, cd: 1, spd: 0, tid: 1 });
   s.r0 = { 1: { anim: 'monster' } }; s.Qa = 0.5; s.Mw = () => {};
   s.U9 = () => { s.l.life -= 10; }; s.hB = () => {};
-  declaration(s, 'app/core/state-and-save-01.js', '$d');
+  declaration(s, 'src/client/core/state-and-save-01.js', '$d');
   s.$d(attacker, 1 / 60);
   assert.equal(s.l.life, 100);
   run(s, 0.2); assert.equal(s.l.life, 100);
@@ -225,7 +225,7 @@ test('an enemy ranged attack also waits for contact and can be dodged by the pla
 });
 
 function standardSkill(s, id) {
-  for (let i = 1; i <= 59; i++) load(s, `app/data/skill-tables-${String(i).padStart(2, '0')}.js`);
+  for (let i = 1; i <= 59; i++) load(s, `src/client/data/skill-tables-${String(i).padStart(2, '0')}.js`);
   for (const [key, std] of Object.entries(s.SK_STD)) {
     if (s.T[key]) Object.assign(s.T[key], std.m, { attr: std.a });
   }
@@ -274,9 +274,9 @@ test('Thien Ngoai Luu Tinh secondary explosion ignores terrain, hits nearby bodi
   const s = world(), center = enemy(s, 200), nearby = enemy(s, 270), outside = enemy(s, 400);
   s.Z0.g = true; s.mt = () => false; s.R2 = () => false;
   const skill = standardSkill(s, 362);
-  for (const name of ['LP', 'qP', 'Ds']) declaration(s, 'app/render/arena-02.js', name);
-  for (const name of ['$P', 'B8', 'Be']) declaration(s, 'app/render/arena-01.js', name);
-  declaration(s, 'app/core/state-and-save-01.js', 'eD');
+  for (const name of ['LP', 'qP', 'Ds']) declaration(s, 'src/client/render/arena-02.js', name);
+  for (const name of ['$P', 'B8', 'Be']) declaration(s, 'src/client/render/arena-01.js', name);
+  declaration(s, 'src/client/core/state-and-save-01.js', 'eD');
   s.Qi = () => 5; s.S5 = () => ({ fire: 10 });
   s.eD(skill, center, s.l.enemies, [center], { sid: 363, max: 5, el: 'fire' });
   assert.equal(nearby.hp, 100);
@@ -308,9 +308,9 @@ test('a stationary fallback field uses its chosen cast coordinate rather than th
 test('an enemy entering the Thien Ngoai explosion before activation is hit even if it was outside on cast', () => {
   const s = world(), center = enemy(s, 200), entering = enemy(s, 450);
   const skill = standardSkill(s, 362);
-  for (const name of ['LP', 'qP', 'Ds']) declaration(s, 'app/render/arena-02.js', name);
-  for (const name of ['$P', 'B8', 'Be']) declaration(s, 'app/render/arena-01.js', name);
-  declaration(s, 'app/core/state-and-save-01.js', 'eD');
+  for (const name of ['LP', 'qP', 'Ds']) declaration(s, 'src/client/render/arena-02.js', name);
+  for (const name of ['$P', 'B8', 'Be']) declaration(s, 'src/client/render/arena-01.js', name);
+  declaration(s, 'src/client/core/state-and-save-01.js', 'eD');
   s.Qi = () => 5; s.S5 = () => ({ fire: 10 });
   s.eD(skill, center, s.l.enemies, [center], { sid: 363, max: 5, el: 'fire' });
   entering.x = 270;
@@ -350,9 +350,9 @@ test('ordinary flying attacks remain blocked when casting across terrain', () =>
 
 test('Phong Suong secondary rays ignore terrain and still wait for physical contact', () => {
   const s = world(), target = enemy(s, 180), missed = enemy(s, 180, 180);
-  for (const name of ['LP', 'qP', 'Ds']) declaration(s, 'app/render/arena-02.js', name);
-  for (const name of ['$P', 'B8', 'Be']) declaration(s, 'app/render/arena-01.js', name);
-  declaration(s, 'app/core/state-and-save-01.js', 'eD');
+  for (const name of ['LP', 'qP', 'Ds']) declaration(s, 'src/client/render/arena-02.js', name);
+  for (const name of ['$P', 'B8', 'Be']) declaration(s, 'src/client/render/arena-01.js', name);
+  declaration(s, 'src/client/core/state-and-save-01.js', 'eD');
   s.Qi = () => 1; s.S5 = () => ({ cold: 10 });
   s.Z0.g = true; s.mt = () => false; s.R2 = () => false;
   const skill = standardSkill(s, 380);
@@ -438,16 +438,16 @@ test('a non-piercing narrow impact hits all overlapping bodies but stops before 
 
 test('the player combat log is written only after physical skill contact',()=>{
   const s=world(),target=enemy(s,180);s.m0=0;Object.assign(s.o,{fac:'shaolin',name:'Tester'});s.U9=()=>{};s.$d=()=>{};
-  load(s,'app/ui/combat-log-01.js');shaolin(s);s.oD();
+  load(s,'src/client/ui/combat-log-01.js');shaolin(s);s.oD();
   assert.equal(s.combatLog.entries().length,0);run(s,.1);assert.equal(s.combatLog.entries().length,0);
   run(s,1);assert.equal(s.combatLog.entries('out').length,1);assert.equal(s.combatLog.entries()[0].amount,10);
 });
 
 function secondaryWorld(s) {
- load(s,'app/data/status-effects-01.js');
- for(const name of ['LP','qP','Ds'])declaration(s,'app/render/arena-02.js',name);
- for(const name of ['$P','B8','Be','showNhiepHonImpact'])declaration(s,'app/render/arena-01.js',name);
- declaration(s,'app/core/state-and-save-01.js','eD');
+ load(s,'src/client/data/status-effects-01.js');
+ for(const name of ['LP','qP','Ds'])declaration(s,'src/client/render/arena-02.js',name);
+ for(const name of ['$P','B8','Be','showNhiepHonImpact'])declaration(s,'src/client/render/arena-01.js',name);
+ declaration(s,'src/client/core/state-and-save-01.js','eD');
  s.Qi=(skill,event)=>event.rays?event.rays(skill.L):event.max;s.S5=()=>({phys:10});
 }
 test('Phong Suong primary contact then four real homing rays each damage the same monster once',()=>{
@@ -481,7 +481,7 @@ test('Loi Dong field lasts three seconds with one hit every 300ms and checks liv
  run(s,3);assert.equal(entering.hp,20);const hp=entering.hp;run(s,1);assert.equal(entering.hp,hp);
 });
 test('Thien Dia animation advances twice as fast without changing simulation age',()=>{
- const s=world();declaration(s,'app/render/projectiles-01.js','YP');s.Ds=()=>0;
+ const s=world();declaration(s,'src/client/render/projectiles-01.js','YP');s.Ds=()=>0;
  let time;s.Fa=(sprite,dir,t)=>{time=t;};
  const effect={age:2,lf:18,loop:true,m:{fly:{n:10,ms:100,d:1}},combat:{skill:{id:365}},x:0,y:0,z:0,hz:0};
  s.YP(effect);assert.equal(time,.25);assert.equal(effect.age,2);
@@ -528,7 +528,7 @@ test('Hoanh Tao secondary damage is centered on the caster rather than its dista
 });
 test('all three Thien Vuong level 90 missiles hit in eight directions, after real contact and never beyond range',()=>{
  for(const id of [322,323,325,326,327,408])for(let dir=0;dir<8;dir++){
-  const s=world();load(s,'app/data/status-effects-01.js');
+  const s=world();load(s,'src/client/data/status-effects-01.js');
   const angle=dir*Math.PI/4,target=enemy(s,Math.cos(angle)*65,Math.sin(angle)*65/2),far=enemy(s,Math.cos(angle)*1000,Math.sin(angle)*1000/2);
   const skill=standardSkill(s,id);s.queueSkillContact(s.v,target,skill,h=>s.hs(skill,h));
   assert.equal(target.hp,100);if(![325,408].includes(id))assert.ok(s.l.combatProjectiles.every(e=>e.mid===({322:326,323:327}[id]||id)&&e.kind===1));
@@ -549,7 +549,7 @@ test('Nhiep Hon piercing contacts display one impact on every hit monster beyond
 });
 
 test('Thien Dia one-shot stops drawing after its accelerated final frame instead of freezing until contact expiry',()=>{
- const s=world();load(s,'app/data/status-effects-01.js');declaration(s,'app/render/projectiles-01.js','YP');s.Ds=()=>0;
+ const s=world();load(s,'src/client/data/status-effects-01.js');declaration(s,'src/client/render/projectiles-01.js','YP');s.Ds=()=>0;
  const skill=standardSkill(s,365),target=enemy(s,100);s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
  const effect=s.l.combatProjectiles.find(e=>e.k==='jm');assert.ok(effect);assert.equal(effect.loop,false);
  const frames=[];s.Fa=(sprite,dir,time)=>frames.push(Math.floor(time*1000/sprite.ms));
@@ -564,13 +564,13 @@ test('Thien Dia one-shot stops drawing after its accelerated final frame instead
 test('Thien Vuong hit sheets animate once at a fixed impact point instead of scattering frames along missile paths',()=>{
  for(const [id,spriteId,legacyId]of [[322,326,138],[326,326,138],[323,327,139],[327,327,139]]){
   for(const quiet of [false,true]){
-   const s=world();load(s,'app/data/status-effects-01.js');s.l.quiet=quiet;
+   const s=world();load(s,'src/client/data/status-effects-01.js');s.l.quiet=quiet;
    const originalFly=s.A0.m[spriteId].fly,legacy=s.A0.m[legacyId].hit,target=enemy(s,65),skill=standardSkill(s,id);
    const packed=Array.from({length:8},()=>enemy(s,65));
    s.queueSkillContact(s.v,target,skill,h=>s.hs(skill,h));
    const missiles=s.l.combatProjectiles;assert.ok(missiles.length);assert.ok(missiles.every(e=>e.mid===spriteId&&e.kind===1&&e.m.fly===null&&e.m.hit===null));
    assert.equal(s.A0.m[spriteId].fly,originalFly);
-   declaration(s,'app/render/projectiles-01.js','YP');s.Ds=()=>0;const draws=[];s.Fa=(sprite,dir,t,x,y)=>draws.push({file:sprite.f,t,x,y});
+   declaration(s,'src/client/render/projectiles-01.js','YP');s.Ds=()=>0;const draws=[];s.Fa=(sprite,dir,t,x,y)=>draws.push({file:sprite.f,t,x,y});
    for(const missile of missiles)s.YP({...missile,age:0});assert.equal(draws.length,0);
    const emitted=[];s.l.fxQ=[];s.l.fxQ.push=function(...effects){emitted.push(...effects);return Array.prototype.push.apply(this,effects);};
    assert.equal(target.hp,100);assert.equal(emitted.length,0);run(s,1);assert.equal(target.hp,90);assert.ok(packed.every(mob=>mob.hp===90));
@@ -579,7 +579,7 @@ test('Thien Vuong hit sheets animate once at a fixed impact point instead of sca
    if(!quiet){
     const effect=animations[0];assert.equal(effect.x,65);assert.equal(effect.y,-14);assert.equal(effect.k,'boom');
     target.x=200;target.y=100;
-    declaration(s,'app/render/arena-01.js','CP');declaration(s,'app/render/arena-01.js','TP');
+    declaration(s,'src/client/render/arena-01.js','CP');declaration(s,'src/client/render/arena-01.js','TP');
     for(const t of [0,legacy.ms/1000,legacy.ms*(legacy.n-1)/1000])s.CP({...effect,t});
     assert.equal(draws.length,3);assert.ok(draws.every(draw=>draw.file===`fx/m${legacyId}_hit.webp`&&draw.x===65&&draw.y===-14));
     assert.ok(draws[0].t<draws[1].t&&draws[1].t<draws[2].t);
@@ -593,10 +593,10 @@ test('Thien Vuong hit sheets animate once at a fixed impact point instead of sca
 function lotusWorld(options = {}) {
   const s = world(options);
   secondaryWorld(s);
-  for (const name of ['l1', 'l4', 'Uw', 'Jw', 'F5']) declaration(s, 'app/combat/skills-01.js', name);
-  for (const name of ['I5', 'S5']) declaration(s, 'app/core/attributes-01.js', name);
-  declaration(s, 'app/core/state-and-save-01.js', 'tD');
-  declaration(s, 'app/render/arena-02.js', 'yn');
+  for (const name of ['l1', 'l4', 'Uw', 'Jw', 'F5']) declaration(s, 'src/client/combat/skills-01.js', name);
+  for (const name of ['I5', 'S5']) declaration(s, 'src/client/core/attributes-01.js', name);
+  declaration(s, 'src/client/core/state-and-save-01.js', 'tD');
+  declaration(s, 'src/client/render/arena-02.js', 'yn');
   s.Tw = () => [];
   s.skill = { ...standardSkill(s, 336), ev: true, tot: 40 };
   s.flowers = [];
@@ -782,7 +782,7 @@ test('Vo Hinh Doc emits its green native contact sprite only on nearby living mo
  Object.assign(s,{Yn:{69:{el:'poison',every:10/18,rad:180}},y4:{},zi:()=>1,i6:()=>90,F0:()=>1,
   Q0:['poison'],Rn:()=>null,ja:value=>value,ea:()=>1,ve:3});
  s.l.P.main={};near.res=far.res=dead.res={poison:0};
- declaration(s,'app/gameplay/shop-and-books-01.js','b7');
+ declaration(s,'src/client/gameplay/shop-and-books-01.js','b7');
  s.b7(69,.01);
  assert.equal(near.hp,100);assert.equal(near.poison,3);assert.equal(near.poisonDmg,30);
  assert.equal(far.poison,undefined);assert.equal(dead.poison,undefined);
@@ -797,8 +797,8 @@ test('Vo Hinh Doc emits its green native contact sprite only on nearby living mo
 // Load the actual level-16 event configuration, including its native ring sprite.
 function nhanKiemWorld(options = {}) {
  const s=lotusWorld(options);
- declaration(s,'app/combat/skills-01.js','Vw');
- const source=fs.readFileSync(path.join(ROOT,'app/combat/skills-01.js'),'utf8');
+ declaration(s,'src/client/combat/skills-01.js','Vw');
+ const source=fs.readFileSync(path.join(ROOT,'src/client/combat/skills-01.js'),'utf8');
  const setup=acorn.parse(source,{ecmaVersion:'latest'}).body.find(node=>node.type==='ForOfStatement'&&
   node.right.type==='ArrayExpression'&&node.right.elements.some(value=>value.value===368));
  assert.ok(setup);vm.runInContext(source.slice(setup.start,setup.end),s);
@@ -885,7 +885,7 @@ test('Bang Tam snow begins at cast time and advances through fixed patches to th
   const positions=patches.map(e=>[e.x,e.y]);target.x+=200;target.y+=80;s.v.x-=200;s.v.y-=80;
   run(s,.04);assert.equal(patches[0].t,.05);assert.ok(patches.at(-1).t<0);
   assert.deepEqual(patches.map(e=>[e.x,e.y]),positions);
-  declaration(s,'app/render/arena-01.js','CP');const frames=[];s.Fa=(sprite,dir,t,x,y)=>frames.push({sprite,t,x,y});
+  declaration(s,'src/client/render/arena-01.js','CP');const frames=[];s.Fa=(sprite,dir,t,x,y)=>frames.push({sprite,t,x,y});
   for(const patch of patches)s.CP(patch);
   assert.equal(frames.length,1);assert.equal(frames[0].x,0);assert.equal(frames[0].y,-14);
  }

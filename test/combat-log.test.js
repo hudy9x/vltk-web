@@ -1,7 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const source=fs.readFileSync(path.join(__dirname,'../app/ui/combat-log-01.js'),'utf8');
+const source=fs.readFileSync(path.join(__dirname,'../src/client/ui/combat-log-01.js'),'utf8');
 function game(){
  const s={Date,Math,Number,o:{fac:'wudang',name:'Tester'},m0:0,l:{life:100,quiet:false},T:{1:{n:'Chiêu test'}},saved:0,refreshes:0,
  D:text=>String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'),$:()=>s.saved++,T2:()=>s.refreshes++,
@@ -60,7 +60,7 @@ test('copy exports all filtered events without skill names; clear removes both d
 test('the real player poison tick records its fractional HP loss as incoming damage',()=>{
  const s=game();Object.assign(s.l,{P:{life:100,mana:100,regen:0,manaRegen:0},mana:100,town:true,hpDotT:1,hpDot:10});
  for(const name of ['$w','Sb','advanceSkillContacts','advanceConsumableCooldowns','X9','nP','Ab','cb','Oy','Gv'])s[name]=()=>{};
- const acorn=require('acorn'),text=fs.readFileSync(path.join(__dirname,'../app/core/state-and-save-02.js'),'utf8');
+ const acorn=require('acorn'),text=fs.readFileSync(path.join(__dirname,'../src/client/core/state-and-save-02.js'),'utf8');
  const node=acorn.parse(text,{ecmaVersion:'latest'}).body.find(n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>d.id.name==='Td'));
  vm.runInContext(text.slice(node.start,node.end),s);s.Td(.25);
  assert.equal(s.l.life,97.5);assert.equal(s.combatLog.entries('in').length,1);assert.equal(s.combatLog.entries()[0].amount,2.5);
@@ -75,7 +75,7 @@ test('the real player poison tick records its fractional HP loss as incoming dam
  s.l.quiet=false;s.combatLog.clear();s.combatLog.miss('out','Hổ');assert.equal(s.combatLog.entries()[0].sequence,1);
  });
  test('real accuracy failure logs one outgoing miss and one incoming miss without damage',()=>{
- const s=game(),core=fs.readFileSync(path.join(__dirname,'../app/core/state-and-save-01.js'),'utf8'),acorn=require('acorn');
+ const s=game(),core=fs.readFileSync(path.join(__dirname,'../src/client/core/state-and-save-01.js'),'utf8'),acorn=require('acorn');
  const nodes=acorn.parse(core,{ecmaVersion:'latest'}).body.filter(n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>['hs','U9'].includes(d.id.name)));
  s.Math=Object.create(Math);s.Math.random=()=>1;s.Pe=()=>50;s.showDamageNumber=()=>{};s.v={x:0,y:0};s.l.P={ar:1,def:1};
  for(const node of nodes)vm.runInContext(core.slice(node.start,node.end),s);

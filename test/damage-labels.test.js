@@ -6,7 +6,7 @@ function damageScene(lowFx=false){
  const s={o:{lowFx},l:{txt:[],quiet:false}};vm.createContext(s);loadCombatEngine(s);return s;
 }
 function scene(lowFx=false){
- const source=fs.readFileSync('app/render/arena-01.js','utf8');
+ const source=fs.readFileSync('src/client/render/arena-01.js','utf8');
  const node=acorn.parse(source,{ecmaVersion:'latest'}).body.find(n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>d.id.name==='$A'));
  const s={o:{lowFx},l:{txt:[],quiet:false}};vm.createContext(s);vm.runInContext(source.slice(node.start,node.end),s);return s;
 }
@@ -99,12 +99,12 @@ test('real outgoing and incoming damage keep individual HP/log events while only
   W3(){},Dw:{},Yr:75,U9(){},$d(){},
  });
  Object.assign(s.o,{fac:'cuiyan',name:'Tester'});Object.assign(s.l,{P:{heavy:0,res:{}},life:1000});s.v={x:50,y:70,act:'at'};
- const source=fs.readFileSync('app/core/state-and-save-01.js','utf8');
+ const source=fs.readFileSync('src/client/core/state-and-save-01.js','utf8');
  for(const name of ['hs','U9']){
   const node=acorn.parse(source,{ecmaVersion:'latest'}).body.find(n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>d.id.name===name));
   vm.runInContext(source.slice(node.start,node.end),s);
  }
- vm.runInContext(fs.readFileSync('app/ui/combat-log-01.js','utf8'),s);
+ vm.runInContext(fs.readFileSync('src/client/ui/combat-log-01.js','utf8'),s);
  const monster={x:200,y:300,n:'Quái',hp:1000,tid:1,act:'at',res:{},series:0,ar:100,dmg:10};
  const skill={parts:{phys:100},crit:0,ev2:true};
  s.hs(skill,monster);s.hs(skill,monster);

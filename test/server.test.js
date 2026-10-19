@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const { mkdtempSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
-const { openDatabase, snapshot, initialize, applyBatch, reset } = require('../server/database.ts');
-const { createServer } = require('../server/index.ts');
+const { openDatabase, snapshot, initialize, applyBatch, reset } = require('../src/server/database.ts');
+const { createServer } = require('../src/server/index.ts');
 
 test('save, shared stash and backup survive reopening SQLite; retries cannot overwrite newer saves', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'volam-sqlite-'));
@@ -46,8 +46,15 @@ test('HTTP API persists changes and rejects invalid writes; private server/datab
     assert.equal((await (await fetch(base+'/api/storage')).json()).entries.jxidle_2, batch.operations[0].value);
     assert.equal((await fetch(base+'/api/storage',post({ ...batch,id:'invalid',operations:[{ key:'jxidle_auth',value:'token' }] }))).status,400);
     assert.equal((await fetch(base+'/api/storage', { ...post(batch),headers:{ 'Content-Type':'application/json',Origin:'https://example.org' } })).status,403);
-    for (const file of ['database/game.sqlite','server/database.ts','server/index.ts','.git/config','tools/reset-db.js','app.js']) assert.equal((await fetch(base+'/'+file)).status,404);
+    for (const file of ['database/game.sqlite','server/database.ts','server/index.ts','src/server/index.ts','src/server/database.ts','src/client/bootstrap.js','public/index.html','tools/map-tool/package.json','.git/config','tools/reset-db.js','app.js']) assert.equal((await fetch(base+'/'+file)).status,404);
     assert.match(await (await fetch(base+'/')).text(), /client\/bootstrap.js/);
+    // Files moved on disk must still load at the URLs used by HTML and bootstrap.
+    for (const file of ['client/bootstrap.js', 'data.js', 'setvi.js', 'jxlook.js', 'style.css',
+      'jx1ui.css', 'jx1ui2.css', 'ui20.css', 'manifest.json', 'sw.js', 'fonts/ibm-plex-mono.css', 'img/pl/shaolin.png']) {
+      const response = await fetch(base+'/'+file);
+      assert.equal(response.status, 200, file);
+      assert.ok((await response.arrayBuffer()).byteLength > 0, file);
+    }
     const bundle = await fetch(base+'/app/game.js?v=622');
     assert.equal(bundle.status,200);
     assert.match(await bundle.text(), /sourceMappingURL=game.js.map/);

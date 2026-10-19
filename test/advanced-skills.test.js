@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const acorn = require('acorn');
 const { loadCombatEngine } = require('./helpers/combat-engine');
 const ROOT = path.resolve(__dirname, '..');
-const manifest = require('../skill_assets_manifest.json');
+const manifest = require('../docs/skill_assets_manifest.json');
 function load(s, file) { vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), s, { filename: file }); }
 function declaration(s, file, name) {
   const source = fs.readFileSync(path.join(ROOT, file), 'utf8');
@@ -23,9 +23,9 @@ function catalog() {
     h4:{}, Df:{}, B8(){}, Q0:['phys','cold','fire','poison','light'],
   };
   s.window=s;vm.createContext(s);
-  for (const file of ['data.js','app/data/projectile-effects-01.js','app/data/projectile-effects-02.js','app/data/advanced-skills-01.js','app/data/skill-150-details-01.js']) load(s,file);
+  for (const file of ['public/data.js','src/client/data/projectile-effects-01.js','src/client/data/projectile-effects-02.js','src/client/data/advanced-skills-01.js','src/client/data/skill-150-details-01.js']) load(s,file);
   s.T=s.JX.skills;s.I=Object.fromEntries(s.JX.factions.map(f=>[f.key,f]));s.A0=s.JFX;
-  declaration(s,'app/render/arena-01.js','TP');
+  declaration(s,'src/client/render/arena-01.js','TP');
   return s;
 }
 test('all 34 advanced skills register once with their faction, icons and usable primary FX', () => {
@@ -34,27 +34,27 @@ test('all 34 advanced skills register once with their faction, icons and usable 
     const skill=s.T[entry.id];assert.ok(skill,entry.id);
     assert.equal(skill.tier,entry.tier);assert.equal(skill.req,entry.req);assert.equal(skill.f,entry.faction);
     assert.equal(s.I[skill.f].skills.filter(id=>id===skill.id).length,1);
-    assert.ok(fs.existsSync(path.join(ROOT,skill.ic)));
+    assert.ok(fs.existsSync(path.join(ROOT,'public',skill.ic)));
     if (skill.tier===150) {
       assert.ok(['physicsenhance_p','poisondamage_v','colddamage_v','firedamage_v','lightingdamage_v'].some(key=>skill.attr[key]),skill.n);
       const fx=s.JFX.f[skill.id];assert.ok(s.JFX.m[fx.c],skill.n);
-      for (const value of Object.values(s.JFX.m[fx.c])) if(value?.f) assert.ok(fs.existsSync(path.join(ROOT,value.f)),value.f);
+      for (const value of Object.values(s.JFX.m[fx.c])) if(value?.f) assert.ok(fs.existsSync(path.join(ROOT,'public',value.f)),value.f);
     } else { assert.equal(skill.enemy,0);assert.match(skill.d,/chưa được áp dụng/); }
   }
-  load(s,'app/data/advanced-skills-01.js');
+  load(s,'src/client/data/advanced-skills-01.js');
   for(const entry of Object.values(manifest))assert.equal(s.I[entry.faction].skills.filter(id=>id===entry.id).length,1);
 });
 
 // Real catalog -> F2 -> G3 -> physical update, shared by the world and arena.
 function advancedCombat() {
-  const s=catalog();loadCombatEngine(s);load(s,'app/render/projectiles-01.js');
+  const s=catalog();loadCombatEngine(s);load(s,'src/client/render/projectiles-01.js');
   Object.assign(s,{mw:/^(skill_|missle_)/,ww:10,s7:0,Fw:{},w4:.82,J5:.75,y5:2,
     Rr:{phys:'physicsdamage_v',poison:'poisondamage_v',cold:'colddamage_v',fire:'firedamage_v',light:'lightingdamage_v'},
     Cw:()=>1,n7:()=>false,j1:()=>null,Zw:()=>0,q5:()=>1});
-  for(const name of ['r4','U2','t7','i4','r7','Y5','e7','a7'])declaration(s,'app/combat/skills-01.js',name);
-  declaration(s,'app/core/attributes-01.js','N5');
-  declaration(s,'app/core/helpers-and-config-01.js','b0');
-  for(const name of ['Li','F2'])declaration(s,'app/core/attributes-02.js',name);
+  for(const name of ['r4','U2','t7','i4','r7','Y5','e7','a7'])declaration(s,'src/client/combat/skills-01.js',name);
+  declaration(s,'src/client/core/attributes-01.js','N5');
+  declaration(s,'src/client/core/helpers-and-config-01.js','b0');
+  for(const name of ['Li','F2'])declaration(s,'src/client/core/attributes-02.js',name);
   const stats={skillBonus:{},seriesSkill:0,wmin:100,wmax:100,physPct:0,add:{},enh:{},crit:0,ignoreDef:0,aspd:2,series:0};
   return {s, skill:(id,level=25)=>s.F2(stats,s.T[id],level)};
 }
@@ -210,7 +210,7 @@ test('Vô Ảnh Xuyên plays its original impact once at the struck enemy from l
       assert.equal(fx.x,target.x);assert.equal(fx.y,target.y-14);
       assert.equal(fx.life,20*53/1000);assert.ok(fx.cosmetic&&!fx.combat);
       assert.ok(manifest[1069].assets.includes(fx.s.f));
-      assert.ok(fs.existsSync(path.join(ROOT,fx.s.f)));
+      assert.ok(fs.existsSync(path.join(ROOT,'public',fx.s.f)));
     }
     for(let i=0;i<120;i++)s.advanceSkillContacts(1/60);
     assert.equal(visible().length,0);assert.equal(hits,1);
@@ -380,7 +380,7 @@ test('Thời Thặng Lục Long flies first, followed by its delayed fire core a
   const core=s.l.fx.find(fx=>fx.s?.f==='fx/advanced/m363_fly.webp');
   assert.ok(core&&core.cosmetic&&!core.combat);assert.ok(core.t<0&&flames[0].t<0);
   const draws=[];s.Fa=(...args)=>draws.push(args);s.W={globalAlpha:1};
-  declaration(s,'app/render/arena-02.js','Ds');declaration(s,'app/render/arena-01.js','CP');
+  declaration(s,'src/client/render/arena-02.js','Ds');declaration(s,'src/client/render/arena-01.js','CP');
   s.YP(dragon);s.CP(core);s.CP(flames[0]);
   assert.ok(draws.some(args=>args[0].f==='fx/advanced/m335_fly.webp'));
   assert.ok(!draws.some(args=>args[0].f==='fx/advanced/m363_fly.webp'||args[0].f==='fx/advanced/m344_fly.webp'),
@@ -415,8 +415,8 @@ test('every faction skill grid exposes Lv120 and Lv150 while preserving level ga
   const s=catalog(),nodes=new Map();s.m=id=>{if(!nodes.has(id))nodes.set(id,{});return nodes.get(id);};
   Object.assign(s,{document:{querySelectorAll:()=>[]},D:String,N:()=>0,z1:()=>0,SA:()=>false,GA:()=>s.o.lvl,
     W2:skill=>s.o.lvl>=skill.req,m4:()=>false,P4:()=>true,D2(){},Ri(){}});
-  for(const name of ['Ni','Q1'])declaration(s,'app/core/attributes-02.js',name);
-  declaration(s,'app/ui/world-panels-01.js','$B');
+  for(const name of ['Ni','Q1'])declaration(s,'src/client/core/attributes-02.js',name);
+  declaration(s,'src/client/ui/world-panels-01.js','$B');
   for(const faction of Object.values(s.I).filter(f=>Object.values(manifest).some(sk=>sk.faction===f.key))) {
     s.o.fac=faction.key;s.$B();const html=nodes.get('#t-skill').innerHTML;
     assert.match(html,/Lv120/);assert.match(html,/Lv150/);
@@ -428,14 +428,14 @@ test('every faction skill grid exposes Lv120 and Lv150 while preserving level ga
   }
 });
 test('all 24 level-150 primary skills register physical contacts and hit once within the cast quota', () => {
-  const s=catalog();loadCombatEngine(s);load(s,'app/render/projectiles-01.js');
+  const s=catalog();loadCombatEngine(s);load(s,'src/client/render/projectiles-01.js');
   Object.assign(s, {mw:/^(skill_|missle_)/,ww:10,s7:0,Fw:{},w4:.82,J5:.75,y5:2,
     Rr:{phys:'physicsdamage_v',poison:'poisondamage_v',cold:'colddamage_v',fire:'firedamage_v',light:'lightingdamage_v'},
     Cw:()=>1,n7:()=>false,j1:()=>null,Zw:()=>0,q5:()=>1});
-  for(const name of ['r4','U2','t7','i4','r7','Y5','e7','a7'])declaration(s,'app/combat/skills-01.js',name);
-  declaration(s,'app/core/attributes-01.js','N5');
-  declaration(s,'app/core/helpers-and-config-01.js','b0');
-  for(const name of ['Li','F2'])declaration(s,'app/core/attributes-02.js',name);
+  for(const name of ['r4','U2','t7','i4','r7','Y5','e7','a7'])declaration(s,'src/client/combat/skills-01.js',name);
+  declaration(s,'src/client/core/attributes-01.js','N5');
+  declaration(s,'src/client/core/helpers-and-config-01.js','b0');
+  for(const name of ['Li','F2'])declaration(s,'src/client/core/attributes-02.js',name);
   const stats={skillBonus:{},seriesSkill:0,wmin:100,wmax:100,physPct:0,add:{},enh:{},crit:0,ignoreDef:0,aspd:2,series:0};
   for(const entry of Object.values(manifest).filter(sk=>sk.tier===150)) {
     s.l.fx=[];s.l.combatProjectiles=[];s.v.actionRevision=0;s.v.actionState=null;
@@ -529,7 +529,7 @@ test('Kiếm Hoa charge and main sword have independent hit quotas and obey terr
 test('Kiếm Hoa uses the documented p6 charge once, not the secondary missile impact sheet',()=>{
   const {s,skill}=advancedCombat();s.j3=160;
   // Exercise real generic pre-cast rendering to catch a duplicate p6 layer.
-  declaration(s,'app/render/arena-01.js','Ya');
+  declaration(s,'src/client/render/arena-01.js','Ya');
   const caster={x:500,y:500,hp:100},target={x:800,y:500,hp:100,r:1};
   const cast=s.queueSkillContact(caster,target,skill(1061),()=>{},{targets:()=>[],windup:0});
   const charge=s.l.combatProjectiles.find(fx=>fx.combat!==cast);
@@ -547,7 +547,7 @@ test('Kiếm Hoa uses the documented p6 charge once, not the secondary missile i
 
 // Execute the real j0 support-aggregation loop, followed by the real F2 formula.
 function supportStats(s, levels) {
-  const text=fs.readFileSync(path.join(ROOT,'app/core/attributes-01.js'),'utf8');
+  const text=fs.readFileSync(path.join(ROOT,'src/client/core/attributes-01.js'),'utf8');
   const tree=acorn.parse(text,{ecmaVersion:'latest'});
   const j0=tree.body.find(node=>node.type==='VariableDeclaration'&&node.declarations[0].id.name==='j0').declarations[0].init;
   const loop=j0.body.body.find(node=>node.type==='ForInStatement'&&text.slice(node.start,node.end).includes('u.skillBonus'));
@@ -576,9 +576,9 @@ test('24 detail entries and all 82 exact support curves cover the document witho
   for(const [id,total]of [[1055,395],[1056,114],[1076,305],[1081,197]])
     assert.equal(details[id].support.reduce((n,link)=>n+link.maximum,0),total);
   const before=JSON.stringify(s.T);
-  load(s,'app/data/skill-150-details-01.js');assert.equal(JSON.stringify(s.T),before,'reload must be idempotent');
+  load(s,'src/client/data/skill-150-details-01.js');assert.equal(JSON.stringify(s.T),before,'reload must be idempotent');
   const base={window:null,JFX:{m:{},f:{},c:{}}};base.window=base;vm.createContext(base);
-  load(base,'data.js');load(base,'app/data/advanced-skills-01.js');
+  load(base,'public/data.js');load(base,'src/client/data/advanced-skills-01.js');
   for(const skill of Object.values(base.JX.skills)) {
     if(skill.tier===120)assert.equal(JSON.stringify(s.T[skill.id]),JSON.stringify(skill));
     for(const [key,value]of Object.entries(skill.attr))assert.equal(JSON.stringify(s.T[skill.id].attr[key]),JSON.stringify(value),`${skill.id}.${key}`);
@@ -603,9 +603,9 @@ test('150 skill details use the same compact current/next-level layout as 90 wit
     g0:['Kim','Mộc','Thủy','Hỏa','Thổ'],j1:()=>null,Ci:()=>true,B5:{},i4:()=>false,
     xv:()=>['Thông số chiêu'],Gf:()=>[],l1:{},f4:()=>0,Ev:String,Xf:{},
     mw:/^(skill_|missle_)/,ww:10,y7:()=>'',D7:()=>'',v0:()=>0});
-  declaration(s,'app/core/helpers-and-config-01.js','b0');
-  for(const name of ['Bv','Qf'])declaration(s,'app/ui/legacy-panels-and-audio-01.js',name);
-  declaration(s,'app/ui/legacy-panels-and-audio-02.js','Kf');
+  declaration(s,'src/client/core/helpers-and-config-01.js','b0');
+  for(const name of ['Bv','Qf'])declaration(s,'src/client/ui/legacy-panels-and-audio-01.js',name);
+  declaration(s,'src/client/ui/legacy-panels-and-audio-02.js','Kf');
   for(const id of Object.keys(s.SKILL_150_DETAILS)) {
     const html=s.Kf(+id,10,0,10,10,11);
     assert.match(html,/Cấp hiện tại: 10/);assert.match(html,/Cấp kế tiếp: 11/);
@@ -633,25 +633,25 @@ function normalizedSkillUi() {
     E:(n,a,b)=>Math.max(a,Math.min(b,n)),mw:/^(skill_|missle_)/,ww:10,
     z1:()=>0,Ci:()=>true,i4:()=>false,wn:()=> 'passive',_7:{passive:'Hỗ trợ'},
     Ev:String,v0:()=>0,D7:()=>'',y7:()=>'',Ti:key=>key,f4:()=>0};
-  s.window=s;vm.createContext(s);load(s,'data.js');s.T=s.JX.skills;s.S=s.JX;
-  const source=fs.readFileSync(path.join(ROOT,'app/core/helpers-and-config-01.js'),'utf8');
+  s.window=s;vm.createContext(s);load(s,'public/data.js');s.T=s.JX.skills;s.S=s.JX;
+  const source=fs.readFileSync(path.join(ROOT,'src/client/core/helpers-and-config-01.js'),'utf8');
   const normalize=acorn.parse(source,{ecmaVersion:'latest'}).body.find(node=>
     node.type==='IfStatement'&&source.slice(node.test.start,node.test.end)==='window.SK_STD');
   assert.ok(normalize);
   // Follow the actual manifest order, including the attr replacement that used
   // to erase all imported 150 support links after isolated catalog tests passed.
-  for(const {file}of require('../app/modules.json').modules) {
-    if(/^data\/skill-tables-|^data\/advanced-skills-|^data\/skill-150-details-/.test(file))load(s,'app/'+file);
+  for(const {file}of require('../src/client/modules.json').modules) {
+    if(/^data\/skill-tables-|^data\/advanced-skills-|^data\/skill-150-details-/.test(file))load(s,'src/client/'+file);
     if(file==='core/helpers-and-config-01.js')vm.runInContext(source.slice(normalize.start,normalize.end),s);
   }
   s.I=Object.fromEntries(s.JX.factions.map(f=>[f.key,f]));
   s.D=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-  for(const name of ['b0','i1','pw','UA','j1','B5','g0'])declaration(s,'app/core/helpers-and-config-01.js',name);
-  declaration(s,'app/combat/skills-01.js','l1');
-  for(const name of ['Cv','X8','Sv','Iv','Xf'])declaration(s,'app/ui/legacy-panels-and-audio-03.js',name);
-  for(const name of ['xv','Bv','Qf'])declaration(s,'app/ui/legacy-panels-and-audio-01.js',name);
-  load(s,'app/ui/skill-150-effects-01.js');
-  for(const name of ['Gf','Kf'])declaration(s,'app/ui/legacy-panels-and-audio-02.js',name);
+  for(const name of ['b0','i1','pw','UA','j1','B5','g0'])declaration(s,'src/client/core/helpers-and-config-01.js',name);
+  declaration(s,'src/client/combat/skills-01.js','l1');
+  for(const name of ['Cv','X8','Sv','Iv','Xf'])declaration(s,'src/client/ui/legacy-panels-and-audio-03.js',name);
+  for(const name of ['xv','Bv','Qf'])declaration(s,'src/client/ui/legacy-panels-and-audio-01.js',name);
+  load(s,'src/client/ui/skill-150-effects-01.js');
+  for(const name of ['Gf','Kf'])declaration(s,'src/client/ui/legacy-panels-and-audio-02.js',name);
   return s;
 }
 

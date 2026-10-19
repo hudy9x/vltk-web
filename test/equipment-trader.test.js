@@ -7,7 +7,7 @@ function game(arena = false) {
   const s = { document: { currentScript: null, createElement: () => ({}), head: { appendChild() {} } }, Math: Object.create(Math) };
   s.window = s;
   vm.createContext(s);
-  for (const file of ['data.js', 'setvi.js', 'app/core/item-sets-01.js', 'app/data/equipment-and-zone-patches-01.js']) vm.runInContext(fs.readFileSync(file, 'utf8'), s);
+  for (const file of ['public/data.js', 'public/setvi.js', 'src/client/core/item-sets-01.js', 'src/client/data/equipment-and-zone-patches-01.js']) vm.runInContext(fs.readFileSync(file, 'utf8'), s);
   s.S = s.JX;
   s.vA = s.S.factions.filter(f => f.skills?.length);
   s.I = Object.fromEntries(s.vA.map(f => [f.key, f]));
@@ -29,12 +29,12 @@ function game(arena = false) {
   s.$ = () => { s.saved = JSON.parse(JSON.stringify(s.o)); };
   s.V = () => {}; s.x1 = () => false;
   for (const [file, names] of [
-    ['app/gameplay/equipment-01.js', ['k6']],
-    ['app/core/helpers-and-config-01.js', ['un', 'Wr']],
-    ['app/combat/skills-01.js', ['V2', 'G5', 's4']],
-    ['app/core/attributes-01.js', ['Y2', 'Dt']],
-    ['app/gameplay/equipment-02.js', ['Mp', 'Hp', '$a']],
-    ['app/gameplay/crafting-01.js', ['K1', 'V6', 'F6', 'cA']],
+    ['src/client/gameplay/equipment-01.js', ['k6']],
+    ['src/client/core/helpers-and-config-01.js', ['un', 'Wr']],
+    ['src/client/combat/skills-01.js', ['V2', 'G5', 's4']],
+    ['src/client/core/attributes-01.js', ['Y2', 'Dt']],
+    ['src/client/gameplay/equipment-02.js', ['Mp', 'Hp', '$a']],
+    ['src/client/gameplay/crafting-01.js', ['K1', 'V6', 'F6', 'cA']],
   ]) {
     const source = fs.readFileSync(file, 'utf8');
     const ast = acorn.parse(source, { ecmaVersion: 'latest' });
@@ -44,7 +44,7 @@ function game(arena = false) {
     }
   }
   for (const template of s.S.sets.gold) s.cA(template); // Warm the existing family cache.
-  vm.runInContext(fs.readFileSync('app/gameplay/equipment-trader-01.js', 'utf8'), s);
+  vm.runInContext(fs.readFileSync('src/client/gameplay/equipment-trader-01.js', 'utf8'), s);
   return s;
 }
 function selection(s, item = s.equipmentTrader.blueCatalog(0)[0], series = 0) {

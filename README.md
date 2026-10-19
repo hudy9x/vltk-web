@@ -14,9 +14,29 @@ npm start
 `npm run dev` bật môi trường development và Node watch. `PORT=3001 npm start` đổi port.
 `DB_PATH=/absolute/path/test.sqlite npm start` dùng database riêng.
 
+## Cấu trúc thư mục
+
+```text
+src/client/       Game, UI, combat, map và bootstrap trên trình duyệt
+src/server/       Fastify, API, SQLite và phục vụ tài nguyên
+public/           HTML, CSS, dữ liệu legacy, ảnh, âm thanh và font
+database/         Migration, seed và SQLite local
+tools/            Build, database, tài nguyên và công cụ map-tool/
+test/             Kiểm thử tự động
+docs/             Đặc tả, hướng dẫn và manifest tài nguyên skill
+output/           Ảnh chụp và kết quả kiểm tra
+```
+
+File trên ổ đĩa đã được gom theo vai trò. URL trình duyệt vẫn giữ nguyên:
+`/client/bootstrap.js` trỏ đến `src/client/bootstrap.js`, `/app/...` trỏ đến
+`src/client/...`, còn tài nguyên như `/img/...` được đọc từ `public/`.
+Server chỉ phục vụ các đường dẫn trong allowlist; không mở toàn bộ repository.
+Game được build thành `src/client/game.js` và source map; hai file này không đưa vào Git.
+Map editor chạy từ `tools/map-tool/` và vẫn chọn root repository làm workspace.
+
 ## Đọc và chỉnh sửa server
 
-Bắt đầu tại [server/index.ts](server/index.ts). `createServer()` tạo app nhưng
+Bắt đầu tại [src/server/index.ts](src/server/index.ts). `createServer()` tạo app nhưng
 không mở port; `startServer()` mới listen ở `127.0.0.1`. Import factory từ test
 không tự khởi động server. Luồng khởi tạo:
 
@@ -32,14 +52,14 @@ index.ts -> mở SQLite -> build game -> seed catalog -> tạo Fastify
 
 | File | Trách nhiệm |
 | --- | --- |
-| `server/index.ts` | Factory, cấu hình Fastify, khởi động/dừng server |
-| `server/routes/api.ts` | Config, health, storage, catalog và báo cáo tài nguyên |
-| `server/routes/static.ts` | Phục vụ file theo whitelist, stream tài nguyên, rebuild game khi reload |
-| `server/database.ts` | SQLite, kiểm tra dữ liệu save, transaction, retry batch và reset |
-| `server/assets.ts` | Kiểm tra byte ảnh/audio/font, sửa base64, tải/cache tài nguyên |
-| `server/http.ts` | JSON response, parse body, kiểu lỗi HTTP |
-| `server/paths.ts` | Root của dự án và kiểm tra file đang được chạy trực tiếp |
-| `server/types.ts` | Kiểu services, cấu hình server và payload storage |
+| `src/server/index.ts` | Factory, cấu hình Fastify, khởi động/dừng server |
+| `src/server/routes/api.ts` | Config, health, storage, catalog và báo cáo tài nguyên |
+| `src/server/routes/static.ts` | Phục vụ file theo whitelist, stream tài nguyên, rebuild game khi reload |
+| `src/server/database.ts` | SQLite, kiểm tra dữ liệu save, transaction, retry batch và reset |
+| `src/server/assets.ts` | Kiểm tra byte ảnh/audio/font, sửa base64, tải/cache tài nguyên |
+| `src/server/http.ts` | JSON response, parse body, kiểu lỗi HTTP |
+| `src/server/paths.ts` | Root của dự án và kiểm tra file đang được chạy trực tiếp |
+| `src/server/types.ts` | Kiểu services, cấu hình server và payload storage |
 | `database/seeds/catalog.ts` | Nhập catalog từ dữ liệu game vào SQLite |
 
 Server giữ URL/payload/status API, SQL schema, transaction và database hiện có.
@@ -51,13 +71,13 @@ qua HTTP, vì cùng repo còn chứa SQLite, source server và `.git`.
 ```sh
 npm run typecheck # kiểm tra combat TS + server TS bằng hai tsconfig riêng
 npm run build     # type-check cả hai, sinh bundle JS của game + source map
-npm run dev       # Node watch chạy server/index.ts trực tiếp
-npm start         # chạy server/index.ts trực tiếp
+npm run dev       # Node watch chạy src/server/index.ts trực tiếp
+npm start         # chạy src/server/index.ts trực tiếp
 npm test          # integration HTTP/SQLite, Fastify và các test game
 ```
 
 `tsconfig.server.json` dùng NodeNext, strict và chỉ cho phép cú pháp TS có thể
-xóa kiểu. `tsconfig.json` dành cho combat trên trình duyệt. `server/package.json`
+xóa kiểu. `tsconfig.json` dành cho combat trên trình duyệt. `src/server/package.json`
 và `database/package.json` xác định ESM cho hai nhóm này; tools/test JS hiện có
 tiếp tục dùng CommonJS và import TS qua Node.js 24.
 Factory trả `{ app, server, db }`: `app` là Fastify instance (dùng `inject`,
@@ -170,39 +190,39 @@ cùng ⚔️ thay cho chữ sát thương. Số thứ tự có tối thiểu 3 c
 1 khi xóa log hoặc đổi nhân vật.
 
 ```text
-app/*/*.js -> tools/build-app.js -> app/game.js
+src/client/*/*.js -> tools/build-app.js -> src/client/game.js
                                      ^
-index.html -> client/bootstrap.js ---+ (sau data.js + setvi.js)
+public/index.html -> src/client/bootstrap.js ---+ (sau data.js + setvi.js)
                                      |
                            combat + UI + Canvas -> jxlook.js / assets
 ```
 
 Đây là game web idle lấy cảm hứng từ JX1/VLTK. Combat, AI, loot, inventory,
-forge và nhiệm vụ chạy ở trình duyệt từ source trong `app/`. Repo ban đầu có các file JS/CSS
+forge và nhiệm vụ chạy ở trình duyệt từ source trong `src/client/`. Repo ban đầu có các file JS/CSS
 rỗng; chúng được khôi phục từ https://volamidle.pages.dev/ (bản v622, ngày 11/10/2026).
 
 ## Chỉnh sửa game
 
-Source trong `app/` được tổ chức theo nhóm
+Source trong `src/client/` được tổ chức theo nhóm
 data, core, combat, gameplay, render, UI, systems, online và dev.
-Xem [app/README.md](app/README.md) để tìm đúng nhóm.
-`app/modules.json` giữ thứ tự ghép và danh sách symbol từng file.
+Xem [src/client/README.md](src/client/README.md) để tìm đúng nhóm.
+`src/client/modules.json` giữ thứ tự ghép và danh sách symbol từng file.
 
 ```sh
 npm run typecheck # kiểm tra kiểu TS, không sinh file
-npm run build   # kiểm tra kiểu, build cả JS + TS thành app/game.js + source map
+npm run build   # kiểm tra kiểu, build cả JS + TS thành src/client/game.js + source map
 npm test       # kiểm tra module/source map, GM và luồng SQLite/HTTP
-npm start      # tự build lúc khởi động và mỗi lần browser tải app/game.js
+npm start      # tự build lúc khởi động và mỗi lần browser tải /app/game.js
 ```
 
 Chỉnh file source rồi reload trình duyệt. DevTools dùng source map để hiển thị
-file trong `app/`. Không sửa `app/game.js`: đây là output được tạo lại tự động.
+file trong `src/client/`. Không sửa `src/client/game.js`: đây là output được tạo lại tự động.
 Các module JS cũ vẫn dùng chung scope và tên biến từ bản gốc; builder ghép chúng
 trong cùng IIFE để giữ hành vi. Phần va chạm combat đã dùng các ES module TypeScript.
 
 ### Đọc combat từ `index.ts`
 
-Bắt đầu tại [app/combat/index.ts](app/combat/index.ts). File này mô tả luồng và
+Bắt đầu tại [src/client/combat/index.ts](src/client/combat/index.ts). File này mô tả luồng và
 export API dễ đọc: `castSkill`, `updateCombat`, `drawFallbackProjectile`.
 
 ```text
@@ -227,19 +247,19 @@ Canvas -> drawFallbackProjectile -> render.ts (chỉ vẽ)
 
 | File | Đọc/chỉnh gì |
 | --- | --- |
-| `app/combat/index.ts` | Điểm bắt đầu, API và thứ tự xử lý |
-| `app/combat/types.ts` | Kiểu skill, mục tiêu, cast, đạn/vùng chiêu và callback |
-| `app/combat/config.ts` | Phạm vi xuất chiêu elip và skill bỏ qua vật cản |
-| `app/combat/casting.ts` | Vùng chữ nhật hẹp, hệ số thu nhỏ vùng nổ, số hit, windup, nhịp và thời hạn |
-| `app/combat/simulation.ts` | Cập nhật chuyển động, thời gian tồn tại, cleanup và hàng đợi FX |
-| `app/combat/geometry.ts` | Quét đường đạn qua hình tròn/chữ nhật |
-| `app/combat/collision.ts` | Lọc/sắp xếp va chạm, vùng nổ và các quái chồng nhau |
-| `app/combat/damage.ts` | Giới hạn số hit và một lượt damage mỗi pulse trước khi gọi `onHit` |
-| `app/combat/impact-fields.ts` | Hoa sen Băng Tung Vô Ảnh theo từng tia va chạm, vùng sát thương 80 |
-| `app/combat/damage-labels.ts` | Gộp damage trong 120 ms, xếp tối đa 4 dòng theo từng mục tiêu và bảng màu |
-| `app/combat/render.ts` | Vẽ đạn/vùng thay thế khi thiếu sprite |
-| `app/combat/legacy-bridge.js` | Nối tên hàm JS hiện có sang API TS, dùng chung state |
-| `app/combat/legacy-globals.d.ts` | Khai báo kiểu tại biên TS/JS, không tạo state mới |
+| `src/client/combat/index.ts` | Điểm bắt đầu, API và thứ tự xử lý |
+| `src/client/combat/types.ts` | Kiểu skill, mục tiêu, cast, đạn/vùng chiêu và callback |
+| `src/client/combat/config.ts` | Phạm vi xuất chiêu elip và skill bỏ qua vật cản |
+| `src/client/combat/casting.ts` | Vùng chữ nhật hẹp, hệ số thu nhỏ vùng nổ, số hit, windup, nhịp và thời hạn |
+| `src/client/combat/simulation.ts` | Cập nhật chuyển động, thời gian tồn tại, cleanup và hàng đợi FX |
+| `src/client/combat/geometry.ts` | Quét đường đạn qua hình tròn/chữ nhật |
+| `src/client/combat/collision.ts` | Lọc/sắp xếp va chạm, vùng nổ và các quái chồng nhau |
+| `src/client/combat/damage.ts` | Giới hạn số hit và một lượt damage mỗi pulse trước khi gọi `onHit` |
+| `src/client/combat/impact-fields.ts` | Hoa sen Băng Tung Vô Ảnh theo từng tia va chạm, vùng sát thương 80 |
+| `src/client/combat/damage-labels.ts` | Gộp damage trong 120 ms, xếp tối đa 4 dòng theo từng mục tiêu và bảng màu |
+| `src/client/combat/render.ts` | Vẽ đạn/vùng thay thế khi thiếu sprite |
+| `src/client/combat/legacy-bridge.js` | Nối tên hàm JS hiện có sang API TS, dùng chung state |
+| `src/client/combat/legacy-globals.d.ts` | Khai báo kiểu tại biên TS/JS, không tạo state mới |
 
 Số damage bám theo thân mục tiêu, xếp dọc tối đa 4 dòng (3 khi giảm FX).
 Số mới xuất hiện giữa thân rồi bay lên ngay với tốc độ `riseSpeed` (mặc định 40 px/s).
@@ -283,7 +303,7 @@ Giữ entry ở đúng vị trí khởi tạo của module JS được thay th�
 Server tự build để tiện dev; chạy `npm run build` trước khi phát hành để kiểm tra
 kiểu, vì lần build tự động khi reload chỉ biên dịch nhanh.
 
-`npm test` chạy tuần tự vì các test HTTP cùng dùng output `app/game.js`. Các test
+`npm test` chạy tuần tự vì các test HTTP cùng dùng output `src/client/game.js`. Các test
 combat dùng đúng entry TS đã bundle, kiểm tra cả hành vi cũ và bridge. Test build
 kiểm tra source map và việc cập nhật file TS được import.
 
@@ -299,7 +319,7 @@ khi mục tiêu chạy ra xa. Click một mục tiêu hoặc vị trí mới đ�
 Thời gian giữa các đòn vẫn được giữ, nhưng bộ đếm tiếp tục giảm khi đứng chờ
 trong manual để không phát sinh độ trễ do bộ đếm bị đóng băng.
 
-`app/combat/index.ts` dẫn đến các module cập nhật đạn và vùng đánh trong vòng mô phỏng.
+`src/client/combat/index.ts` dẫn đến các module cập nhật đạn và vùng đánh trong vòng mô phỏng.
 Đạn phải cắt hitbox mục tiêu; đạn và cận chiến có 0,12 giây ra đòn. Đạn thẳng giữ
 hướng ban đầu; đạn truy đuổi bẻ hướng theo dữ liệu chuyển động của từng chiêu.
 Vùng skill đứng yên xuất hiện tại tọa độ khởi tạo, không chạy theo người tung
@@ -454,7 +474,7 @@ Môi trường được bootstrap đọc từ `GET /api/config`, không bật b�
   vào Hành trang; cần 2 ô trống. Không tự trang bị.
 
 Các lệnh dùng luồng save hiện tại và được đồng bộ sang SQLite. Source GM nằm ở
-`app/dev/game-master-01.js`.
+`src/client/dev/game-master-01.js`.
 
 Nút **Bán nhanh** cạnh GM cũng chỉ hiện trong development. Bấm để bật, sau đó bấm
 từng món trong Hành trang để bán ngay toàn bộ món/chồng, không hỏi xác nhận.

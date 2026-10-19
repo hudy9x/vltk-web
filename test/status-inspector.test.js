@@ -26,9 +26,9 @@ function game(){
  ja:(damage,_kind,_from,_to,res)=>damage*(100-Math.max(-75,Math.min(75,res.cold)))/100,
  };
  vm.createContext(s);
- for(const name of ['pt','M5','ua','j0'])declaration(s,'app/core/attributes-01.js',name);
- declaration(s,'app/combat/skills-01.js','z');
- for(const name of ['F2','Ow'])declaration(s,'app/core/attributes-02.js',name);
+ for(const name of ['pt','M5','ua','j0'])declaration(s,'src/client/core/attributes-01.js',name);
+ declaration(s,'src/client/combat/skills-01.js','z');
+ for(const name of ['F2','Ow'])declaration(s,'src/client/core/attributes-02.js',name);
  vm.runInContext(compileTypeScriptEntry('status/index.ts','StatusInspector').code,s);
  s.timers=timers;s.listeners=listeners;s.elements=elements;
  s.gear={n:'Nhẫn băng',base:[],mag:[{a:'do_stun_p',p:[25,0,0]},{a:'anti_stuntimereduce_p',p:[300,0,0]},

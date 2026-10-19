@@ -4,9 +4,9 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
-const { openDatabase, snapshot, reset } = require('../server/database.ts');
-const { createServer } = require('../server/index.ts');
-const source = fs.readFileSync(path.join(__dirname,'../client/bootstrap.js'),'utf8');
+const { openDatabase, snapshot, reset } = require('../src/server/database.ts');
+const { createServer } = require('../src/server/index.ts');
+const source = fs.readFileSync(path.join(__dirname,'../src/client/bootstrap.js'),'utf8');
 const OUTBOX = '__volam_sqlite_outbox';
 async function boot(base, values, { failWrites = false, search = '' } = {}) {
   class Storage {

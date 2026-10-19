@@ -16,10 +16,10 @@
     "resolveJsonModule": true
   },
   "include": [
-    "app/combat/**/*.ts",
-    "app/render/**/*.ts",
-    "app/simulator/**/*.ts",
-    "app/status/**/*.ts",
-    "app/maps/**/*.ts"
+    "src/client/combat/**/*.ts",
+    "src/client/render/**/*.ts",
+    "src/client/simulator/**/*.ts",
+    "src/client/status/**/*.ts",
+    "src/client/maps/**/*.ts"
   ]
 }

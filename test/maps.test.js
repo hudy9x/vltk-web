@@ -27,17 +27,17 @@ function randomSource(seed = 42) {
 }
 
 test('all map artwork is local to its map folder and Test maps are excluded from runtime loading', () => {
-  const oldFolder = path.join(__dirname, '../img/z');
+  const oldFolder = path.join(__dirname, '../public/img/z');
   assert.ok(!fs.existsSync(oldFolder) || fs.readdirSync(oldFolder).length === 0);
-  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../app/maps/availability.json')));
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/client/maps/availability.json')));
   const catalog = engine.createLegacyCatalog();
-  for (const id of fs.readdirSync(path.join(__dirname, '../app/maps/content'))) {
-    const map = JSON.parse(fs.readFileSync(path.join(__dirname, `../app/maps/content/${id}/map.json`)));
+  for (const id of fs.readdirSync(path.join(__dirname, '../src/client/maps/content'))) {
+    const map = JSON.parse(fs.readFileSync(path.join(__dirname, `../src/client/maps/content/${id}/map.json`)));
     for (const layer of map.layers) for (const image of 'image' in layer ? [layer.image] : layer.type === 'world' ? layer.objects.map(object => object.image) : []) {
       assert.ok(image.startsWith('./'), `${id}: ${image}`);
       const resolved = engine.resolveMapAsset(map.id, image);
       assert.ok(resolved.startsWith(`app/maps/content/${id}/`));
-      if (map.status !== 'test') assert.ok(fs.existsSync(path.join(__dirname, '..', resolved)), resolved);
+      if (map.status !== 'test') assert.ok(fs.existsSync(path.join(__dirname, '..', resolved.replace(/^app\//, 'src/client/'))), resolved);
     }
     assert.equal(manifest.maps[id], map.status || 'available');
     if (map.status === 'test') { assert.equal(engine.getMap(map.id), undefined); assert.equal(catalog.navigation[id], undefined); }
@@ -78,7 +78,7 @@ test('all migrated maps validate, retain navigation dimensions and legacy progre
   assert.ok(engine.listMaps().length >= 42);
   for (const map of engine.listMaps()) {
     assert.equal(engine.parseMapDefinition(map), map);
-    const source = JSON.parse(fs.readFileSync(path.join(__dirname, `../app/maps/content/${map.id}/map.json`)));
+    const source = JSON.parse(fs.readFileSync(path.join(__dirname, `../src/client/maps/content/${map.id}/map.json`)));
     assert.deepEqual(plain(map), source);
     const definition = catalog.navigation[map.id];
     if (definition) {
@@ -92,10 +92,10 @@ test('all migrated maps validate, retain navigation dimensions and legacy progre
   const monsters = {};
   const sandbox = vm.createContext({ window: {}, MapsEngine: engine });
   for (const file of ['monsters-and-zones-01', 'monsters-and-zones-02', 'monsters-and-zones-03', 'monsters-and-zones-04']) {
-    vm.runInContext(fs.readFileSync(path.join(__dirname, `../app/data/${file}.js`), 'utf8'), sandbox);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, `../src/client/data/${file}.js`), 'utf8'), sandbox);
     sandbox.JW = sandbox.window.JW;
   }
-  vm.runInContext(fs.readFileSync(path.join(__dirname, '../app/data/equipment-and-zone-patches-02.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../src/client/data/equipment-and-zone-patches-02.js'), 'utf8'), sandbox);
   Object.assign(monsters, sandbox.JW.mon);
   for (const profile of engine.encounters) {
     assert.ok(monsters[profile.bossId], `Unknown boss ${profile.bossId}`);
@@ -171,7 +171,7 @@ function fieldFixture() {
 
 test('Test maps cannot initialize navigation or spawn actors through direct field runtime calls', () => {
   const fixture = fieldFixture();
-  const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, '../app/maps/availability.json'))), disabled = plain(baseline);
+  const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/client/maps/availability.json'))), disabled = plain(baseline);
   disabled.maps[2] = 'test';
   engine.updateMapAvailability(disabled);
   try {
@@ -265,7 +265,7 @@ test('actual JS map loading bridge retains the active world after a bad navigati
   const s = vm.createContext({ window: {}, MapsEngine: engine, mapAccess: { require: id => engine.isMapAvailable(id) }, E0: { town: { id: 37 } }, actorActionLocked: () => false,
     l: { ground: [] }, bA: () => null });
   s.window.JMO = engine.createLegacyCatalog().navigation;
-  for (const name of ['mapAdapter', 'mapNavigation', 'mapScene', 'O0', 'X0', 'ma', 'Z0']) declaration(s, 'app/core/attributes-01.js', name);
+  for (const name of ['mapAdapter', 'mapNavigation', 'mapScene', 'O0', 'X0', 'ma', 'Z0']) declaration(s, 'src/client/core/attributes-01.js', name);
   assert.equal(s.ma(2), true); const grid = s.Z0.g;
   s.window.JMO.bad = { w: 3584, h: 3584 };
   assert.throws(() => s.ma('bad')); assert.equal(s.Z0.g, grid); assert.equal(s.Z0.key, 2);
@@ -280,14 +280,14 @@ test('explicit open maps draw a full-size ground image instead of the legacy rep
   const scene = engine.createMapScene(() => image); scene.setMap(map);
   const context = { globalAlpha: 1, save() {}, restore() {}, drawImage: (...args) => calls.push(args) };
   const s = vm.createContext({ mapScene: scene });
-  declaration(s, 'app/render/arena-01.js', 'EP');
+  declaration(s, 'src/client/render/arena-01.js', 'EP');
   s.EP(context, image);
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0], [image, 0, 0, 640, 480]);
 });
 
 test('saving JSON or adding a map folder is detected by the real build without editing TS imports', () => {
-  const id = 999998, directory = path.join(__dirname, `../app/maps/content/${id}`);
+  const id = 999998, directory = path.join(__dirname, `../src/client/maps/content/${id}`);
   assert.equal(fs.existsSync(directory), false);
   const map = plain(engine.getMap(2)); map.id = id; map.name = 'Editor reload probe'; map.navigation = { kind: 'open' };
   const read = () => {
@@ -303,25 +303,25 @@ test('saving JSON or adding a map folder is detected by the real build without e
     assert.equal(read().name, 'Updated in JSON');
     map.status = 'test'; fs.writeFileSync(path.join(directory, 'map.json'), JSON.stringify(map));
     assert.equal(read(), undefined);
-    assert.equal(JSON.parse(fs.readFileSync(path.join(__dirname, '../app/maps/availability.json'))).maps[id], 'test');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(__dirname, '../src/client/maps/availability.json'))).maps[id], 'test');
     map.status = 'available'; fs.writeFileSync(path.join(directory, 'map.json'), JSON.stringify(map));
     assert.equal(read().name, 'Updated in JSON');
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
-    require('../tools/maps/catalog.ts').syncMapCatalog(path.join(__dirname, '../app'));
+    require('../tools/maps/catalog.ts').syncMapCatalog(path.join(__dirname, '../src/client'));
   }
 });
 
 test('local map sprites are served while arbitrary source files remain private', async () => {
-  const { openDatabase } = require('../server/database.ts');
-  const { createServer } = require('../server/index.ts');
+  const { openDatabase } = require('../src/server/database.ts');
+  const { createServer } = require('../src/server/index.ts');
   const db = openDatabase(':memory:'), { app } = createServer({ db, downloadAssets: false });
-  const filename = `probe-${randomUUID()}.png`, relative = `app/maps/content/2/${filename}`;
+  const filename = `probe-${randomUUID()}.png`, relative = `src/client/maps/content/2/${filename}`;
   const absolute = path.join(__dirname, '..', relative);
   const bytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN2kAAAAASUVORK5CYII=', 'base64');
   try {
     fs.writeFileSync(absolute, bytes);
-    const result = await app.inject({ method: 'GET', url: '/' + relative });
+    const result = await app.inject({ method: 'GET', url: '/' + relative.replace(/^src\/client\//, 'app/') });
     assert.equal(result.statusCode, 200); assert.deepEqual(result.rawPayload, bytes);
     for (const url of ['/app/maps/not-a-bundled-module.ts', '/app/maps/content/2/not-public.ts', '/app/maps/content/2/.secret.png', '/server/index.ts']) {
       assert.equal((await app.inject({ method: 'GET', url })).statusCode, 404, url);
@@ -339,8 +339,8 @@ function townTravelFixture() {
     m: () => ({ textContent: '', classList: { remove() {} } }) });
   s.mapAccess = { require: id => engine.isMapAvailable(id) };
   s.window.JMO = engine.createLegacyCatalog().navigation;
-  for (const name of ['mapAdapter', 'mapNavigation', 'mapScene', 'O0', 'X0', 'ma', 'Z0']) declaration(s, 'app/core/attributes-01.js', name);
-  declaration(s, 'app/ui/legacy-panels-and-audio-03.js', 'nc');
+  for (const name of ['mapAdapter', 'mapNavigation', 'mapScene', 'O0', 'X0', 'ma', 'Z0']) declaration(s, 'src/client/core/attributes-01.js', name);
+  declaration(s, 'src/client/ui/legacy-panels-and-audio-03.js', 'nc');
   return { s, effects };
 }
 
@@ -384,7 +384,7 @@ function trainingTravelFixture() {
     ol: index => index, DA: index => index, Jo: () => { s.l.moveTo = null; }, Tf() {}, PA: 'none',
     m: () => ({ textContent: '', classList: { remove() {}, add() {} } }) });
   s.AA = index => s.o.zalt[index] && s.Un[index]?.[s.o.zalt[index] - 1] || s.k0[index];
-  for (const [file, name] of [['app/core/game-loop-01.js', 'Gn'], ['app/ui/legacy-panels-and-audio-03.js', 'en'], ['app/systems/activities-and-stash-06.js', 'On']]) declaration(s, file, name);
+  for (const [file, name] of [['src/client/core/game-loop-01.js', 'Gn'], ['src/client/ui/legacy-panels-and-audio-03.js', 'en'], ['src/client/systems/activities-and-stash-06.js', 'On']]) declaration(s, file, name);
   const expected = id => { const map = engine.getMap(id), nav = engine.createNavigationRuntime(); nav.load(id, catalog.navigation[id], map.size); return plain(nav.resolvePosition(map.entry.x, map.entry.y)); };
   return { s, effects, catalog, expected };
 }
@@ -414,9 +414,9 @@ test('explicit reselection returns to entry while same-map refresh and field reb
   s.On(2, 'Tự đổi map'); assert.deepEqual([s.v.x, s.v.y], expected(catalog.zones[2].id));
 });
 
-for (const file of ['app/ui/world-panels-02.js', 'app/ui/legacy-panels-and-audio-01.js']) {
+for (const file of ['src/client/ui/world-panels-02.js', 'src/client/ui/legacy-panels-and-audio-01.js']) {
   test(`Test maps are hidden while available alternates retain their saved selection indices: ${file}`, () => {
-    const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, '../app/maps/availability.json')));
+    const baseline = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/client/maps/availability.json')));
     const manifest = plain(baseline); manifest.maps[2] = 'test'; manifest.maps[398] = 'test';
     engine.updateMapAvailability(manifest);
     try {
