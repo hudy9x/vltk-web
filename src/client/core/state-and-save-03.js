@@ -474,7 +474,8 @@ var oP = function () {
     A = localStorage.getItem(f1);
   } catch {}
   const n = [...Array(V1).keys()].filter((i) => ms(i));
-  if (A === "menu") return { slot: n[0] ?? 0, menu: n.length > 0 };
+  if (A === "login") return { slot: n[0] ?? 0, menu: !0 };
+  if (A === "menu") return { slot: n[0] ?? 0, menu: !0 };
   let t = null;
   try {
     t = sessionStorage.getItem("jxidle_in");
@@ -507,10 +508,10 @@ var Fd = async function (A) {
 };
 
 var rP = async function () {
-  if (($(), typeof h0 == "function" && h0() && b.user && o && o.fac))
-    try {
-      await U0();
-    } catch {}
+  if (!(await qx())) {
+    k("Chưa lưu được tiến trình. Hãy thử đổi nhân vật lại.");
+    return;
+  }
   HA = !0;
   try {
     (localStorage.setItem(f1, "menu"), sessionStorage.removeItem("jxidle_in"));

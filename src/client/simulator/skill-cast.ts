@@ -34,6 +34,7 @@ export function castSimulatorSkill(actor: SimulatorActor, target: LegacyEntity, 
   const snow = +input.id! === 337 ? events.find(event => +event.sid === 338) : undefined;
   const skill = { ...input, ...(lotus ? { impactLotusHandled: true } : {}),
     ...(snow ? { snowTrailHandled: true } : {}),
+    ...(+input.id! === 1081 ? { visualAnchor: { x: target.x, y: target.y - 14 } } : {}),
     ...(+input.id! === 339 ? { impactVisualTargets: new Set() } : {}) };
   const live = () => valid() ? targets() : [];
   const damage = (ability: SimulatorSkill, contact: LegacyEntity): number =>

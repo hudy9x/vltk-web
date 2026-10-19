@@ -14,6 +14,23 @@ npm start
 `npm run dev` bật môi trường development và Node watch. `PORT=3001 npm start` đổi port.
 `DB_PATH=/absolute/path/test.sqlite npm start` dùng database riêng.
 
+## Vấn đề đã xác nhận, tạm hoãn sửa
+
+**2026-10-19 — Điểm tiềm năng Nội công chưa tăng sát thương phép ở tất cả môn phái**,
+bao gồm Côn Lôn và Võ Đang. Người dùng yêu cầu ghi nhận, tạm thời chưa bật lại.
+
+- `src/client/combat/skills-01.js`: biến dùng chung `s7 = 0`.
+- `src/client/core/attributes-02.js`, hàm `F2`: nhánh `if (!a && s7)` nhân sát
+  thương chiêu nội công với `1 + (A.eng || 0) / 500`, nhưng hiện không chạy.
+- Nội công vẫn tăng nội lực tối đa và hồi nội lực trong `j0`
+  (`src/client/core/attributes-01.js`); sát thương phép vẫn có từ kỹ năng,
+  trang bị và hỗ trợ, chỉ thiếu phần tăng theo điểm Nội công.
+- Đã tái hiện với Thiên Lôi Chấn Nhạc cấp 27: Nội công 2798 → 2898, các thông số
+  khác cố định, lôi sát `F2` vẫn là 368 → 368. Lực tay trên UI lấy từ kết quả này.
+- Khi xử lý sau này, cần xác nhận công thức/cân bằng mong muốn trước khi bật
+  `s7`: thay đổi ảnh hưởng mọi chiêu nội công, không chỉ Côn Lôn hay tooltip.
+  Không tự bật cờ này khi sửa animation hoặc tầng phụ của kỹ năng.
+
 ## Cấu trúc thư mục
 
 ```text

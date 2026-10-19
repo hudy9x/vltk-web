@@ -1,7 +1,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { createServer } = require('../src/server/index.ts');
-const { openDatabase, snapshot } = require('../src/server/database.ts');
+const { openDatabase } = require('../src/server/database.ts');
+const { accountCookie, accountSnapshot: snapshot } = require('./helpers/accounts.js');
 
 function fixture() {
   const db = openDatabase(':memory:');
@@ -40,22 +41,24 @@ test('Fastify preserves HEAD, method errors, source privacy and malformed-path J
 
 test('JSON parsing keeps the old content-type behavior and cross-site rejection precedes parsing/writes', async () => {
   const { app, db } = fixture();
+  const cookie = await accountCookie(app);
+  const inject = options => app.inject({ ...options, headers:{ cookie, ...options.headers } });
   try {
-    const initialized = (await app.inject({ method: 'POST', url: '/api/storage/init',
+    const initialized = (await inject({ method: 'POST', url: '/api/storage/init',
       headers: { 'content-type': 'text/plain' }, payload: '{"entries":{}}' })).json();
     const batch = { id: 'custom-type', generation: initialized.generation, operations: [{ key: 'jxidle', value: 'saved' }] };
-    const response = await app.inject({ method: 'POST', url: '/api/storage',
+    const response = await inject({ method: 'POST', url: '/api/storage',
       headers: { 'content-type': 'application/x-game-save' }, payload: JSON.stringify(batch) });
     assert.equal(response.statusCode, 200);
     assert.equal(snapshot(db).entries.jxidle, 'saved');
     for (const [headers, message] of [[{ origin: 'https://other.example' }, 'Origin rejected'],
       [{ 'sec-fetch-site': 'cross-site' }, 'Cross-site request rejected']]) {
-      const rejected = await app.inject({ method: 'POST', url: '/api/storage', headers, payload: '{' });
+      const rejected = await inject({ method: 'POST', url: '/api/storage', headers, payload: '{' });
       assert.equal(rejected.statusCode, 403);
       assert.deepEqual(rejected.json(), { error: message });
       assert.equal(snapshot(db).entries.jxidle, 'saved');
     }
-    const invalid = await app.inject({ method: 'POST', url: '/api/storage', payload: '{' });
+    const invalid = await inject({ method: 'POST', url: '/api/storage', payload: '{' });
     assert.equal(invalid.statusCode, 400);
     assert.deepEqual(invalid.json(), { error: 'Invalid JSON' });
   } finally { await app.close(); db.close(); }
@@ -63,13 +66,15 @@ test('JSON parsing keeps the old content-type behavior and cross-site rejection 
 
 test('the 8 MB body limit is measured in bytes and oversized bodies cannot write SQLite', async () => {
   const { app, db } = fixture();
+  const cookie = await accountCookie(app);
+  const inject = options => app.inject({ ...options, headers:{ cookie, ...options.headers } });
   try {
     const prefix = JSON.stringify({ id: 'limit', generation: snapshot(db).generation, operations: [], padding: '' }).slice(0, -2);
     const payload = prefix + 'a'.repeat(8_000_000 - Buffer.byteLength(prefix) - 2) + '"}';
     assert.equal(Buffer.byteLength(payload), 8_000_000);
-    assert.equal((await app.inject({ method: 'POST', url: '/api/storage', payload })).statusCode, 200);
+    assert.equal((await inject({ method: 'POST', url: '/api/storage', payload })).statusCode, 200);
     const before = snapshot(db);
-    const oversized = await app.inject({ method: 'POST', url: '/api/storage', payload: payload + ' ' });
+    const oversized = await inject({ method: 'POST', url: '/api/storage', payload: payload + ' ' });
     assert.equal(oversized.statusCode, 413);
     assert.deepEqual(oversized.json(), { error: 'Request too large' });
     assert.deepEqual(snapshot(db), before);

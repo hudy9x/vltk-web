@@ -400,7 +400,8 @@ var CP = function (A) {
       W.globalCompositeOperation = n;
     }
   }
-  return Fa(A.s, A.dir, A.t * (A.sp || 1), A.x, A.y, !1);
+  const anchor = A.visualAnchor || A;
+  return Fa(A.s, A.dir, A.t * (A.sp || 1), anchor.x, anchor.y, !1);
 };
 
 var St = function () {

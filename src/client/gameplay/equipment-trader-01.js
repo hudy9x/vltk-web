@@ -298,6 +298,10 @@ var equipmentTrader = (function () {
     @media(max-width:540px){.equipment-trader .trader-blue-options{grid-template-columns:1fr;gap:12px}.equipment-trader .trader-blue-layout{grid-template-columns:1fr}.equipment-trader .trader-item-list{max-height:230px}.equipment-trader .trader-badge{padding:6px 10px}}
   `;
   document.head.appendChild(style);
+  if (window.localGameConfig?.development === true) {
+    // Biện Kinh: open walkway just east of the town arrival point (1112, 2139).
+    place({ x: 1240, y: 2139, visible: () => !!l.town && !l.dg && !l.tower });
+  }
   if (typeof combatSandbox !== "undefined" && combatSandbox) {
     place({ x: O0.w / 2 - 350, y: O0.h / 2 - 160, visible: () => !l.town && !l.dg && !l.tower });
     const button = document.createElement("button");

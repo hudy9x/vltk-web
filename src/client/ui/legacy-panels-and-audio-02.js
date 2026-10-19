@@ -107,7 +107,11 @@ var Kf = function (A, n, t, e, a, i) {
   if (c) {
     const p = Bv(A);
     if (p.length) {
-      g.push(["tt", `Được hỗ trợ (+${p.filter((P) => !P[4]).reduce((P, _) => P + _[2], 0)}%):`]);
+      const primary = p.filter(P => !P[4]).reduce((total, row) => total + row[2], 0);
+      const secondary = p.filter(P => P[4]).reduce((total, row) => total + row[2], 0);
+      g.push(["tt", +A === 1081
+        ? `Được hỗ trợ (chiêu chính: +${primary}%, tầng 2: +${secondary}%):`
+        : `Được hỗ trợ (+${primary}%):`]);
       for (const P of p)
         g.push([
           P[1] ? "g" : "h",
@@ -626,11 +630,12 @@ var Ao = function () {
   }, 0);
   const A = typeof h0 == "function" && h0() && !b.offline;
   m("#t-more").innerHTML =
-    `<div class="btnrow"><button class="btn" id="bGcode">🎟 Nhập Giftcode</button></div>${
+    `<div class="btnrow"><button class="btn" id="bSwitchCharacter">👤 Đổi nhân vật</button><button class="btn red" id="bLogout">⏻ Thoát game</button></div>
+    <div class="btnrow"><button class="btn" id="bGcode">🎟 Nhập Giftcode</button></div>${
       A
         ? `<h3>Lưu game</h3><div class="card"><p class="dim small">Nhân vật tự lưu lên máy chủ khi đã đăng nhập (vài phút một lần, khi ẩn tab, đổi nhân vật và khi Đăng xuất). Đăng nhập cùng tài khoản ở máy / điện thoại khác là chơi tiếp.</p><div class="btnrow"><button class="btn" id="bCloud">🌐 Tài khoản · Lưu đám mây</button></div></div>
     `
-        : `<h3>Lưu game</h3><div class="card"><p class="dim small">Nhân vật lưu trong trình duyệt của từng thiết bị (3 slot). Để chơi trên thiết bị khác: bấm <b>Tải file lưu</b>, chuyển file <code>.jxsave</code> sang thiết bị kia (Zalo, Drive, cáp…), rồi mở game ở đó và bấm <b>Nạp từ file</b>. File có chữ ký, sửa tay sẽ bị từ chối. Nên tải file định kỳ để sao lưu.</p>
+        : `<h3>Lưu game</h3><div class="card"><p class="dim small">${window.localGameAuth ? "Nhân vật tự lưu theo tài khoản trên máy chủ (3 slot). Đăng nhập cùng tài khoản để chơi tiếp. Có thể sao lưu thêm bằng file:" : "Nhân vật lưu trong trình duyệt của từng thiết bị (3 slot). Để chơi trên thiết bị khác:"} bấm <b>Tải file lưu</b>, chuyển file <code>.jxsave</code> sang thiết bị kia (Zalo, Drive, cáp…), rồi mở game ở đó và bấm <b>Nạp từ file</b>. File có chữ ký, sửa tay sẽ bị từ chối. Nên tải file định kỳ để sao lưu.</p>
     <div class="btnrow"><button class="btn" id="bDl">Tải file lưu (.jxsave)</button><button class="btn" id="bFile">Nạp từ file</button></div>
     <p class="dim small">Hoặc dùng mã văn bản:</p><div class="btnrow"><button class="btn" id="bExp">Xuất mã</button><button class="btn" id="bImp">Nhập mã</button></div><textarea id="saveTxt" rows="4" placeholder="Mã lưu game"></textarea></div>`
     }
@@ -661,8 +666,7 @@ var Ao = function () {
       <small class="dim">Tay cầm: cần analog / D-pad để đi, A B X Y dùng chiêu 1–4, LB / RB uống thuốc HP / MP. Phím Esc đóng hộp thoại.</small></div>
     <h3>Điều khiển & Hiển thị</h3><div class="card">
       <label><input type="checkbox" id="cLowFx" ${o.lowFx ? "checked" : ""}> Giảm hiệu ứng (mượt hơn trên máy yếu / đông quái)</label></div>
-    <h3>Nguồn dữ liệu</h3><div class="card small dim">Kỹ năng, quái, trang bị, thuộc tính và tỉ lệ rơi đồ trích từ dữ liệu Võ Lâm Truyền Kỳ 1 (bản fan chơi offline, phi thương mại).</div>
-    <div class="btnrow"><button class="btn red" id="bLogout">⏻ Đăng xuất</button></div>`;
+    <h3>Nguồn dữ liệu</h3><div class="card small dim">Kỹ năng, quái, trang bị, thuộc tính và tỉ lệ rơi đồ trích từ dữ liệu Võ Lâm Truyền Kỳ 1 (bản fan chơi offline, phi thương mại).</div>`;
   const n = (t, e) => {
     const a = m(t);
     a && (a.onclick = e);
@@ -729,6 +733,15 @@ var Ao = function () {
       i5({ fs: +t.target.value });
     }),
     (m("#uSaver").onchange = (t) => i5({ saver: t.target.checked })),
+    n("#bSwitchCharacter", async () => {
+      const button = m("#bSwitchCharacter");
+      button.disabled = !0;
+      try {
+        await rP();
+      } finally {
+        button.disabled = !1;
+      }
+    }),
     n("#bLogout", () => Fg()));
 };
 

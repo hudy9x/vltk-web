@@ -5,6 +5,7 @@ const { tmpdir } = require('node:os');
 const path = require('node:path');
 const { openDatabase, snapshot, initialize, applyBatch, reset } = require('../src/server/database.ts');
 const { createServer } = require('../src/server/index.ts');
+const { accountCookie } = require('./helpers/accounts.js');
 
 test('save, shared stash and backup survive reopening SQLite; retries cannot overwrite newer saves', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'volam-sqlite-'));
@@ -37,6 +38,9 @@ test('HTTP API persists changes and rejects invalid writes; private server/datab
   await app.ready();
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
+  const cookie = await accountCookie(app);
+  const nativeFetch = globalThis.fetch;
+  const fetch = (url, options) => nativeFetch(url, { ...options, headers:{ cookie, ...options?.headers } });
   const post = value => ({ method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(value) });
   try {
     assert.deepEqual(await (await fetch(base+'/api/config?development=true')).json(), { development:false });
