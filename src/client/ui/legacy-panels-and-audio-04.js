@@ -184,7 +184,7 @@ var Rv = function () {
     (m("#rideBtn").onclick = () => D8()),
     O3(),
     eo(),
-    (m("#bBack").onclick = en));
+    (m("#bBack").onclick = () => en()));
   {
     const e = m("#ktcBtn");
     e && (e.onclick = () => iA());
