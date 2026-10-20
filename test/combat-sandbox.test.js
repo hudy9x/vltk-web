@@ -819,3 +819,40 @@ test('SIM health presets stay independent through selection, skills, builds and 
   health.value='123';health.onchange();assert.equal(copy.max,1000);
   assert.match(s.fields.get('#sim-status').textContent,/không hợp lệ/);
 });
+
+test('cold skill hits slow a moving SIM without hurt locks, while physical hits still interrupt',()=>{
+ for(const cold of [false,true]){
+  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');
+  actor.moving=true;actor.mv=true;actor.act='run';
+  s.hs({parts:cold?{cold:200}:{phys:200},crit:0,series:0,series5:0},actor);
+  assert.ok(actor.hp<850);
+  assert.equal(s.actorActionLocked(actor),!cold);
+  assert.equal(actor.moving,cold);
+  if(cold){assert.ok(s.coldSpeedFactor(actor)>0&&s.coldSpeedFactor(actor)<1);assert.equal(actor.act,'run');}
+ }
+});
+
+test('native cold hits preserve player movement and destination even above the hurt threshold',()=>{
+ const s=simulatorGame();loadDeclaration(s,'src/client/core/state-and-save-01.js','U9');
+ Object.assign(s,{Dw:['cold'],Yr:75,Pe:()=>100});
+ const destination={x:900,y:500};s.Y={target:destination,mouse:true};s.l.moveTo=destination;s.v.moving=true;
+ s.U9({hp:10000,max:10000,dmg:200,ar:100,series:0,ranged:true});
+ assert.equal(s.l.life,800);assert.ok(s.l.slowT>0);
+ assert.equal(s.actorActionLocked(s.v),false);assert.equal(s.v.moving,true);
+ assert.equal(s.Y.target,destination);assert.equal(s.l.moveTo,destination);
+ const navigation=require('./helpers/maps-engine').loadMapsEngine(s).createNavigationRuntime(a=>s.actorActionLocked(a));
+ Object.assign(s,{Ra:()=>1,H5:(x,y)=>[x,y],Qv:()=>[1,0],hA:()=>false,gt:navigation.tryMove});
+ loadDeclaration(s,'src/client/ui/legacy-panels-and-audio-03.js','Ah');
+ const start=s.v.x,speed=s.coldSpeedFactor(s.l);
+ for(let frame=0;frame<144;frame++)assert.equal(s.Ah(1/144),true);
+ assert.ok(Math.abs(s.v.x-start-150*speed)<1e-8,'cold movement stays continuous even at 144 FPS');
+});
+
+test('SIM cold PK leaves player free to move and retains its movement destination',()=>{
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');
+ actor.x=s.v.x;actor.y=s.v.y;actor.stats.main.parts={cold:200};s.arenaSimulator.setPK(true);
+ const destination={x:900,y:500};s.Y={target:destination,mouse:true};s.l.moveTo=destination;s.v.moving=true;
+ s.arenaSimulator.tick(.01);advanceSimulator(s,.2);
+ assert.ok(s.l.life<=800);assert.ok(s.l.slowT>0);assert.equal(s.actorActionLocked(s.v),false);
+ assert.equal(s.Y.target,destination);assert.equal(s.l.moveTo,destination);
+});

@@ -277,7 +277,8 @@ export function createSimulator() {
         l.mana -= mana; damage -= mana;
         step("PK: (kỹ năng − min(khiên, damage × Jr)) × (1 − sorb/100) × (1 − from/100) − khiên mana", { raw, shield, sorb: defense.sorb || 0, from: (defense.from && defense.from[actor.series]) || 0, manaAbsorbed: mana, damage, hpBefore: l.life, hpAfter: Math.max(0, l.life - damage) });
         l.life = Math.max(0, l.life - damage);
-        applyActorHurt(v, damage, defense.life);
+        // The disposable receiver has no hurt state; preserve cold-only movement semantics here too.
+        if (!(skill.parts.cold > 0)) applyActorHurt(v, damage, defense.life);
         if (receiver.poison > 0) {
           const seconds = receiver.poison * (1 - (defense.poisonRed || 0) / 100);
           if (seconds > .05) { l.hpDot = (l.hpDot || 0) + receiver.poisonDmg * seconds; l.hpDotT = Math.max(l.hpDotT || 0, seconds); }
