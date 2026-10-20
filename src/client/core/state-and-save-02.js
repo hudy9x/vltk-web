@@ -31,6 +31,7 @@ var Td = function (A) {
     const e = Math.min(A, l.hpDotT) / l.hpDotT;
     const damage = l.hpDot * e, before = l.life;
     ((l.life -= damage), (l.hpDot -= damage), (l.hpDotT -= A));
+    showDamageNumber(v, Math.max(0, Math.min(before, before - l.life)), "poison");
     if (typeof combatLog !== "undefined" && combatLog) combatLog.record("in", "Hiệu ứng độc", Math.min(Math.max(0, before), damage), "Hiệu ứng duy trì");
   }
   if (
@@ -55,7 +56,7 @@ var Td = function (A) {
     typeof Lm == "function" && Lm(A),
     !l.enemies.length)
   ) {
-    if (Y.tmp && Y.target && !hA()) Ah(A);
+    if ($1()) Ah(A);
     if (Ga()) return;
     if (t && l.lootWait < 8) {
       l.lootWait += A;

@@ -42,13 +42,15 @@ declare function Mw(actor: LegacyEntity, x: number, y: number, distance: number)
 declare function skillCastDistance(actor: CombatTarget, target: CombatTarget): number;
 declare function skillIgnoresTerrain(skill: SimulatorSkill): boolean;
 declare function queueSkillContact(actor: LegacyEntity, target: LegacyEntity, skill: SimulatorSkill, hit: (target: LegacyEntity) => void, options: { targets(): LegacyEntity[]; visual(): unknown }): CombatCast;
-declare function showDamageNumber(target: LegacyEntity, damage: number): unknown;
+declare function showDamageNumber(target: LegacyEntity, damage: number, kind?: string): unknown;
 declare function H8(actor: LegacyEntity, dt: number, action: string): unknown;
 declare function ps(actor: LegacyEntity, action: string): unknown;
 declare function kf(...args: unknown[]): number;
 declare function M8(...args: unknown[]): unknown;
 declare function bA(path: string): unknown;
 declare function L3(...args: unknown[]): unknown;
+declare function WP(context: CanvasRenderingContext2D, actor: LegacyEntity, scale: number): void;
+declare function ZP(context: CanvasRenderingContext2D, actor: LegacyEntity, height: number, scale: number, dt: number): void;
 declare function nameplateOffset(animation: string | undefined, scale: number, ratio: number, padding: number, fallback: number): number;
 declare function actorActionLocked(actor: CombatTarget): boolean;
 declare function applyActorHurt(actor: CombatTarget, damage: number, maximumHP: number): boolean;
@@ -315,6 +317,7 @@ export function createSimulator() {
     if (actor.poison > 0) {
       const duration = Math.min(dt, actor.poison), before = actor.hp;
       actor.poison -= duration; actor.hp = Math.max(0, actor.hp - actor.poisonDmg * duration);
+      showDamageNumber(actor, before - actor.hp, "poison");
       capture("Độc", actor, { n: "DoT SIM" }, () => step("DoT = DPS × min(dt, giây còn lại)", { dps: actor.poisonDmg, duration, before, after: actor.hp }));
       if (actor.hp <= 0) return;
     }
@@ -360,6 +363,8 @@ export function createSimulator() {
     if (!height && !(look && M8(bA(look.img), look.sz, actor.x, actor.y, 1, actor.face < 0, 1))) {
       context.fillStyle = "#6ee7e0"; context.beginPath(); context.arc(actor.x, actor.y - 18, 14, 0, Math.PI * 2); context.fill();
     }
+    if (actor.curse && typeof WP === "function") WP(context, actor, Jn);
+    if (actor.stFx && typeof ZP === "function") ZP(context, actor, height ? Math.min(height, 110) : 50, Jn, dt);
     L3(actor.x, actor.y - nameplateOffset(look?.anim, Jn, 1, 0, 55), actor.n, "#6ee7e0", 12, actor.hp / actor.max, "#6ee7e0");
   }
   function text(simOnly = false) { return JSON.stringify({ format: "arena-damage-v1", exportedAt: new Date().toISOString(), oneDamage: sandbox.oneDamage,

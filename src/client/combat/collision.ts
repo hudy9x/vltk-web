@@ -15,8 +15,16 @@ function notifyProjectileImpact(effect: ContactEffect, target: CombatTarget): vo
 // Chọn va chạm theo thứ tự trên đường đi, rồi mới gọi damage và tạo FX trúng.
 export function collideCombatEffect(effect: ContactEffect, x0: number, y0: number, x1: number, y1: number): boolean {
   const cast = effect.combat;
-  const staticArea = effect.staticArea || effect.k === "boom" || (effect.k === "jm" && (!effect.kind || effect.still));
-  const geo = cast.skill.geo || {};
+  if (cast.pulseCount) {
+    // All sprites share this clock: never multiply damage by the FX count.
+    // Catch up overdue strikes before expiry so low FPS does not lose hits.
+    while (cast.pulse + 1 < cast.pulseCount && cast.elapsed + 1e-9 >= cast.nextPulse) {
+      cast.pulse++;
+      cast.nextPulse = cast.windup + (cast.pulse + 1) * cast.interval;
+      collideCombatPulse(effect, x0, y0, x1, y1);
+    }
+    return false;
+  }
   if (cast.interval) {
     if (cast.elapsed >= cast.duration! - 1e-9) return false;
     if (cast.elapsed + 1e-9 >= cast.nextPulse) {
@@ -25,6 +33,13 @@ export function collideCombatEffect(effect: ContactEffect, x0: number, y0: numbe
       cast.pulseFrame = cast.elapsed;
     } else if (cast.pulseFrame !== cast.elapsed) return false;
   }
+  return collideCombatPulse(effect, x0, y0, x1, y1);
+}
+
+function collideCombatPulse(effect: ContactEffect, x0: number, y0: number, x1: number, y1: number): boolean {
+  const cast = effect.combat;
+  const staticArea = effect.staticArea || effect.k === "boom" || (effect.k === "jm" && (!effect.kind || effect.still));
+  const geo = cast.skill.geo || {};
   if (staticArea && geo.shape === "rect") {
     x0 = cast.origin.x; y0 = cast.origin.y;
     x1 = x0 + Math.cos(cast.direction) * geo.len! * QA;

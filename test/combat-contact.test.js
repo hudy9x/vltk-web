@@ -254,7 +254,7 @@ test('Phi Long Tai Thien and Thien Ha Vo Cau use homing metadata and curve towar
   }
 });
 
-test('Thien Dia Vo Cuc is an immediate stationary field with an exact live area and expiry', () => {
+test('Thien Dia Vo Cuc stays at its cast point and only pulses on live occupants before expiry', () => {
   const s = world(), target = enemy(s, 80), inside = enemy(s, 120), outside = enemy(s, 260);
   const skill = standardSkill(s, 365);
   s.queueSkillContact(s.v, target, skill, hit => s.hs(skill, hit));
@@ -264,8 +264,8 @@ test('Thien Dia Vo Cuc is an immediate stationary field with an exact live area 
   target.x = 350; s.v.x = 400;
   run(s, 0.1);
   assert.deepEqual([field.x, field.y], origin);
-  assert.equal(target.hp, 100); assert.equal(inside.hp, 90); assert.equal(outside.hp, 100);
-  outside.x = 100; run(s, 0.1); assert.equal(outside.hp, 90);
+  assert.equal(target.hp, 100); assert.equal(inside.hp, 100); assert.equal(outside.hp, 100);
+  outside.x = 100; run(s, 0.15); assert.equal(outside.hp, 90);assert.equal(inside.hp,90);
   run(s, 1.5);
   target.x = 80; run(s, 0.1); assert.equal(target.hp, 100);
 });
@@ -583,11 +583,12 @@ test('Thien Dia one-shot stops drawing after its accelerated final frame instead
  const effect=s.l.combatProjectiles.find(e=>e.k==='jm');assert.ok(effect);assert.equal(effect.loop,false);
  const frames=[];s.Fa=(sprite,dir,time)=>frames.push(Math.floor(time*1000/sprite.ms));
  effect.age=0;s.YP(effect);assert.equal(frames.at(-1),0);
- effect.age=effect.lf/2-effect.lf/(effect.m.fly.n*4);s.YP(effect);assert.equal(frames.at(-1),effect.m.fly.n-1);
+ const visual=effect.visualLifetime;
+ effect.age=visual/2-visual/(effect.m.fly.n*4);s.YP(effect);assert.equal(frames.at(-1),effect.m.fly.n-1);
  const count=frames.length,life=effect.lf;
  for(const age of [life/2,life*.6,life*.9]){effect.age=age;s.YP(effect);assert.equal(effect.age,age);}
  assert.equal(frames.length,count);assert.equal(effect.lf,life);
- effect.combat.skill.id=380;s.YP(effect);assert.equal(frames.length,count+1);
+ s.YP({...effect,visualLifetime:undefined,combat:{skill:{id:380}}});assert.equal(frames.length,count+1);
 });
 
 test('Thien Vuong hit sheets animate once at a fixed impact point instead of scattering frames along missile paths',()=>{

@@ -51,6 +51,56 @@ function enemy(s, x=150) { const e={ x, y:100, r:17, hp:100, n:'Quái', cls:'nor
 function pointer(s, type, x, y, pointerType='mouse') { s.handlers[type]({ clientX:x,clientY:y,pointerId:1,pointerType }); }
 function ticks(s, seconds) { for(let i=0;i<seconds*60;i++) { s.l.clock+=1/60;s.Td(1/60); } }
 
+function enableCurseHotbar(s) {
+  Object.assign(s, { T: { 10: { id: 10, n: 'Attack', attack: true, attr: {} },
+    4: { id: 4, n: 'Curse', enemy: 1, attr: { physicsres_p: [[-10, 180, 0]], skill_cost_v: [[10, 0, 0]] } } },
+    Yn: {}, k7: 18, UA: skill => !!skill?.attack, te: () => false,
+    zi: id => s.o.sk[id] || 0, i4: () => false,
+    b0: (skill, key, level) => skill.attr[key]?.[level - 1] || null,
+    $() {}, D0() {}, o0() {}, contacts: [],
+    beginActorCast: s.CombatEngine.beginActorCast,
+    advanceSkillContacts: s.CombatEngine.advanceActorActions,
+    queueSkillContact: (actor, target, skill, hit) => {
+      if (skill.id === 4) s.contacts.push({ target, hit }); else s.casts++;
+    },
+  });
+  Object.assign(s.o, { fac: 'test', sk: { 10: 1, 4: 1 }, slots: [10, 4, -1, -1], main: 10, mainLock: true, trapV: 1 });
+  s.l.P.main = { id: 10 };
+  for (const name of ['B7','wn','ae','M7','ba','ya','b4','canSlotSkill','castSupportSkill']) declaration(s,'src/client/gameplay/shop-and-books-01.js',name);
+  for (const name of ['nh','tn','Ac']) declaration(s,'src/client/ui/legacy-panels-and-audio-03.js',name);
+}
+
+test('selecting a curse before clicking a monster casts that curse, never the main attack, with mouse or touch in auto or manual', () => {
+  for (const pointerType of ['mouse','touch']) for (const mode of ['manual','auto']) {
+    const s=game(); enableCurseHotbar(s); const target=enemy(s),old=enemy(s,350);
+    s.o.ctrl=mode;s.l.manTgt=old;s.l.tgt=old;
+    s.Ac(1);assert.equal(s.contacts.length,0);ticks(s,.1);assert.equal(s.casts,0);
+    pointer(s,'pointerdown',150,20,pointerType);pointer(s,'pointerup',150,20,pointerType);
+    assert.equal(s.contacts.length,1);assert.equal(s.contacts[0].target,target);assert.equal(s.l.mana,90);
+    s.contacts[0].hit(target);assert.ok(target.curse[4]>s.l.clock);
+    ticks(s,1);assert.equal(s.casts,0);assert.equal(s.o.main,10);assert.equal(s.Y.pendingSupport,0);
+  }
+});
+
+test('a failed targeted curse stays armed and cannot fall through to a main attack; a ground click cancels targeting', () => {
+  const s=game();enableCurseHotbar(s);enemy(s);s.l.mana=0;
+  s.Ac(1);pointer(s,'pointerdown',150,20);pointer(s,'pointerup',150,20);ticks(s,1);
+  assert.equal(s.contacts.length,0);assert.equal(s.casts,0);assert.equal(s.Y.pendingSupport,4);
+  pointer(s,'pointerdown',800,800);pointer(s,'pointerup',800,800);
+  assert.equal(s.Y.pendingSupport,0);assert.ok(s.Y.target);
+});
+
+test('the selected curse reaches the monster through the real contact simulation without main-skill damage', () => {
+  const s=game();enableCurseHotbar(s);const target=enemy(s);
+  Object.assign(s,{activeCombatCast:null,A0:{m:{},f:{},s:{}},Hi:{},G3(){},x8(){},Y3:()=>0,Z0:{g:false},R2:()=>true});
+  s.l.zoneShown=1;s.l.fx=[];
+  s.queueSkillContact=s.CombatEngine.castSkill;
+  s.advanceSkillContacts=s.CombatEngine.updateCombat;
+  s.Ac(1);pointer(s,'pointerdown',150,20);pointer(s,'pointerup',150,20);
+  assert.equal(target.curse,undefined);ticks(s,1);
+  assert.ok(target.curse[4]>s.l.clock);assert.equal(target.hp,100);assert.equal(s.l.mana,90);assert.equal(s.casts,0);
+});
+
 test('an auto ground click interrupts casting on the next tick, prevents attacks while travelling and resumes auto on arrival', () => {
   const s=game(); enemy(s,150); s.o.ctrl='auto';
   Object.assign(s.v,{castT:.8,atT:.8,act:'at',actionRevision:2});
@@ -69,6 +119,24 @@ test('auto ground movement works with an empty field and preserves hurt locks', 
   pointer(s,'pointerdown',240,100); pointer(s,'pointerup',240,100);
   ticks(s,1/60); assert.equal(s.v.x,0); assert.equal(s.v.hurtT,.5);
   s.v.hurtT=0; ticks(s,1/60); assert.ok(s.v.x>0);
+});
+
+test('manual movement overrides casts even in empty fields, for mouse, keyboard and gamepad',()=>{
+  for(const input of ['ground','keyboard','gamepad']) {
+    const s=game();s.l.spawnT=10;s.l.clickHold=true;
+    Object.assign(s.v,{castT:.4,atT:.4,actionRevision:2});
+    if(input==='ground')s.Y.moveTarget(240,100);
+    if(input==='keyboard')s.Y.keys.d=true;
+    if(input==='gamepad')s.T1.v=[1,0];
+    ticks(s,1/60);
+    assert.ok(s.v.x>0,input);assert.equal(s.v.castT,0);assert.equal(s.v.actionRevision,3);
+  }
+});
+
+test('automatic attacks cannot re-lock movement toward a selected monster while movement input is held',()=>{
+  const s=game(),e=enemy(s);s.l.manTgt=e;s.Y.keys.d=true;
+  ticks(s,.2);assert.ok(s.v.x>0);assert.equal(s.casts,0);
+  s.Y.keys.d=false;ticks(s,.2);assert.ok(s.casts>0,'attack resumes after movement input stops');
 });
 
 test('auto buffs wait for the ground command to finish, while expired buffs still expire', () => {

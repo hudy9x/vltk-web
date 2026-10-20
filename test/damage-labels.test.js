@@ -83,13 +83,40 @@ test('misses and blocked hits share the target stack without being counted as nu
  assert.equal(s.l.txt.length,length);
 });
 
-test('all ordinary elements use red and critical hits stay yellow',()=>{
+test('ordinary damage uses red, poison uses green and critical hits keep their own color',()=>{
  const s=damageScene(),colors=s.CombatEngine.DAMAGE_LABEL_COLORS;
  for(const kind of ['phys','fire','cold','light','poison','unknown']){
   const target={x:0,y:0};s.showDamageNumber(target,100,kind);
-  assert.equal(s.l.txt.at(-1).color,colors.phys);
+  assert.equal(s.l.txt.at(-1).color,kind==='poison'?'#8fe34a':colors.phys);
   s.showDamageNumber(target,100,kind,true);assert.equal(s.l.txt.at(-1).color,colors.critical);
  }
+});
+
+test('frequent poison ticks sum raw fractional losses for half a second without mixing recipients or direct damage',()=>{
+ const s=damageScene(),a={x:20,y:90},b={x:20,y:90};
+ for(let i=0;i<12;i++){s.showDamageNumber(a,1.25,'poison');s.updateDamageLabels(s.l.txt,.04);}
+ assert.equal(s.l.txt.length,1);assert.equal(s.l.txt[0].amount,15);assert.equal(s.l.txt[0].t,'15');
+ assert.equal(s.l.txt[0].color,'#8fe34a');
+ s.updateDamageLabels(s.l.txt,.04);s.showDamageNumber(a,2,'poison');
+ assert.equal(s.l.txt.length,2);assert.equal(s.l.txt[0].amount,15);
+ s.showDamageNumber(b,3,'poison');s.showDamageNumber(a,4,'phys');
+ assert.equal(s.l.txt.length,4);assert.equal(s.l.txt[2].target,b);assert.equal(s.l.txt[3].amount,4);
+});
+
+test('player and monster poison numbers reflect HP actually lost, capped by remaining HP',()=>{
+ const s=damageScene();Object.assign(s,{v:{x:0,y:0},Qa:.5,kn:()=>0,Rn:()=>null,
+  $w(){},Sb(){},advanceSkillContacts(){},X9(){},nP(){},Ab(){},cb(){},Oy(){},Gv(){}});
+ Object.assign(s.l,{P:{life:100,mana:100,regen:0,manaRegen:0},life:3,mana:100,hpDot:10,hpDotT:1,town:true});
+ const source=fs.readFileSync('src/client/core/state-and-save-02.js','utf8');
+ const node=acorn.parse(source,{ecmaVersion:'latest'}).body.find(n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>d.id.name==='Td'));
+ vm.runInContext(source.slice(node.start,node.end),s);
+ s.Td(.1);assert.equal(s.l.life,2);assert.equal(s.l.txt[0].amount,1);assert.equal(s.l.txt[0].target,s.v);
+ s.Td(1);assert.equal(s.l.txt[0].amount,3);assert.equal(s.l.txt[0].color,'#8fe34a');
+ const enemySource=fs.readFileSync('src/client/core/state-and-save-01.js','utf8');
+ const enemyNode=acorn.parse(enemySource,{ecmaVersion:'latest'}).body.find(n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>d.id.name==='$d'));
+ vm.runInContext(enemySource.slice(enemyNode.start,enemyNode.end),s);
+ const enemy={x:50,y:0,hp:2,poison:1,poisonDmg:100,castT:1};
+ s.$d(enemy,.1);assert.equal(s.l.txt.at(-1).target,enemy);assert.equal(s.l.txt.at(-1).amount,2);
 });
 
 test('real outgoing and incoming damage keep individual HP/log events while only floating numbers are summed',()=>{

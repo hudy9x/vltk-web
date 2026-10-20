@@ -272,6 +272,64 @@ test("GM range checkbox draws only the current skill at the moving hero, updates
   s.gameMaster.drawSkillRange(context);
   assert.equal(calls.length, 0);
 });
+test('GM damage checkbox independently draws actual active fields, including SIM and hidden FX, without mutating combat',()=>{
+  const s=game(),calls=[];
+  Object.assign(s,{QA:.81,wf:1,v:{x:20,y:30}});
+  Object.assign(s.l,{zoneShown:1,quiet:true,fx:[],combatProjectiles:[]});
+  const cast={skill:{id:1078,geo:{k:'spot',r:512}},zone:1,actor:{x:900,y:900},elapsed:.4};
+  const effect={k:'jm',kind:0,x:200,y:286,z:0,hz:0,age:7,combat:cast};
+  s.l.combatProjectiles.push(effect,{...effect});
+  const before=JSON.stringify(s.l.combatProjectiles);
+  const context={save(){calls.push('save');},restore(){calls.push('restore');},setLineDash(){},
+    beginPath(){},fill(){},stroke(){},ellipse(...args){calls.push(args);}};
+  const panel=s.nodes.find(node=>node.id==='gm-panel');
+  assert.match(panel.innerHTML,/type="checkbox" id="gm-show-damage"/);
+  s.gameMaster.drawSkillRange(context);assert.equal(calls.length,0);
+  panel.onchange({target:{id:'gm-show-damage',checked:true}});
+  s.gameMaster.drawSkillRange(context);
+  const ellipses=calls.filter(Array.isArray);
+  assert.equal(ellipses.length,1,'overlapping field sprites share one overlay');
+  assert.deepEqual(ellipses[0].slice(0,4),[200,300,512*.81,512*.81/2]);
+  assert.equal(calls[0],'save');assert.equal(calls.at(-1),'restore');
+  assert.equal(JSON.stringify(s.l.combatProjectiles),before,'drawing changes no combat state');
+  calls.length=0;panel.onchange({target:{id:'gm-show-damage',checked:false}});
+  s.gameMaster.drawSkillRange(context);assert.equal(calls.length,0);
+});
+
+test('GM damage overlay follows moving missiles, splash and self ellipses, and skips inactive/foreign-map effects',()=>{
+  const s=game(),calls=[];Object.assign(s,{QA:.81,wf:1,v:{x:0,y:0}});
+  s.E=(value,min,max)=>Math.max(min,Math.min(max,value));
+  Object.assign(s.l,{zoneShown:1,combatProjectiles:[]});
+  const cast=geo=>({skill:{geo},zone:1});
+  s.l.combatProjectiles.push(
+    {k:'mis',x:0,y:0,x1:0,y1:0,x2:100,y2:80,t:.5,life:1,combat:cast({area:96})},
+    {k:'boom',x:20,y:36,t:.1,combat:cast({k:'self',r:170})},
+    {k:'boom',x:500,y:500,t:-.1,combat:cast({r:500})},
+    {k:'boom',x:500,y:500,t:0,contactAlive:false,combat:cast({r:500})},
+    {k:'boom',x:500,y:500,t:0,combat:{...cast({r:500}),zone:2}},
+  );
+  const context={save(){},restore(){},setLineDash(){},beginPath(){},fill(){},stroke(){},
+    ellipse(...args){calls.push(args);}};
+  s.CombatEngine.drawSkillDamageAreas(context);
+  assert.equal(calls.length,3);
+  assert.deepEqual(calls[0].slice(0,4),[50,54,8,4]);
+  assert.deepEqual(calls[1].slice(0,4),[50,54,96*.81,96*.81/2]);
+  assert.deepEqual(calls[2].slice(0,4),[20,50,170*.81,170*.81*.6]);
+});
+
+test('GM damage overlay draws oriented rectangular fields using collision dimensions',()=>{
+  const s=game(),points=[];s.QA=.81;
+  Object.assign(s.l,{zoneShown:1,combatProjectiles:[{k:'boom',x:800,y:800,t:0,
+    combat:{zone:1,origin:{x:100,y:86},direction:Math.PI/2,
+      skill:{geo:{k:'self',shape:'rect',len:200,width:24}}}}]});
+  s.CombatEngine.drawSkillDamageAreas({save(){},restore(){},setLineDash(){},beginPath(){},fill(){},stroke(){},
+    closePath(){},moveTo(...args){points.push(args);},lineTo(...args){points.push(args);}});
+  assert.equal(points.length,4);
+  assert.ok(Math.abs(points[0][0]-(100+12*.81))<1e-9);
+  assert.ok(Math.abs(points[0][1]-100)<1e-9);
+  assert.ok(Math.abs(points[1][1]-(100+200*.81/2))<1e-9);
+});
+
 test("quick sale sells clicked inventory items without confirmation, unlocks locked items, saves, and stops on Escape", () => {
   const s = game();
   const item = { uid: 3, n: "Ngựa", d: 10, price: 100, mag: [] },

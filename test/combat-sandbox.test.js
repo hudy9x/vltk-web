@@ -438,6 +438,20 @@ test('SIM nameplate anchor ignores attack animation height just like ordinary ch
   assert.ok(positions.every(position=>position.x===actor.x&&position.y===actor.y-80));
 });
 
+test('SIM renders live curse sprites above its nameplate, expires them and obeys the look FX switch', () => {
+  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang'),draws=[];
+  actor.look={anim:'sim-body'};actor.curse={390:10};s.l.clock=1;
+  Object.assign(s,{E0:{anim:{'sim-body':{st:{h:80}}}},Jn:1,nv:.6,H8(){},ps(){},kf:()=>80,M8:()=>true,
+    bA:()=>({complete:true,naturalWidth:100}),L3(){},U1:{390:{f:'curse.webp',pos:'head',n:1,w:52,h:46,ax:23,ay:97,ms:60}}});
+  vm.runInContext(compileTypeScriptEntry('render/nameplates.ts','nameplateOffset').code,s);
+  for(const name of ['F3','WP'])loadDeclaration(s,'src/client/render/effects-and-look-01.js',name);
+  const context={drawImage:(...args)=>draws.push(args)};
+  s.arenaSimulator.draw(context,actor,1/60);
+  assert.equal(draws.length,1);assert.ok(draws[0][6]+draws[0][8]<actor.y-80-20);
+  s.l.clock=11;s.arenaSimulator.draw(context,actor,1/60);assert.equal(draws.length,1);
+  s.l.clock=1;s.o.lookFx=false;s.arenaSimulator.draw(context,actor,1/60);assert.equal(draws.length,1);
+});
+
 test('SIM list exposes each actor and deletes the clicked actor without touching another selected SIM',()=>{
  const s=simulatorGame(),one=s.arenaSimulator.create('wudang'),two=s.arenaSimulator.create('shaolin');
  const list=s.fields.get('#sim-list');assert.match(list.innerHTML,new RegExp(one.simId));assert.match(list.innerHTML,new RegExp(two.simId));
@@ -528,6 +542,18 @@ test('poison adds remaining damage into the refreshed duration without immediate
  s.hs(skill,monster);assert.equal(monster.hp,1000);assert.equal(monster.poison,3);assert.equal(monster.poisonDmg,30);
  monster.poison=2;s.hs(skill,monster);
  assert.equal(monster.poison,3);assert.equal(monster.poisonDmg,50,'60 remaining plus 90 new damage over 3s');
+ assert.ok(!(s.l.txt||[]).some(label=>label.kind==='poison'),'deferred poison is not displayed as HP damage on application');
+});
+
+test('SIM poison loss uses green aggregated damage numbers, stops at expiry and never displays overkill HP',()=>{
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');
+ actor.farm=false;actor.pk=false;actor.hp=100;actor.poison=.1;actor.poisonDmg=10;s.l.txt=[];
+ s.arenaSimulator.tick(.05);s.arenaSimulator.tick(.05);
+ assert.equal(actor.hp,99);assert.equal(s.l.txt.length,1);assert.equal(s.l.txt[0].target,actor);
+ assert.equal(s.l.txt[0].amount,1);assert.equal(s.l.txt[0].color,'#8fe34a');
+ s.arenaSimulator.tick(.1);assert.equal(actor.hp,99);assert.equal(s.l.txt[0].amount,1);
+ actor.hp=.2;actor.poison=1;actor.poisonDmg=100;s.l.txt=[];
+ s.arenaSimulator.tick(.1);assert.equal(actor.hp,0);assert.equal(s.l.txt[0].amount,.2);
 });
 
 test('explicit stun refreshes to the configured duration rather than adding hit durations',()=>{

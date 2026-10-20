@@ -125,6 +125,13 @@ body.nochat #modeSw{left:6px}
 #skPick{position:absolute;z-index:30;display:grid;grid-template-columns:repeat(6,36px);gap:3px;padding:6px;background:linear-gradient(#1c1d19,#0b0c0a);border:1px solid #6b5a2e;box-shadow:0 0 0 1px #000,0 6px 14px #000c}
 #skPick .nm{grid-column:1/-1;font-size:11px;color:#e8dcc0;padding:0 2px 4px;border-bottom:1px solid #2e2b22;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #skPick .nm small{color:#a99f86}
+#skPick .skgroup{grid-column:1/-1;font-size:11px;color:#c9b788;padding-top:3px}
+#skPick .skauto,#skPick .skhint{grid-column:1/-1;font-size:11px;color:#c9bfa7;white-space:normal}
+#skPick .skauto{border-top:1px solid #2e2b22;padding-top:6px}
+#skPick .skhint{font-size:10px;line-height:1.4}
+#pad .pbtn.support-on{border-color:#80c98d!important;box-shadow:inset 0 0 0 1px #000,0 0 5px #80c98d88!important}
+#pad .pbtn.support-aim{border-color:#e8b5fc!important;box-shadow:inset 0 0 0 1px #000,0 0 6px #e8b5fc99!important}
+#pad .sk .skremain{z-index:2;right:2px;bottom:1px}
 #skPick .spk{width:36px;height:36px;padding:0;border:1px solid #3d3a30;background:#000 center/cover no-repeat;position:relative;cursor:pointer;box-shadow:inset 0 0 0 1px #000}
 #skPick .spk:hover{border-color:#c9a85a}
 #skPick .spk.on{border-color:#ffd24a;box-shadow:0 0 0 1px #ffd24a,0 0 8px #ffd24a88}

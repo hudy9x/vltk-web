@@ -56,7 +56,8 @@ export function enqueueDamageLabel(labels: FloatingCombatLabel[], target: LabelT
   // Stale rows can remain in a legacy queue until its next render pass.
   for (const old of stack.slice()) if (old.life <= 0) remove(labels, index, old);
   stack = index.stacks.get(target) || [];
-  const window = crowded ? BUDGET.denseMergeWindow : DAMAGE_LABEL_LAYOUT.mergeWindow;
+  const window = kind === 'poison' ? Math.max(DAMAGE_LABEL_LAYOUT.poisonMergeWindow, crowded ? BUDGET.denseMergeWindow : 0) :
+    crowded ? BUDGET.denseMergeWindow : DAMAGE_LABEL_LAYOUT.mergeWindow;
   let label = stack.slice().reverse().find(candidate => candidate.kind === kind && candidate.critical === critical &&
     candidate.suffix === suffix && candidate.status === status && (candidate.age || 0) <= window);
   if (label) {

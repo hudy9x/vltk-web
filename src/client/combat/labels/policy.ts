@@ -4,13 +4,14 @@ export const DAMAGE_LABEL_COLORS = {
   fire: '#f01a1aff',
   cold: '#f01a1aff',
   light: '#f01a1aff',
-  poison: '#f01a1aff',
+  poison: '#8fe34a',
   critical: '#fa7676ff',
   status: '#d5d9df',
 } as const;
 
 export const DAMAGE_LABEL_LAYOUT = {
   mergeWindow: 0.12,
+  poisonMergeWindow: 0.5,
   rows: 4,
   lowFxRows: 3,
   gap: 2,
