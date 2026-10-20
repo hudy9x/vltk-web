@@ -790,3 +790,32 @@ test('SIM exposes every active 150 skill and includes support 120 in the build t
     }
   }
 });
+
+test('SIM health presets stay independent through selection, skills, builds and templates',async()=>{
+  const s=simulatorGame(),health=s.fields.get('#sim-health');
+  const playerHP=s.l.life;
+  const presets=[20000,50000,100000,500000,1000000,10000000,20000000,100000000];
+  health.value='20000';
+  const one=s.arenaSimulator.create('wudang');
+  assert.equal(one.hp,20000);assert.equal(one.stats.life,20000);
+  const two=s.arenaSimulator.create('shaolin');
+  for(const hp of presets){
+    health.value=String(hp);health.onchange();
+    assert.equal(two.hp,hp);assert.equal(two.max,hp);assert.equal(two.stats.life,hp);
+    assert.equal(one.hp,20000);
+  }
+  two.hp=two.max/2;
+  s.arenaSimulator.selectSkill('basic');
+  assert.equal(two.max,100000000);assert.equal(two.hp,50000000);
+  s.arenaSimulator.setAttribute('str',two.profile.attr.str+1);
+  assert.equal(two.max,100000000);assert.equal(two.hp,50000000);
+  s.arenaSimulator.selectActor(one.simId);assert.equal(health.value,'20000');
+  s.arenaSimulator.selectActor(two.simId);assert.equal(health.value,'100000000');
+  const template=await s.arenaSimulator.saveTemplate('HP 100m');
+  const copy=s.arenaSimulator.createFromTemplate(template.id);
+  assert.equal(copy.max,100000000);assert.equal(copy.hp,100000000);
+  health.value='';health.onchange();assert.equal(copy.max,1000);assert.equal(copy.hp,1000);
+  assert.equal(two.max,100000000);assert.equal(s.l.life,playerHP);
+  health.value='123';health.onchange();assert.equal(copy.max,1000);
+  assert.match(s.fields.get('#sim-status').textContent,/không hợp lệ/);
+});
