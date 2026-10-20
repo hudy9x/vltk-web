@@ -268,7 +268,8 @@ var hs = function (A, n) {
     (trace && trace("Sát thương trực tiếp = chỉ độc ? 0 : max(1, tổng × ea)", { poisonOnly: y, accountMultiplier: ea(), damage: i, hpBefore: n.hp, hpAfter: n.hp - i })),
     (n.hp -= i),
     (n.hitT = 0.12),
-    applyActorHurt(n, i, n.max) && W3(n.animKey || r0[n.tid].anim, "hurt", 0.3),
+    // Cold hits slow locomotion without entering the movement-blocking hurt pose.
+    coldDamage <= 0 && applyActorHurt(n, i, n.max) && W3(n.animKey || r0[n.tid].anim, "hurt", 0.3),
     (A.stun || l.P.stunAdd) &&
       Math.random() * 100 < (A.stun || 0) + (l.P.stunAdd || 0) &&
       (n.stun > 0 || Tt(n, "Choáng", "#ffd24a"), (n.stun = Math.max(n.stun, 0.8 * _))),
@@ -366,7 +367,7 @@ var U9 = function (A) {
   if (
     ((trace && trace("Trừ HP", { damage: e, hpBefore: l.life, hpAfter: l.life - e, dot: l.hpDot || 0, dotSeconds: l.hpDotT || 0, sorb: l.P.sorb || 0, from: (l.P.from && l.P.from[A.series]) || 0 })),
     (l.life -= e),
-    applyActorHurt(v, e, l.P.life),
+    coldDamage <= 0 && applyActorHurt(v, e, l.P.life),
     l.P.retMelee || l.P.retMeleeP || l.P.retRangeP)
   ) {
     const a = A.ranged

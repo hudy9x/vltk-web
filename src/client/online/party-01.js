@@ -436,7 +436,7 @@ var Am = function (A) {
         (y1(e.se, r.series) ? (x *= 1 + Ct) : y1(r.series, e.se) && (x *= 1 - Ct),
           (x = Math.max(1, x)),
           (r.hp -= x),
-          applyActorHurt(r, x, r.max),
+          coldDamage <= 0 && applyActorHurt(r, x, r.max),
           (r.hitT = 0.1),
           (r.aggro = !0),
           (!r.tgtA || Math.random() < 0.35) && (r.tgtA = e),
@@ -522,7 +522,7 @@ var hB = function (A, n) {
     (y1(n.series, A.se) ? (t *= 1 + Ct) : y1(A.se, n.series) && (t *= 1 - Ct),
     (A.hp -= t),
     l.quiet || showDamageNumber(A, t, Dw[n.series] || "phys"),
-    applyActorHurt(A, t, A.hpMax),
+    Dw[n.series] !== "cold" && applyActorHurt(A, t, A.hpMax),
     A.hp <= 0)
   ) {
     ((A.hp = 0), (A.dead = !0), (A.resp = sm));
