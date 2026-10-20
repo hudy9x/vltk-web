@@ -128,6 +128,8 @@ export interface InterpolatedMissile extends EffectBase {
   dir?: number;
 }
 export interface StationaryEffect extends EffectBase {
+  /** Animation playback multiplier, consumed by the stationary FX renderer. */
+  sp?: number;
   k: 'boom';
   t: number;
   life: number;

@@ -330,6 +330,44 @@ test('Thời Thặng Lục Long pierces and damages every enemy along its path o
   }
 });
 
+test('Cửu Thiên Cương Phong pierces every body and leaves one Ngạo Tuyết column per contact',()=>{
+  for(const level of [1,25,27])for(const mode of ['normal','quiet','lowFx','missing','budget']) {
+    const {s,skill}=advancedCombat();load(s,'src/client/data/status-effects-01.js');
+    const sprite=s.A0.m[179].fly;
+    assert.ok(manifest[1080].assets.includes(sprite.f));
+    if(mode==='quiet')s.l.quiet=true;
+    if(mode==='lowFx')s.o.lowFx=true;
+    if(mode==='missing')delete s.A0.m[179];
+    const caster={x:500,y:300,hp:100};
+    const targets=[100,180,260].map(dx=>({x:caster.x+dx,y:caster.y,hp:100,r:12}));
+    const offPath={x:680,y:370,hp:100,r:12},hits=[],columns=[];
+    const cast=s.queueSkillContact(caster,targets[0],skill(1080,level),hit=>hits.push(hit),{
+      targets:()=>[...targets,offPath],windup:0,
+    });
+    assert.equal(cast.skill.geo.pierce,true);assert.equal(cast.skill.geo.area,0);
+    assert.equal(hits.length,0,'no damage or column before physical contact');
+    if(mode==='budget')for(let i=0;i<200;i++)s.l.fx.push({k:'boom',t:0,life:5,x:0,y:0});
+    s.l.fxQ=[];
+    s.l.fxQ.push=function(...effects) {
+      columns.push(...effects.filter(effect=>effect.s===sprite));
+      return Array.prototype.push.apply(this,effects);
+    };
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    for(const target of targets)assert.equal(hits.filter(hit=>hit===target).length,1,`${level} ${mode}`);
+    assert.ok(!hits.includes(offPath),'only physically contacted monsters take damage');
+    const visible=mode==='normal'||mode==='lowFx';
+    assert.equal(columns.length,visible?3:0,`${level} ${mode}`);
+    if(visible)for(const [index,column] of columns.entries()) {
+      assert.equal(column.x,targets[index].x);assert.equal(column.y,targets[index].y-14);
+      assert.equal(column.cosmetic,true);assert.ok(!column.combat);
+      assert.equal(column.life,15/s.K3);
+      assert.ok(Math.abs(column.sp*column.life-sprite.n*sprite.ms/1000)<1e-9);
+    }
+    assert.equal(s.l.combatProjectiles.length,0);
+    if(visible)assert.equal(s.l.fx.filter(effect=>effect.s===sprite).length,0,'columns expire');
+  }
+});
+
 test('Bổng Huýnh Lược Địa emits three abreast and steers toward a moving target',()=>{
   for(const angle of [0,Math.PI/2,-Math.PI*.7]) {
     const {s,skill}=advancedCombat(),caster={x:500,y:300,hp:100};

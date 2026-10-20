@@ -155,6 +155,8 @@ var Wn = function (A, n, t, e, a, i, r) {
 
 var gf = function (A, n, t) {
   if (l.quiet) return;
+  // Lôi Động's explosion follows the visual bolt landing, not each damage pulse.
+  if (A.combat && +A.combat.skill.id === 375) return;
   const e = A.m.hit;
   !e ||
     l.fx.length > mf ||
@@ -252,6 +254,20 @@ var YP = function (A) {
   if (A.age < 0) return;
   const n = A.m.fly;
   if (!n) return;
+  if (A.combat && +A.combat.skill.id === 375) {
+    // Physical fields last 3s. Each visual bolt is a one-shot: six frames of
+    // descent at 18fps (twice the old 111ms/frame), then its ground explosion.
+    const elapsed = A.age / K3 - (A.lightningDelay || 0);
+    if (elapsed < 0) return;
+    const fall = n.n / K3, y = A.y - (A.z + A.hz) * wf;
+    if (elapsed < fall) {
+      Fa(n, 0, elapsed / fall * n.n * n.ms / 1e3, A.x, y, !1);
+    } else {
+      const hit = A.m.hit, time = elapsed - fall;
+      if (hit && time < hit.n * hit.ms / 1e3) Fa(hit, 0, time, A.x, y, !1);
+    }
+    return;
+  }
   const t = n.n,
     e = Math.max(1, Math.round(n.ms / (1e3 / K3))),
     speed = A.combat && +A.combat.skill.id === 365 ? 2 : 1,
@@ -444,6 +460,13 @@ var G3 = function (A, n, t) {
         if (separateImpact) missile.m = Object.assign({}, missile.m, { hit: null });
       }
     } else bs(f, g, o.lowFx && !activeCombatCast ? Math.min(u, 3) : u, a, A, n, n);
+    if (+t.id === 375 && activeCombatCast) {
+      let index = 0;
+      for (const missile of (l.combatProjectiles || []).slice(contactStart)) {
+        if (missile.combat === activeCombatCast && missile.k === "jm")
+          missile.lightningDelay = (2 + index++ * 2) / K3;
+      }
+    }
     if (+t.id === 1069) {
       // Twice the speed must not double the old lifetime-based flight range.
       for (const missile of (l.combatProjectiles || []).slice(contactStart)) {
