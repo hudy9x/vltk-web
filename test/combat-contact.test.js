@@ -480,6 +480,35 @@ test('Loi Dong field lasts three seconds with one hit every 300ms and checks liv
  entering.x=200;target.x=1000;run(s,.3);assert.equal(entering.hp,90);assert.equal(target.hp,80);
  run(s,3);assert.equal(entering.hp,20);const hp=entering.hp;run(s,1);assert.equal(entering.hp,hp);
 });
+test('Loi Dong lightning falls in six frames then renders its explosion instead of looping',()=>{
+ const s=world();declaration(s,'src/client/render/projectiles-01.js','YP');s.Ds=()=>0;
+ const draw=[];s.Fa=(sprite,dir,time,x,y)=>draw.push({sprite,time,x,y});
+ const missile=s.A0.m[181],effect={age:0,lf:54,loop:true,m:missile,combat:{skill:{id:375}},
+  x:200,y:86,z:0,hz:10,lightningDelay:2/18};
+ s.YP(effect);assert.equal(draw.length,0,'do not draw before the bolt delay');
+ effect.age=(2/18+3/18)*18;s.YP(effect);
+ assert.equal(draw.at(-1).sprite,missile.fly);assert.ok(Math.abs(draw.at(-1).time-3*missile.fly.ms/1000)<1e-9);
+ effect.age=(2/18+6/18+.05)*18;s.YP(effect);
+ assert.equal(draw.at(-1).sprite,missile.hit);assert.ok(Math.abs(draw.at(-1).time-.05)<1e-9);
+ assert.equal(draw.at(-1).y,81,'explosion and bolt use the same ground anchor');
+ const count=draw.length;effect.age=54;s.YP(effect);assert.equal(draw.length,count,'never loop or pin the final bolt frame');
+ assert.equal(effect.age,54,'animation must not advance the damage clock');
+});
+test('Loi Dong staggers the full lightning field and keeps ten damage pulses at different frame rates',()=>{
+ for(const dt of [1/60,1/30,.05]) {
+  const s=world(),target=enemy(s,200),skill=standardSkill(s,375);target.hp=1000;
+  const cast=s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
+  const bolts=s.l.combatProjectiles.filter(effect=>effect.combat===cast);
+  assert.equal(bolts.length,16);assert.equal(new Set(bolts.map(effect=>effect.lightningDelay)).size,16);
+  assert.ok(Math.max(...bolts.map(effect=>effect.lightningDelay))+6/18+8*.056<3,'all explosions finish within the field duration');
+  run(s,3.5,dt);assert.equal(target.hp,900,'visual acceleration must retain ten hits');
+ }
+});
+test('Loi Dong waits for its visual landing before exploding while other missiles retain impact FX',()=>{
+ const s=world(),effect={m:s.A0.m[181],combat:{skill:{id:375}}};
+ s.gf(effect,100,100);assert.equal((s.l.fxQ||[]).length,0);
+ effect.combat.skill.id=182;s.gf(effect,100,100);assert.equal(s.l.fxQ.length,1);
+});
 test('Thien Dia animation advances twice as fast without changing simulation age',()=>{
  const s=world();declaration(s,'src/client/render/projectiles-01.js','YP');s.Ds=()=>0;
  let time;s.Fa=(sprite,dir,t)=>{time=t;};

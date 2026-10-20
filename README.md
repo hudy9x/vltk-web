@@ -170,6 +170,9 @@ Lệnh chỉ khởi động môi trường test; bạn tạo nhân vật và h�
 Các chiêu 90 trong phòng test có quy tắc riêng: Phong Sương Toái Ảnh tính
 va chạm từng tia; Nhân Kiếm Hợp Nhất tính ba kiếm và một đòn phụ; Lôi Động
 Cửu Thiên gây một đòn mỗi 300ms trong 3 giây cho quái còn trong vùng.
+Tia sét của Lôi Động Cửu Thiên rơi trong khoảng 0,33 giây rồi chuyển sang
+sprite nổ tại cùng vị trí; 16 tia rơi lệch nhau 2 frame. Nhịp hình ảnh này
+độc lập với nhịp sát thương, không tăng số lần trúng.
 Phi Long Tại Thiên và Thiên Hạ Vô Cẩu không gây sát thương quanh người tung
 chiêu. Phạm vi nổ của Phi Long và ba chiêu 90 Đường Môn giảm còn 1/3.
 Nhiếp Hồn Nguyệt Ảnh hiện hiệu ứng tại từng quái bị đạn xuyên hoặc vùng phụ

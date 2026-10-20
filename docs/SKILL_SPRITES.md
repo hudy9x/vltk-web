@@ -273,7 +273,7 @@
 - **path**:
   - Icon: `img/s/1080.png`
   - Sprite đòn chính: `fx/advanced/m342_fly.webp` | Hit FX: `fx/advanced/m342_hit.webp`
-  - Sprite đòn phụ: `Không có`
+  - Sprite đòn phụ: `fx/m179_fly.webp` — cột lốc đứng tại mỗi quái chạm phải trên đường bay, dùng chung với Ngạo Tuyết Tiêu Phong.
   - Sprite tụ khí: `fx/advanced/p7.webp`
 
 - **tên skill**: Thiên Lôi Chấn Nhạc (Cấp 150 - Công kích nội công)

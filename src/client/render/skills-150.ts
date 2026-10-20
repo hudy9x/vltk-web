@@ -4,6 +4,7 @@ import { configureShaolinImpact } from '../combat/skill-effects/thieu-lam-impact
 import { configureTianwangImpact } from '../combat/skill-effects/thien-vuong-impact';
 import { configureIcePeacockImpact } from '../combat/skill-effects/bang-tuoc-hoat-ky';
 import { configureBeggarImpact } from '../combat/skill-effects/cai-bang-impact';
+import { configureKunlunWindImpact } from '../combat/skill-effects/cuu-thien-cuong-phong';
 
 // Sprite sheets này đã chứa toàn bộ chuyển động của chiêu. Chỉ tiến frame,
 // không rải thành lưới và không di chuyển tâm của từng frame.
@@ -89,6 +90,7 @@ function swordFlowerFormation(caster: WorldPoint, angle: number): SkillSpritePla
 
 /** Mỗi đạn phát impact đúng va chạm, độc lập quota damage của cả chiêu. */
 export function configureAdvancedSkillImpact(id: number, cast: CombatCast | null, sprite?: SpriteMetadata): boolean {
+  if (id === 1080) configureKunlunWindImpact(cast);
   if (id === 1073 || id === 1074) configureBeggarImpact(cast);
   if (id === 1063) configureIcePeacockImpact(cast);
   if (id === 1058 || id === 1059 || id === 1060) configureTianwangImpact(cast);
