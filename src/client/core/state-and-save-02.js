@@ -55,6 +55,7 @@ var Td = function (A) {
     typeof Lm == "function" && Lm(A),
     !l.enemies.length)
   ) {
+    if (Y.tmp && Y.target && !hA()) Ah(A);
     if (Ga()) return;
     if (t && l.lootWait < 8) {
       l.lootWait += A;

@@ -51,6 +51,36 @@ function enemy(s, x=150) { const e={ x, y:100, r:17, hp:100, n:'Quái', cls:'nor
 function pointer(s, type, x, y, pointerType='mouse') { s.handlers[type]({ clientX:x,clientY:y,pointerId:1,pointerType }); }
 function ticks(s, seconds) { for(let i=0;i<seconds*60;i++) { s.l.clock+=1/60;s.Td(1/60); } }
 
+test('an auto ground click interrupts casting on the next tick, prevents attacks while travelling and resumes auto on arrival', () => {
+  const s=game(); enemy(s,150); s.o.ctrl='auto';
+  Object.assign(s.v,{castT:.8,atT:.8,act:'at',actionRevision:2});
+  pointer(s,'pointerdown',240,100); pointer(s,'pointerup',240,100);
+  assert.equal(s.v.castT,0); assert.equal(s.v.actionRevision,3);
+  ticks(s,1/60);
+  assert.ok(s.v.x>0); assert.equal(s.v.castT,0); assert.equal(s.v.actionRevision,3);
+  assert.equal(s.casts,0); assert.equal(s.o.ctrl,'auto');
+  ticks(s,1); assert.equal(s.casts,0); assert.ok(s.Y.target);
+  ticks(s,1); assert.equal(s.Y.target,null); assert.equal(s.Y.tmp,false); assert.ok(s.casts>0);
+});
+
+test('auto ground movement works with an empty field and preserves hurt locks', () => {
+  const s=game(); s.o.ctrl='auto'; s.l.spawnT=10;
+  Object.assign(s.v,{hurtT:.5,act:'hurt'});
+  pointer(s,'pointerdown',240,100); pointer(s,'pointerup',240,100);
+  ticks(s,1/60); assert.equal(s.v.x,0); assert.equal(s.v.hurtT,.5);
+  s.v.hurtT=0; ticks(s,1/60); assert.ok(s.v.x>0);
+});
+
+test('auto buffs wait for the ground command to finish, while expired buffs still expire', () => {
+  const s=game(), buffs={buff:{2:.1},cd:{}}; enemy(s); s.o.ctrl='auto'; s.o.fac='test'; s.o.sk={1:1};
+  Object.assign(s,{v7(){},k4:0,ya:()=>s.l.clock,ba:()=>buffs,T:{1:{n:'Buff'}},wn:()=> 'buff',zi:()=>1,
+    M7:()=>10,ae:()=>10,i4:()=>false,b4:()=>false,beginActorCast:()=>{s.v.castT=.4;return true;},o0(){}});
+  declaration(s,'src/client/gameplay/shop-and-books-01.js','A6');
+  s.l.clock=1; pointer(s,'pointerdown',240,100); pointer(s,'pointerup',240,100);
+  s.A6(.5); assert.equal(s.l.mana,100); assert.equal(buffs.buff[1],undefined); assert.equal(buffs.buff[2],0);
+  s.Y.target=null;s.Y.tmp=false;s.A6(.5);assert.equal(s.l.mana,90);assert.ok(buffs.buff[1]>s.l.clock);
+});
+
 test('mouse click cancels stale movement, flashes the monster, and does not turn holding/releasing into another command', () => {
   const s=game(), e=enemy(s);
   s.l.moveTo={x:900,y:100,hp:100};s.Y.target={x:900,y:100};s.l.pickTarget={};

@@ -780,6 +780,7 @@ var iD = function (A) {
 };
 
 var oD = function () {
+  if (typeof Y !== "undefined" && Y.tmp && Y.target && !hA()) return 0.05;
   if (actorActionLocked(v)) return 0.05;
   const A = l.P,
     n = _1();

@@ -42,7 +42,7 @@ var Rv = function () {
       hA() || (Y.tmp = !0);
       Y.releaseTarget();
       const [f, h] = X0(r + B0.x, c + B0.y);
-      ((Y.target = { x: f, y: h }), (l.pickTarget = null));
+      (Y.moveTarget(f, h), (l.pickTarget = null));
       return;
     }
     const [a, i] = A(e);
@@ -70,7 +70,7 @@ var Rv = function () {
       if (((Y.x = a), (Y.y = i), Y.mouse)) {
         const [r, c] = X0(a + B0.x, i + B0.y);
         Y.releaseTarget();
-        Y.target = { x: r, y: c };
+        Y.moveTarget(r, c);
         return;
       }
       if (!Y.fromJoy) {
@@ -78,7 +78,7 @@ var Rv = function () {
           ((Y.moved = !0), hA() || (Y.tmp = !0));
           const [r, c] = X0(a + B0.x, i + B0.y);
           Y.releaseTarget();
-          Y.target = { x: r, y: c };
+          Y.moveTarget(r, c);
         }
         return;
       }
@@ -109,7 +109,7 @@ var Rv = function () {
     {
       hA() || (Y.tmp = !0);
       const [d, f] = X0(a + B0.x, i + B0.y);
-      Y.target = { x: d, y: f };
+      Y.moveTarget(d, f);
     }
   };
   (lA.addEventListener("pointerup", n),
@@ -201,6 +201,18 @@ var Rv = function () {
 var ah = function (A) {};
 
 var Y = {
+  moveTarget(x, y) {
+    Y.target = { x, y };
+    // Cancel before the next simulation tick can release an auto windup.
+    if (!hA()) {
+      Y.tmp = true;
+      if (v.castT > 0 && !(v.hurtT > 0)) {
+        v.castT = 0; v.atT = 0;
+        v.actionRevision = (v.actionRevision || 0) + 1;
+        v.act = "st"; v.actT = 0;
+      }
+    }
+  },
   selectTarget(target) {
     if (!hA()) Wa("manual", !0);
     l.manTgt = target;
