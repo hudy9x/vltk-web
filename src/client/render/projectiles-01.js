@@ -155,8 +155,8 @@ var Wn = function (A, n, t, e, a, i, r) {
 
 var gf = function (A, n, t) {
   if (l.quiet) return;
-  // Lôi Động's explosion follows the visual bolt landing, not each damage pulse.
-  if (A.combat && +A.combat.skill.id === 375) return;
+  // Falling fire/lightning play their explosion on landing, not on damage pulses.
+  if (A.combat && [362, 375].includes(+A.combat.skill.id)) return;
   const e = A.m.hit;
   !e ||
     l.fx.length > mf ||
@@ -254,12 +254,13 @@ var YP = function (A) {
   if (A.age < 0) return;
   const n = A.m.fly;
   if (!n) return;
-  if (A.combat && +A.combat.skill.id === 375) {
-    // Physical fields last 3s. Each visual bolt is a one-shot: six frames of
-    // descent at 18fps (twice the old 111ms/frame), then its ground explosion.
+  if (A.combat && [362, 375].includes(+A.combat.skill.id)) {
+    // Play descent then landing once, independently of the damage pulses.
+    // Meteors keep their sprite timing; Lôi Động descends at 18fps.
     const elapsed = A.age / K3 - (A.lightningDelay || 0);
     if (elapsed < 0) return;
-    const fall = n.n / K3, y = A.y - (A.z + A.hz) * wf;
+    const fall = +A.combat.skill.id === 362 ? n.n * n.ms / 1e3 : n.n / K3;
+    const y = A.y - (A.z + A.hz) * wf;
     if (elapsed < fall) {
       Fa(n, 0, elapsed / fall * n.n * n.ms / 1e3, A.x, y, !1);
     } else {

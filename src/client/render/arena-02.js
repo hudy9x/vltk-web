@@ -238,7 +238,7 @@ var NP = function (A) {
     const cast = effect.combat;
     // Finite damage pulses share one continuous animation; only legacy
     // repeating fields restart their visuals at each damage interval.
-    const repeating = cast && !cast.pulseCount && +cast.skill.id !== 375 && cast.interval && cast.pulse >= 0;
+    const repeating = cast && !cast.pulseCount && ![362, 375].includes(+cast.skill.id) && cast.interval && cast.pulse >= 0;
     const phase = repeating ? Math.max(0, cast.elapsed - (cast.nextPulse - cast.interval)) : 0;
     if (effect.k === "jm") YP(repeating && effect.age >= 0 ? Object.assign({}, effect, { age: phase * K3 }) : effect);
     else if (effect.k === "mis" || effect.k === "boom") CP(repeating && effect.t >= 0 ? Object.assign({}, effect, { t: phase }) : effect);
