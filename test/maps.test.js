@@ -389,6 +389,31 @@ function trainingTravelFixture() {
   return { s, effects, catalog, expected };
 }
 
+test('the return-to-training button ignores the click event and returns to the selected primary or alternate map', () => {
+  for (const alternate of [false, true]) {
+    const { s, catalog, expected } = trainingTravelFixture();
+    const index = alternate ? Number(Object.keys(catalog.alternates).find(index => catalog.alternates[index].length)) : 1;
+    s.o.stage = index;
+    if (alternate) s.o.zalt[index] = 1;
+    const destination = s.AA(index);
+    const elements = new Map();
+    s.m = selector => {
+      if (!elements.has(selector)) elements.set(selector, { addEventListener() {}, classList: { add() {}, remove() {} } });
+      return elements.get(selector);
+    };
+    Object.assign(s, { lA: { addEventListener() {} }, document: { querySelectorAll: () => [] },
+      W8() {}, O3() {}, eo() {}, k: message => assert.fail(message) });
+    s.window.addEventListener = () => {};
+    declaration(s, 'src/client/ui/legacy-panels-and-audio-04.js', 'Rv');
+    s.Rv();
+    s.nc(); s.l.tpCd = 0;
+    elements.get('#bBack').onclick({ type: 'click', target: elements.get('#bBack') });
+    assert.equal(s.l.town, false);
+    assert.equal(s.Z0.key, destination.id);
+    assert.deepEqual([s.v.x, s.v.y], expected(destination.id));
+  }
+});
+
 test('choosing primary/alternate training maps, including from town, uses each destination entry', () => {
   const { s, catalog, expected } = trainingTravelFixture();
   s.nc(); assert.equal(s.l.town, true); s.l.tpCd = 0;
