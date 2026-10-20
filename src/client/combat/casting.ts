@@ -122,6 +122,14 @@ export function registerCombatMissile(missile: SpriteMissile): void {
   if (missile.kind && !missile.still) missile.age -= activeCombatCast.windup * K3;
   missile.lf = Math.max(missile.lf, 2);
   if (activeCombatCast.interval) missile.lf = Math.max(missile.lf, Math.ceil(activeCombatCast.duration! * K3));
+  if (+activeCombatCast.skill.id! === 362 && !activeCombatCast.skill.ev2) {
+    const spriteId = A0.f?.[362]?.c || A0.s?.[362];
+    const animation = spriteId != null ? A0.m[spriteId] : undefined;
+    // Let the visual finish its landing after the damage field has expired.
+    const fall = animation?.fly ? animation.fly.n * animation.fly.ms / 1000 : 0;
+    const landing = animation?.hit ? animation.hit.n * animation.hit.ms / 1000 : 0;
+    missile.lf = Math.max(missile.lf, Math.ceil((fall + landing) * K3));
+  }
   if (+activeCombatCast.skill.id! === 1075 && !activeCombatCast.skill.ev2) {
     missile.staticArea = true;
     const reach = (activeCombatCast.skill.geo?.len || activeCombatCast.skill.rad || 198) * QA;

@@ -420,6 +420,31 @@ test('Thien Ngoai fields pulse every 300ms, deduplicate visual effects, and insp
   run(s,.3);assert.equal(entering.hp,80);assert.ok(packed.every(e=>e.hp===70));
   run(s,1);const hp=entering.hp;run(s,1);assert.equal(entering.hp,hp);
 });
+test('Thien Ngoai world renderer completes the fall and one landing explosion without pulse rewinds',()=>{
+ for(const dt of [1/60,1/30,.05]) {
+  const s=world(),target=enemy(s,200);target.hp=1000;
+  const skill=standardSkill(s,362),draws=[];
+  s.Fa=(sprite,dir,time)=>draws.push({sprite,time});s.CP=()=>{};
+  s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
+  const meteor=s.l.combatProjectiles.find(effect=>effect.mid===171);assert.ok(meteor);
+  const realYP=s.YP;s.YP=effect=>{if(effect.mid===171)realYP(effect);};
+  const source=fs.readFileSync(path.join(ROOT,'src/client/render/arena-02.js'),'utf8');
+  const np=acorn.parse(source,{ecmaVersion:'latest'}).body.find(node=>node.type==='VariableDeclaration'&&
+    node.declarations.some(item=>item.id.name==='NP')).declarations[0].init;
+  const loop=np.body.body.find(node=>node.type==='ForOfStatement'&&source.slice(node.start,node.end).includes('const repeating'));
+  for(let time=0;time<2;time+=dt){s.advanceSkillContacts(dt);vm.runInContext(source.slice(loop.start,loop.end),s);}
+  const fall=draws.filter(draw=>draw.sprite===meteor.m.fly);
+  assert.ok(fall.length>0);
+  assert.ok(fall.every((draw,index)=>!index||draw.time>=fall[index-1].time),'the real world draw loop must never rewind the fall');
+  assert.equal(new Set(fall.map(draw=>Math.floor(draw.time*1000/meteor.m.fly.ms))).size,meteor.m.fly.n,'display every falling frame');
+  const landing=draws.filter(draw=>draw.sprite===meteor.m.hit);
+  assert.ok(landing.length>0,'the fireball must reach its landing animation');
+  assert.equal(new Set(landing.map(draw=>Math.floor(draw.time*1000/meteor.m.hit.ms))).size,meteor.m.hit.n,'complete the landing explosion');
+  assert.ok(!s.l.combatProjectiles.includes(meteor));assert.ok(!s.l.fx.includes(meteor));
+  assert.equal(target.hp,960,'retain four original damage pulses independently of the visual');
+ }
+});
+
 test('Thien Ngoai logical pulses remain active with quiet or missing visual effects',()=>{
   for(const quiet of [true,false]){
     const s=world(),target=enemy(s,200);s.l.quiet=quiet;
