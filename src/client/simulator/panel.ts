@@ -10,6 +10,7 @@ interface SimulatorElements {
   'sim-status': HTMLParagraphElement;
   'sim-faction': HTMLSelectElement;
   'sim-skill': HTMLSelectElement;
+  'sim-health': HTMLSelectElement;
   'sim-auto-skills': HTMLInputElement;
   'sim-auto-potential': HTMLInputElement;
   'sim-farm': HTMLInputElement;
@@ -68,6 +69,8 @@ export function mountSimulatorPanel(content: string) {
   return { panel, toggle, field };
 }
 
+export const SIM_HEALTH_PRESETS = [20_000, 50_000, 100_000, 500_000, 1_000_000, 10_000_000, 20_000_000, 100_000_000] as const;
+
 export function renderSimulatorControls(factions: readonly Faction[], escapeHTML: (text: string) => string): string {
-  return `<h3>Danh sách SIM đang có</h3><ul id="sim-list" aria-label="Danh sách SIM đang có"></ul><label>SIM đang chỉnh sửa <select id="sim-roster"></select></label><label>Môn phái <select id="sim-faction">${factions.filter(f => !f.novice && f.skills?.length).map(f => `<option value="${f.key}">${escapeHTML(f.n)}</option>`).join("")}</select></label><label>Chiêu thức <select id="sim-skill"></select></label><label><input id="sim-auto-skills" type="checkbox"> Tự cộng kỹ năng</label><label><input id="sim-auto-potential" type="checkbox"> Tự cộng tiềm năng</label><button type="button" id="sim-create">Tạo thêm SIM</button> <button type="button" id="sim-remove">Xóa SIM được chọn</button><label><input id="sim-farm" type="checkbox"> SIM tự đánh quái</label><label><input id="sim-pk" type="checkbox"> SIM tự PK người chơi (ưu tiên hơn quái)</label><p id="sim-info" role="status"></p><details><summary>Điểm tiềm năng và kỹ năng của SIM được chọn</summary><div id="sim-build"></div></details><h3>Template SIM</h3><label>Tên template <input id="sim-template-name" maxlength="80" placeholder="Ví dụ: Võ Đang kiếm 9x"></label><button id="sim-template-save" type="button">Lưu template</button><div id="sim-templates"></div><p id="sim-status" role="status"></p>`;
+  return `<h3>Danh sách SIM đang có</h3><ul id="sim-list" aria-label="Danh sách SIM đang có"></ul><label>SIM đang chỉnh sửa <select id="sim-roster"></select></label><label>Môn phái <select id="sim-faction">${factions.filter(f => !f.novice && f.skills?.length).map(f => `<option value="${f.key}">${escapeHTML(f.n)}</option>`).join("")}</select></label><label>Máu tối đa <select id="sim-health"><option value="">Theo chỉ số nhân vật</option>${SIM_HEALTH_PRESETS.map(hp => `<option value="${hp}">${hp >= 1_000_000 ? hp / 1_000_000 + "m" : hp / 1_000 + "k"}</option>`).join("")}</select></label><small>Áp dụng riêng cho SIM được chọn; đổi mức máu sẽ hồi đầy HP.</small><label>Chiêu thức <select id="sim-skill"></select></label><label><input id="sim-auto-skills" type="checkbox"> Tự cộng kỹ năng</label><label><input id="sim-auto-potential" type="checkbox"> Tự cộng tiềm năng</label><button type="button" id="sim-create">Tạo thêm SIM</button> <button type="button" id="sim-remove">Xóa SIM được chọn</button><label><input id="sim-farm" type="checkbox"> SIM tự đánh quái</label><label><input id="sim-pk" type="checkbox"> SIM tự PK người chơi (ưu tiên hơn quái)</label><p id="sim-info" role="status"></p><details><summary>Điểm tiềm năng và kỹ năng của SIM được chọn</summary><div id="sim-build"></div></details><h3>Template SIM</h3><label>Tên template <input id="sim-template-name" maxlength="80" placeholder="Ví dụ: Võ Đang kiếm 9x"></label><button id="sim-template-save" type="button">Lưu template</button><div id="sim-templates"></div><p id="sim-status" role="status"></p>`;
 }

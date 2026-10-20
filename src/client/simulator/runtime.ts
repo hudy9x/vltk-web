@@ -5,7 +5,7 @@ import { createSimulatorLogView } from './log-view';
 import { renderSimulatorRoster } from './roster';
 import { renderTemplateTable } from './template-table';
 import type { SimulatorLogProvider } from './types';
-import { mountSimulatorPanel, renderSimulatorControls } from './panel';
+import { mountSimulatorPanel, renderSimulatorControls, SIM_HEALTH_PRESETS } from './panel';
 import { createTemplateStore } from './templates';
 import { POTENTIALS, setPotential, setSkillLevel, skillLimit } from './build';
 import { castSimulatorSkill } from './skill-cast';
@@ -184,6 +184,7 @@ export function createSimulator() {
       equipSkill(actor.profile, id);
       asSim(actor, () => {
         const stats = j0();
+        stats.life = actor.profile.simMaxHP ?? stats.life;
         stats.main = resolvedSkill(stats, actor.profile.main);
         actor.stats = stats;
       });
@@ -198,6 +199,7 @@ export function createSimulator() {
     if (!I[faction] || I[faction].novice) throw new Error("Môn phái SIM không hợp lệ.");
     if (skillId !== "basic" && (!I[faction].skills.includes(+skillId) || !UA(T[skillId]))) throw new Error("Chiêu SIM không thuộc môn phái.");
     const profile = template ? clone(template.profile) : sandbox.createProfile(I[faction]);
+    if (!template && field("sim-health").value) profile.simMaxHP = Number(field("sim-health").value);
     validateProfile(profile);
     const id = ++nextSimId;
     profile.name = (template ? template.name : "SIM · " + I[faction].n) + " #" + id;
@@ -218,6 +220,7 @@ export function createSimulator() {
       if (!template && autoSkills) Pt();
       if (!template && autoPotential) yt();
       actor.stats = j0();
+      actor.stats.life = profile.simMaxHP ?? actor.stats.life;
       actor.stats.main = resolvedSkill(actor.stats, profile.main);
       actor.look = Jt(faction, profile.sex);
     });
@@ -374,6 +377,7 @@ export function createSimulator() {
     note: "Log thô tối đa 200 sự kiện. SIM PK dùng hs cho kỹ năng rồi áp hấp thụ/khiên người chơi; từng bước nằm trong steps. Độc là sát thương theo thời gian, không phải HP mất ngay.", events: diagnostics.entries.filter(event => !simOnly || event.simId) }, null, 2); }
   function clearLog(simOnly = false) { diagnostics.clear(simOnly ? event => !!event.simId : undefined); }
   function validateProfile(profile: SimulatorProfile): void {
+    if (profile?.simMaxHP !== undefined && !SIM_HEALTH_PRESETS.some(hp => hp === profile.simMaxHP)) throw new Error("Mức máu SIM không hợp lệ.");
     if (!profile || !I[profile.fac] || !Number.isSafeInteger(profile.lvl) || profile.lvl < 1 || profile.lvl > 200 || !profile.attr || !profile.sk || !profile.eq) throw new Error("Dữ liệu template không hợp lệ.");
     for (const value of [profile.attrPts, profile.skPts, ...Object.values(profile.attr)]) if (!Number.isSafeInteger(value) || value < 0 || value > 1_000_000) throw new Error("Điểm template không hợp lệ.");
     for (const [id, value] of Object.entries(profile.sk)) {
@@ -385,6 +389,7 @@ export function createSimulator() {
     field("sim-roster").value = sim?.simId || "";
   }
   function syncSelection() {
+    field("sim-health").value = sim?.profile.simMaxHP ? String(sim.profile.simMaxHP) : "";
     if (sim) {
       field("sim-faction").value = sim.profile.fac;
       field("sim-auto-skills").checked = sim.autoSkills; field("sim-auto-potential").checked = sim.autoPotential;
@@ -410,7 +415,7 @@ export function createSimulator() {
     const ratio = actor.hp / Math.max(1, actor.max);
     try {
       action();
-      asSim(actor, () => { actor.stats = j0(); actor.stats.main = resolvedSkill(actor.stats, actor.profile.main); });
+      asSim(actor, () => { actor.stats = j0(); actor.stats.life = actor.profile.simMaxHP ?? actor.stats.life; actor.stats.main = resolvedSkill(actor.stats, actor.profile.main); });
     } catch (error) { actor.profile = previous; actor.stats = stats; renderBuild(); throw error; }
     cancelCasts(actor); actor.cooldown = 0;
     Object.assign(actor, { hp: actor.stats.life * ratio, max: actor.stats.life, mana: actor.stats.mana,
@@ -498,6 +503,17 @@ export function createSimulator() {
   }
   field("sim-faction").onchange = () => { sim = null; updateSkills(); refreshRoster(); renderBuild(); updateInfo(); };
   field("sim-skill").onchange = applySelectedSkill;
+  field("sim-health").onchange = () => {
+    if (!sim) return;
+    try {
+      const hp = field("sim-health").value ? Number(field("sim-health").value) : undefined;
+      if (hp !== undefined && !SIM_HEALTH_PRESETS.some(value => value === hp)) throw new Error("Mức máu SIM không hợp lệ.");
+      editProfile(() => { if (hp === undefined) delete sim!.profile.simMaxHP; else sim!.profile.simMaxHP = hp; });
+      sim.hp = sim.max;
+      updateInfo();
+      field("sim-status").textContent = "Đã cập nhật máu và hồi đầy HP cho SIM được chọn.";
+    } catch (error) { field("sim-status").textContent = errorMessage(error); }
+  };
   field("sim-create").onclick = () => {
     try { create(field("sim-faction").value, field("sim-skill").value, field("sim-auto-skills").checked, field("sim-auto-potential").checked); }
     catch (error) { field("sim-info").textContent = errorMessage(error); }
