@@ -107,6 +107,10 @@ var A6 = function (A) {
     t = ba();
   let e = !1;
   for (const i in t.buff) t.buff[i] <= n && t.buff[i] > 0 && ((t.buff[i] = 0), (e = !0));
+  if (typeof Y !== "undefined" && Y.tmp && Y.target && !hA()) {
+    if (e) l.dirty = !0;
+    return;
+  }
   const a = l.enemies.some((i) => !i.dead);
   for (const i in o.sk) {
     if (actorActionLocked(v)) break;

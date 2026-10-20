@@ -63,6 +63,19 @@ test('monster AI waits for hurt to end before attacking',()=>{
  run(s,.51);s.$d(monster,.1);assert.ok(s.l.combatProjectiles.length>0);
 });
 
+test('auto ground input cancels unreleased windups but preserves launched projectiles',()=>{
+ for(const elapsed of [.02,.15]){
+  const s=world(),target={x:100,y:0,hp:100,r:17};let hits=0;
+  s.hA=()=>false;
+  declaration(s,'src/client/ui/legacy-panels-and-audio-04.js','Y');
+  s.l.enemies=[target];
+  s.queueSkillContact(s.v,target,{parts:{phys:10},melee:false,rad:500},()=>hits++);
+  run(s,elapsed);s.Y.moveTarget(300,0);
+  assert.equal(s.actorActionLocked(s.v),false);assert.equal(s.Y.tmp,true);
+  run(s,1);assert.equal(hits,elapsed<.12?0:1);
+ }
+});
+
 test('hurt blocks automatic buffs until recovery',()=>{
  const s=world(),buffs={buff:{},cd:{}};
  Object.assign(s,{o:{fac:'test',sk:{1:1}},v7(){},k4:0,ya:()=>1,ba:()=>buffs,T:{1:{n:'Buff'}},wn:()=> 'buff',zi:()=>1,M7:()=>10,ae:()=>10,i4:()=>false,b4:()=>false});
