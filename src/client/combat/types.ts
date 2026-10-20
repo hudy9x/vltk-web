@@ -81,6 +81,8 @@ export interface CombatCast {
   pulseFrame: number;
   targetPulses: Map<CombatTarget, number>;
   interval: number;
+  /** Finite fields keep a fixed pulse budget, including frames that run late. */
+  pulseCount?: number;
   duration?: number;
 }
 
@@ -105,10 +107,15 @@ interface EffectBase extends WorldPoint {
 /** jm chạy theo frame K3; mis/boom/contact chạy theo giây. Không đổi đơn vị. */
 export interface SpriteMissile extends EffectBase {
   k: 'jm';
+  spd?: number;
+  ang?: number;
   kind?: number;
   still?: boolean;
   age: number;
   lf: number;
+  /** Original one-shot animation length, independent of damage-field lifetime. */
+  visualLifetime?: number;
+  loop?: boolean;
   z: number;
   hz: number;
   za?: boolean | number;

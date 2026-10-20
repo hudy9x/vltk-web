@@ -29,7 +29,8 @@ window.JXST = {
   174: { f: "fx/st_26.webp", n: 15, w: 39, h: 45, ax: 19, ay: 111, ms: 80, pos: "head" },
   175: { f: "fx/st_27.webp", n: 15, w: 25, h: 50, ax: 13, ay: 129, ms: 80, pos: "head" },
   178: { f: "fx/st_28.webp", n: 24, w: 94, h: 100, ax: 46, ay: 79, ms: 50, pos: "body" },
-  273: { f: "fx/st_29.webp", n: 15, w: 168, h: 167, ax: 85, ay: 168, ms: 80, pos: "head" },
+  // Anchor the golden eye itself; the large, faint halo must not push it away from the head.
+  273: { f: "fx/st_29.webp", n: 15, w: 168, h: 167, ax: 85, ay: 168, headBottom: 100, ms: 80, pos: "head" },
   277: { f: "fx/st_30.webp", n: 15, w: 68, h: 41, ax: 29, ay: 56, ms: 80, pos: "body" },
   282: { f: "fx/st_31.webp", n: 20, w: 81, h: 73, ax: 40, ay: 79, ms: 60, pos: "body" },
   332: { f: "fx/st_32.webp", n: 20, w: 130, h: 78, ax: 66, ay: 37, ms: 60, pos: "foot" },

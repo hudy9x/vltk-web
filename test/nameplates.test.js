@@ -104,6 +104,38 @@ test('ordinary game hero and monster anchors stay fixed across attack sizes and 
   assert.deepEqual(s.positions.map(p => p.y), snapshots[0].map(p => p.y + 25));
 });
 
+test('Nhu Lai head artwork follows the same standing or mounted head anchor as the player nameplate', () => {
+  const s=scene();s.window={};
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/jxlook.js'),'utf8'),s);
+  s.P0=s.window.JXLOOK;s.J3=()=>true;s.Jn=1.35;s.nv=.6;s.bA=()=>({complete:true,naturalWidth:100});
+  load(s,'src/client/ui/legacy-panels-and-audio-01.js','L8');
+  for(const name of ['heroNameplateOffset','F3'])load(s,'src/client/render/effects-and-look-01.js',name);
+  const source=fs.readFileSync(path.join(__dirname,'../src/client/data/status-effects-01.js'),'utf8');
+  const catalog=acorn.parse(source,{ecmaVersion:'latest'}).body[0];vm.runInContext(source.slice(catalog.start,catalog.end),s);
+  const effect=s.window.JXST[273];
+  for(const sex of ['m','f']){
+    const positions=[];
+    for(const mounted of [false,true]){
+      s.l.mounted=mounted;
+      s.l.jx={sx:sex,rows:{helm:0},asc:s.P0.assoc[sex]['空手'][mounted?1:0]};
+      const offsets=[];
+      for(const attackHeight of [80,200,30]){
+        s.kf=()=>attackHeight;s.positions.length=0;s.NP(1/60);
+        const name=s.positions.find(p=>p.text==='hero');let draw;
+        s.F3({drawImage:(...args)=>{draw=args;}},effect,s.v.x,s.v.y,60,.4,s.Jn,.9,s.v);
+        const visibleBottom=draw[6]+effect.headBottom*s.Jn*s.nv;
+        assert.ok(Math.abs(visibleBottom-(name.y-18))<1e-8);
+        offsets.push(s.v.y-name.y);
+      }
+      assert.ok(offsets.every(value=>value===offsets[0]));positions.push(offsets[0]);
+    }
+    assert.ok(positions[1]>positions[0],'mounted buffs and nameplates rise together with the rider');
+  }
+  const standalone=s.heroNameplateOffset();s.J3=()=>false;
+  assert.equal(s.heroNameplateOffset(),s.nameplateOffset(s.v.animKey,s.Jn,.9,6,58));
+  assert.ok(standalone>0);
+});
+
 test('party member anchors also ignore attack animation height and missing sprite frames', () => {
   const s = scene();
   load(s, 'src/client/online/party-01.js', 'uB');

@@ -59,6 +59,130 @@ function advancedCombat() {
   return {s, skill:(id,level=25)=>s.F2(stats,s.T[id],level)};
 }
 
+test('Tạo Hóa Thái Thanh deals seven timed hits with native, hidden and missing FX at different frame rates',()=>{
+  for(const mode of ['native','quiet','missing'])for(const dt of [1/60,1/30,.05,.4,2]) {
+    const {s,skill}=advancedCombat();
+    const actor={x:0,y:0,hp:100},target={x:180,y:110,hp:1000,r:12};
+    s.l.quiet=mode==='quiet';
+    if(mode==='missing')delete s.A0.m[s.A0.f[1078].c];
+    const hits=[];
+    const cast=s.queueSkillContact(actor,target,skill(1078),hit=>{hit.hp-=10;hits.push(cast.elapsed);},
+      {targets:()=>[target]});
+    assert.equal(target.hp,1000,'no immediate damage on cast');
+    s.advanceSkillContacts(.1);assert.equal(target.hp,1000,'respect cast windup');
+    for(let time=0;time<3;time+=dt)s.advanceSkillContacts(dt);
+    assert.equal(hits.length,7,`${mode}, dt=${dt}`);
+    assert.equal(target.hp,930);
+    if(dt<.1)assert.equal(new Set(hits).size,7,'damage occurs on seven separate beats');
+    assert.equal(s.l.combatProjectiles.length,0,'no lingering damage after field expires');
+  }
+});
+
+test('Thái Thanh damage fits its visible footprint at every level without shortening cast range',()=>{
+  for(const level of [1,25])for(const mode of ['native','quiet','missing']) {
+    const {s,skill}=advancedCombat(),ability=skill(1078,level);
+    const target={x:400,y:200,hp:1000,r:12};
+    const inside={x:target.x+100,y:target.y,hp:1000,r:12};
+    const outside={x:target.x+180,y:target.y,hp:1000,r:12};
+    const above={x:target.x,y:target.y-100,hp:1000,r:12};
+    const far={x:target.x+350,y:target.y,hp:1000,r:12};
+    s.l.quiet=mode==='quiet';
+    if(mode==='missing')delete s.A0.m[s.A0.f[1078].c];
+    const range=ability.rad;
+    const cast=s.queueSkillContact(s.v,target,ability,hit=>hit.hp-=10,
+      {targets:()=>[target,inside,outside,above,far]});
+    assert.equal(cast.skill.rad,range,'cast range remains unchanged');
+    assert.equal(ability.geo.r,range,'input skill is not mutated');
+    assert.equal(cast.skill.geo.r,150,'keep the configured 150-unit footprint');
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.equal(target.hp,930);assert.equal(inside.hp,930);
+    for(const enemy of [outside,above,far])assert.equal(enemy.hp,1000,`${mode}, level ${level}: outside footprint`);
+    const ellipses=[];
+    // GM reads the same reduced geometry as real damage.
+    s.l.combatProjectiles=[{k:'contact',age:0,x:target.x,y:target.y-14,staticArea:true,combat:cast}];
+    s.CombatEngine.drawSkillDamageAreas({save(){},restore(){},setLineDash(){},beginPath(){},fill(){},stroke(){},
+      ellipse(...args){ellipses.push(args);}});
+    assert.deepEqual(ellipses[0].slice(0,4),[target.x,target.y,150*s.QA,150*s.QA/2]);
+  }
+});
+
+test('Thái Thanh and Thiên Lôi play complete animations without rewinding on damage beats',()=>{
+  for(const id of [365,1076,1078,1081])for(const level of [1,25]) {
+    const {s,skill}=advancedCombat(),target={x:180,y:110,hp:1000,r:12};
+    // Exercise the real world renderer, not YP alone: its pulse phase used to
+    // rewind this animation every ~238ms before YP ever saw its actual age.
+    const source=fs.readFileSync(path.join(ROOT,'src/client/render/arena-02.js'),'utf8');
+    const np=acorn.parse(source,{ecmaVersion:'latest'}).body.find(node=>
+      node.type==='VariableDeclaration'&&node.declarations.some(item=>item.id.name==='NP')).declarations[0].init;
+    const renderLoop=np.body.body.find(node=>node.type==='ForOfStatement'&&
+      source.slice(node.start,node.end).includes('const repeating'));
+    assert.ok(renderLoop,'world FX render loop');
+    const render=()=>vm.runInContext(source.slice(renderLoop.start,renderLoop.end),s);
+    const draws=[],hits=[];s.Fa=(sprite,dir,time)=>draws.push({sprite,time});
+    const cast=s.queueSkillContact(s.v,target,skill(id,level),()=>hits.push(cast.elapsed),{targets:()=>[target]});
+    const field=s.l.combatProjectiles[0];
+    assert.equal(field.loop,false);
+    assert.ok(field.visualLifetime>0);
+    assert.equal(cast.emitted,1);
+    for(let i=0;i<150;i++) {
+      s.advanceSkillContacts(1/60);
+      render();
+    }
+    assert.equal(hits.length,id===1076?3:id===1078?7:5);
+    assert.ok(draws.length>1);
+    assert.ok(draws.every((draw,index)=>draw.sprite===field.m.fly&&(!index||draw.time>=draws[index-1].time)),
+      'one sheet plays forward, never wraps back to its opening');
+    const frames=new Set(draws.map(draw=>Math.floor(draw.time*1000/field.m.fly.ms)));
+    assert.equal(frames.size,field.m.fly.n,'world renderer displays every frame, including the ending');
+    assert.ok(frames.has(field.m.fly.n-1),'the final sprite frame must actually be drawn');
+    assert.equal(cast.emitted,1,'damage beats never spawn another skill animation');
+    assert.equal(s.l.fx.length,0,'no impact copies or lingering visual fields');
+    const count=draws.length;field.age=field.visualLifetime;s.YP(field);
+    field.age=field.visualLifetime*2;s.YP(field);
+    assert.equal(draws.length,count,'animation ends independently of contact lifetime');
+  }
+});
+
+test('SIM Thái Thanh uses the same seven-hit field and stops hitting removed opponents',()=>{
+  for(const remove of [false,true]) {
+    const {s,skill}=advancedCombat(),actor={x:0,y:0,hp:100},target={x:180,y:110,hp:1000,r:12};
+    Object.assign(s,{F5:()=>[],l8:()=>0,nD:()=>[],skillCastDistance:()=>200});
+    const {compileTypeScriptEntry}=require('../tools/build-app');
+    vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','SkillCastTest').code,s);
+    let valid=true;
+    s.SkillCastTest.castSimulatorSkill(actor,target,skill(1078),()=>valid,()=>[target],
+      (_ability,hit)=>{hit.hp-=10;return 10;},fn=>fn());
+    for(let i=0;i<10;i++)s.advanceSkillContacts(1/60);
+    assert.equal(target.hp,990);
+    if(remove)valid=false;
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.equal(target.hp,remove?990:930);
+  }
+});
+
+test('Thái Thanh checks live occupants on each beat and deduplicates overlapping visual contacts',()=>{
+  const {s,skill}=advancedCombat();
+  const target={x:180,y:110,hp:1000,r:12},entering={x:1000,y:110,hp:1000,r:12};
+  s.queueSkillContact(s.v,target,skill(1078),hit=>hit.hp-=10,{targets:()=>[target,entering],windup:0});
+  const field=s.l.combatProjectiles[0];
+  s.l.combatProjectiles.push({...field,contactHits:new Set()});
+  s.advanceSkillContacts(.01);assert.equal(target.hp,990);assert.equal(entering.hp,1000);
+  target.x=1000;entering.x=180;
+  for(let time=0;time<3;time+=.05)s.advanceSkillContacts(.05);
+  assert.equal(target.hp,990,'leaving the field avoids later strikes');
+  assert.equal(entering.hp,940,'late entrant receives only remaining six strikes');
+});
+
+test('Thái Thanh cancels before release and cannot damage across maps',()=>{
+  for(const reason of ['interrupt','map']) {
+    const {s,skill}=advancedCombat(),target={x:180,y:110,hp:1000,r:12};
+    s.queueSkillContact(s.v,target,skill(1078),hit=>hit.hp-=10,{targets:()=>[target]});
+    if(reason==='interrupt')s.v.actionRevision=1;else s.l.zoneShown=2;
+    s.advanceSkillContacts(2);
+    assert.equal(target.hp,1000,reason);
+  }
+});
+
 test('Thiên Vương uses the swapped sheets and manifest tracks the corrected FX',()=>{
   const s=catalog();
   for(const [id,mid] of [[1059,350],[1060,349]]) {
@@ -315,6 +439,135 @@ test('Băng Tước Hoạt Kỳ splashes within 96 without multiplying damage fr
   }
 });
 
+test('Giang Hải Nộ Lan hits every body in its forward rectangle once in world and SIM',()=>{
+  for(const level of [1,25])for(const mode of ['native','quiet','missing','sim']) {
+    const {s,skill}=advancedCombat(),ability=skill(1075,level);
+    const targets=[30,65,100,135].map(x=>({x,y:0,hp:100,r:12}));
+    const offPath={x:100,y:60,hp:100,r:12},hits=[];
+    s.l.quiet=mode==='quiet';
+    if(mode==='missing')delete s.A0.m[s.A0.f[1075].c];
+    let cast;
+    if(mode==='sim') {
+      Object.assign(s,{F5:()=>[],l8:()=>0,nD:()=>[],skillCastDistance:()=>200});
+      const {compileTypeScriptEntry}=require('../tools/build-app');
+      vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','SkillCastTest').code,s);
+      cast=s.SkillCastTest.castSimulatorSkill({x:0,y:0,hp:100},targets[1],ability,()=>true,()=>[...targets,offPath],
+        (_skill,target)=>{hits.push(target);return 10;},fn=>fn());
+    } else cast=s.queueSkillContact(s.v,targets[1],ability,target=>hits.push(target),{targets:()=>[...targets,offPath]});
+    assert.equal(cast.skill.geo.pierce,true);assert.equal(cast.skill.geo.area||0,0);
+    assert.equal(cast.skill.geo.shape,'rect');assert.equal(cast.skill.geo.width,24);
+    assert.equal(hits.length,0,'no damage before a physical contact');
+    for(let i=0;i<120;i++)s.advanceSkillContacts(1/60);
+    for(const target of targets)assert.equal(hits.filter(hit=>hit===target).length,1,`${level}/${mode}`);
+    assert.ok(!hits.includes(offPath),'no damage beside the flight path');
+    assert.deepEqual(hits,targets,'the forward rectangle includes all bodies beyond the selected target');
+  }
+});
+
+test('Giang Hải rushes a short distance in 167ms, plays its full sprite once and disappears',()=>{
+  for(const level of [1,25]) {
+    const {s,skill}=advancedCombat(),ability=skill(1075,level);
+    declaration(s,'src/client/render/arena-02.js','Ds');
+    const target={x:100,y:0,hp:100,r:12};
+    // G3 with the unmodified skill is the original animation generator.
+    s.G3(s.v,target,ability);
+    const original=s.l.fx.find(effect=>effect.k==='jm');assert.ok(original);
+    const snapshot=effect=>Object.fromEntries(['mid','kind','x','y','z','vz','za','hz','cv','ae','ang','sh']
+      .map(key=>[key,effect[key]]));
+    const expected=snapshot(original);s.l.fx=[];
+    const targets=[30,65,100,135].map(x=>({x,y:0,hp:100,r:12}));
+    const unchanged=JSON.stringify(ability);let received;
+    const generator=s.G3;s.G3=(actor,selected,input)=>{received=input;return generator(actor,selected,input);};
+    const cast=s.queueSkillContact(s.v,target,ability,hit=>hit.hp-=10,{targets:()=>targets});
+    const missile=s.l.combatProjectiles[0];
+    assert.equal(received,ability,'pass the exact original skill to the renderer');
+    assert.equal(JSON.stringify(ability),unchanged);
+    assert.deepEqual(snapshot(missile),expected,'keep the original sprite origin and direction');
+    assert.equal(missile.lf,3);assert.equal(missile.loop,false);
+    assert.ok(missile.spd>original.spd,'the short thrust must be faster, not slowed to fill the old lifetime');
+    assert.equal(missile.m,original.m);
+    const frames=[];s.Fa=(sprite,dir,time)=>frames.push({sprite,dir,time});
+    let impacts=0;const impact=s.gf;s.gf=(effect,x,y)=>{
+      const before=(s.l.fxQ||[]).length;impact(effect,x,y);
+      impacts+=(s.l.fxQ||[]).length-before;
+    };
+    let endedAt;
+    for(let tick=1;tick<=120;tick++) {
+      s.advanceSkillContacts(1/120);
+      if(missile.contactAlive)s.YP(missile);
+      else if(endedAt==null)endedAt=tick/120;
+    }
+    assert.ok(endedAt<=cast.windup+.18,'disappear promptly after the 167ms thrust');
+    const shown=new Set(frames.map(frame=>Math.floor(frame.time*1000/missile.m.fly.ms)));
+    assert.equal(shown.size,missile.m.fly.n,'play the entire sprite within the short thrust');
+    assert.ok(!s.l.fx.includes(missile),'no lingering or restarted wave');
+    assert.ok(targets.every(actor=>actor.hp===90));
+    assert.equal(impacts,targets.length,'each recipient uses the normal contact FX, like Vân Long');
+  }
+});
+
+test('Giang Hải and Vân Long use identical rectangle rules for stacked, side, rear and out-of-range bodies',()=>{
+  for(const id of [361,1075]) {
+    const {s,skill}=advancedCombat(),selected={x:100,y:0,hp:100,r:12};
+    const packed=Array.from({length:25},()=>({...selected}));
+    const side={x:100,y:45,hp:100,r:12},rear={x:-60,y:0,hp:100,r:12},far={x:230,y:0,hp:100,r:12};
+    const ability=skill(id);
+    const cast=s.queueSkillContact(s.v,selected,{...ability,rad:198,geo:{...ability.geo,len:198}},target=>target.hp-=10,
+      {targets:()=>[selected,...packed,side,rear,far],maxTargets:1});
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    assert.equal(cast.skill.geo.width,24);assert.equal(cast.skill.geo.len,198);
+    assert.equal(selected.hp,90);assert.ok(packed.every(target=>target.hp===90));
+    assert.ok([side,rear,far].every(target=>target.hp===100));
+  }
+});
+
+test('Giang Hải visual travel ends at its damage range in every direction and at low FPS',()=>{
+  for(const level of [1,25])for(const dt of [1/60,.05,.4])for(let direction=0;direction<8;direction++) {
+    const {s,skill}=advancedCombat(),angle=direction*Math.PI/4;
+    const selected={x:Math.cos(angle)*100,y:Math.sin(angle)*50,hp:100,r:12};
+    const cast=s.queueSkillContact(s.v,selected,skill(1075,level),()=>{},{targets:()=>[selected]});
+    const missile=s.l.combatProjectiles[0],origin={x:missile.x,y:missile.y};
+    const length=cast.skill.geo.len*s.QA;
+    for(let tick=0;tick<Math.ceil(2/dt);tick++) {
+      s.advanceSkillContacts(dt);
+      assert.ok(Math.hypot(missile.x-origin.x,(missile.y-origin.y)*2)<=length+1e-8,
+        `level ${level}, direction ${direction}, dt ${dt}: visible wave must not exceed the attack length`);
+    }
+    assert.equal(missile.contactAlive,false);
+    assert.ok(!s.l.fx.includes(missile),'expired wave cannot keep flying in the renderer');
+  }
+});
+
+test('Giang Hải rectangle keeps the release origin and heading after caster and selected target move',()=>{
+  for(const mode of ['native','quiet','missing']) {
+    const {s,skill}=advancedCombat(),selected={x:0,y:-60,hp:100,r:12},onPath={x:0,y:-70,hp:100,r:12},side={x:80,y:-70,hp:100,r:12};
+    s.l.quiet=mode==='quiet';if(mode==='missing')delete s.A0.m[s.A0.f[1075].c];
+    s.queueSkillContact(s.v,selected,skill(1075),target=>target.hp-=10,{targets:()=>[selected,onPath,side]});
+    s.v.x=500;selected.x=500;
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    assert.equal(onPath.hp,90,mode);assert.equal(selected.hp,100);assert.equal(side.hp,100);
+  }
+});
+
+test('Tật Hỏa only hits inside radius 150 while preserving three beats and its original cast range',()=>{
+  for(const mode of ['native','quiet','missing','sim']) {
+    const {s,skill}=advancedCombat(),ability=skill(1076);
+    const target={x:180,y:100,hp:1000,r:10},near={x:280,y:100,hp:1000,r:10},far={x:340,y:100,hp:1000,r:10};
+    s.l.quiet=mode==='quiet';if(mode==='missing')delete s.A0.m[s.A0.f[1076].c];
+    let cast;
+    if(mode==='sim') {
+      Object.assign(s,{F5:()=>[],l8:()=>0,nD:()=>[],skillCastDistance:()=>200});
+      const {compileTypeScriptEntry}=require('../tools/build-app');
+      vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','SkillCastTest').code,s);
+      cast=s.SkillCastTest.castSimulatorSkill({x:0,y:0,hp:100},target,ability,()=>true,()=>[target,near,far],
+        (_skill,hit)=>{hit.hp-=10;return 10;},fn=>fn());
+    } else cast=s.queueSkillContact(s.v,target,ability,hit=>hit.hp-=10,{targets:()=>[target,near,far]});
+    assert.equal(cast.skill.geo.r,150);assert.equal(cast.skill.rad,ability.rad);
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.equal(target.hp,970);assert.equal(near.hp,970);assert.equal(far.hp,1000,mode);
+  }
+});
+
 test('Thời Thặng Lục Long pierces and damages every enemy along its path once',()=>{
   for(const level of [1,25])for(const quiet of [false,true]) {
     const {s,skill}=advancedCombat();s.l.quiet=quiet;
@@ -465,7 +718,7 @@ test('every faction skill grid exposes Lv120 and Lv150 while preserving level ga
     }
   }
 });
-test('all 24 level-150 primary skills register physical contacts and hit once within the cast quota', () => {
+test('all 24 level-150 primary skills register physical contacts within their cast quotas', () => {
   const s=catalog();loadCombatEngine(s);load(s,'src/client/render/projectiles-01.js');
   Object.assign(s, {mw:/^(skill_|missle_)/,ww:10,s7:0,Fw:{},w4:.82,J5:.75,y5:2,
     Rr:{phys:'physicsdamage_v',poison:'poisondamage_v',cold:'colddamage_v',fire:'firedamage_v',light:'lightingdamage_v'},
@@ -487,8 +740,11 @@ test('all 24 level-150 primary skills register physical contacts and hit once wi
     const sprite=s.JFX.m[s.JFX.f[entry.id].c];
     if(!sprite.spd)assert.equal(missile.kind,0,entry.name+' must remain stationary');
     for(let t=0;t<2;t+=1/60)s.advanceSkillContacts(1/60);
-    assert.equal(cast.hits.get(target),1,`${entry.id} ${def.n} primary quota`);
-    assert.equal(hits,entry.id===1061?2:1,`${entry.id} ${def.n}`);
+    if(entry.id===1078)assert.equal(cast.pulse,6,'seven Thái Thanh pulses');
+    else if(entry.id===1081)assert.equal(cast.pulse,4,'five Thiên Lôi pulses');
+    else if(entry.id===1076)assert.equal(cast.pulse,2,'three Tật Hỏa pulses');
+    else assert.equal(cast.hits.get(target),1,`${entry.id} ${def.n} primary quota`);
+    assert.equal(hits,entry.id===1078?7:entry.id===1081?5:entry.id===1076?3:entry.id===1061?2:1,`${entry.id} ${def.n}`);
   }
 });
 
@@ -763,6 +1019,52 @@ function kunlunThunderCombat(level=27, options={}) {
   return {s,ability,hits,targets,selected,advance(seconds){for(let t=0;t<seconds-1e-9;t+=1/60)s.advanceSkillContacts(1/60);}};
 }
 
+test('Thiên Địa and Tật Hỏa deliver exactly five/three beats in world and SIM despite low FPS or missing FX',()=>{
+  for(const id of [365,1076])for(const mode of ['native','quiet','missing','sim'])for(const dt of [1/60,.05,.4,2]) {
+    const {s,skill}=advancedCombat(),ability=skill(id,20),target={x:180,y:100,hp:1000,r:10};
+    let hits=0;const hit=contact=>{contact.hp-=10;hits++;};
+    s.l.quiet=mode==='quiet';
+    if(mode==='missing')delete s.A0.m[s.A0.f[id].c];
+    if(mode==='sim') {
+      Object.assign(s,{F5:()=>[],l8:()=>0,nD:()=>[],skillCastDistance:()=>200});
+      const {compileTypeScriptEntry}=require('../tools/build-app');
+      vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','SkillCastTest').code,s);
+      s.SkillCastTest.castSimulatorSkill({x:0,y:0,hp:100},target,ability,()=>true,()=>[target],(_skill,contact)=>{hit(contact);return 10;},fn=>fn());
+    } else s.queueSkillContact(s.v,target,ability,hit,{targets:()=>[target]});
+    s.advanceSkillContacts(.1);assert.equal(hits,0,'wait for release');
+    for(let time=0;time<3;time+=dt)s.advanceSkillContacts(dt);
+    assert.equal(hits,id===365?5:3,`${id}/${mode}/${dt}`);
+    assert.equal(s.l.combatProjectiles.length,0);
+  }
+});
+
+test('Thiên Lôi delivers five timed primary strikes inside radius 150 at different frame rates and FX settings',()=>{
+  for(const level of [1,25])for(const mode of ['native','quiet','missing'])for(const dt of [1/60,.05,.4,2]) {
+    const {s,skill}=advancedCombat(),ability=skill(1081,level);
+    const target={x:180,y:100,hp:1000,r:10},near={x:280,y:100,hp:1000,r:10},far={x:340,y:100,hp:1000,r:10};
+    const hits=[];s.l.quiet=mode==='quiet';
+    if(mode==='missing')delete s.A0.m[s.A0.f[1081].c];
+    const cast=s.queueSkillContact(s.v,target,ability,hit=>{hit.hp-=10;hits.push(cast.elapsed);},
+      {targets:()=>[target,near,far]});
+    assert.equal(cast.skill.geo.r,150);assert.equal(cast.skill.rad,ability.rad);
+    s.advanceSkillContacts(.1);assert.equal(hits.length,0,'respect windup');
+    for(let time=0;time<3;time+=dt)s.advanceSkillContacts(dt);
+    assert.equal(target.hp,950);assert.equal(near.hp,950);assert.equal(far.hp,1000);
+    if(dt<.1)assert.equal(new Set(hits).size,5,'five separate damage beats');
+    assert.equal(s.l.combatProjectiles.length,0);
+  }
+});
+
+test('world and SIM Thiên Lôi keep primary and secondary recipients inside the reduced field',()=>{
+  for(const mode of [{world:true},{sim:true},{world:true,quiet:true},{sim:true,quiet:true}]) {
+    const game=kunlunThunderCombat(25,{...mode,positions:[[180,100],[280,100],[340,100]]});
+    game.advance(3);
+    for(const target of game.targets.slice(0,2))assert.equal(game.hits.filter(hit=>!hit.secondary&&hit.target===target).length,5);
+    assert.equal(game.hits.filter(hit=>hit.secondary).length,2,'one original tier-2 strike for each paired recipient');
+    assert.ok(game.hits.every(hit=>hit.target!==game.targets[2]),'wide legacy target lists cannot leak secondary damage outside radius 150');
+  }
+});
+
 test('Thiên Lôi Chấn Nhạc unlocks its real secondary at 11 and max level casts sky lightning after 0.3s',()=>{
   const locked=kunlunThunderCombat(10);locked.advance(2);
   assert.equal(locked.hits.filter(hit=>hit.secondary).length,0);
@@ -809,7 +1111,7 @@ test('Kunlun tooltip distinguishes primary support from the +252% secondary supp
 
 test('Kunlun ring and lightning share the chosen target when an offset neighbour is contacted first',()=>{
   for(const mode of [{world:true},{sim:true}]) {
-    const game=kunlunThunderCombat(27,{...mode,selected:1,positions:[[160,80],[260,130]]}),{s,selected}=game;
+    const game=kunlunThunderCombat(27,{...mode,selected:1,positions:[[180,100],[260,130]]}),{s,selected}=game;
     game.advance(.2);
     const main=s.l.combatProjectiles.find(fx=>!fx.combat.skill.ev2);
     assert.equal(main.x,selected.x);assert.equal(main.y,selected.y-14);

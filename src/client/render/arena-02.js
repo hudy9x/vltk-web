@@ -142,7 +142,7 @@ var NP = function (A) {
             kf(f.anim, v.act || "st", v.dir || 0, v.actT || 0, v.x, v.y, Jn),
           );
       (Pf(n, "over", w ? Math.min(w, 90) : 60), sv(n, A));
-      const x = v.y - nameplateOffset(v.animKey, Jn, 0.9, 6, 58),
+      const x = v.y - (typeof heroNameplateOffset === "function" ? heroNameplateOffset(Jn) : nameplateOffset(v.animKey, Jn, 0.9, 6, 58)),
         p = typeof bo == "function" && bo();
       (L3(
         v.x,
@@ -236,7 +236,9 @@ var NP = function (A) {
   IP();
   for (const effect of l.fx) {
     const cast = effect.combat;
-    const repeating = cast && +cast.skill.id !== 375 && cast.interval && cast.pulse >= 0;
+    // Finite damage pulses share one continuous animation; only legacy
+    // repeating fields restart their visuals at each damage interval.
+    const repeating = cast && !cast.pulseCount && +cast.skill.id !== 375 && cast.interval && cast.pulse >= 0;
     const phase = repeating ? Math.max(0, cast.elapsed - (cast.nextPulse - cast.interval)) : 0;
     if (effect.k === "jm") YP(repeating && effect.age >= 0 ? Object.assign({}, effect, { age: phase * K3 }) : effect);
     else if (effect.k === "mis" || effect.k === "boom") CP(repeating && effect.t >= 0 ? Object.assign({}, effect, { t: phase }) : effect);

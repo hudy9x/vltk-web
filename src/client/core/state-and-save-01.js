@@ -291,10 +291,10 @@ var hs = function (A, n) {
     O = ((M && l.P.manaLeech) || 0) + (A.ev2 ? 0 : A.skMLeech || 0);
   (B && za((i * B) / 100, !0), O && (l.mana = Math.min(l.P.mana, l.mana + (i * O) / 100)));
   const G = p ? " ⚡" : P ? " 🛡" : "";
+  // Poison is deferred: display only actual HP loss from its later ticks.
   return y
-    ? (showDamageNumber(n, d, "poison", false, G), d)
+    ? d
     : (showDamageNumber(n, i, r, e || a, G),
-      d > 0 && i > 0 && showDamageNumber(n, d, "poison"),
       i);
 };
 
@@ -583,10 +583,12 @@ var eD = function (A, n, t, e, a, context) {
   // Kunlun draws one storm at its chosen target; Emei draws ice at each recipient.
   const thunder = +A.id === 1081 && +a.sid === 1109;
   if (thunder || (+A.id === 1061 && +a.sid === 1091)) {
-    const recipients = [...new Set(e || [n])].filter(target => target && !target.dead && target.hp > 0).slice(0, Qi(A, a));
+    const castAnchor = A.visualAnchor || { x: n.x, y: n.y - 14 };
+    const recipients = [...new Set(e || [n])].filter(target => target && !target.dead && target.hp > 0 &&
+      (!thunder || contactFraction(castAnchor.x, castAnchor.y, castAnchor.x, castAnchor.y, target, 150 * QA) != null)
+    ).slice(0, Qi(A, a));
     const missile = A0.m[A0.f[a.sid] && A0.f[a.sid].c], sprite = missile && missile.fly;
     const delay = a.delay, life = missile && missile.life || 1.67;
-    const castAnchor = A.visualAnchor || { x: n.x, y: n.y - 14 };
     let visualShown = false;
     const ability = Object.assign({}, A, {
       id: a.sid, n: a.n, parts: S5(A, a), ev: false, ev2: true,
@@ -780,7 +782,8 @@ var iD = function (A) {
 };
 
 var oD = function () {
-  if (typeof Y !== "undefined" && Y.tmp && Y.target && !hA()) return 0.05;
+  if (typeof Y !== "undefined" && (Y.pendingSupport ||
+    (typeof Y.hasMovementInput === "function" && Y.hasMovementInput()) || (Y.tmp && Y.target && !hA()))) return 0.05;
   if (actorActionLocked(v)) return 0.05;
   const A = l.P,
     n = _1();
@@ -896,7 +899,11 @@ var $d = function (A, n) {
   }
   const t = coldSpeedFactor(A);
   A.slowT = Math.max(0, (A.slowT || 0) - n);
-  if (A.poison > 0) { A.poison -= n; A.hp -= A.poisonDmg * n; }
+  if (A.poison > 0) {
+    const before = A.hp;
+    A.poison -= n; A.hp -= A.poisonDmg * n;
+    showDamageNumber(A, Math.max(0, Math.min(before, before - A.hp)), "poison");
+  }
   if (actorActionLocked(A)) { A.moving = false; A.atkCd = Math.max(0, (A.atkCd || 0) - n * t); return; }
   if (A.home && KD(A, n)) return;
   const e = A.arenaMonster && typeof combatSandbox !== "undefined" && combatSandbox

@@ -62,7 +62,7 @@ var Rv = function () {
     lA.addEventListener("pointermove", (e) => {
       if (Hs() && e.pointerType !== "touch") {
         const [x, y] = A(e);
-        lA.style.cursor = eh(x + B0.x, y + B0.y) ? 'url("img/ui/attack-dagger.svg") 2 2, pointer' : "default";
+        lA.style.cursor = Y.pendingSupport ? "crosshair" : eh(x + B0.x, y + B0.y) ? 'url("img/ui/attack-dagger.svg") 2 2, pointer' : "default";
       }
       if (!Y.active || e.pointerId !== Y.id) return;
       if (Y.selected) return;
@@ -201,17 +201,27 @@ var Rv = function () {
 var ah = function (A) {};
 
 var Y = {
+  hasMovementInput() {
+    if (Y.active && Y.moved) return Math.hypot(Y.x - Y.ox, Y.y - Y.oy) >= 6;
+    if (typeof T1 !== "undefined" && (T1.v[0] || T1.v[1])) return true;
+    const keys = Y.keys || {};
+    const dx = +(!!(keys.ArrowRight || keys.d)) - +(!!(keys.ArrowLeft || keys.a));
+    const dy = +(!!(keys.ArrowDown || keys.s)) - +(!!(keys.ArrowUp || keys.w));
+    return !!(dx || dy || (Y.target && Math.hypot(Y.target.x - v.x, Y.target.y - v.y) >= 6));
+  },
+  prioritizeMovement() {
+    if (!hA()) Y.tmp = true;
+    l.clickHold = false;
+    if (v.castT > 0 && !(v.hurtT > 0)) {
+      v.castT = 0; v.atT = 0;
+      v.actionRevision = (v.actionRevision || 0) + 1;
+      v.act = "st"; v.actT = 0;
+    }
+  },
   moveTarget(x, y) {
     Y.target = { x, y };
     // Cancel before the next simulation tick can release an auto windup.
-    if (!hA()) {
-      Y.tmp = true;
-      if (v.castT > 0 && !(v.hurtT > 0)) {
-        v.castT = 0; v.atT = 0;
-        v.actionRevision = (v.actionRevision || 0) + 1;
-        v.act = "st"; v.actT = 0;
-      }
-    }
+    Y.prioritizeMovement();
   },
   selectTarget(target) {
     if (!hA()) Wa("manual", !0);
@@ -224,9 +234,20 @@ var Y = {
     Y.target = null;
     Y.mouse = false;
     Y.selected = true;
+    if (Y.pendingSupport) {
+      if (castSupportSkill(Y.pendingSupport)) {
+        Y.pendingSupport = 0;
+        // This click issued a curse, not a follow-up primary attack command.
+        l.manTgt = null;
+        l.clickHold = true;
+      }
+      qA();
+      return;
+    }
     k("Tấn công: " + target.n);
   },
   releaseTarget() {
+    Y.pendingSupport = 0;
     l.manTgt = null;
     l.moveTo = null;
     l.pickTarget = null;

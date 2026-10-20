@@ -101,13 +101,75 @@ var Vi = function (A) {
         : !1;
 };
 
+// Slots expose only skills whose combat effects are implemented.
+var canSlotSkill = function (id) {
+  const skill = T[id];
+  return !!(skill && o.sk[id] > 0 && skill.tier !== 120 &&
+    ["atk", "buff", "curse", "aura"].includes(wn(skill)));
+};
+
+var castSupportSkill = function (id) {
+  const skill = T[id], kind = skill && wn(skill);
+  const fail = message => { k(message); return false; };
+  if (!canSlotSkill(id) || kind === "atk") return false;
+  if (!l.P || l.town || l.deadT > 0) return fail("Chỉ dùng chiêu hỗ trợ khi đang ở bãi luyện công");
+  if (l.stunT > 0 || actorActionLocked(v)) return fail("Chưa thể thi triển khi đang xuất chiêu hoặc bị khống chế");
+  if (kind === "aura") {
+    const off = o.auraOff || (o.auraOff = {});
+    if (off[id]) delete off[id]; else off[id] = 1;
+    l.dirty = true; D0(); qA(); $();
+    k(`${off[id] ? "Tắt" : "Bật"} vòng sáng: ${skill.n}`);
+    return true;
+  }
+  const state = ba(), now = ya(), level = zi(id), duration = ae(skill, level);
+  if ((state.cd[id] || 0) > now) return fail(`Chiêu hồi sau ${Math.ceil(state.cd[id] - now)}s`);
+  if (kind === "buff" && b4(id)) return fail("Bùa lợi vẫn còn hiệu lực");
+  const cost = M7(skill, level), lifeCost = i4(skill);
+  if (lifeCost ? l.life - cost < Math.max(1, l.P.life * 0.25) : l.mana < cost)
+    return fail(lifeCost ? "Không đủ sinh lực để thi triển" : "Không đủ nội lực để thi triển");
+  const heal = kind === "buff" && duration < 5;
+  const healing = heal && b0(skill, "lifereplenish_v", level);
+  if (!(duration > 0) || (heal && !(healing && healing[0] > 0))) return fail("Chiêu chưa có hiệu ứng hỗ trợ khả dụng");
+  if (heal && l.life >= l.P.life) return fail("Sinh lực đã đầy");
+  let target;
+  if (kind === "curse") {
+    const targets = typeof _1 === "function" ? _1() : l.enemies;
+    target = [l.manTgt, l.tgt].find(actor => actor && !actor.dead && actor.hp > 0 && targets.includes(actor));
+    if (!target) return fail("Hãy chọn mục tiêu để thi triển bùa hại");
+    if (q0(v, target) > 420) return fail("Mục tiêu ở quá xa");
+    if ((target.curse || {})[id] > now) return fail("Mục tiêu vẫn đang chịu bùa hại này");
+  }
+  if (!beginActorCast(v)) return false;
+  if (lifeCost) l.life = Math.max(1, l.life - cost); else l.mana -= cost;
+  const cooldownRow = b0(skill, l.mounted && skill.attr.skill_mintimepercastonhorse_v
+    ? "skill_mintimepercastonhorse_v" : "skill_mintimepercast_v", level);
+  const cooldown = Math.max(heal ? 8 : kind === "curse" ? 5 : 0, cooldownRow ? cooldownRow[0] / k7 : 0);
+  state.cd[id] = now + cooldown;
+  if (kind === "buff") {
+    if (heal) za(healing[0] * duration * 2, false);
+    else state.buff[id] = now + duration;
+    l.dirty = true;
+  } else {
+    queueSkillContact(v, target, {
+      id: +id, L: level, parts: {}, melee: false, rad: 420,
+      geo: { k: "spot", r: 120, pierce: true },
+    }, actor => {
+      (actor.curse || (actor.curse = {}))[id] = ya() + Math.min(duration, 60);
+    }, { maxTargets: Infinity });
+  }
+  if (typeof o0 === "function") o0("use");
+  qA(); k(`Thi triển: ${skill.n}`);
+  return true;
+};
+
 var A6 = function (A) {
   if ((v7(A), (k4 -= A), k4 > 0 || ((k4 = 0.5), !o.fac || !l.P || l.deadT > 0 || l.town))) return;
   const n = ya(),
     t = ba();
   let e = !1;
   for (const i in t.buff) t.buff[i] <= n && t.buff[i] > 0 && ((t.buff[i] = 0), (e = !0));
-  if (typeof Y !== "undefined" && Y.tmp && Y.target && !hA()) {
+  if (typeof Y !== "undefined" && (Y.pendingSupport ||
+    (typeof Y.hasMovementInput === "function" && Y.hasMovementInput()) || (Y.tmp && Y.target && !hA()))) {
     if (e) l.dirty = !0;
     return;
   }
@@ -119,6 +181,8 @@ var A6 = function (A) {
     const d = wn(r);
     if (
       (d !== "buff" && d !== "curse") ||
+      (o.supportAutoOff && o.supportAutoOff[i]) ||
+      (t.cd[i] || 0) > n ||
       (d === "buff" && o.autoBuff === !1) ||
       (d === "curse" && o.autoCurse === !1)
     )
@@ -130,7 +194,12 @@ var A6 = function (A) {
       w = () => {
         beginActorCast(v);
         u ? (l.life = Math.max(1, l.life - h)) : (l.mana -= h);
+        const row = typeof b0 === "function" && r.attr && b0(r,
+          l.mounted && r.attr.skill_mintimepercastonhorse_v
+            ? "skill_mintimepercastonhorse_v" : "skill_mintimepercast_v", f);
+        t.cd[i] = n + Math.max(d === "curse" ? 5 : 0, row ? row[0] / k7 : 0);
       };
+    if (!(g > 0)) continue;
     if (!(u ? l.life < h + l.P.life * 0.3 : l.mana < h + l.P.mana * 0.15)) {
       if (d === "buff") {
         if (b4(i)) continue;
@@ -139,14 +208,14 @@ var A6 = function (A) {
           const x = b0(r, "lifereplenish_v", f);
           (w(),
             za((x ? x[0] : 0) * g * 2, !1),
-            (t.cd[i] = n + 8),
+            (t.cd[i] = Math.max(t.cd[i], n + 8)),
             $A(v.x, v.y - 60, "✚ " + r.n, "#8f8", 12));
           continue;
         }
         (w(), (t.buff[i] = n + g), (e = !0), typeof o0 == "function" && o0("use"));
       } else if (a) {
         const p = l.enemies
-          .filter((_) => !_.dead && !((_.curse || {})[i] > n))
+          .filter((_) => !_.dead && _.hp > 0 && q0(v, _) <= 420 && !((_.curse || {})[i] > n))
           .sort(
             (_, y) =>
               (y.cls === "boss") - (_.cls === "boss") ||

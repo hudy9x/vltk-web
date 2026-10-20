@@ -23,6 +23,7 @@ export { advanceSkillContacts, advanceSkillContacts as updateCombat, advanceCont
 export { contactFraction, rectangleContactFraction } from './geometry';
 export { collideCombatEffect } from './collision';
 export { applyContactHit } from './damage';
+export { drawSkillDamageAreas } from './debug-areas';
 export { drawContactProjectile, drawContactProjectile as drawFallbackProjectile } from './render';
 export { SKILL_RANGE_Y_RATIO, skillCastDistance, skillIgnoresTerrain } from './config';
 export { spawnLotusImpact, LOTUS_IMPACT_RADIUS } from './impact-fields';

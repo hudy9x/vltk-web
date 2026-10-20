@@ -61,7 +61,9 @@ var gameMaster = (function () {
   if (!window.localGameConfig || !window.localGameConfig.development) return null;
 
   let showSkillRange = false;
+  let showDamageAreas = false;
   function drawSkillRange(context) {
+    if (showDamageAreas) CombatEngine.drawSkillDamageAreas(context);
     if (!showSkillRange || !o || !o.fac || !l.P || !l.P.main) return;
     const skill = l.P.main;
     const reach = skill.geo && skill.geo.k === "self" ? skill.geo.r || skill.rad : skill.rad;
@@ -185,7 +187,7 @@ var gameMaster = (function () {
     #gm-header::before{left:12px}#gm-header::after{right:45px;transform:scaleX(-1)}
     #gm-header button{position:absolute;right:7px;top:6px;width:30px;height:30px;padding:0;border-radius:50%;border:2px solid #c9c6b6;background:radial-gradient(circle at 40% 35%,#6a6a66,#1d1d1b);color:#fff;font-size:20px;line-height:24px;box-shadow:0 0 3px #000;cursor:pointer}
     #gm-content{padding:12px}
-    #gm-range-label{display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer}
+    #gm-range-label,#gm-damage-label{display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer}
     #gm-panel [data-gm]{display:block;width:100%;min-height:48px;margin:0 0 8px;padding:9px 12px;font:inherit;text-align:left;line-height:1.45;cursor:pointer}
     #gm-panel [data-gm] img{width:24px;height:24px;object-fit:contain;image-rendering:pixelated;vertical-align:middle;margin-right:8px}
     #gm-status{margin:12px 0 0;padding-top:10px;border-top:1px solid #4e4c3c;font-size:12px;line-height:1.5;color:#c6c1a2}
@@ -202,7 +204,8 @@ var gameMaster = (function () {
   panel.setAttribute("aria-label", "GameMaster");
   panel.innerHTML = `<header id="gm-header"><span>GameMaster</span><button type="button" data-gm-close aria-label="Đóng GameMaster" title="Đóng">×</button></header>
     <div id="gm-content">
-    <label id="gm-range-label"><input type="checkbox" id="gm-show-range">Hiển thị phạm vi chiêu thức</label>
+    <label id="gm-range-label"><input type="checkbox" id="gm-show-range">Hiển thị tầm tung chiêu (xanh)</label>
+    <label id="gm-damage-label" title="Vùng màu cam: vùng va chạm của chiêu đang hoạt động, gồm cả SIM. Chưa cộng kích thước thân mục tiêu."><input type="checkbox" id="gm-show-damage">Hiển thị vùng sát thương (cam)</label>
     <button type="button" data-gm="level150">Tăng nhân vật lên cấp 150</button>
     <button type="button" data-gm="learn90">Học tất cả chiêu cấp 90 của môn phái</button>
     <button type="button" data-gm="max90">Nâng tối đa các chiêu cấp 90 đã học</button>
@@ -218,6 +221,7 @@ var gameMaster = (function () {
   };
   panel.onchange = (event) => {
     if (event.target.id === "gm-show-range") showSkillRange = event.target.checked;
+    if (event.target.id === "gm-show-damage") showDamageAreas = event.target.checked;
   };
   panel.onclick = (event) => {
     if (event.target.closest("[data-gm-close]")) {

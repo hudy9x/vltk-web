@@ -18,11 +18,33 @@ var JP = function () {
   return ((l.stKey = t), (l.stList = i), i);
 };
 
-var F3 = function (A, n, t, e, a, i, r, c = 1) {
+// Composite standing head coordinates include the rider's lift and stay stable during attacks.
+var heroNameplateOffset = function (scale = Jn) {
+  const fallback = nameplateOffset(v.animKey, scale, 0.9, 6, 58);
+  if (typeof J3 !== "function" || !J3() || !l.jx || !P0) return fallback;
+  const look = l.jx, pose = look.asc && look.asc.st, tabs = P0.tabs[look.sx];
+  if (!pose || !tabs) return fallback;
+  let height = 0;
+  for (const part of ["头部", "发型"]) {
+    const row = look.rows.helm, id = tabs[part] && tabs[part][row] && tabs[part][row][pose];
+    const sheet = id && P0.sheets[L8(look.sx, id)];
+    if (sheet) height = Math.max(height, (P0.foot[1] - sheet[3]) * scale);
+  }
+  return height > 0 ? height + 8 : fallback;
+};
+
+var F3 = function (A, n, t, e, a, i, r, c = 1, actor = null) {
   const d = bA(n.f);
   if (!d.complete || !d.naturalWidth) return;
+  const hero = actor === v,
+    guildLine = hero && typeof bo === "function" && bo(),
+    clearance = hero
+      ? heroNameplateOffset(r) + (guildLine ? 40 : 26)
+      : actor ? nameplateOffset(actor.animKey, r, 0.85, 8, (actor.r || 17) * 2 + 8) + 28
+        : Math.max(0, a) + 28;
   const f = Math.floor((i * 1e3) / n.ms) % n.n,
-    h = e;
+    // Anchor visible artwork above the name/HP block rather than empty sheet padding.
+    h = n.pos === "head" ? e - clearance - ((n.headBottom || n.h) - n.ay) * r * nv : e;
   ((r *= nv),
     (A.globalAlpha = c),
     A.drawImage(d, f * n.w, 0, n.w, n.h, t - n.ax * r, h - n.ay * r, n.w * r, n.h * r),
@@ -37,7 +59,7 @@ var Pf = function (A, n, t) {
   }
   for (const a of JP())
     (a.pos === "foot") == (n === "under") &&
-      F3(A, a, v.x, v.y, t, e, Jn, a.pos === "foot" ? 0.85 : 0.9);
+      F3(A, a, v.x, v.y, t, e, Jn, a.pos === "foot" ? 0.85 : 0.9, v);
 };
 
 var E8 = function (A, n) {
@@ -55,7 +77,7 @@ var WP = function (A, n, t) {
     const r = U1[i];
     !r ||
       a[r.pos] ||
-      ((a[r.pos] = 1), F3(A, r, n.x, n.y, 0, e, t, Math.min(0.9, (n.curse[i] - e) / 1.5)));
+      ((a[r.pos] = 1), F3(A, r, n.x, n.y, 0, e, t, Math.min(0.9, (n.curse[i] - e) / 1.5), n));
   }
 };
 
@@ -65,7 +87,7 @@ var ZP = function (A, n, t, e, a) {
       n.stFx = null;
       return;
     }
-    F3(A, n.stFx, n.x, n.y, t, l.clock || 0, e, E(n.stT, 0, 1));
+    F3(A, n.stFx, n.x, n.y, t, l.clock || 0, e, E(n.stT, 0, 1), n);
   }
 };
 

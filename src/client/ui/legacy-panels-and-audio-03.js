@@ -492,6 +492,7 @@ var Qv = function () {
 };
 
 var Ah = function (A) {
+  if (typeof Y.hasMovementInput === "function" && Y.hasMovementInput()) Y.prioritizeMovement();
   if (actorActionLocked(v)) { v.moving = false; return false; }
   if (hA() && l.clickHold) return !1;
   const [n, t] = Qv();
@@ -519,14 +520,14 @@ var Wa = function (A, n) {
 var nh = function () {
   return Object.keys(o.sk)
     .map(Number)
-    .filter((A) => o.sk[A] && UA(T[A]));
+    .filter((A) => canSlotSkill(A));
 };
 
 var tn = function () {
-  ((o.slots = (o.slots || [0, 0, 0, 0]).map((A) => (A === -1 ? -1 : A && o.sk[A] ? A : 0))),
+  ((o.slots = (o.slots || [0, 0, 0, 0]).map((A) => (A === -1 ? -1 : canSlotSkill(A) ? A : 0))),
     o.trapV || ((o.trapV = 1), (o.slots = o.slots.map((A) => (A > 0 && te(T[A]) ? 0 : A)))));
   for (const A of nh()
-    .filter((n) => !te(T[n]))
+    .filter((n) => UA(T[n]) && !te(T[n]))
     .sort((n, t) => T[t].req - T[n].req)) {
     if (o.slots.includes(A)) continue;
     const n = o.slots.indexOf(0);
@@ -536,6 +537,7 @@ var tn = function () {
 };
 
 var th = function (A, n) {
+  if (!Number.isInteger(A) || A < 0 || A >= 4 || (n !== -1 && !canSlotSkill(n))) return;
   if ((tn(), n === -1)) {
     ((o.slots[A] = -1), qA(), $());
     return;
@@ -559,18 +561,28 @@ var Z8 = function (A) {
   const i = (u) => {
     const w = T[u],
       x = o.slots.indexOf(u);
-    return `<b>${D(w.n)}</b> <small>cấp ${o.sk[u] || 0}${x >= 0 && x !== A ? ` · đang ở F${x + 1}` : ""}</small>`;
+    return `<b>${D(w.n)}</b> <small>${D(_7[wn(w)] || "")} · cấp ${o.sk[u] || 0}${x >= 0 && x !== A ? ` · đang ở F${x + 1}` : ""}</small>`;
   };
+  const group = (attack, title) => {
+    const ids = e.filter(id => UA(T[id]) === attack);
+    return ids.length ? `<div class="skgroup">${title}</div>` + ids.map(u => {
+      const slot = o.slots.indexOf(u);
+      return `<button class="spk${u === t ? " on" : ""}" data-ss="${u}" title="${D(T[u].n)}" style="background-image:url('${D(T[u].ic || "")}')">${slot >= 0 ? `<i>F${slot + 1}</i>` : ""}<u>${o.sk[u] || 0}</u></button>`;
+    }).join("") : "";
+  };
+  const kind = T[t] && wn(T[t]);
   ((n.innerHTML =
     `<div class="nm">F${A + 1} · ${t > 0 ? i(t) : "<small>trống</small>"}</div>` +
     (t > 0 ? '<button class="spk spk0" data-ss="-1" title="Bỏ chiêu khỏi ô này">✕</button>' : "") +
-    (e
-      .map((u) => {
-        const w = o.slots.indexOf(u);
-        return `<button class="spk${u === t ? " on" : ""}" data-ss="${u}" style="background-image:url('${D(T[u].ic || "")}')">${w >= 0 ? `<i>F${w + 1}</i>` : ""}<u>${o.sk[u] || 0}</u></button>`;
-      })
-      .join("") || '<small class="dim">Chưa học chiêu tấn công</small>')),
+    (group(true, "Tấn công") + group(false, "Hỗ trợ") || '<small class="dim">Chưa học chiêu có thể gán</small>') +
+    (["buff", "curse"].includes(kind) ? `<label class="skauto"><input type="checkbox" data-support-auto="${t}" ${o.supportAutoOff && o.supportAutoOff[t] ? "" : "checked"}> Tự dùng ${D(T[t].n)}</label><small class="skhint">Theo công tắc bùa lợi / bùa hại trong Võ công. Gán ô không đổi chế độ tự dùng.</small>` : "")),
     a.appendChild(n));
+  const auto = n.querySelector("[data-support-auto]");
+  if (auto) auto.onchange = () => {
+    const off = o.supportAutoOff || (o.supportAutoOff = {});
+    if (auto.checked) delete off[t]; else off[t] = true;
+    $();
+  };
   const r = $8(),
     c = a.getBoundingClientRect(),
     d = m(`#pad .sk[data-i="${A}"]`).getBoundingClientRect(),
@@ -620,6 +632,20 @@ var Ac = function (A) {
     Z8(A);
     return;
   }
+  if (T[n] && !UA(T[n])) {
+    if (wn(T[n]) === "curse" && !l.town && !(l.deadT > 0)) {
+      Y.releaseTarget();
+      Y.target = null;
+      Y.pendingSupport = n;
+      qA();
+      k(`Đã chọn ${T[n].n}: bấm vào quái để thi triển; bấm xuống đất để hủy`);
+      return;
+    }
+    Y.pendingSupport = 0;
+    castSupportSkill(n);
+    return;
+  }
+  Y.pendingSupport = 0;
   if (hA() && typeof _1 == "function") {
     const t = _1();
     t.length && (l.manTgt = c8(t));
@@ -701,13 +727,13 @@ var qA = function () {
       const a = o.slots[+e.dataset.i],
         i = T[a];
       (e.classList.toggle("empty", !i),
-        e.classList.toggle("nowp", !!i && !Ci(i)),
-        e.classList.toggle("cur", !!(i && l.P && l.P.main.id === a)),
+        e.classList.toggle("nowp", !!i && UA(i) && !Ci(i)),
+        e.classList.toggle("cur", !!(i && UA(i) && l.P && l.P.main && l.P.main.id === a)),
         (e.querySelector("i").style.backgroundImage = i && i.ic ? `url('${i.ic}')` : ""));
       const r = i ? (o.sk[a] || 0) + (typeof z1 == "function" ? z1(a) : 0) : 0,
         c = i && typeof z1 == "function" ? z1(a) : 0;
       e.title = i
-        ? `${i.n} · cấp ${r}${c ? ` (${o.sk[a]}+${c})` : ""}${Ci(i) ? "" : " · cần " + B5[j1(i)]}`
+        ? `${i.n} · ${_7[wn(i)] || ""} · cấp ${r}${c ? ` (${o.sk[a]}+${c})` : ""}${!UA(i) || Ci(i) ? "" : " · cần " + B5[j1(i)]} · ${UA(i) ? "Chọn làm chiêu chính" : wn(i) === "aura" ? "Bật / tắt vòng sáng" : wn(i) === "curse" ? "Chọn rồi bấm vào quái" : "Thi triển ngay"}`
         : "Ô trống";
       let d = e.querySelector(".sklv");
       (d || ((d = document.createElement("u")), (d.className = "sklv"), e.appendChild(d)),
@@ -734,6 +760,19 @@ var Kv = function () {
     n = (t, e, a) =>
       t && t.querySelector(".cd").style.setProperty("--p", `${E(e / a, 0, 1) * 100}%`);
   (n(m("#bHp"), A.life || 0, ao), n(m("#bMp"), A.mana || 0, ao), n(m("#bTp"), l.tpCd || 0, ih));
+  document.querySelectorAll("#pad .sk").forEach(button => {
+    const id = o.slots[+button.dataset.i], skill = T[id], kind = skill && wn(skill);
+    const state = ba(), now = ya(), support = ["buff", "curse", "aura"].includes(kind);
+    const remaining = support ? Math.max(0, (state.cd[id] || 0) - now) : 0;
+    const active = kind === "buff" ? b4(id) : kind === "aura" ? o6(id) : false;
+    button.classList.toggle("support-on", active);
+    button.classList.toggle("support-aim", kind === "curse" && Y.pendingSupport === id);
+    const overlay = button.querySelector(".cd"), label = button.querySelector(".skremain");
+    const duration = kind === "buff" && ae(skill, zi(id)) < 5 ? 8 :
+      skill && (b0(skill, l.mounted && skill.attr.skill_mintimepercastonhorse_v ? "skill_mintimepercastonhorse_v" : "skill_mintimepercast_v", zi(id)) || [0])[0] / k7;
+    if (overlay) overlay.style.setProperty("--p", `${remaining > 0 ? E(remaining / Math.max(duration || 0, remaining), 0, 1) * 100 : 0}%`);
+    if (label) label.textContent = remaining > 0 ? Math.ceil(remaining) : "";
+  });
   for (const [t, e] of [
     ["#bHp", 0],
     ["#bMp", 1],

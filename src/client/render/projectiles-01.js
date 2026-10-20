@@ -271,10 +271,10 @@ var YP = function (A) {
   const t = n.n,
     e = Math.max(1, Math.round(n.ms / (1e3 / K3))),
     speed = A.combat && +A.combat.skill.id === 365 ? 2 : 1,
-    frame = A.loop ? Math.floor(A.age * speed / e) : Math.floor(t * A.age * speed / A.lf);
+    frame = A.loop ? Math.floor(A.age * speed / e) : Math.floor(t * A.age * speed / (A.visualLifetime || A.lf));
   // The accelerated one-shot ends visually when its frames finish. The
   // contact lifetime remains independent; never pin its last frame until expiry.
-  if (speed === 2 && !A.loop && frame >= t) return;
+  if ((speed === 2 || A.visualLifetime) && !A.loop && frame >= t) return;
   const a = A.loop ? frame % t : Math.min(t - 1, frame),
     i = n.d > 1 ? Ds(Math.cos(A.ang), Math.sin(A.ang) / 2) : 0;
   if (A.sh && A.tr.length) {

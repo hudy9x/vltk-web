@@ -76,6 +76,47 @@ test('auto ground input cancels unreleased windups but preserves launched projec
  }
 });
 
+test('manual movement immediately interrupts automatic buff locks in both modes and auto buffs wait until movement stops',()=>{
+ for(const manual of [false,true])for(const input of ['ground','keyboard','joystick','gamepad']) {
+  const s=world(),buffs={buff:{},cd:{}};
+  Object.assign(s,{hA:()=>manual,T1:{v:[0,0]},an:45,
+   o:{fac:'test',sk:{1:1,2:1}},v7(){},k4:0,ya:()=>1,ba:()=>buffs,
+   T:{1:{n:'Buff 1'},2:{n:'Buff 2'}},wn:()=> 'buff',zi:()=>1,M7:()=>10,ae:()=>10,
+   i4:()=>false,b4:id=>buffs.buff[id]>1,Ra:()=>1,H5:(x,y)=>[x,y],
+   gt:(actor,x,y)=>{Object.assign(actor,{x,y,moving:true});return true;}});
+  s.l.P={life:1000,mana:1000};s.l.mana=1000;
+  declaration(s,'src/client/ui/legacy-panels-and-audio-04.js','Y');
+  for(const name of ['Qv','Ah'])declaration(s,'src/client/ui/legacy-panels-and-audio-03.js',name);
+  declaration(s,'src/client/gameplay/shop-and-books-01.js','A6');
+  s.A6(.5);assert.ok(s.v.castT>0);assert.equal(s.l.mana,990);
+  if(input==='ground')s.Y.moveTarget(300,0);
+  if(input==='keyboard')s.Y.keys.d=true;
+  if(input==='joystick')Object.assign(s.Y,{active:true,moved:true,ox:0,oy:0,x:45,y:0});
+  if(input==='gamepad')s.T1.v=[1,0];
+  for(let tick=0;tick<4;tick++) {
+   s.A6(.5);assert.equal(s.Ah(.1),true,`${manual}/${input}`);
+  }
+  assert.ok(s.v.x>0);assert.equal(s.v.castT,0);assert.equal(s.l.mana,990);
+  assert.equal(buffs.buff[2],undefined,'buff sequence cannot re-lock a moving player');
+  assert.equal(buffs.buff[1],11,'interrupting the pose preserves an already applied buff');
+  Object.assign(s.Y,{active:false,moved:false,target:null,keys:{}});s.T1.v=[0,0];
+  s.A6(.5);assert.equal(s.l.mana,980);assert.equal(buffs.buff[2],11,'auto buff resumes after stopping');
+ }
+});
+
+test('manual movement cancels a pending automatic curse without replaying or refunding it',()=>{
+ const s=world(),buffs={buff:{},cd:{}},target={x:100,y:0,hp:100,cls:'boss'};
+ Object.assign(s,{hA:()=>true,o:{fac:'test',sk:{1:1}},v7(){},k4:0,ya:()=>1,ba:()=>buffs,
+  T:{1:{n:'Curse'}},wn:()=> 'curse',zi:()=>1,M7:()=>10,ae:()=>10,i4:()=>false,b4:()=>false});
+ s.l.P={life:1000,mana:1000};s.l.mana=1000;s.l.enemies=[target];
+ declaration(s,'src/client/ui/legacy-panels-and-audio-04.js','Y');
+ declaration(s,'src/client/gameplay/shop-and-books-01.js','A6');
+ s.A6(.5);assert.equal(s.l.mana,990);assert.ok(s.v.castT>0);
+ s.Y.moveTarget(300,0);assert.equal(s.v.castT,0);
+ run(s,1);assert.equal(target.curse,undefined);assert.equal(s.l.mana,990);
+ s.A6(.5);assert.equal(s.l.mana,990,'no new curse while the move command remains active');
+});
+
 test('hurt blocks automatic buffs until recovery',()=>{
  const s=world(),buffs={buff:{},cd:{}};
  Object.assign(s,{o:{fac:'test',sk:{1:1}},v7(){},k4:0,ya:()=>1,ba:()=>buffs,T:{1:{n:'Buff'}},wn:()=> 'buff',zi:()=>1,M7:()=>10,ae:()=>10,i4:()=>false,b4:()=>false});
