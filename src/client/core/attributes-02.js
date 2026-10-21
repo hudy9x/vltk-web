@@ -203,7 +203,11 @@ var G0 = function (A) {
     d = (g) => (g ? g.reduce((u, w) => u + (w || 0), 0) / 5 : 0),
     f = a.dps * i * (1 + d(A.me2) / 100) * (1 + ((A.hurtP || 0) / 100) * 0.15),
     h =
-      A.life /
+      // Battlefield builds have finite mana. Count only the MP the shield can
+      // spend before HP runs out; a large MP pool without a shield adds no HP.
+      (A.life + (o.battlefieldBuild ? Math.min(A.mana || 0,
+        A.life * Math.min(0.9, (A.manaShield || 0) / 100) /
+        Math.max(0.1, 1 - Math.min(0.9, (A.manaShield || 0) / 100))) : 0)) /
       Math.max(0.2, 1 - c / 100) /
       Math.max(0.2, 1 - d(A.from) / 100) /
       Math.max(0.3, 1 - r) /

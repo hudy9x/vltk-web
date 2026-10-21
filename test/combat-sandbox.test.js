@@ -974,7 +974,7 @@ test('Tống Kim synchronous secondary skills resolve against the real player ev
     if(target===player) {secondary++;context.hit({...skill,ev2:true},player);}
   };
   const before=world.life;s.arenaSimulator.tick(.1);advanceSimulator(s);
-  assert.equal(secondary,1);assert.equal(world.life,before-200);
+  assert.equal(secondary,1);assert.equal(world.life,before-200*s.arenaSimulator.pvpDamageScale(enemy,player));
   assert.equal(s.l,world);assert.equal(s.v,player);assert.equal(enemy.hp,enemy.max);
 });
 
@@ -1124,4 +1124,90 @@ test('soldier hits use the SIM recipient team rather than the real player team',
   const [ally]=match.add({team:playerTeam,faction:'wudang',level:150,strength:'normal',count:1});
   const allyHP=ally.hp;s.arenaSimulator.receiveMonsterHit(ally,soldier);assert.equal(ally.hp,allyHP);
  }
+});
+
+test('Tống Kim skill defense refunds MP before mana shield, for both SIM and player recipients',()=>{
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const [defender]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
+ Object.assign(defender.stats,{mana:5491,manaShield:84,dmg2mana:22});
+ defender.hp=defender.max=3227;defender.mana=200;
+ s.hs({...s.l.P.main,parts:{phys:23200},series:0,series5:0},defender);
+ assert.ok(Math.abs(defender.hp-2522.2)<1e-8);assert.equal(defender.mana,0);
+ // Deliver the same resolved damage via the actor-to-player contact path.
+ Object.assign(s.l.P,{mana:5491,manaShield:84,dmg2mana:22});s.l.life=3227;s.l.mana=200;
+ defender.x=s.v.x;defender.y=s.v.y;defender.cooldown=0;defender.hurtT=0;
+ Object.assign(defender.stats.main,{parts:{phys:23200},series:0,series5:0});
+ s.arenaSimulator.tick(.001);advanceSimulator(s,.25);
+ assert.ok(Math.abs(s.l.life-2522.2)<1e-8);assert.equal(s.l.mana,0);
+});
+
+test('Tống Kim finite MP pays each cast once and passively recovers without refilling on context swaps',()=>{
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const [actor]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
+ actor.x=s.v.x;actor.y=s.v.y;actor.mana=25;actor.hp=500;
+ Object.assign(actor.stats,{regen:19,manaRegen:10});actor.stats.main.cost=40;
+ s.arenaSimulator.tick(1);assert.equal(actor.casts,1);assert.equal(actor.mana,35);assert.equal(actor.hp,519);
+ advanceSimulator(s,.5);
+ s.arenaSimulator.tick(.5);assert.equal(actor.casts,2);assert.equal(actor.mana,0);
+ advanceSimulator(s,.5);assert.equal(actor.mana,0,'visual and delayed hit context cannot replenish mana');
+ s.arenaSimulator.tick(1);assert.equal(actor.casts,3);assert.equal(actor.mana,10);
+});
+
+test('Tống Kim poison/cold/stun reductions preserve older effects; poison, regen and break timers continue while stunned',()=>{
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const [actor]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
+ Object.assign(actor.stats,{poisonRed:80,freezeRed:80,stunRed:80,regen:19});
+ actor.hp=500;actor.stun=0;actor.poison=0;actor.slowT=0;
+ s.hs({...s.l.P.main,parts:{poison:2000,cold:2000},poisonT:10,coldT:10,stun:100,series:0,series5:0},actor);
+ assert.ok(Math.abs(actor.poison-2)<1e-8);assert.ok(Math.abs(actor.poison*actor.poisonDmg-20)<1e-8);
+ assert.ok(actor.slowT<=2.01);assert.ok(actor.stun<=.161);
+ actor.stun=5;actor.resBrkT=3;actor.hp=500;
+ s.arenaSimulator.tick(1);
+ assert.equal(actor.stun,4);assert.equal(actor.resBrkT,2);assert.ok(Math.abs(actor.hp-509)<1e-8);assert.ok(Math.abs(actor.poison-1)<1e-8);
+ // A shorter reduced application must not shorten an existing long effect.
+ actor.resBrkT=0;actor.poison=4;actor.poisonDmg=10;actor.slowT=4;actor.stun=4;
+ s.hs({...s.l.P.main,parts:{poison:2000,cold:2000},poisonT:10,coldT:10,stun:100,series:0,series5:0},actor);
+ assert.equal(actor.poison,4);assert.ok(Math.abs(actor.poison*actor.poisonDmg-60)<1e-8);
+ assert.equal(actor.slowT,4);assert.equal(actor.stun,4);
+});
+
+test('battlefield suggestion values a usable mana shield without crediting an unshielded MP pool',()=>{
+ const s=simulatorGame();loadDeclaration(s,'src/client/core/attributes-02.js','G0');
+ Object.assign(s,{Pe:()=>50,Q0:['phys','cold','fire','poison','light'],V5:.7,Sw:()=>0});
+ s.o.mainLock=true;s.o.battlefieldBuild={equipped:true};
+ const base={...s.l.P,life:3000,mana:5000,manaShield:0,main:{dps:1000},res:{phys:50,cold:50,fire:50,poison:50,light:50}};
+ const unshielded=s.G0(base);assert.equal(s.G0({...base,mana:20000}),unshielded);
+ const shielded=s.G0({...base,manaShield:84});assert.ok(shielded>unshielded);
+ assert.ok(s.G0({...base,mana:100,manaShield:84})<shielded);
+ delete s.o.battlefieldBuild;assert.equal(s.G0({...base,manaShield:84}),s.G0(base));
+});
+
+test('Tống Kim PvP scales direct and poison damage once, preserving soldier and golden boss PvE damage',()=>{
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const [enemy]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
+ const ratio=s.arenaSimulator.pvpDamageScale(s.v,enemy);assert.equal(ratio,.05);
+ const before=enemy.hp;s.hs({...s.l.P.main,parts:{phys:200,poison:200},poisonT:4,series:0,series5:0},enemy);
+ assert.ok(Math.abs(before-enemy.hp-10)<1e-8);assert.ok(Math.abs(enemy.poison*enemy.poisonDmg-10)<1e-8);
+ const boss=s.arenaSimulator.actors.find(x=>x.battlefieldBoss);
+ assert.equal(s.arenaSimulator.pvpDamageScale(s.v,boss),1);assert.equal(s.arenaSimulator.pvpDamageScale(boss,enemy),1);
+ assert.equal(s.arenaSimulator.pvpDamageScale(s.v,{battlefieldMonster:true}),1);
+ match.reset();assert.equal(s.arenaSimulator.pvpDamageScale(s.v,enemy),1);
+});
+
+test('Vô Hình Độc uses the PvP coefficient and poison duration reduction without changing soldier poison',()=>{
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const [enemy]=match.add({team:'jin',faction:'wudu',level:150,strength:'normal',count:1});
+ const soldier=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam==='jin');
+ Object.assign(enemy.stats,{poisonRed:80});enemy.poison=0;
+ Object.assign(soldier,{res:{...s.l.P.res},series:0,poison:0});
+ for(const actor of [enemy,soldier])Object.assign(actor,{x:s.v.x+40,y:s.v.y});
+ s.o.fac='wudu';s.o.sk[69]=1;
+ Object.assign(s,{Yn:{69:{el:'poison',every:.5,rad:180}},y4:{},zi:()=>1,i6:()=>100,F0:()=>0,q0:(a,b)=>Math.hypot(a.x-b.x,(a.y-b.y)*2)/s.QA});
+ loadDeclaration(s,'src/client/core/state-and-save-02.js','_1');
+ loadDeclaration(s,'src/client/gameplay/shop-and-books-01.js','b7');
+ s.b7(69,.6);
+ assert.ok(Math.abs(enemy.poison-.6)<1e-8);assert.ok(Math.abs(enemy.poison*enemy.poisonDmg-1)<1e-8);
+ assert.equal(soldier.poison,3);assert.equal(soldier.poison*soldier.poisonDmg,100);
+ // Existing poison is not reduced again when the aura pulses.
+ s.b7(69,.6);assert.ok(Math.abs(enemy.poison*enemy.poisonDmg-2)<1e-8);
 });

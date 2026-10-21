@@ -81,13 +81,19 @@ var b7 = function (A, n) {
         75,
         l.P.series5 || 0,
       ) * ea();
+    if (typeof arenaSimulator !== "undefined" && arenaSimulator && arenaSimulator.pvpDamageScale)
+      h *= arenaSimulator.pvpDamageScale(v, c);
     if (h > 0 && typeof arenaSimulator !== "undefined" && arenaSimulator && typeof arenaSimulator.recordBattlefieldHit === "function") arenaSimulator.recordBattlefieldHit(v,c);
     if (
       (t.el === "poison" && !(c.poison > 0) && typeof Tt == "function" && Tt(c, "Độc", "#8fe34a"),
       t.el === "poison")
     ) {
       const g = c.poison > 0 ? c.poisonDmg * c.poison : 0;
-      ((c.poisonDmg = (g + h) / ve), (c.poison = ve));
+      const battleSim = c.arenaSim && l.battlefield;
+      const reduction = battleSim ? Math.max(0, 1 - Math.min(100, c.stats.poisonRed || 0) / 100) : 1;
+      const duration = battleSim ? Math.max(c.poison || 0, ve * reduction) : ve;
+      c.poisonDmg = duration > 0 ? (g + h * reduction) / duration : 0;
+      c.poison = duration;
     } else { c.hp -= h; applyActorHurt(c, h, c.max); }
   }
 };
