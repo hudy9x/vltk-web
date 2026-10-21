@@ -1,10 +1,11 @@
+import type { ArmyEquipmentKind } from './set-equipment';
 import { BATTLEFIELD_ROUTES } from './routes';
 import { distributeArmy } from './composition';
 import type { LegacyEntity, SimulatorActor } from './types';
 
 export type Team = 'song' | 'jin';
 export type Strength = 'weak' | 'normal' | 'strong';
-export interface ArmyBuild { team: Team; faction: string; level: number; strength: Strength; count: number; composition?: Record<string, number>; equipped?: boolean }
+export interface ArmyBuild { team: Team; faction: string; level: number; strength: Strength; count: number; composition?: Record<string, number>; equipped?: boolean; skillTier?: 90 | 150; equipmentKind?: ArmyEquipmentKind }
 export interface BothArmyBuild extends Omit<ArmyBuild, 'team' | 'composition'> { compositions?: Record<Team, Record<string, number>> }
 export function splitArmyTotal(count: number) {
   if (!Number.isSafeInteger(count) || count < 2 || count > 200 || count % 2) throw new Error('Tổng SIM phải là số chẵn từ 2 đến 200 để chia đều hai phe.');
@@ -91,6 +92,8 @@ export function createBattlefield(host: BattlefieldHost) {
   function validateBuild(build: ArmyBuild) {
     if (!isTeam(build.team) || !isStrength(build.strength) || !Number.isSafeInteger(build.level) || build.level < 1 || build.level > 200 ||
       !Number.isSafeInteger(build.count) || build.count < 1 || build.count > 100) throw new Error('Cấu hình quân: cấp 1–200, số lượng 1–100, phe và sức mạnh hợp lệ.');
+    if (build.skillTier !== undefined && ![90,150].includes(build.skillTier)) throw new Error('Chọn chiêu cấp 90 hoặc 150.');
+    if (build.equipmentKind && !['blue','gold','thientu'].includes(build.equipmentKind)) throw new Error('Loại trang bị SIM không hợp lệ.');
     if (host.actors().filter(owns).length + build.count > 502) throw new Error('Tối đa 500 SIM và hai boss trên chiến trường.');
   }
   function add(build: ArmyBuild) {

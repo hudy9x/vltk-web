@@ -39,13 +39,15 @@ matchups: for (let firstIndex = 0; firstIndex < dataset.builds.length; firstInde
     }
   }
 }
+const usesThienTu = dataset.builds.some(build => Object.values(build.profile.eq).some(item => item.set?.kind === 'platina'));
+const usesGold = dataset.builds.some(build => Object.values(build.profile.eq).some(item => item.set?.kind === 'gold'));
 const config = { level: 150, potential: 745, regularSkills: 149,
-  gear: 'tier 10, blue, 5 affixes, normal, deterministic 0.5', advanced: '90/150 learned as arena rules',
+  gear: usesThienTu ? 'native Thien Tu with faction gold/blue fallback' : usesGold ? 'native faction gold with blue fallback' : 'tier 10, blue, 5 affixes, normal, deterministic 0.5', advanced: '90/150 learned as arena rules',
   distance: openingDistance, dt: timeStep, maxSeconds: maximumSeconds, repeats: repetitions,
   mana: 'finite MP, passive recovery and skill-defense fixes',
   pvpDamage: game.arenaSimulator.pvpDamageScale({ arenaSim: true }, { arenaSim: true }),
   movement: 'central bridge with real navigation',
-  note: 'Native attributes, skills, G3/Be missiles, secondary contacts and navigation. One primary tier-90 skill per faction, basic attacks while MP recovers. Support attributes assumed; no active support/curse/aura AI, player/soldier/boss targets, respawn or consumables. Canvas/UI stubs only.',
+  note: 'Native attributes, skills, G3/Be missiles, secondary contacts and navigation. One configured primary skill per faction, basic attacks while MP recovers. Support attributes assumed; no active support/curse/aura AI, player/soldier/boss targets, respawn or consumables. Canvas/UI stubs only.',
 };
 fs.writeFileSync(path.join(outputDirectory, `duels-${openingDistance}.json`), JSON.stringify({ config, builds: dataset.builds, results }, null, 2));
 console.log(`Completed ${results.length} duels`);

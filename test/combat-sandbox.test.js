@@ -1019,7 +1019,7 @@ test('Tống Kim road monsters join real combat targets, can damage SIMs, respaw
   const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
   const monsters=s.l.enemies.filter(actor=>actor.battlefieldMonster);
   assert.equal(monsters.length,12);assert.equal(match.state.monsters.alive,12);
-  assert.equal(s.combatSandbox.nearestTarget(monsters[0]),null,'road monsters wait until a fighter enters their detection range');
+  assert.ok(s.combatSandbox.nearestTarget(monsters[0])?.battlefieldTeam!==monsters[0].battlefieldTeam,'soldiers acquire hostile soldiers across the wider lane');
   for(const monster of monsters)Object.assign(monster,{res:{...s.l.P.res},def:0,series:0,act:'st'});
   const [sim]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
   const monster=monsters.find(actor=>actor.battlefieldTeam==='jin');sim.x=monster.x;sim.y=monster.y;
@@ -1099,16 +1099,16 @@ test('native soldier contacts damage only opposing soldiers through the shared c
  s.arenaSimulator.receiveSoldierHit(friendly,attacker);assert.equal(friendly.hp,allyHP);
 });
 
-test('Tống Kim soldiers have 900k HP and pursue enemies beyond the old 280-unit leash',()=>{
+test('Tống Kim soldiers have increased HP and pursue enemies within a 1600-unit leash',()=>{
  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
  const soldier=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam==='jin');
- assert.ok(s.l.enemies.filter(actor=>actor.battlefieldMonster).every(actor=>actor.hp>=900000&&actor.max>=900000));
+ assert.ok(s.l.enemies.filter(actor=>actor.battlefieldMonster).every(actor=>actor.hp>=1200000&&actor.max>=1200000));
  for(const other of s.l.enemies.filter(actor=>actor.battlefieldMonster&&actor!==soldier)) other.dead=true;
  const [enemy]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
  soldier.x-=500;enemy.x=soldier.x-600;enemy.y=soldier.y;
  assert.equal(s.combatSandbox.nearestTarget(soldier),enemy,'soldier still acquires enemies 500 units away from home');
- enemy.x=soldier.x-801;assert.equal(s.combatSandbox.nearestTarget(soldier),null,'detection range remains bounded');
- soldier.x=soldier.battlefieldHome.x-901;enemy.x=soldier.x;
+ enemy.x=soldier.x-1201;assert.equal(s.combatSandbox.nearestTarget(soldier),null,'detection range remains bounded');
+ soldier.x=soldier.battlefieldHome.x-1601;enemy.x=soldier.x;
  assert.equal(s.combatSandbox.nearestTarget(soldier),null,'stop attacking beyond new leash');
  s.arenaSimulator.tick(.01);assert.equal(soldier.x,soldier.battlefieldHome.x,'out-of-range soldier returns home');
 });

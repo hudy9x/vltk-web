@@ -8,6 +8,9 @@ import { collectLegacyDeclarations } from './legacy-runtime.ts';
 import type { FactionBuild, LegacyScope } from './types.ts';
 
 const repositoryRoot = process.cwd();
+const equipmentKind = process.argv[3] || 'blue';
+const skillTier = Number(process.argv[4] || 90);
+if (!['blue','gold','thientu'].includes(equipmentKind) || ![90,150].includes(skillTier)) throw new Error('Choose blue/gold/thientu and skill tier 90/150.');
 const outputDirectory = path.resolve(process.argv[2] || '/tmp/vltk-sim-balance');
 fs.mkdirSync(outputDirectory, { recursive: true });
 const declarations = collectLegacyDeclarations(path.join(repositoryRoot, 'src/client'));
@@ -61,6 +64,8 @@ const require = createRequire(import.meta.url); // Existing bundler remains Comm
 const { compileTypeScriptEntry } = require('../build-app.js') as typeof import('../build-app.js');
 vm.runInContext(compileTypeScriptEntry('simulator/equipment.ts', 'ArmyGear').code, vmContext);
 nativeGlobals.createArmyEquipment = nativeGlobals.ArmyGear.createArmyEquipment;
+vm.runInContext(compileTypeScriptEntry('simulator/set-equipment.ts', 'ArmySetGear').code, vmContext);
+nativeGlobals.applyArmySetEquipment = nativeGlobals.ArmySetGear.applyArmySetEquipment;
 // Evaluate the native builder without mounting simulator UI. Fail explicitly if
 // these function boundaries move so a future refactor cannot silently use a stub.
 const runtimeSource = fs.readFileSync(path.join(repositoryRoot, 'src/client/simulator/runtime.ts'), 'utf8');
@@ -77,7 +82,7 @@ nativeGlobals.sandbox = {
 };
 const builds: FactionBuild[] = [];
 for (const factionKey of Object.keys(nativeGlobals.I).filter(factionKey => !nativeGlobals.I[factionKey].novice)) {
-  const profile = nativeScope.battleProfile({ team: 'song', faction: factionKey, level: 150, strength: 'normal', count: 1, equipped: true });
+  const profile = nativeScope.battleProfile({ team: 'song', faction: factionKey, level: 150, strength: 'normal', count: 1, equipped: true, equipmentKind, skillTier });
   nativeGlobals.o = profile;
   builds.push({ faction: factionKey, name: nativeGlobals.I[factionKey].n, profile, stats: nativeScope.j0() });
 }
