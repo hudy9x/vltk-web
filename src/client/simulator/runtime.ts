@@ -1,3 +1,5 @@
+import { skillDefense, statusDuration } from './defense';
+import { BATTLEFIELD_PVP_DAMAGE } from './balance';
 import { soldierSkin } from './soldiers';
 import { createWarRewards, WAR_ITEMS } from './war-rewards';
 import { createRoadMonsters } from './road-monsters';
@@ -40,7 +42,7 @@ declare function J3(): boolean;
 declare function ma(id: number | string): unknown;
 declare function j2(id: number): number;
 declare function Kr(faction: Faction): [number, number];
-declare var cw: number, Jr: number, Qa: number, Jn: number;
+declare var cw: number, Jr: number, Qa: number, Jn: number, ve: number;
 declare var ja: (base: number, kind: string, from: number, to: number, res: Record<string, number>, cap: number, series: number) => number;
 declare var Z: (lo: number, hi: number) => number;
 declare var Pe: (attack: number, defense: number, ignore?: number) => number;
@@ -121,11 +123,18 @@ export function createSimulator() {
     return result;
   };
   let battlefield: ReturnType<typeof createBattlefield> | undefined;
+  // Local Tống Kim balance parameter, not an asserted original-VLTK formula.
+  function pvpDamageScale(source: LegacyEntity, target: LegacyEntity): number {
+    const fighter = (actor: LegacyEntity) => !actor.battlefieldBoss && !actor.battlefieldMonster &&
+      (actor.arenaSim || actor.battlefieldPlayer || actor === battlefieldHero);
+    return battlefield?.active && fighter(source) && fighter(target) ? BATTLEFIELD_PVP_DAMAGE : 1;
+  }
   const originalHit = hs;
   hs = function (skill, target) {
     if (battlefield?.active && !battlefield.canHit(v, target)) return 0;
     return capture(o.name, target, skill, () => {
       const before = target.hp, poisonBefore = (target.poison || 0) * (target.poisonDmg || 0);
+      const statusBefore = { poison: target.poison || 0, slow: target.slowT || 0, stun: target.stun || 0 };
       step("Đầu vào nhân vật gây sát thương", { faction: o.fac, level: o.lvl, attr: o.attr, stats: statsSnapshot(l.P), target: { defense: target.def, resistance: target.res, series: target.series, hp: before } });
       // Boss resistance is an effective floor AFTER penetration and elemental adjustment.
       const boss = battlefield?.active && target.battlefieldBoss;
@@ -136,16 +145,31 @@ export function createSimulator() {
         target.res = Object.fromEntries(Object.keys(resistance).map(key => [key, Math.max(floor, resistance[key]) + Math.max(0, -(curseResistance?.[key] || 0))]));
         l.P.anti = {}; l.P.antiMax = 0; target.resBrkT = 0;
       }
+      const scale = pvpDamageScale(v, target), flat = l.P.series5, proxy = target.hurtProxy;
+      const defendedSim = battlefield?.active && target.arenaSim && !target.battlefieldBoss;
+      if (defendedSim) target.hurtProxy = true;
       let result;
-      try { result = originalHit(boss ? { ...skill, series5: 0 } : skill, target); }
-      finally { if (boss) { target.res = resistance; l.P.anti = anti; l.P.antiMax = antiMax; target.resBrkT = breakTime; } }
+      try {
+        if (scale !== 1) step("Hệ số sát thương PvP Tống Kim trước kháng", { scale, parts: skill.parts, seriesFlat: flat || 0 });
+        l.P.series5 = (flat || 0) * scale;
+        const ability = scale === 1 ? skill : { ...skill, parts: Object.fromEntries(Object.entries(skill.parts).map(([kind, damage]) => [kind, damage * scale])) };
+        result = originalHit(boss ? { ...ability, series5: 0 } : ability, target);
+      }
+      finally { target.hurtProxy = proxy; l.P.series5 = flat; if (boss) { target.res = resistance; l.P.anti = anti; l.P.antiMax = antiMax; target.resBrkT = breakTime; } }
       if (battlefield?.active && target.arenaSim && !target.battlefieldBoss) {
         const defender = target as SimulatorActor, defense = defender.stats;
-        let loss = Math.max(0, before - defender.hp);
-        loss -= Math.min(defense.dmgShield || 0, loss * Jr);
-        loss *= Math.max(0, 1 - (defense.sorb || 0) / 100) * Math.max(0, 1 - (defense.from?.[v.series] || 0) / 100);
-        const mana = Math.min(defender.mana, loss * (defense.manaShield || 0) / 100);
-        defender.mana -= mana; defender.hp = Math.max(0, before - loss + mana);
+        const resolved = skillDefense(Math.max(0, before - defender.hp), defense, defender.mana, v.series, Jr);
+        defender.mana = resolved.mana; defender.hp = Math.max(0, before - resolved.damage);
+        // Reduce only the newly applied poison, preserving an existing poison pool.
+        const addedPoison = Math.max(0, (defender.poison || 0) * (defender.poisonDmg || 0) - poisonBefore);
+        const seconds = statusDuration(skill.poisonT || (typeof ve !== 'undefined' ? ve : 4), defense.poisonRed);
+        const duration = Math.max(statusBefore.poison, addedPoison > 0 ? seconds : 0);
+        defender.poison = duration;
+        defender.poisonDmg = duration > 0 ? (poisonBefore + statusDuration(addedPoison, defense.poisonRed)) / duration : 0;
+        defender.slowT = Math.max(statusBefore.slow, statusDuration(defender.slowT || 0, defense.freezeRed));
+        defender.stun = Math.max(statusBefore.stun, statusDuration(defender.stun || 0, defense.stunRed));
+        if (!(skill.parts.cold > 0)) applyActorHurt(defender, resolved.damage, defender.max);
+        step("Phòng thủ SIM sau kháng: khiên → hấp thụ → hồi MP → nội lực hộ thân", resolved);
       }
       if (before > target.hp || (target.poison || 0) * (target.poisonDmg || 0) > poisonBefore) recordBattlefieldHit(v,target);
       step("HP thực mất = max(0, min(HP trước, HP trước − HP sau))", { before, after: target.hp, actualLoss: Math.max(0, Math.min(before, before - target.hp)), returnedDamage: result, poisonDps: target.poisonDmg || 0, poisonSeconds: target.poison || 0 });
@@ -184,7 +208,7 @@ export function createSimulator() {
     l = Object.assign({}, world, { P: actor.battlefieldBoss && loadout ? { ...loadout.stats, life: actor.max } : loadout?.stats || actor.stats || world.P, life: actor.hp, mana: actor.mana, sim: true, quiet,
       buffs: {}, skCd: {}, look: null, jx: null, ignoreEqt: null, buffAssume: true });
     try { return action(); }
-    finally { actor.hp = l.life; actor.mana = actor.stats.mana; o = player; l = world; v = hero; }
+    finally { actor.hp = l.life; actor.mana = actor.battlefieldTeam && !actor.battlefieldBoss ? l.mana : actor.stats.mana; o = player; l = world; v = hero; }
   }
   function equipSkill(profile: SimulatorProfile, id: SkillId) {
     if (profile.battlefieldBuild) return;
@@ -328,14 +352,9 @@ export function createSimulator() {
       // hs supplies the shared skill/accuracy/resistance calculation. Apply the
       // player's absorption and mana shield using the same order as U9.
       capture(actor.n, { n: receiver.n }, { n: "PK · phòng thủ sau sát thương kỹ năng" }, () => {
-        const raw = damage;
-        const shield = Math.min(defense.dmgShield || 0, damage * Jr);
-        damage -= shield;
-        damage *= 1 - (defense.sorb || 0) / 100;
-        damage *= 1 - ((defense.from && defense.from[actor.series]) || 0) / 100;
-        const mana = Math.min(world.mana, damage * (defense.manaShield || 0) / 100);
-        world.mana -= mana; damage -= mana;
-        step("PK: (kỹ năng − min(khiên, damage × Jr)) × (1 − sorb/100) × (1 − from/100) − khiên mana", { raw, shield, sorb: defense.sorb || 0, from: (defense.from && defense.from[actor.series]) || 0, manaAbsorbed: mana, damage, hpBefore: world.life, hpAfter: Math.max(0, world.life - damage) });
+        const resolved = skillDefense(damage, defense, world.mana, actor.series, Jr);
+        world.mana = resolved.mana; damage = resolved.damage;
+        step("PK sau kháng: khiên → hấp thụ → hồi MP → nội lực hộ thân", resolved);
         world.life = Math.max(0, world.life - damage);
         // The disposable receiver has no hurt state; preserve cold-only movement semantics here too.
         if (!(skill.parts.cold > 0)) applyActorHurt(hero, damage, defense.life);
@@ -424,8 +443,13 @@ export function createSimulator() {
   }
   function tickActor(actor: SimulatorActor, dt: number) {
     if (battlefield?.active && actor.target === battlefieldHero && !battlefield.canHit(actor,battlefieldHero)) { actor.target=null; actor.moving=false; }
-    actor.mana = actor.stats.mana;
-    if (actor.stun > 0) { actor.stun = Math.max(0, actor.stun - dt); return; }
+    actor.resBrkT = Math.max(0, (actor.resBrkT || 0) - dt);
+    if (actor.battlefieldTeam && !actor.battlefieldBoss) {
+      actor.hp = Math.min(actor.max, actor.hp + (actor.stats.regen || 0) * dt);
+      actor.mana = Math.min(actor.stats.mana, actor.mana + (actor.stats.manaRegen || 0) * dt);
+    } else actor.mana = actor.stats.mana;
+    const stunned = actor.stun > 0;
+    actor.stun = Math.max(0, (actor.stun || 0) - dt);
     const speed = coldSpeedFactor(actor);
     actor.slowT = Math.max(0, (actor.slowT || 0) - dt);
     if (actor.poison > 0) {
@@ -435,6 +459,7 @@ export function createSimulator() {
       capture("Độc", actor, { n: "DoT SIM" }, () => step("DoT = DPS × min(dt, giây còn lại)", { dps: actor.poisonDmg, duration, before, after: actor.hp }));
       if (actor.hp <= 0) return;
     }
+    if (stunned) { actor.moving = false; return; }
     actor.cooldown = Math.max(0, actor.cooldown - dt * speed);
     if (actorActionLocked(actor)) { actor.moving = false; return; }
     const targets = availableTargets(actor);
@@ -452,7 +477,11 @@ export function createSimulator() {
       actor.battlefieldLoadout = deck[actor.battlefieldDeckIndex];
     }
     const loadout = actor.battlefieldLoadout as { profile: SimulatorProfile; stats: SimulatorStats } | undefined;
-    const skill = loadout?.stats.main || actor.stats.main;
+    const preferred = loadout?.stats.main || actor.stats.main;
+    const recovering = actor.battlefieldTeam && !actor.battlefieldBoss && !preferred.costLife && actor.mana < (preferred.cost || 0);
+    // Keep fighting with the equipped weapon while MP recovers, rather than
+    // standing still until the expensive primary skill is affordable again.
+    const skill = recovering ? actor.stats.basic : preferred;
     const reach = skill.geo?.k === "self" ? skill.geo.r || skill.rad : skill.rad;
     const distance = () => Math.max(0, skillCastDistance(actor, target) - (target.r || 12) / QA);
     actor.dir = kn(target.x - actor.x, target.y - actor.y);
@@ -482,8 +511,10 @@ export function createSimulator() {
     if (distance() > reach + 4 || !actor.see || actor.cooldown > 0) return;
     const cost = skill.cost || 0;
     if (skill.costLife && actor.hp <= cost) { actor.waiting = "Chưa đủ sinh lực để ra chiêu"; return; }
-    actor.waiting = "";
+    if (actor.battlefieldTeam && !actor.battlefieldBoss && !skill.costLife && actor.mana < cost) { actor.waiting = "Chờ hồi nội lực để ra chiêu"; return; }
+    actor.waiting = recovering ? "Đánh thường trong lúc hồi nội lực" : "";
     if (skill.costLife) actor.hp -= cost;
+    else if (actor.battlefieldTeam && !actor.battlefieldBoss) actor.mana -= cost;
     actor.cooldown = Math.max(1 / Math.max(.1, skill.rate || 1), skill.cd || 0);
     const token = actor.generation;
     castSimulatorSkill(actor, target, skill,
@@ -855,6 +886,6 @@ export function createSimulator() {
   const battlePanel = mountBattlefieldPanel(battlefield, Object.values(I), D, warRewards);
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { battlefield, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  return { battlefield, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }
