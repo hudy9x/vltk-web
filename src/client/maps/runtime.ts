@@ -89,21 +89,29 @@ export function createNavigationRuntime(actionLocked: (actor: MovingActor) => bo
   function moveWithFlow(actor: MovingActor, x: number, y: number, distance: number): void {
     if (actionLocked(actor)) return;
     const grid = state.g;
-    if (!grid || (Math.hypot(x - actor.x, y - actor.y) < 260 && clear(actor.x, actor.y, x, y))) {
+    // Preserve the current lane whenever the whole segment is walkable.
+    // Equal-cost BFS diagonals otherwise drift a straight march toward obstacle edges.
+    if (!grid || clear(actor.x, actor.y, x, y)) {
       stepToward(actor, { x, y }, distance); return;
     }
     const field = distances(x, y);
     if (!field) return;
     const col = clamp(Math.floor(actor.x / grid.cw), 0, grid.gw - 1), row = clamp(Math.floor(actor.y / grid.ch), 0, grid.gh - 1);
-    let best = field[row * grid.gw + col], nx = col, ny = row;
+    const current = field[row * grid.gw + col];
+    let best = current, goalDistance = Infinity, nx = col, ny = row;
     if (best >= 0) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const px = col + dx, py = row + dy;
       if ((!dx && !dy) || px < 0 || py < 0 || px >= grid.gw || py >= grid.gh) continue;
       const value = field[py * grid.gw + px];
-      if (value < 0 || value >= best || (dx && dy && (!grid.ok[row * grid.gw + px] || !grid.ok[py * grid.gw + col]))) continue;
-      best = value; nx = px; ny = py;
+      const cx = (px + 0.5) * grid.cw, cy = (py + 0.5) * grid.ch;
+      const remaining = Math.hypot(x - cx, y - cy);
+      if (value < 0 || value >= current || value > best || (value === best && remaining >= goalDistance) ||
+          !canStand(cx, cy) || (dx && dy && (!grid.ok[row * grid.gw + px] || !grid.ok[py * grid.gw + col]))) continue;
+      best = value; goalDistance = remaining; nx = px; ny = py;
     }
+    const beforeX = actor.x, beforeY = actor.y;
     stepToward(actor, nx === col && ny === row ? { x, y } : { x: (nx + 0.5) * grid.cw, y: (ny + 0.5) * grid.ch }, distance);
+    if (Math.hypot(actor.x - beforeX, actor.y - beforeY) < 0.001 && distance > 0) moveAlongPath(actor, x, y, distance);
   }
   return { bounds, state, flowCache: flow.cache, load, clampPosition, resolvePosition, selectIsland,
     walkable, canStand, nearest, clear, sight, path, distances, cell, tryMove, moveAlongPath, moveWithFlow,

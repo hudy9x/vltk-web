@@ -351,6 +351,8 @@ var j0 = function (A, trace) {
         }
     }
   }
+  if (!l.sim && typeof arenaSimulator !== "undefined" && arenaSimulator && typeof arenaSimulator.applyBattlefieldBonuses === "function")
+    arenaSimulator.applyBattlefieldBonuses(u);
   u.actives = [];
   const $0 = [],
     I0 = Xr();

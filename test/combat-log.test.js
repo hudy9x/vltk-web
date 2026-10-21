@@ -58,8 +58,8 @@ test('copy exports all filtered events without skill names; clear removes both d
 });
 
 test('the real player poison tick records its fractional HP loss as incoming damage',()=>{
- const s=game();Object.assign(s.l,{P:{life:100,mana:100,regen:0,manaRegen:0},mana:100,town:true,hpDotT:1,hpDot:10});
- for(const name of ['$w','Sb','advanceSkillContacts','advanceConsumableCooldowns','X9','nP','Ab','cb','Oy','Gv'])s[name]=()=>{};
+ const s=game();s.v={x:0,y:0};Object.assign(s.l,{P:{life:100,mana:100,regen:0,manaRegen:0},mana:100,town:true,hpDotT:1,hpDot:10});
+ for(const name of ['$w','Sb','advanceSkillContacts','advanceConsumableCooldowns','X9','nP','Ab','cb','Oy','Gv','showDamageNumber'])s[name]=()=>{};
  const acorn=require('acorn'),text=fs.readFileSync(path.join(__dirname,'../src/client/core/state-and-save-02.js'),'utf8');
  const node=acorn.parse(text,{ecmaVersion:'latest'}).body.find(n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>d.id.name==='Td'));
  vm.runInContext(text.slice(node.start,node.end),s);s.Td(.25);

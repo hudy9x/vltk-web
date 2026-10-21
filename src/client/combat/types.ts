@@ -165,6 +165,8 @@ export type ContactEffect = ContactVisual & {
   contactHits: Set<CombatTarget>;
 };
 export interface CombatWorld {
+  /** The local battlefield continues simulating while the player is respawning. */
+  battlefield?: boolean;
   slowT?: number;
   slowPower?: number;
   moveTo?: CombatTarget | null;

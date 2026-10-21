@@ -15,6 +15,7 @@ var Td = function (A) {
   const n = l.P;
   if (typeof combatSandbox !== "undefined" && combatSandbox) combatSandbox.tick(A);
   advanceSkillContacts(A);
+  if (typeof arenaSimulator !== "undefined" && arenaSimulator && arenaSimulator.battlefield.active && !arenaSimulator.battlefield.running) return;
   if (l.deadT > 0) {
     ((l.deadT -= A),
       l.deadT <= 0 && ((l.life = n.life), (l.mana = n.mana), (o.wave = 1), Ga() || o8()));
@@ -216,6 +217,7 @@ var lD = function () {
 };
 
 var dD = function () {
+  if (typeof arenaSimulator !== "undefined" && arenaSimulator && arenaSimulator.battlefield.running) { arenaSimulator.battlefield.playerDied(); return; }
   if (
     (l.enemies.some((A) => A.goldBoss && !A.dead) && (Q().gbT = Hh),
     (l.deadT = 3),
@@ -540,7 +542,8 @@ var ED = {
 
 var Ot = (s) => (ED[s.kind] || [])[s.tier] || s.price;
 
-var _1 = () => l.enemies.filter((s) => s.hp > 0);
+var _1 = () => l.enemies.filter((s) => s.hp > 0 && !s.dead &&
+  !(typeof arenaSimulator !== "undefined" && arenaSimulator && arenaSimulator.battlefield.active && !arenaSimulator.battlefield.canHit(v, s)));
 
 var SD = 160;
 

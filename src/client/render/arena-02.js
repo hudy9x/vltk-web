@@ -57,6 +57,7 @@ var NP = function (A) {
       n.fillText(a.it.n, a.x, a.y - 28)),
       (n.globalAlpha = 1));
   }
+  if (typeof arenaSimulator !== "undefined" && arenaSimulator && typeof arenaSimulator.drawBattlefieldLoot === "function") arenaSimulator.drawBattlefieldLoot(n);
   typeof qm == "function" && qm(n, A);
   for (const a of l.corpses) {
     a.actT += A;
@@ -148,7 +149,7 @@ var NP = function (A) {
         v.x,
         x,
         `${o.name || (I[o.fac] && I[o.fac].n) || ""}${o.name && typeof Rh == "function" ? Rh(o.name) : ""}${hf({ slowT: l.slowT, poison: l.hpDotT, stun: l.stunT })}`,
-        typeof o2 == "function" ? o2(o.name, o.fac) : Ps.hero,
+        l.battlefield && typeof arenaSimulator !== "undefined" && arenaSimulator ? (arenaSimulator.battlefield.state.team === "song" ? "#ffcc00" : "#c77bff") : typeof o2 == "function" ? o2(o.name, o.fac) : Ps.hero,
         12,
         l.life / Math.max(1, l.P.life),
         "#4fd04f",
@@ -224,7 +225,7 @@ var NP = function (A) {
       d,
       GP(a) + (crowd.counts.has(a) ? ` ×${crowd.counts.get(a)}` : "") +
         (typeof combatSandbox !== "undefined" && combatSandbox ? combatSandbox.healthLabel(a) : ""),
-      a.goldBoss ? Ps.gold : Ps[a.cls] || Ps.normal,
+      a.battlefieldTeam === 'song' ? '#ffcc00' : a.battlefieldTeam === 'jin' ? '#c77bff' : a.goldBoss ? Ps.gold : Ps[a.cls] || Ps.normal,
       a.cls === "boss" ? 12 : 11,
       a.hp / a.max,
       a.cls === "boss" ? "#ff5030" : "#e03a2a",

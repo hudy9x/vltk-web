@@ -1,0 +1,9 @@
+{
+  "routes": [1152, 1792, 2432],
+  "roadHalfHeight": 176,
+  "bridgeHalfHeight": 208,
+  "leftBank": 1632,
+  "rightBank": 1952,
+  "leftEntry": 1504,
+  "rightEntry": 2080
+}
