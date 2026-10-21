@@ -482,7 +482,7 @@ var FB = () =>
       ([s, A]) =>
         `<button class="it r1 mi" data-mi="${s}" title="${D(rt(s))}"><img src="${A}" alt=""><i>${N("misc", s)}</i></button>`,
     )
-    .join("");
+    .join("") + (typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.warInventory.html() : "");
 
 var dt = !1;
 

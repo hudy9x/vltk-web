@@ -22,3 +22,5 @@ Giới hạn: một bộ đồ và một chiêu chính 90 cho mỗi phái; khôn
 `armies.ts` là smoke test 20/40/100 SIM với build native, chạy 30 giây, kiểm tra HP/MP hữu hạn và MP không âm. Không có hồi sinh, boss/binh sĩ/người chơi; không thay thế kiểm thử đầy đủ một trận 20 phút.
 
 `simulation.ts` khởi tạo runtime dùng chung cho đấu đôi và đội quân; `legacy-runtime.ts` cô lập việc nạp các khai báo JS native. `types.ts` định nghĩa dữ liệu build/kết quả. Tên ngắn như `l`, `o`, `T` chỉ được giữ ở ranh giới VM để tương thích code game gốc, không dùng làm tên biến điều phối mới.
+
+Kiểm tra build trang bị/chiêu mới: `node tools/sim-balance/profiles.ts /tmp/tk-gold-150 gold 150` hoặc thay `gold` bằng `thientu`. Mặc định vẫn là `blue 90`. Mỗi cấu hình nên dùng thư mục kết quả riêng.

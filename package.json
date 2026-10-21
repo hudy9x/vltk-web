@@ -17,8 +17,8 @@
     "db:reset": "node tools/reset-db.js",
     "assets:repair": "node tools/download-assets.js --existing",
     "assets:download": "node tools/download-assets.js",
-    "test": "node --test --test-concurrency=1 test/*.test.js",
-    "typecheck": "node -e \"require('./tools/maps/catalog.ts').syncMapCatalog('src/client')\" && tsc --noEmit && tsc --project tsconfig.server.json --noEmit"
+    "test": "node --test --test-concurrency=1 test/*.test.js test/*.test.ts",
+    "typecheck": "node -e \"require('./tools/maps/catalog.ts').syncMapCatalog('src/client')\" && tsc --noEmit && tsc --project tsconfig.server.json --noEmit && tsc --project tsconfig.tests.json --noEmit"
   },
   "devDependencies": {
     "@jridgewell/sourcemap-codec": "1.6.0",

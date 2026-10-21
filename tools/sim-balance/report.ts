@@ -16,7 +16,7 @@ for (const build of profiles.builds) {
   assert.equal(build.profile.attrPts, 0);
   assert.equal(build.profile.skPts, 0);
   assert.equal(Object.values(build.profile.eq).length, 10);
-  assert.ok(Object.values(build.profile.eq).every(item => item.mag.length === 5));
+  assert.ok(Object.values(build.profile.eq).every(item => item.set ? item.mag.length > 0 : item.mag.length === 5));
 }
 const results = distanceDatasets.flatMap(dataset => dataset.results.map(duel => ({ ...duel, distance: dataset.config.distance })));
 const summary = distanceDatasets.map(dataset => {

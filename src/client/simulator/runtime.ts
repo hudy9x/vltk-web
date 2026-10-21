@@ -1,3 +1,7 @@
+import { createWarSupplies, SUPPLY_RADIUS } from './supplies';
+import { createWarInventory } from './war-inventory';
+import { applyArmySetEquipment } from './set-equipment';
+import { SOLDIER_DETECTION_RADIUS, SOLDIER_LEASH_RADIUS, soldierRank } from './soldier-rules';
 import { skillDefense, statusDuration } from './defense';
 import { BATTLEFIELD_PVP_DAMAGE } from './balance';
 import { soldierSkin } from './soldiers';
@@ -34,11 +38,23 @@ declare var Z0: LegacyRecord;
 declare var k0: LegacyRecord[];
 declare var z2: number;
 declare var mapNavigation: { clear(x: number, y: number, tx: number, ty: number): boolean };
-declare var equipmentTrader: { blueCatalog(sex: number): LegacyRecord[]; affixes(item: LegacyRecord, series: number, index: number): LegacyRecord[] };
+declare var equipmentTrader: { blueCatalog(sex: number): LegacyRecord[]; goldCatalog(faction: string): {key: string; items: LegacyRecord[]}[]; affixes(item: LegacyRecord, series: number, index: number): LegacyRecord[] };
 declare var G5: Record<string, string[]>, V2: Record<number, number>;
 declare function yf(): LegacyRecord;
 declare function N8(): LegacyRecord | null;
 declare function J3(): boolean;
+declare var S: LegacyRecord, R: boolean;
+declare var X9: (dt: number) => void, Ms: (kind: 'life' | 'mana') => void;
+declare var be: Record<number, number>, ao: number;
+declare function applyPotionRecovery(world: SimulatorWorld, kind: 'life' | 'mana', potion: LegacyRecord): void;
+declare function Ta(kind: string, template: LegacyRecord, quality: number): LegacyRecord;
+declare function g3(name: string): LegacyRecord | null;
+declare function os(item: LegacyRecord): void;
+declare function J(html: string, ready?: () => void): void;
+declare function m(selector: string): HTMLElement;
+declare function n0(close?: boolean): void;
+declare function An(): void;
+declare function k(message: string): void;
 declare function ma(id: number | string): unknown;
 declare function j2(id: number): number;
 declare function Kr(faction: Faction): [number, number];
@@ -56,6 +72,7 @@ declare function j1(skill: LegacyRecord): number | null;
 declare function _A(kind: number, weapon: number, level: number, rarity: number, series?: number): LegacyRecord | null;
 declare function X0(x: number, y: number): [number, number];
 declare function n1(id: SkillId, level: number, rarity: string, x: number, y: number): LegacyEntity;
+declare function p0(item: LegacyRecord): boolean;
 declare function j5(): unknown;
 declare function Pt(): unknown;
 declare function yt(): unknown;
@@ -389,20 +406,22 @@ export function createSimulator() {
     if (!monster.battlefieldMonster) return nearestArenaTarget.call(sandbox,monster);
     if (!battlefield?.running) return null;
     const home = monster.battlefieldHome;
-    if (home && Math.hypot(monster.x-home.x,(monster.y-home.y)*2) > 900) return null;
+    if (home && Math.hypot(monster.x-home.x,(monster.y-home.y)*2) > SOLDIER_LEASH_RADIUS) return null;
     const candidates: LegacyEntity[] = actors.filter(actor => !actor.dead && actor.hp > 0);
     if (battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0)) candidates.push(battlefieldHero);
     const distance = (target: LegacyEntity) => Math.hypot(target.x-monster.x,(target.y-monster.y)*2);
     candidates.push(...roadMonsters.actors.filter(target => target !== monster && !target.dead && target.hp>0));
-    return candidates.filter(target => battlefield!.canHit(monster,target) && distance(target) < 800).sort((a,b) => distance(a)-distance(b))[0] || null;
+    return candidates.filter(target => battlefield!.canHit(monster,target) && distance(target) < SOLDIER_DETECTION_RADIUS).sort((a,b) => distance(a)-distance(b))[0] || null;
   };
   const roadMonsters = createRoadMonsters({
     create(index, x, y) {
       const team = x < 1792 ? 'song' : 'jin';
       const id = soldierSkin(r0,team,index);
       const [px,py] = X0(x,y), monster = n1(id,120,'normal',px,py);
-      const maximum = Math.max(900_000, monster.max || 0);
-      Object.assign(monster, { battlefieldMonster: true, battlefieldTeam: team, arenaMonster: true, n: (team === 'song' ? 'Tống · Giáp binh · ' : 'Kim · Sơn tặc · ') + r0[id].n,
+      const rank = soldierRank(index);
+      const maximum = Math.max(rank.minimumHP, monster.max || 0);
+      Object.assign(monster, { battlefieldMonster: true, battlefieldTeam: team, arenaMonster: true, n: `${team === 'song' ? 'Tống' : 'Kim'} · ${rank.name} · ${r0[id].n}`, battlefieldRank: rank.name,
+        cd: Math.max(.25, (monster.cd || 1) * rank.attackIntervalFactor), spd: (monster.spd || 40) * rank.movementFactor,
         hp: maximum, max: maximum, nativeDamage: monster.dmg, dmg: sandbox.oneDamage ? 1 : monster.dmg, battlefieldHome: { x:px, y:py } });
       delete monster.home; l.enemies.push(monster); return monster;
     },
@@ -410,7 +429,7 @@ export function createSimulator() {
     cancel: cancelRoadMonster,
     remove(actor) { cancelRoadMonster(actor); l.enemies = l.enemies.filter(enemy => enemy !== actor); l.corpses = (l.corpses || []).filter((corpse: LegacyEntity) => corpse !== actor); },
     tick(actor,dt) {
-      const home = actor.battlefieldHome, returning = Math.hypot(actor.x-home.x,(actor.y-home.y)*2) > 900;
+      const home = actor.battlefieldHome, returning = Math.hypot(actor.x-home.x,(actor.y-home.y)*2) > SOLDIER_LEASH_RADIUS;
       // Native ticking still expires poison/cold/stun while the leash suppresses targets.
       monsterTick(actor,dt);
       if (returning && actor.hp > 0 && !actorActionLocked(actor)) { actor.moving = true; Mw(actor,home.x,home.y,actor.spd*coldSpeedFactor(actor)*dt); }
@@ -768,7 +787,8 @@ export function createSimulator() {
       }
     }
     const active = eligible.filter(id => UA(T[id]));
-    const preferred = active.filter(id => T[id].tier === 90);
+    const preferred = active.filter(id => T[id].tier === (build.skillTier || 90));
+    if (!boss && build.skillTier === 150 && !preferred.length) throw new Error('Cấp hiện tại chưa dùng được chiêu 150 của môn phái này.');
     const selected = main || preferred[Math.floor(Math.random() * preferred.length)] || active[0];
     // Unarmed builds use the game's basic attack, which has no weapon requirement.
     profile.main = build.equipped === false ? 'basic' : selected || 'basic';
@@ -781,11 +801,28 @@ export function createSimulator() {
         const code = selected ? j1(T[selected]) : null;
         const weapon: [number, number] = code === null ? Kr(I[faction]) : [code >= 100 ? 1 : 0, code >= 100 ? code - 100 : code === -1 ? 6 : code];
         profile.eq = createArmyEquipment(equipmentTrader, { sex: profile.sex || 0, level: build.level, factionId: Number((I[faction] as unknown as LegacyRecord).id), series: I[faction].series || 0, weapon, points: profile.attrPts, enh: power.enh, strength: build.strength }, G5, V2);
+        if (!boss && build.equipmentKind && build.equipmentKind !== 'blue') {
+          const findThienTuTemplate = (name: string) => {
+            const template = g3(name);
+            return template && /^\[Thiên Tứ\]/iu.test(template.n) ? template : null;
+          };
+          profile.eq = applyArmySetEquipment({ goldCatalog: factionKey => equipmentTrader.goldCatalog(factionKey), canUpgrade: template => !!findThienTuTemplate(template.n),
+            make(template, kind) {
+              const nativeTemplate = kind === 'gold' ? template : findThienTuTemplate(template.n);
+              if (!nativeTemplate) return null;
+              const item = Ta(kind === 'gold' ? 'gold' : 'platina', nativeTemplate, 10);
+              Object.assign(item, { lock: true, enh: power.enh });
+              if (kind === 'thientu') { Object.assign(item, { plv:0, pv2:1, pv3:1 }); os(item); }
+              return item;
+            },
+          }, profile.eq, { faction, sex:profile.sex || 0, level:build.level, weapon, kind:build.equipmentKind });
+        }
       }
       // Use the existing suggestion engines, after assigning gear so its requirements are met.
       if (typeof j5 === 'function') j5();
       if (!boss) Pt();
       yt();
+      if (build.equipmentKind && build.equipmentKind !== 'blue' && typeof p0 === 'function' && Object.values(profile.eq).some(item => !p0(item))) throw new Error('Chưa đủ điều kiện mặc bộ môn phái. Tăng level hoặc chọn đồ xanh.');
     } finally { o = player; l = world; }
     return profile;
   }
@@ -820,12 +857,54 @@ export function createSimulator() {
   // asSim swaps v/l synchronously; team identity must always refer to the real player.
   const battlefieldHero = v, battlefieldWorld = l;
   const warRewards = createWarRewards({ player: () => battlefieldHero, team: () => battlefield!.state.team,
-    running: () => !!battlefield?.running, alive: () => battlefieldWorld.life>0 && !(battlefieldWorld.deadT>0), changed: () => { battlefieldWorld.dirty=true; } });
+    running: () => !!battlefield?.running, alive: () => battlefieldWorld.life>0 && !(battlefieldWorld.deadT>0), changed: () => { battlefieldWorld.dirty=true; if(typeof R !== 'undefined')R=true; } });
+  const supplies = createWarSupplies({ running: () => !!battlefield?.running,
+    alive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
+    team: () => battlefield!.state.team, position: () => battlefieldHero,
+    changed: () => { if(typeof R !== 'undefined')R=true; },
+    recover(resource) {
+      if ((battlefieldWorld.potCd?.[resource] || 0) > 0) return false;
+      const potions = (S.potions || []).filter((potion: LegacyRecord) => potion.kind === resource && o.lvl >= (be[potion.tier] || 999));
+      const potion = potions.sort((first:LegacyRecord,second:LegacyRecord) => second.tier-first.tier)[0];
+      if (!potion || battlefieldWorld[resource] >= battlefieldWorld.P[resource]) return false;
+      applyPotionRecovery(battlefieldWorld, resource, potion);
+      battlefieldWorld.potCd ||= { life:0, mana:0 }; battlefieldWorld.potCd[resource] = ao;
+      return true;
+    },
+  });
+  const nativeManualPotion = typeof Ms === 'function' ? Ms : null;
+  Ms = function(resource) {
+    if (!battlefield?.active) { nativeManualPotion?.(resource); return; }
+    if (!supplies.use(resource)) k('Không dùng được bình. Hết bình hãy về điểm tập trung nhận tiếp tế.');
+  };
+  const nativeAutoPotion = typeof X9 === 'function' ? X9 : null;
+  X9 = function(dt) {
+    if (!battlefield?.active) { nativeAutoPotion?.(dt); return; }
+    if (o.potOff || !battlefield.running) return;
+    for (const resource of ['life','mana'] as const) {
+      const threshold = E((o[resource === 'life' ? 'potHp' : 'potMp'] ?? 50)/100,.05,.95);
+      const primarySkill = battlefieldWorld.P.main;
+      const needsCastingMana = resource === 'mana' && !primarySkill.costLife && battlefieldWorld.mana < (primarySkill.cost || 0)*2;
+      if (battlefieldWorld[resource] < battlefieldWorld.P[resource]*threshold || needsCastingMana) supplies.use(resource);
+    }
+  };
+  const warInventory = createWarInventory({ active: () => !!battlefield?.active, rewards: warRewards,
+    refresh: () => { R=true; An(); },
+    details(title, description, use) {
+      J(`<h3>${D(title)}</h3><p>${D(description)}</p><button class="btn" id="war-item-use">Sử dụng</button><button class="btn" id="war-item-close">Đóng</button>`, () => {
+        m('#war-item-use').onclick = () => { try { use(); n0(true); } catch(error) { k(errorMessage(error)); } };
+        m('#war-item-close').onclick = () => n0(true);
+      });
+    },
+  });
   function recordBattlefieldHit(source: LegacyEntity,target: LegacyEntity) { warRewards.record(source,target); }
   function applyBattlefieldBonuses(stats: LegacyRecord) { if (!l.sim && l.battlefield) warRewards.apply(stats); }
   function drawBattlefieldLoot(context: CanvasRenderingContext2D) {
     if (!battlefield?.active) return;
     context.save(); context.textAlign='center'; context.font='11px sans-serif';
+    const supplyCamp = CAMPS[battlefield.state.team];
+    context.fillStyle='#ffdf9788';context.beginPath();context.ellipse(supplyCamp.x,supplyCamp.y,SUPPLY_RADIUS,SUPPLY_RADIUS/2,0,0,Math.PI*2);context.strokeStyle='#ffdf97';context.stroke();
+    context.fillText('Điểm tập trung · Tiếp tế',supplyCamp.x,supplyCamp.y-55);
     for(const drop of warRewards.drops) {
       context.fillStyle='#0008';context.beginPath();context.ellipse(drop.x,drop.y+3,12,5,0,0,Math.PI*2);context.fill();
       context.fillStyle=WAR_ITEMS[drop.kind].color;context.beginPath();context.arc(drop.x,drop.y-8,7,0,Math.PI*2);context.fill();
@@ -850,10 +929,10 @@ export function createSimulator() {
       l.town = false; l.battlefield = true; o.ctrl = 'manual'; o.autoMap = false;
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = true;
       Object.assign(v, CAMPS[team]); l.life = l.P.life; l.mana = l.P.mana;
-      warRewards.reset(); roadMonsters.start();
+      warRewards.reset(); supplies.reset(true); roadMonsters.start();
     },
     leave() {
-      roadMonsters.clear(); warRewards.reset();
+      roadMonsters.clear(); warRewards.reset(); supplies.reset();
       if (!previousField) return;
       sandbox.clearCombat?.(false);
       ma(previousField.key); Object.assign(v, { x: previousField.x, y: previousField.y });
@@ -883,9 +962,9 @@ export function createSimulator() {
       l.corpses = (l.corpses || []).filter((corpse: LegacyEntity) => corpse !== actor);
     },
   });
-  const battlePanel = mountBattlefieldPanel(battlefield, Object.values(I), D, warRewards);
+  const battlePanel = mountBattlefieldPanel(battlefield, Object.values(I), D, warRewards, supplies);
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { battlefield, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  return { battlefield, supplies, warInventory, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }

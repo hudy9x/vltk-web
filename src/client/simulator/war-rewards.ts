@@ -46,7 +46,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     const player=host.player();
     for(let i=drops.length-1;i>=0;i--) {
       const drop=drops[i];
-      if(host.alive()&&Math.hypot(player.x-drop.x,(player.y-drop.y)*2)<=80) { inventory[drop.kind]++; drops.splice(i,1); }
+      if(host.alive()&&Math.hypot(player.x-drop.x,(player.y-drop.y)*2)<=80) { inventory[drop.kind]++; drops.splice(i,1); host.changed(); }
       else if(drop.expires<=elapsed)drops.splice(i,1);
     }
   }
