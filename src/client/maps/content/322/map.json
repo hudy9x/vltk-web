@@ -14,7 +14,7 @@
     {
       "id": "ground",
       "type": "ground",
-      "image": "./assets/a6f5e269-322.jpg"
+      "image": "./assets/ground.jpg"
     }
   ],
   "navigation": {

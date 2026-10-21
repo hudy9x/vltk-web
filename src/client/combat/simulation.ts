@@ -84,7 +84,7 @@ export function advanceSkillContacts(dt: number): void {
     for (const effect of pending) {
       const cast = effect.combat;
       const interrupted = cast.actionRevision != null && cast.actionRevision !== (cast.actor.actionRevision || 0) && cast.elapsed - dt < cast.windup;
-      effect.contactAlive = !interrupted && !l.town && !(l.deadT > 0) && cast.zone === l.zoneShown && advanceContactEffect(effect, dt);
+      effect.contactAlive = !interrupted && !l.town && (!(l.deadT > 0) || !!l.battlefield) && cast.zone === l.zoneShown && advanceContactEffect(effect, dt);
       if (effect.contactAlive) l.combatProjectiles.push(effect);
     }
     l.fx = l.fx.filter(effect => {

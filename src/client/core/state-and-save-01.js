@@ -926,10 +926,11 @@ var $d = function (A, n) {
       ((A.atkCd =
         A.cd * (A.curse && typeof Rn == "function" ? 1 + ((Rn(A) || {}).slow || 0) / 100 : 1)),
       queueSkillContact(A, e, { melee: !A.ranged, rad: A.reach || 90, parts: { phys: 1 } },
-        target => target === v ? U9(A) : target.arenaSim && typeof arenaSimulator !== "undefined" && arenaSimulator
+        target => target === v ? U9(A) : target.battlefieldMonster && typeof arenaSimulator !== "undefined" && arenaSimulator
+          ? arenaSimulator.receiveSoldierHit(target,A) : target.arenaSim && typeof arenaSimulator !== "undefined" && arenaSimulator
           ? arenaSimulator.receiveMonsterHit(target, A) : hB(target, A),
         { maxTargets: 1, targets: () => [e].filter(target => target === v ? l.life > 0 :
-          target.arenaSim ? l.enemies.includes(target) && !target.dead && target.hp > 0 : (l.allies || []).includes(target)), visual: () => {} }),
+          (target.arenaSim || target.battlefieldMonster) ? l.enemies.includes(target) && !target.dead && target.hp > 0 && (!A.battlefieldMonster || arenaSimulator.battlefield.canHit(A,target)) : (l.allies || []).includes(target)), visual: () => {} }),
       (A.act = "at"),
       (A.actT = 0),
       W3(A.animKey || r0[A.tid].anim, "at", 0.35)));

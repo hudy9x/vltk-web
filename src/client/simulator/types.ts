@@ -7,6 +7,7 @@ export interface Faction {
   key: string;
   n: string;
   novice?: boolean;
+  series?: number;
   skills: number[];
 }
 export interface SimulatorProfile extends LegacyRecord {
@@ -82,6 +83,7 @@ export interface SimulatorWorld extends CombatWorld, LegacyRecord {
 export interface SandboxAPI {
   createProfile(faction: Faction): SimulatorProfile;
   tick(dt: number): void;
+  clearCombat?(preserveSims?: boolean): void;
   readonly oneDamage: boolean;
 }
 export interface DiagnosticStep {

@@ -61,7 +61,8 @@ var b7 = function (A, n) {
   const e = Math.max(1, zi(A)),
     a = i6(A, e);
   if (!(a > 0)) return;
-  const i = l.enemies.filter((c) => !c.dead && c.hp > 0 && q0(v, c) <= t.rad);
+  // Aura damage bypasses hs(); use the same eligible targets as ordinary attacks.
+  const i = _1().filter((c) => q0(v, c) <= t.rad);
   if (!i.length) return;
   const r = F0();
   for (const c of i) {
@@ -80,6 +81,7 @@ var b7 = function (A, n) {
         75,
         l.P.series5 || 0,
       ) * ea();
+    if (h > 0 && typeof arenaSimulator !== "undefined" && arenaSimulator && typeof arenaSimulator.recordBattlefieldHit === "function") arenaSimulator.recordBattlefieldHit(v,c);
     if (
       (t.el === "poison" && !(c.poison > 0) && typeof Tt == "function" && Tt(c, "Độc", "#8fe34a"),
       t.el === "poison")

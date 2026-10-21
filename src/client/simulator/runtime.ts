@@ -1,3 +1,12 @@
+import { soldierSkin } from './soldiers';
+import { createWarRewards, WAR_ITEMS } from './war-rewards';
+import { createRoadMonsters } from './road-monsters';
+import { createArmyEquipment } from './equipment';
+import { createCrowdSteering } from './crowd';
+import { createBattlefieldApproach } from './approach';
+import { createBattlefield, BATTLE_MAP, CAMPS, ELEMENT_FACTIONS, estimateDPS } from './battlefield';
+import type { ArmyBuild } from './battlefield';
+import { mountBattlefieldPanel } from './battlefield-panel';
 import type { CombatTarget, CombatCast } from '../combat/types';
 import type { Faction, LegacyEntity, LegacyRecord, SandboxAPI, SimulatorActor, SimulatorProfile, SimulatorSkill, SimulatorStats, SimulatorWorld, SkillId } from './types';
 import { clone, createDiagnostics } from './diagnostics';
@@ -18,6 +27,19 @@ import type { SimulatorTemplate } from './types';
 declare var combatSandbox: SandboxAPI | null;
 declare var o: SimulatorProfile, l: SimulatorWorld, v: LegacyEntity;
 declare var I: Record<string, Faction>, T: Record<string, LegacyRecord>, r0: Record<string, LegacyRecord>;
+declare var MapsEngine: { getMapBackground(id: number): string };
+declare var Z0: LegacyRecord;
+declare var k0: LegacyRecord[];
+declare var z2: number;
+declare var mapNavigation: { clear(x: number, y: number, tx: number, ty: number): boolean };
+declare var equipmentTrader: { blueCatalog(sex: number): LegacyRecord[]; affixes(item: LegacyRecord, series: number, index: number): LegacyRecord[] };
+declare var G5: Record<string, string[]>, V2: Record<number, number>;
+declare function yf(): LegacyRecord;
+declare function N8(): LegacyRecord | null;
+declare function J3(): boolean;
+declare function ma(id: number | string): unknown;
+declare function j2(id: number): number;
+declare function Kr(faction: Faction): [number, number];
 declare var cw: number, Jr: number, Qa: number, Jn: number;
 declare var ja: (base: number, kind: string, from: number, to: number, res: Record<string, number>, cap: number, series: number) => number;
 declare var Z: (lo: number, hi: number) => number;
@@ -26,11 +48,13 @@ declare var hs: (skill: SimulatorSkill, target: LegacyEntity) => number;
 declare var U9: (attacker: LegacyEntity) => unknown;
 declare var $d: (monster: LegacyEntity, dt: number) => unknown;
 declare var combatLog: { registerSimulatorLog?(provider: SimulatorLogProvider): void; record(type: string, target: LegacyEntity | string, amount: number, detail?: string, outcome?: string): void } | null;
+declare function Rn(target: LegacyEntity): LegacyRecord | null;
 declare function y1(from: number, to: number): boolean;
 declare function j1(skill: LegacyRecord): number | null;
-declare function _A(kind: number, weapon: number, level: number, rarity: number): LegacyRecord | null;
+declare function _A(kind: number, weapon: number, level: number, rarity: number, series?: number): LegacyRecord | null;
 declare function X0(x: number, y: number): [number, number];
 declare function n1(id: SkillId, level: number, rarity: string, x: number, y: number): LegacyEntity;
+declare function j5(): unknown;
 declare function Pt(): unknown;
 declare function yt(): unknown;
 declare function j0(): SimulatorStats;
@@ -60,6 +84,8 @@ const errorMessage = (error: unknown): string => error instanceof Error ? error.
 export function createSimulator() {
   if (typeof combatSandbox === "undefined" || !combatSandbox) return null;
   const sandbox = combatSandbox;
+  const battlefieldApproach = createBattlefieldApproach();
+  const crowd = createCrowdSteering();
   let sim: SimulatorActor | null = null, nextSimId = 0, refreshTime = 0;
   const actors: SimulatorActor[] = [];
   const templateStore = createTemplateStore(localStorage);
@@ -94,18 +120,41 @@ export function createSimulator() {
     step("Tỉ lệ trúng Pe(AR, phòng thủ, bỏ qua phòng thủ) (%)", { attack, defense, ignore: ignore || 0, result });
     return result;
   };
+  let battlefield: ReturnType<typeof createBattlefield> | undefined;
   const originalHit = hs;
   hs = function (skill, target) {
+    if (battlefield?.active && !battlefield.canHit(v, target)) return 0;
     return capture(o.name, target, skill, () => {
-      const before = target.hp;
+      const before = target.hp, poisonBefore = (target.poison || 0) * (target.poisonDmg || 0);
       step("Đầu vào nhân vật gây sát thương", { faction: o.fac, level: o.lvl, attr: o.attr, stats: statsSnapshot(l.P), target: { defense: target.def, resistance: target.res, series: target.series, hp: before } });
-      const result = originalHit(skill, target);
+      // Boss resistance is an effective floor AFTER penetration and elemental adjustment.
+      const boss = battlefield?.active && target.battlefieldBoss;
+      const resistance = target.res, anti = l.P.anti, antiMax = l.P.antiMax, breakTime = target.resBrkT;
+      if (boss) {
+        const floor = y1(skill.series, target.series) ? 50 : 25;
+        const curseResistance = typeof Rn === 'function' ? Rn(target)?.res : undefined;
+        target.res = Object.fromEntries(Object.keys(resistance).map(key => [key, Math.max(floor, resistance[key]) + Math.max(0, -(curseResistance?.[key] || 0))]));
+        l.P.anti = {}; l.P.antiMax = 0; target.resBrkT = 0;
+      }
+      let result;
+      try { result = originalHit(boss ? { ...skill, series5: 0 } : skill, target); }
+      finally { if (boss) { target.res = resistance; l.P.anti = anti; l.P.antiMax = antiMax; target.resBrkT = breakTime; } }
+      if (battlefield?.active && target.arenaSim && !target.battlefieldBoss) {
+        const defender = target as SimulatorActor, defense = defender.stats;
+        let loss = Math.max(0, before - defender.hp);
+        loss -= Math.min(defense.dmgShield || 0, loss * Jr);
+        loss *= Math.max(0, 1 - (defense.sorb || 0) / 100) * Math.max(0, 1 - (defense.from?.[v.series] || 0) / 100);
+        const mana = Math.min(defender.mana, loss * (defense.manaShield || 0) / 100);
+        defender.mana -= mana; defender.hp = Math.max(0, before - loss + mana);
+      }
+      if (before > target.hp || (target.poison || 0) * (target.poisonDmg || 0) > poisonBefore) recordBattlefieldHit(v,target);
       step("HP thực mất = max(0, min(HP trước, HP trước − HP sau))", { before, after: target.hp, actualLoss: Math.max(0, Math.min(before, before - target.hp)), returnedDamage: result, poisonDps: target.poisonDmg || 0, poisonSeconds: target.poison || 0 });
       return result;
     });
   };
   const originalIncoming = U9;
   U9 = function (attacker) {
+    if (battlefield?.active && attacker.battlefieldTeam && !battlefield.canHit(attacker,l.sim ? v : battlefieldHero)) return 0;
     return capture(attacker.n, { n: o.name }, { n: "Đòn đánh quái", damage: attacker.dmg, ar: attacker.ar, series: attacker.series }, () => {
       const before = l.life;
       step("Đầu vào phòng thủ người chơi", { faction: o.fac, level: o.lvl, stats: statsSnapshot(l.P), hp: before, mana: l.mana });
@@ -129,19 +178,26 @@ export function createSimulator() {
   }
   // Only swap the synchronous calculation context; always restore it before a frame,
   // a projectile callback, a save or a UI handler can run.
-  function asSim<T>(actor: SimulatorActor, action: () => T, quiet = true): T {
+  function asSim<T>(actor: SimulatorActor, action: () => T, quiet = true, loadout?: { profile: SimulatorProfile; stats: SimulatorStats }): T {
     const player = o, world = l, hero = v;
-    o = actor.profile; v = actor;
-    l = Object.assign({}, world, { P: actor.stats || world.P, life: actor.hp, mana: actor.mana, sim: true, quiet,
+    o = loadout?.profile || actor.profile; v = actor;
+    l = Object.assign({}, world, { P: actor.battlefieldBoss && loadout ? { ...loadout.stats, life: actor.max } : loadout?.stats || actor.stats || world.P, life: actor.hp, mana: actor.mana, sim: true, quiet,
       buffs: {}, skCd: {}, look: null, jx: null, ignoreEqt: null, buffAssume: true });
     try { return action(); }
     finally { actor.hp = l.life; actor.mana = actor.stats.mana; o = player; l = world; v = hero; }
   }
   function equipSkill(profile: SimulatorProfile, id: SkillId) {
+    if (profile.battlefieldBuild) return;
     const weapon = id === "basic" ? null : j1(T[id]);
     if (weapon !== null) {
-      const item = _A(weapon >= 100 ? 1 : 0, weapon >= 100 ? weapon - 100 : weapon === -1 ? 6 : weapon, 1, 0);
-      if (item) profile.eq.weapon = item;
+      const kind = weapon >= 100 ? 1 : 0, type = weapon >= 100 ? weapon - 100 : weapon === -1 ? 6 : weapon;
+      if (profile.eq.weapon?.d === kind && profile.eq.weapon?.k === type) return;
+      const player = o;
+      try {
+        o = profile;
+        const item = _A(kind, type, profile.battlefieldBuild ? profile.lvl : 1, profile.battlefieldBuild?.rarity || 0);
+        if (item) { item.enh = profile.battlefieldBuild?.enh || 0; profile.eq.weapon = item; }
+      } finally { o = player; }
     }
   }
   function cancelCasts(actor: SimulatorActor | null = sim) {
@@ -173,6 +229,7 @@ export function createSimulator() {
   function selectSkill(id: SkillId) {
     if (!sim) return;
     const actor = sim, faction = I[actor.profile.fac];
+    if (actor.battlefieldBoss) throw new Error("Boss luân phiên bộ kỹ năng chiến trường riêng.");
     if (id !== "basic" && (!faction.skills.includes(+id) || !T[id] || !UA(T[id]))) throw new Error("Chiêu SIM không thuộc môn phái.");
     const previous = clone(actor.profile), statsBefore = actor.stats;
     const hpRatio = actor.hp / actor.max, manaRatio = actor.mana / Math.max(1, actor.stats.mana);
@@ -209,7 +266,7 @@ export function createSimulator() {
     equipSkill(profile, skillId);
     const angle = actors.length * 2.399963;
     const [x, y] = X0(v.x + Math.cos(angle) * 120, v.y + Math.sin(angle) * 70);
-    const actor: SimulatorActor = Object.assign(n1(Object.keys(r0)[0], 150, "normal", x, y), {
+    const actor: SimulatorActor = Object.assign(n1(Object.keys(r0)[0], profile.lvl, "normal", x, y), {
       arenaSim: true as const, simId: "sim-" + id, generation: 0, target: null,
       pk: template?.pk ?? pk, farm: template?.farm ?? farm,
       profile, n: profile.name, stats: l.P, mana: 0, hp: 1, max: 1, cooldown: 0,
@@ -240,10 +297,12 @@ export function createSimulator() {
     updateInfo();
   }
   function playerTarget(actor: SimulatorActor): LegacyEntity {
-    return { x: v.x, y: v.y, n: o.name, hp: l.life, max: l.P.life, hurtProxy: true, r: 17, cls: "normal", tid: actor.tid,
-      def: l.P.def, series: l.P.series, res: l.P.res, act: "at", poison: 0, poisonDmg: 0, slowT: 0, stun: 0 };
+    const world = battlefield?.active ? battlefieldWorld : l, hero = battlefield?.active ? battlefieldHero : v;
+    return { x: hero.x, y: hero.y, n: previousField?.name || o.name, hp: world.life, max: world.P.life, hurtProxy: true, battlefieldPlayer: true, r: 17, cls: "normal", tid: actor.tid,
+      def: world.P.def, series: world.P.series, res: world.P.res, act: "at", poison: 0, poisonDmg: 0, slowT: 0, stun: 0 };
   }
   function receiveMonsterHit(actor: SimulatorActor, attacker: LegacyEntity): void {
+    if (battlefield?.active && !battlefield.canHit(attacker,actor)) return;
     if (!actors.includes(actor) || actor.dead || actor.hp <= 0 || !l.enemies.includes(actor)) return;
     // Reuse U9, including the arena one-damage option and actual SIM defenses.
     // Translate sustained statuses at the boundary so no temporary world state
@@ -257,63 +316,114 @@ export function createSimulator() {
     }, false);
   }
   function hit(actor: SimulatorActor, skill: SimulatorSkill, target: LegacyEntity) {
-    const isPlayer = target === v;
-    if (isPlayer && (!actor.pk || l.life <= 0)) return 0;
+    const world = battlefield?.active ? battlefieldWorld : l, hero = battlefield?.active ? battlefieldHero : v;
+    const isPlayer = target === hero;
+    if (isPlayer && (!(battlefield?.active ? battlefield.canHit(actor, target) : actor.pk) || world.life <= 0)) return 0;
     const receiver = isPlayer ? playerTarget(actor) : target;
     const before = receiver.hp;
-    const defense = l.P;
-    asSim(actor, () => hs(skill, receiver));
+    const defense = world.P;
+    asSim(actor, () => hs(skill, receiver), true, actor.battlefieldLoadout);
     let damage = Math.max(0, before - receiver.hp);
     if (isPlayer) {
       // hs supplies the shared skill/accuracy/resistance calculation. Apply the
       // player's absorption and mana shield using the same order as U9.
-      capture(actor.n, { n: o.name }, { n: "PK · phòng thủ sau sát thương kỹ năng" }, () => {
+      capture(actor.n, { n: receiver.n }, { n: "PK · phòng thủ sau sát thương kỹ năng" }, () => {
         const raw = damage;
         const shield = Math.min(defense.dmgShield || 0, damage * Jr);
         damage -= shield;
         damage *= 1 - (defense.sorb || 0) / 100;
         damage *= 1 - ((defense.from && defense.from[actor.series]) || 0) / 100;
-        const mana = Math.min(l.mana, damage * (defense.manaShield || 0) / 100);
-        l.mana -= mana; damage -= mana;
-        step("PK: (kỹ năng − min(khiên, damage × Jr)) × (1 − sorb/100) × (1 − from/100) − khiên mana", { raw, shield, sorb: defense.sorb || 0, from: (defense.from && defense.from[actor.series]) || 0, manaAbsorbed: mana, damage, hpBefore: l.life, hpAfter: Math.max(0, l.life - damage) });
-        l.life = Math.max(0, l.life - damage);
+        const mana = Math.min(world.mana, damage * (defense.manaShield || 0) / 100);
+        world.mana -= mana; damage -= mana;
+        step("PK: (kỹ năng − min(khiên, damage × Jr)) × (1 − sorb/100) × (1 − from/100) − khiên mana", { raw, shield, sorb: defense.sorb || 0, from: (defense.from && defense.from[actor.series]) || 0, manaAbsorbed: mana, damage, hpBefore: world.life, hpAfter: Math.max(0, world.life - damage) });
+        world.life = Math.max(0, world.life - damage);
         // The disposable receiver has no hurt state; preserve cold-only movement semantics here too.
-        if (!(skill.parts.cold > 0)) applyActorHurt(v, damage, defense.life);
+        if (!(skill.parts.cold > 0)) applyActorHurt(hero, damage, defense.life);
         if (receiver.poison > 0) {
           const seconds = receiver.poison * (1 - (defense.poisonRed || 0) / 100);
-          if (seconds > .05) { l.hpDot = (l.hpDot || 0) + receiver.poisonDmg * seconds; l.hpDotT = Math.max(l.hpDotT || 0, seconds); }
-          step("Độc PK chuyển sang DoT; không tính thành HP mất ngay", { dps: receiver.poisonDmg, seconds, pending: l.hpDot || 0 });
+          if (seconds > .05) { world.hpDot = (world.hpDot || 0) + receiver.poisonDmg * seconds; world.hpDotT = Math.max(world.hpDotT || 0, seconds); }
+          step("Độc PK chuyển sang DoT; không tính thành HP mất ngay", { dps: receiver.poisonDmg, seconds, pending: world.hpDot || 0 });
         }
         if ((receiver.slowT || 0) > 0) {
           const seconds = (receiver.slowT || 0) * (1 - (defense.freezeRed || 0) / 100);
           // Transfer the resolved intensity without applying resistance a second time.
-          applyColdPower(l, receiver.slowPower || 0, seconds);
+          applyColdPower(world, receiver.slowPower || 0, seconds);
         }
-        l.stunT = Math.max(l.stunT || 0, receiver.stun * (1 - (defense.stunRed || 0) / 100));
-        step("HP thực mất", { before, after: l.life, actualLoss: before - l.life });
+        world.stunT = Math.max(world.stunT || 0, receiver.stun * (1 - (defense.stunRed || 0) / 100));
+        step("HP thực mất", { before, after: world.life, actualLoss: before - world.life });
       });
     }
     if (typeof combatLog !== "undefined" && combatLog) combatLog.record(isPlayer ? "in" : "out", isPlayer ? actor : target, Math.min(before, damage), actor.n + " · " + (skill.n || "Đánh thường"));
-    showDamageNumber(isPlayer ? v : target, Math.min(before, damage));
+    showDamageNumber(isPlayer ? hero : target, Math.min(before, damage));
+    if (isPlayer && world.life <= 0 && battlefield?.running) battlefield.playerDied();
     return damage;
   }
   const monsterTick = $d;
-  $d = function (monster, dt) { if (!monster.arenaSim) return monsterTick(monster, dt); };
+  $d = function (monster, dt) { if (!monster.arenaSim && !monster.battlefieldMonster) return monsterTick(monster, dt); };
+  function cancelRoadMonster(actor: LegacyEntity) {
+    actor.actionRevision = (actor.actionRevision || 0) + 1; actor.castT = 0; actor.moving = false;
+    for (const field of ['combatProjectiles', 'fx', 'fxQ']) l[field] = (l[field] || []).filter((effect: LegacyRecord) => effect.combat?.actor !== actor);
+  }
+  const arenaTargets = sandbox as SandboxAPI & { nearestTarget(monster: LegacyEntity): LegacyEntity | null };
+  const nearestArenaTarget = arenaTargets.nearestTarget;
+  arenaTargets.nearestTarget = function (monster) {
+    if (!monster.battlefieldMonster) return nearestArenaTarget.call(sandbox,monster);
+    if (!battlefield?.running) return null;
+    const home = monster.battlefieldHome;
+    if (home && Math.hypot(monster.x-home.x,(monster.y-home.y)*2) > 900) return null;
+    const candidates: LegacyEntity[] = actors.filter(actor => !actor.dead && actor.hp > 0);
+    if (battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0)) candidates.push(battlefieldHero);
+    const distance = (target: LegacyEntity) => Math.hypot(target.x-monster.x,(target.y-monster.y)*2);
+    candidates.push(...roadMonsters.actors.filter(target => target !== monster && !target.dead && target.hp>0));
+    return candidates.filter(target => battlefield!.canHit(monster,target) && distance(target) < 800).sort((a,b) => distance(a)-distance(b))[0] || null;
+  };
+  const roadMonsters = createRoadMonsters({
+    create(index, x, y) {
+      const team = x < 1792 ? 'song' : 'jin';
+      const id = soldierSkin(r0,team,index);
+      const [px,py] = X0(x,y), monster = n1(id,120,'normal',px,py);
+      const maximum = Math.max(900_000, monster.max || 0);
+      Object.assign(monster, { battlefieldMonster: true, battlefieldTeam: team, arenaMonster: true, n: (team === 'song' ? 'Tống · Giáp binh · ' : 'Kim · Sơn tặc · ') + r0[id].n,
+        hp: maximum, max: maximum, nativeDamage: monster.dmg, dmg: sandbox.oneDamage ? 1 : monster.dmg, battlefieldHome: { x:px, y:py } });
+      delete monster.home; l.enemies.push(monster); return monster;
+    },
+    defeated(actor) { warRewards.killed(actor); },
+    cancel: cancelRoadMonster,
+    remove(actor) { cancelRoadMonster(actor); l.enemies = l.enemies.filter(enemy => enemy !== actor); l.corpses = (l.corpses || []).filter((corpse: LegacyEntity) => corpse !== actor); },
+    tick(actor,dt) {
+      const home = actor.battlefieldHome, returning = Math.hypot(actor.x-home.x,(actor.y-home.y)*2) > 900;
+      // Native ticking still expires poison/cold/stun while the leash suppresses targets.
+      monsterTick(actor,dt);
+      if (returning && actor.hp > 0 && !actorActionLocked(actor)) { actor.moving = true; Mw(actor,home.x,home.y,actor.spd*coldSpeedFactor(actor)*dt); }
+    },
+  });
   const arenaTick = sandbox.tick;
   sandbox.tick = function (dt) { arenaTick(dt); tick(dt); };
   function tick(dt: number) {
+    battlefield?.tick(dt);
     refreshTime += dt;
-    if (refreshTime >= .25) { refreshTime = 0; updateInfo(); }
+    if (refreshTime >= .25) { refreshTime = 0; updateInfo(); battlePanel.render(); }
+    warRewards.tick(dt);
+    roadMonsters.tick(dt, !!battlefield?.running);
+    const bodies = battlefield?.active ? [...actors, ...roadMonsters.actors, { ...battlefieldHero, hp: battlefieldWorld.life, dead: !battlefieldWorld.life || battlefieldWorld.deadT > 0 }] : actors;
+    crowd.begin(bodies, dt);
     for (const actor of [...actors]) {
+      if (battlefield?.active && actor.battlefieldTeam) {
+        if (!l.enemies.includes(actor)) l.enemies.push(actor);
+        if (!battlefield.running || actor.dead || actor.hp <= 0) continue;
+        tickActor(actor, dt); continue;
+      }
       if (!l.enemies.includes(actor) || actor.dead || actor.hp <= 0) { remove(actor); continue; }
       if (!l.town && !(l.deadT > 0)) tickActor(actor, dt);
     }
   }
   function availableTargets(actor: SimulatorActor): LegacyEntity[] {
+    if (battlefield?.active && actor.battlefieldTeam) return battlefield.targets(actor);
     return actor.pk && l.life > 0 ? [v] : actor.farm ?
       l.enemies.filter(enemy => !enemy.arenaSim && !enemy.dead && enemy.hp > 0) : [];
   }
   function tickActor(actor: SimulatorActor, dt: number) {
+    if (battlefield?.active && actor.target === battlefieldHero && !battlefield.canHit(actor,battlefieldHero)) { actor.target=null; actor.moving=false; }
     actor.mana = actor.stats.mana;
     if (actor.stun > 0) { actor.stun = Math.max(0, actor.stun - dt); return; }
     const speed = coldSpeedFactor(actor);
@@ -328,13 +438,21 @@ export function createSimulator() {
     actor.cooldown = Math.max(0, actor.cooldown - dt * speed);
     if (actorActionLocked(actor)) { actor.moving = false; return; }
     const targets = availableTargets(actor);
+    const hostilePlayer = battlefield?.running && targets.includes(battlefieldHero) && battlefield.canHit(actor,battlefieldHero) ? battlefieldHero : null;
+    if (hostilePlayer) actor.target = hostilePlayer;
     if (!actor.target || !targets.includes(actor.target)) {
       actor.target = targets.sort((a, b) => skillCastDistance(actor, a) - skillCastDistance(actor, b))[0] || null;
       actor.seeT = 0;
     }
     const target = actor.target;
     if (!target) { actor.moving = false; return; }
-    const skill = actor.stats.main;
+    const deck = actor.battlefieldDeck as { profile: SimulatorProfile; stats: SimulatorStats }[] | undefined;
+    if (deck?.length && actor.cooldown <= 0) {
+      actor.battlefieldDeckIndex = ((actor.battlefieldDeckIndex ?? -1) + 1) % deck.length;
+      actor.battlefieldLoadout = deck[actor.battlefieldDeckIndex];
+    }
+    const loadout = actor.battlefieldLoadout as { profile: SimulatorProfile; stats: SimulatorStats } | undefined;
+    const skill = loadout?.stats.main || actor.stats.main;
     const reach = skill.geo?.k === "self" ? skill.geo.r || skill.rad : skill.rad;
     const distance = () => Math.max(0, skillCastDistance(actor, target) - (target.r || 12) / QA);
     actor.dir = kn(target.x - actor.x, target.y - actor.y);
@@ -342,8 +460,25 @@ export function createSimulator() {
     actor.seeT = (actor.seeT || 0) - dt;
     if (actor.seeT <= 0) { actor.seeT = .25; actor.see = skillIgnoresTerrain(skill) || mt(actor.x, actor.y, target.x, target.y); }
     // Same approach/line-of-sight/cooldown cadence as the monster $d loop.
-    actor.moving = distance() > reach || !actor.see;
-    if (actor.moving) Mw(actor, target.x, target.y, actor.spd * speed * dt);
+    const approach = actor.battlefieldTeam && !actor.battlefieldBoss ? battlefieldApproach(actor, target) : null;
+    actor.moving = !!approach || distance() > reach || !actor.see;
+    if (actor.battlefieldBoss && actor.moving) { actor.moving = false; return; }
+    if (actor.moving) {
+      const before = { x: actor.x, y: actor.y }, step = actor.spd * speed * dt;
+      // Different bridge lanes keep both armies from converging on one waypoint.
+      const lane = actor.battlefieldTeam ? ((Number(actor.simId.replace('sim-', '')) % 5) - 2) * 16 : 0;
+      const goal = { x: approach?.x ?? target.x, y: approach ? approach.y + lane : target.y };
+      const clear = (x: number,y: number,tx: number,ty: number) => typeof mapNavigation !== 'undefined' ? mapNavigation.clear(x,y,tx,ty) : mt(x,y,tx,ty);
+      const waypoint = actor.battlefieldTeam ? crowd.route(actor,goal,clear) : goal;
+      Mw(actor, waypoint.x, waypoint.y, step);
+      if (actor.battlefieldTeam) {
+        const proposed = { x: actor.x, y: actor.y };
+        Object.assign(actor, before);
+        const next = crowd.steer(actor, proposed, step, (x, y, tx, ty) => typeof mapNavigation !== 'undefined' ? mapNavigation.clear(x, y, tx, ty) : mt(x, y, tx, ty));
+        Object.assign(actor, next);
+      }
+    }
+    if (approach) { actor.waiting = "Hành quân qua cầu"; return; }
     if (distance() > reach + 4 || !actor.see || actor.cooldown > 0) return;
     const cost = skill.cost || 0;
     if (skill.costLife && actor.hp <= cost) { actor.waiting = "Chưa đủ sinh lực để ra chiêu"; return; }
@@ -353,23 +488,34 @@ export function createSimulator() {
     const token = actor.generation;
     castSimulatorSkill(actor, target, skill,
       () => token === actor.generation && actors.includes(actor) && actor.hp > 0,
-      () => availableTargets(actor), (ability, contact) => hit(actor, ability, contact),
-      action => asSim(actor, action, false));
+      () => availableTargets(actor), (ability, contact) => {
+        const previous = actor.battlefieldLoadout; actor.battlefieldLoadout = loadout;
+        try { return hit(actor, ability, contact); } finally { actor.battlefieldLoadout = previous; }
+      },
+      action => asSim(actor, action, false, loadout));
     actor.casts++; actor.lastCast = { id: skill.id || 0, name: skill.n || "Đánh thường", level: skill.L || 1 };
     actor.act = "at"; actor.actT = 0;
   }
   function draw(context: CanvasRenderingContext2D, actor: SimulatorActor, dt: number) {
-    const look = actor.look;
+    const look = actor.battlefieldBoss ? r0[actor.tid] : actor.look;
     actor.animKey = look && look.anim;
     H8(actor, dt * coldSpeedFactor(actor), actor.moving ? "run" : "st");
     if (actor.act !== "at" && actor.act !== "hurt") ps(actor, actor.moving ? "run" : "st");
-    const height = look && look.anim ? kf(look.anim, actor.act || "st", actor.dir || 0, actor.actT || 0, actor.x, actor.y, Jn) : 0;
+    const height = look && look.anim ? asSim(actor, () => {
+      // Composite sprites read the current profile/world. Give each SIM its own equipment.
+      l.look = actor.battlefieldBoss || typeof yf !== 'function' ? null : yf();
+      l.jx = !actor.battlefieldBoss && typeof J3 === 'function' && J3() && typeof N8 === 'function' ? N8() : null;
+      return kf(look.anim, actor.act || 'st', actor.dir || 0, actor.actT || 0, actor.x, actor.y, Jn);
+    }) : 0;
     if (!height && !(look && M8(bA(look.img), look.sz, actor.x, actor.y, 1, actor.face < 0, 1))) {
       context.fillStyle = "#6ee7e0"; context.beginPath(); context.arc(actor.x, actor.y - 18, 14, 0, Math.PI * 2); context.fill();
     }
     if (actor.curse && typeof WP === "function") WP(context, actor, Jn);
     if (actor.stFx && typeof ZP === "function") ZP(context, actor, height ? Math.min(height, 110) : 50, Jn, dt);
-    L3(actor.x, actor.y - nameplateOffset(look?.anim, Jn, 1, 0, 55), actor.n, "#6ee7e0", 12, actor.hp / actor.max, "#6ee7e0");
+    const earned = battlefield?.active ? warRewards.rank(actor) : null;
+    const actorName = earned && earned.points > 0 ? `${actor.n} · ${earned.name}` : actor.n;
+    const color = actor.battlefieldTeam === 'song' ? '#ffcc00' : actor.battlefieldTeam === 'jin' ? '#c77bff' : '#6ee7e0';
+    L3(actor.x, actor.y - nameplateOffset(look?.anim, Jn, 1, 0, 55), actorName, color, 12, actor.hp / actor.max, color);
   }
   function text(simOnly = false) { return JSON.stringify({ format: "arena-damage-v1", exportedAt: new Date().toISOString(), oneDamage: sandbox.oneDamage,
     simulators: actors.map(actor => ({ id: actor.simId, name: actor.n, faction: actor.profile.fac, skill: actor.profile.main, attr: actor.profile.attr, skills: actor.profile.sk, pk: actor.pk, farm: actor.farm })),
@@ -412,6 +558,7 @@ export function createSimulator() {
   }
   function editProfile(action: () => void) {
     if (!sim) throw new Error("Hãy chọn một SIM trước.");
+    if (sim.battlefieldBoss) throw new Error("Chỉ số boss do cấu hình chiến trường quản lý.");
     const actor = sim, previous = clone(actor.profile), stats = actor.stats;
     const ratio = actor.hp / Math.max(1, actor.max);
     try {
@@ -571,8 +718,143 @@ export function createSimulator() {
     if (button.dataset.simDelete) { remove(actor); updateInfo(); }
     else selectActor(actor.simId);
   };
+  let previousField: LegacyRecord | null = null;
+  function battleProfile(build: ArmyBuild, faction = build.faction, boss = false, main?: number) {
+    if (!I[faction] || I[faction].novice) throw new Error("Môn phái không hợp lệ.");
+    const profile = sandbox.createProfile(I[faction]);
+    const power = { weak: { enh: 0 }, normal: { enh: 0 }, strong: { enh: 8 } }[build.strength];
+    profile.lvl = build.level; profile.attr = { str: 0, dex: 0, vit: 0, eng: 0 }; profile.attrPts = (build.level - 1) * z2;
+    profile.sk = {}; profile.skL = {}; profile.bkOk = {}; profile.skPts = boss ? 500 : Math.max(0, build.level - 1);
+    profile.eq = {}; profile.inv = []; profile.battlefieldBuild = { ...power, equipped: build.equipped !== false };
+    const eligible = I[faction].skills.filter(id => T[id] && profile.lvl >= (T[id].req || 0));
+    for (const id of eligible) {
+      const skill = T[id]; profile.bkOk[id] = 1;
+      if (boss || [90, 150].includes(skill.tier)) {
+        const points = Math.min(skill.max || 1, boss && ![90, 150].includes(skill.tier) ? profile.skPts : Infinity);
+        profile.sk[id] = points;
+        if (boss && ![90, 150].includes(skill.tier)) profile.skPts -= points;
+        profile.skL[id] = { lv: points, xp: 0 };
+      }
+    }
+    const active = eligible.filter(id => UA(T[id]));
+    const preferred = active.filter(id => T[id].tier === 90);
+    const selected = main || preferred[Math.floor(Math.random() * preferred.length)] || active[0];
+    // Unarmed builds use the game's basic attack, which has no weapon requirement.
+    profile.main = build.equipped === false ? 'basic' : selected || 'basic';
+    profile.mainLock = true; profile.slots = profile.main === 'basic' ? [] : [+profile.main];
+    if (profile.main !== 'basic' && !profile.sk[profile.main]) { profile.sk[profile.main] = 1; profile.skPts = Math.max(0, profile.skPts - 1); }
+    const player = o, world = l;
+    try {
+      o = profile; l = Object.assign({}, world, { quiet: true, sim: true, buffAssume: true, look: null, jx: null, ignoreEqt: null });
+      if (build.equipped !== false) {
+        const code = selected ? j1(T[selected]) : null;
+        const weapon: [number, number] = code === null ? Kr(I[faction]) : [code >= 100 ? 1 : 0, code >= 100 ? code - 100 : code === -1 ? 6 : code];
+        profile.eq = createArmyEquipment(equipmentTrader, { sex: profile.sex || 0, level: build.level, factionId: Number((I[faction] as unknown as LegacyRecord).id), series: I[faction].series || 0, weapon, points: profile.attrPts, enh: power.enh, strength: build.strength }, G5, V2);
+      }
+      // Use the existing suggestion engines, after assigning gear so its requirements are met.
+      if (typeof j5 === 'function') j5();
+      if (!boss) Pt();
+      yt();
+    } finally { o = player; l = world; }
+    return profile;
+  }
+  function spawnBattleActor(build: ArmyBuild, bossElement?: number) {
+    const profile = battleProfile(build, build.faction, bossElement !== undefined);
+    const skill = profile.main;
+    const actor = create(profile.fac, skill, false, false, { version: 1, id: 'battle', name: I[profile.fac].n, updatedAt: '', profile, autoSkills: false, autoPotential: true, pk: true, farm: false });
+    actor.battlefieldTeam = build.team;
+    if (bossElement !== undefined) {
+      const ids = [...new Set(k0.map(zone => zone.boss))].filter(id => r0[id]);
+      const bossId = ids.find(id => j2(id) === bossElement) ?? ids[0];
+      if (bossId === undefined) { remove(actor); throw new Error('Không có boss Hoàng Kim trong catalog.'); }
+      actor.tid = bossId; actor.n = r0[bossId].n; actor.goldBoss = true; actor.cls = 'boss';
+      actor.series = bossElement; actor.stats.series = bossElement;
+      actor.res = actor.stats.res = Object.fromEntries(['phys', 'cold', 'fire', 'poison', 'light'].map(key => [key, 25]));
+      const deck: { profile: SimulatorProfile; stats: SimulatorStats }[] = [];
+      for (const faction of ELEMENT_FACTIONS[bossElement]) {
+        const source = battleProfile(build, faction, true);
+        for (const id of I[faction].skills.filter(id => source.sk[id] && UA(T[id]) && [90, 150].includes(T[id].tier))) {
+          const profile = battleProfile(build, faction, true, id); profile.main = id; profile.slots = [id];
+          asSim(actor, () => {
+            const stats = j0(); stats.main = resolvedSkill(stats, id);
+            deck.push({ profile, stats });
+          }, true, { profile, stats: actor.stats });
+        }
+      }
+      if (!deck.length) { remove(actor); throw new Error('Boss không có kỹ năng 90/150 phù hợp.'); }
+      actor.battlefieldDeck = deck;
+    }
+    return actor;
+  }
+  // asSim swaps v/l synchronously; team identity must always refer to the real player.
+  const battlefieldHero = v, battlefieldWorld = l;
+  const warRewards = createWarRewards({ player: () => battlefieldHero, team: () => battlefield!.state.team,
+    running: () => !!battlefield?.running, alive: () => battlefieldWorld.life>0 && !(battlefieldWorld.deadT>0), changed: () => { battlefieldWorld.dirty=true; } });
+  function recordBattlefieldHit(source: LegacyEntity,target: LegacyEntity) { warRewards.record(source,target); }
+  function applyBattlefieldBonuses(stats: LegacyRecord) { if (!l.sim && l.battlefield) warRewards.apply(stats); }
+  function drawBattlefieldLoot(context: CanvasRenderingContext2D) {
+    if (!battlefield?.active) return;
+    context.save(); context.textAlign='center'; context.font='11px sans-serif';
+    for(const drop of warRewards.drops) {
+      context.fillStyle='#0008';context.beginPath();context.ellipse(drop.x,drop.y+3,12,5,0,0,Math.PI*2);context.fill();
+      context.fillStyle=WAR_ITEMS[drop.kind].color;context.beginPath();context.arc(drop.x,drop.y-8,7,0,Math.PI*2);context.fill();
+      context.strokeStyle='#fff8';context.stroke();context.fillText(WAR_ITEMS[drop.kind].name,drop.x,drop.y-23);
+    }
+    context.restore();
+  }
+  function receiveSoldierHit(target: LegacyEntity,source: LegacyEntity) {
+    if(!battlefield?.canHit(source,target))return;
+    if(Math.random()*100>=Pe(source.ar||0,target.def||0))return;
+    const damage=Math.max(0,ja((source.dmg||0)*Z(.8,1.2),'phys',source.series,target.series,target.res,75,0));
+    target.hp=Math.max(0,target.hp-damage);if(damage>0)recordBattlefieldHit(source,target);applyActorHurt(target,damage,target.max);showDamageNumber(target,damage);
+  }
+  battlefield = createBattlefield({
+    actors: () => [...actors], monsters: () => roadMonsters.actors, player: () => battlefieldHero, playerAlive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
+    playerDPS: () => estimateDPS({ stats: battlefieldWorld.P } as SimulatorActor), create: spawnBattleActor, cancel: cancelCasts, remove,
+    enter(team) {
+      previousField = { key: Z0.key, bgImg: l.bgImg, zoneShown: l.zoneShown, town: l.town, name: o.name, x: v.x, y: v.y, life: l.life, mana: l.mana, ctrl: o.ctrl, autoMap: o.autoMap };
+      for (const actor of [...actors]) remove(actor);
+      sandbox.clearCombat?.(false);
+      ma(BATTLE_MAP); l.bgImg = bA(MapsEngine.getMapBackground(BATTLE_MAP)); l.zoneShown = BATTLE_MAP;
+      l.town = false; l.battlefield = true; o.ctrl = 'manual'; o.autoMap = false;
+      const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = true;
+      Object.assign(v, CAMPS[team]); l.life = l.P.life; l.mana = l.P.mana;
+      warRewards.reset(); roadMonsters.start();
+    },
+    leave() {
+      roadMonsters.clear(); warRewards.reset();
+      if (!previousField) return;
+      sandbox.clearCombat?.(false);
+      ma(previousField.key); Object.assign(v, { x: previousField.x, y: previousField.y });
+      Object.assign(l, { bgImg: previousField.bgImg, zoneShown: previousField.zoneShown, town: previousField.town, life: previousField.life, mana: previousField.mana, battlefield: false });
+      o.ctrl = previousField.ctrl; o.autoMap = previousField.autoMap; previousField = null;
+      const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = false;
+    },
+    respawnPlayer(team) {
+      l.life = l.P.life; l.mana = l.P.mana; l.deadT = 0;
+      l.slowT = l.slowPower = l.stunT = l.hpDotT = l.hpDot = 0;
+      Object.assign(v, CAMPS[team], { act: 'st', actT: 0, castT: 0, hurtT: 0 });
+      v.actionRevision = (v.actionRevision || 0) + 1;
+    },
+    setPlayerDead(team) {
+      Object.assign(battlefieldHero, CAMPS[team]);
+      battlefieldWorld.life = 0; battlefieldWorld.deadT = 6; battlefieldWorld.manTgt = battlefieldWorld.tgt = battlefieldWorld.moveTo = null;
+      battlefieldWorld.slowT = battlefieldWorld.stunT = battlefieldWorld.hpDotT = battlefieldWorld.hpDot = 0;
+      battlefieldHero.actionRevision = (battlefieldHero.actionRevision || 0) + 1;
+      for (const key of ['combatProjectiles', 'fx', 'fxQ']) battlefieldWorld[key] = (battlefieldWorld[key] || []).filter((effect: LegacyRecord) => effect.combat?.actor !== battlefieldHero);
+    },
+    position(actor, x, y) { [actor.x, actor.y] = X0(x, y); actor._pp = null; actor._pk = ''; },
+    restore(actor) {
+      cancelCasts(actor); actor.hp = actor.max; actor.mana = actor.stats.mana;
+      actor.dead = false; actor.target = null; actor.cooldown = 0;
+      actor.poison = actor.poisonDmg = actor.stun = actor.slowT = actor.slowPower = actor.hurtT = actor.castT = 0;
+      actor.act = 'st'; actor.actT = 0;
+      l.corpses = (l.corpses || []).filter((corpse: LegacyEntity) => corpse !== actor);
+    },
+  });
+  const battlePanel = mountBattlefieldPanel(battlefield, Object.values(I), D, warRewards);
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  return { battlefield, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }
