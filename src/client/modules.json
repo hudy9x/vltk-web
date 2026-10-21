@@ -2855,6 +2855,13 @@
       ]
     },
     {
+      "file": "gameplay/horse-trader/index.ts",
+      "global": "horseTrader",
+      "symbols": [
+        "horseTrader"
+      ]
+    },
+    {
       "file": "status/index.ts",
       "global": "statusInspector",
       "symbols": [

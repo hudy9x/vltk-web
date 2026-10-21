@@ -68,7 +68,7 @@ var combatSandbox = (function () {
   rD = function () { l.stall = 0; };
   const originalDamage = U9;
   U9 = function (attacker) {
-    if (!attacker.arenaMonster || !options.oneDamage) return originalDamage(attacker);
+    if (attacker.battlefieldMonster || !attacker.arenaMonster || !options.oneDamage) return originalDamage(attacker);
     const before = l.life;
     l.life = Math.max(0, l.life - 1);
     if (typeof arenaSimulator !== "undefined" && arenaSimulator) arenaSimulator.forcedDamage(attacker, before, l.life);
@@ -92,7 +92,7 @@ var combatSandbox = (function () {
   }
   function setOneDamage(enabled) {
     options.oneDamage = !!enabled;
-    for (const monster of l.enemies) if (monster.arenaMonster) monster.dmg = options.oneDamage ? 1 : monster.nativeDamage;
+    for (const monster of l.enemies) if (monster.arenaMonster && !monster.battlefieldMonster) monster.dmg = options.oneDamage ? 1 : monster.nativeDamage;
     localStorage.setItem(optionsKey, JSON.stringify(options));
   }
   function tick(dt) {

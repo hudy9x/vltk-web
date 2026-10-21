@@ -37,6 +37,7 @@ var ic = function (A) {
 };
 
 var Za = function (A) {
+  if(typeof arenaSimulator!=="undefined" && arenaSimulator?.battlefield.active)return arenaSimulator.supplies.slot(A?"mana":"life");
   const n = co(A),
     t = rc[A];
   if (n) return { ic: n.ic, n: C1(n.kind)[n.tier] || 0, name: n.n };
@@ -55,6 +56,7 @@ var Za = function (A) {
 };
 
 var oo = function (A) {
+  if(typeof arenaSimulator!=="undefined" && arenaSimulator?.battlefield.active){arenaSimulator.openPharmacy(A?"mana":"life",true);return;}
   const n = rc[A],
     t = sc()[A],
     e = S.potions

@@ -9,22 +9,22 @@ function loadModule<Module>(entry: string, globalName: string): Module {
   return scope[globalName] as Module;
 }
 
-test('war supplies enforce 50 potions of each type, successful uses only, and explicit living camp refill', () => {
+test('war supplies enforce a combined capacity of 60 potions, successful uses only, and explicit living camp refill', () => {
   const { createWarSupplies } = loadModule<typeof import('../src/client/simulator/supplies.ts')>('simulator/supplies.ts', 'Supplies');
   let running = true, alive = true, canRecover = true;
   const position = { x: 450, y: 1792 };
   const supplies = createWarSupplies({ running: () => running, alive: () => alive, team: () => 'song', position: () => position,
     recover: () => canRecover, changed() {} });
   supplies.reset(true);
-  assert.equal(supplies.state.life + supplies.state.mana, 100);
-  canRecover = false; assert.equal(supplies.use('life'), false); assert.equal(supplies.state.life, 50);
+  assert.equal(supplies.state.life + supplies.state.mana, 60);
+  canRecover = false; assert.equal(supplies.use('life'), false); assert.equal(supplies.state.life, 30);
   canRecover = true;
-  for (let index = 0; index < 50; index++) { assert.equal(supplies.use('life'), true); assert.equal(supplies.use('mana'), true); }
+  for (let index = 0; index < 30; index++) { assert.equal(supplies.use('life'), true); assert.equal(supplies.use('mana'), true); }
   assert.equal(supplies.use('life'), false); assert.equal(supplies.use('mana'), false);
   position.x = 3134; assert.throws(() => supplies.refill(), /điểm tập trung/);
   position.x = 450; alive = false; assert.throws(() => supplies.refill(), /điểm tập trung/);
   alive = true; assert.equal(supplies.state.life, 0, 'reviving alone does not restock');
-  supplies.refill(); assert.equal(supplies.state.life, 50); assert.equal(supplies.state.mana, 50);
+  supplies.refill(); assert.equal(supplies.state.life, 30); assert.equal(supplies.state.mana, 30);
   running = false; assert.equal(supplies.use('life'), false);
 });
 
@@ -59,9 +59,9 @@ test('manual and automatic battlefield potions share finite stock and preserve n
   const match = game.arenaSimulator.battlefield;
   match.start('song');
   game.l.life = 1;
-  game.Ms('life'); assert.equal(game.l.life, 101); assert.equal(game.arenaSimulator.supplies.state.life, 49);
-  game.Ms('life'); assert.equal(game.arenaSimulator.supplies.state.life, 49, 'cooldown prevents a second spend');
-  for (let index = 0; index < 49; index++) { game.l.life = 1; game.l.potCd.life = 0; game.Ms('life'); }
+  game.Ms('life'); assert.equal(game.l.life, 101); assert.equal(game.arenaSimulator.supplies.state.life, 29);
+  game.Ms('life'); assert.equal(game.arenaSimulator.supplies.state.life, 29, 'cooldown prevents a second spend');
+  for (let index = 0; index < 29; index++) { game.l.life = 1; game.l.potCd.life = 0; game.Ms('life'); }
   game.l.life = 1; game.l.potCd.life = 0; game.X9(.1);
   assert.equal(game.l.life, 1, 'auto potion must not fall back to persistent stock or buying');
   assert.equal(game.arenaSimulator.supplies.state.life, 0);
@@ -69,7 +69,7 @@ test('manual and automatic battlefield potions share finite stock and preserve n
   game.v.x = 1700; assert.throws(() => game.arenaSimulator.supplies.refill(), /điểm tập trung/);
   game.l.life = 0; match.playerDied(); game.arenaSimulator.tick(5);
   assert.equal(game.arenaSimulator.supplies.state.life, 0, 'respawn does not give free potions');
-  game.arenaSimulator.supplies.refill(); assert.equal(game.arenaSimulator.supplies.state.life, 50);
+  game.arenaSimulator.supplies.refill(); assert.equal(game.arenaSimulator.supplies.state.life, 30);
   match.reset(); assert.equal(game.arenaSimulator.supplies.state.life, 0);
 });
 

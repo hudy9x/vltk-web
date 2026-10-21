@@ -784,7 +784,7 @@ var Kv = function () {
     a._k !== r &&
       ((a._k = r),
       (a.querySelector("i").style.backgroundImage = i.ic ? `url('${i.ic}')` : ""),
-      (a.querySelector("em").textContent = i.n || ""),
+      (a.querySelector("em").textContent = i.n || (typeof arenaSimulator !== "undefined" && arenaSimulator?.battlefield.active ? "0" : "")),
       (a.title = `${i.name} (phím ${e + 1}) · chuột phải / ▾ để chọn thuốc`));
   }
 };

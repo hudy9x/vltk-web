@@ -62,9 +62,15 @@ export function createBattlefield(host: BattlefieldHost) {
     if (phase !== 'running' || !alive(actor)) return [];
     const candidates: LegacyEntity[] = [...host.actors(), ...(host.monsters?.() || [])].filter(target => canHit(actor, target));
     if (playerDue === null && host.playerAlive() && canHit(actor, host.player())) candidates.push(host.player());
-    // Fighters engage nearby threats first, then advance on the enemy commander.
-    const near = candidates.filter(target => Math.hypot(target.x - actor.x, (target.y - actor.y) * 2) < (actor.battlefieldBoss ? 650 : 500));
-    return actor.battlefieldBoss ? near : near.length ? near : candidates.filter(target => target.battlefieldBoss);
+    const distance = (target:LegacyEntity) => Math.hypot(target.x-actor.x,(target.y-actor.y)*2);
+    const nearby = candidates.filter(target=>distance(target)<(actor.battlefieldBoss?650:500));
+    if(actor.battlefieldBoss)return nearby;
+    const playerThreat = nearby.find(target=>target===host.player());
+    if(playerThreat)return [playerThreat];
+    // Fight opposing SIMs before farming NPCs, even if a soldier is closer.
+    const fighters = candidates.filter(target=>owns(target)&&target!==host.player()&&!target.battlefieldBoss&&!target.battlefieldMonster);
+    if(fighters.length)return fighters;
+    return nearby.length?nearby:candidates.filter(target=>target.battlefieldBoss);
   }
   function place(actor: SimulatorActor, index = 0) {
     const camp = CAMPS[actor.battlefieldTeam as Team];
@@ -106,7 +112,7 @@ export function createBattlefield(host: BattlefieldHost) {
       for (let i = 0; i < build.count; i++) {
         const actor = host.create({ ...build, faction: plan[i], count: 1 });
         actor.battlefieldTeam = build.team; actor.battlefieldBoss = false;
-        actor.n = `${TEAM_NAMES[build.team]} · ${actor.n}`;
+
         place(actor, host.actors().filter(a => a.battlefieldTeam === build.team && !a.battlefieldBoss).length - 1);
         created.push(actor);
       }
@@ -158,7 +164,7 @@ export function createBattlefield(host: BattlefieldHost) {
       for (const side of ['song', 'jin'] as const) {
         const actor = host.create({ team: side, faction: ELEMENT_FACTIONS[elements[side]][0], level: 150, strength: 'strong', count: 1 }, elements[side]);
         actor.battlefieldTeam = side; actor.battlefieldBoss = true;
-        actor.n = `${TEAM_NAMES[side]} · Hoàng Kim · ${actor.n}`;
+        actor.n = `Hoàng Kim · ${actor.n}`;
         actor.max = actor.hp = actor.stats.life = 100_000_000;
         bosses.set(side, actor); place(actor);
       }

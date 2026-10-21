@@ -648,6 +648,9 @@ var kB = function () {
   if (t) {
     ((e.style.display = "block"), (e.querySelector(".t").textContent = `${t.n} · Lv ${t.L}`));
     const a = Math.max(0, (t.hp / t.max) * 100);
+    // The focused boss HUD follows the same alliance colors as its nameplate.
+    e.querySelector("i").style.background = t.battlefieldTeam && typeof arenaSimulator !== "undefined" && arenaSimulator
+      ? arenaSimulator.battlefieldHealthColor(t.battlefieldTeam, arenaSimulator.battlefield.state.team) : "";
     ((e.querySelector("i").style.width = a + "%"),
       (e.querySelector("span").textContent = a.toFixed(1) + "%"));
   } else e.style.display = "none";

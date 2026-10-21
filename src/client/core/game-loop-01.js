@@ -67,6 +67,11 @@ var qm = function (A, n) {
 
 var jm = function (A, n) {
   if (actorActionLocked(v)) return 0.05;
+  // These skills take a separate cast path and must obey the same ride gate.
+  if (w_(A) && skillCastDistance(v, n) - n.r / QA <= g_) {
+    const riding = tP(A);
+    if (riding === true || riding === null) return 0.25;
+  }
   return w_(A)
     ? skillCastDistance(v, n) - n.r / QA > g_
       ? ((l.moveTo = (hA() && l.clickHold) || ($1() && !(hA() && l.manTgt === n)) ? null : n), 0.05)
