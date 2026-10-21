@@ -67,6 +67,31 @@ var NP = function (A) {
       ((n.globalAlpha = i * 0.5), M8(a.img, a.sz, a.x, a.y, r, a.face < 0), (n.globalAlpha = 1));
   }
   ((l.corpses = l.corpses.filter((a) => a.actT < 1.6)), db(n, A), Vb(n, A));
+  // Skill visuals are drawn once beneath all living bodies and their nameplates.
+  for (const effect of l.fx) {
+    const cast = effect.combat;
+    // Finite damage pulses share one continuous animation; only legacy
+    // repeating fields restart their visuals at each damage interval.
+    const repeating = cast && !cast.pulseCount && ![362, 375].includes(+cast.skill.id) && cast.interval && cast.pulse >= 0;
+    const phase = repeating ? Math.max(0, cast.elapsed - (cast.nextPulse - cast.interval)) : 0;
+    if (effect.k === "jm") YP(repeating && effect.age >= 0 ? Object.assign({}, effect, { age: phase * K3 }) : effect);
+    else if (effect.k === "mis" || effect.k === "boom") CP(repeating && effect.t >= 0 ? Object.assign({}, effect, { t: phase }) : effect);
+    else if (effect.k === "contact") drawContactProjectile(effect);
+  }
+  for (const a of l.fx) {
+    if (a.k === "mis" || a.k === "boom" || a.k === "jm" || a.k === "contact") continue;
+    a.life -= A;
+    const i = E(a.life / a.max, 0, 1);
+    ((n.globalAlpha = i),
+      (n.strokeStyle = a.color),
+      a.k === "line"
+        ? ((n.lineWidth = 3), n.beginPath(), n.moveTo(a.x1, a.y1), n.lineTo(a.x2, a.y2), n.stroke())
+        : ((n.lineWidth = a.r ? 3 : 2),
+          n.beginPath(),
+          n.arc(a.x, a.y - (a.r ? 0 : 10), 8 + (1 - i) * (a.r || 30), 0, 7),
+          n.stroke()));
+  }
+  ((n.globalAlpha = 1), (l.fx = l.fx.filter((a) => a.life > 0)), (n.textAlign = "center"));
   const living = l.enemies.filter((a) => !a.dead);
   const crowd = crowdRenderer.update(living, A,
     { x: B0.x, y: B0.y, width: M0.w, height: M0.h },
@@ -153,8 +178,8 @@ var NP = function (A) {
         12,
         l.life / Math.max(1, l.P.life),
         "#4fd04f",
-        p ? `«${Ns(p)}»` : "",
-        p ? r2[p[3]].c : "",
+        l.battlefield && typeof arenaSimulator!=="undefined" && arenaSimulator ? `<${arenaSimulator.warRewards.rank(v).name}>` : p ? `«${Ns(p)}»` : "",
+        l.battlefield && typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.battlefieldTitleColor(arenaSimulator.warRewards.rank(v).name) : p ? r2[p[3]].c : "",
       ),
         !w &&
           !(f && M8(bA(f.img), f.sz, v.x, v.y, 0.9, v.face < 0, l.deadT > 0 ? 0.35 : 1)) &&
@@ -228,37 +253,15 @@ var NP = function (A) {
       a.battlefieldTeam === 'song' ? '#ffcc00' : a.battlefieldTeam === 'jin' ? '#c77bff' : a.goldBoss ? Ps.gold : Ps[a.cls] || Ps.normal,
       a.cls === "boss" ? 12 : 11,
       a.hp / a.max,
-      a.cls === "boss" ? "#ff5030" : "#e03a2a",
-      void 0,
-      void 0,
+      a.battlefieldTeam && typeof arenaSimulator !== "undefined" && arenaSimulator
+        ? arenaSimulator.battlefieldHealthColor(a.battlefieldTeam, arenaSimulator.battlefield.state.team)
+        : a.cls === "boss" ? "#ff5030" : "#e03a2a",
+      a.battlefieldRank ? `<${a.battlefieldRank}>` : void 0,
+      a.battlefieldRank && typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.battlefieldTitleColor(a.battlefieldRank) : void 0,
       w0[a.series],
     );
   }
   IP();
-  for (const effect of l.fx) {
-    const cast = effect.combat;
-    // Finite damage pulses share one continuous animation; only legacy
-    // repeating fields restart their visuals at each damage interval.
-    const repeating = cast && !cast.pulseCount && ![362, 375].includes(+cast.skill.id) && cast.interval && cast.pulse >= 0;
-    const phase = repeating ? Math.max(0, cast.elapsed - (cast.nextPulse - cast.interval)) : 0;
-    if (effect.k === "jm") YP(repeating && effect.age >= 0 ? Object.assign({}, effect, { age: phase * K3 }) : effect);
-    else if (effect.k === "mis" || effect.k === "boom") CP(repeating && effect.t >= 0 ? Object.assign({}, effect, { t: phase }) : effect);
-    else if (effect.k === "contact") drawContactProjectile(effect);
-  }
-  for (const a of l.fx) {
-    if (a.k === "mis" || a.k === "boom" || a.k === "jm" || a.k === "contact") continue;
-    a.life -= A;
-    const i = E(a.life / a.max, 0, 1);
-    ((n.globalAlpha = i),
-      (n.strokeStyle = a.color),
-      a.k === "line"
-        ? ((n.lineWidth = 3), n.beginPath(), n.moveTo(a.x1, a.y1), n.lineTo(a.x2, a.y2), n.stroke())
-        : ((n.lineWidth = a.r ? 3 : 2),
-          n.beginPath(),
-          n.arc(a.x, a.y - (a.r ? 0 : 10), 8 + (1 - i) * (a.r || 30), 0, 7),
-          n.stroke()));
-  }
-  ((n.globalAlpha = 1), (l.fx = l.fx.filter((a) => a.life > 0)), (n.textAlign = "center"));
   mapScene.drawForeground(n);
   mapScene.drawAtmosphere(n);
   updateDamageLabels(l.txt, A, n);

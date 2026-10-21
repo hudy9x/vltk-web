@@ -691,6 +691,9 @@ var aD = function (A, n, t) {
     !mt(v.x, v.y, n.x, n.y)
   )
     return 0;
+  // Dash attacks also spend resources only after their mount condition passes.
+  const riding = tP(e);
+  if (riding === true || riding === null) return 0.25;
   (o4(e), typeof Y !== "undefined" && Y.stopAfterCast(), ((l.skCd = l.skCd || {})[gs] = (l.clock || 0) + (e.cd || 2)));
   const a = n.x - v.x,
     i = n.y - v.y,

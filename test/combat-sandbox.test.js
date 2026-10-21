@@ -33,7 +33,7 @@ function game(enabled=true, entries=new Map()) {
     I:Object.fromEntries(factions.map(f=>[f.key,f])),T:catalog.JX.skills,
     o:{fac:null},l:{P:{life:100,mana:100}},v:{x:500,y:500},Y:{},HA:false,m0:0,
     r0:{0:{n:'Hổ'},1:{n:'Sói'}},k0:[{lo:1,hi:10,m:[0],boss:1},{lo:140,hi:150,m:[1],boss:0}],O0:{w:1000,h:1000},
-    originalDamage:0, U9:()=>s.originalDamage++, $A(){},$:()=>{},
+    originalDamage:0, U9:attacker=>{s.originalDamage++;return s.nativeIncoming?.(attacker);}, $A(){},$:()=>{},
     o8(){},cD(){},lD(){},rD(){},v8:state=>state,Vf(){},D0(){},pi(){},n0(){},M1(){},uo(){},tt(){},fA(){},V(){},
     AA:()=>({id:1,bg:'test'}),ma(){},bA:()=>null,X0:(x,y)=>[x,y],
     UA:skill=>!!skill.enemy,j1:()=>null,_A:()=>({}),D:text=>text,k(){},
@@ -160,9 +160,9 @@ test('one damage can be disabled for living monsters and future respawns, and su
 function simulatorGame(entries) {
   const s=game(true,entries), fields=s.fields;
   s.Math=Object.create(Math);s.Math.random=()=>.5;
-  const element=()=>({value:'',checked:false,hidden:false,attributes:{},listeners:{},
+  const element=()=>({value:'',checked:false,hidden:false,style:{},attributes:{},listeners:{},
     setAttribute(key,value){this.attributes[key]=value;},addEventListener(key,fn){this.listeners[key]=fn;},
-    focus(){this.focused=true;},querySelector:id=>field(id)});
+    focus(){this.focused=true;},querySelectorAll:()=>[],querySelector:id=>field(id)});
   function field(id){if(!fields.has(id))fields.set(id,element());return fields.get(id);}
   s.simNodes=[];s.simListeners={};
   s.gmToggle=element();s.gmToggle.id='gm-toggle';s.gmPanel=element();s.gmPanel.id='gm-panel';
@@ -170,7 +170,7 @@ function simulatorGame(entries) {
   s.document.getElementById=id=>[...s.simNodes,s.gmToggle,s.gmPanel].find(node=>node.id===id)||null;
   s.document.addEventListener=(key,fn)=>{const previous=s.simListeners[key];s.simListeners[key]=event=>{previous?.(event);fn(event);};};
   s.document.body.appendChild=node=>s.simNodes.push(node);
-  Object.assign(s, { Z:()=>1, E:(x,lo,hi)=>Math.max(lo,Math.min(hi,x)), y1:()=>false, cw:75,
+  Object.assign(s, { S:{potions:[]}, Z:()=>1, E:(x,lo,hi)=>Math.max(lo,Math.min(hi,x)), y1:()=>false, cw:75,
     Q0:['phys','cold','fire','poison','light'], y5:2, Ct:.2, ve:3, f8:1, Od:0, Jr:.5,
     ea:()=>1,E8(){},Tt(){},W3(){},za(){},Rn:()=>null,
     Jt:()=>null,x8(){},Ya(){},kn:()=>0,Mw:(actor,x,y)=>Object.assign(actor,{x,y}),Qa:.5,QA:.81,Z0:{g:false},R2:()=>true,A0:{m:{},f:{},s:{}},Hi:{phys:"#fff"},Y3:()=>0,mt:()=>true,G3(){},
@@ -1026,7 +1026,7 @@ test('Tống Kim road monsters join real combat targets, can damage SIMs, respaw
   assert.equal(s.combatSandbox.nearestTarget(monster),sim);
   assert.equal(match.canHit(s.v,monster),true);assert.ok(match.targets(sim).includes(monster));
   const hp=monster.hp;s.arenaSimulator.tick(.1);advanceSimulator(s);assert.ok(monster.hp<hp,'SIM skills hurt neutral monsters');
-  const before=sim.hp;s.arenaSimulator.receiveMonsterHit(sim,monster);assert.equal(sim.hp,before-1,'shared monster damage reaches SIM defenses');
+  const before=sim.hp;s.nativeIncoming=attacker=>{s.l.life=Math.max(0,s.l.life-attacker.dmg);};s.arenaSimulator.receiveMonsterHit(sim,monster);assert.equal(sim.hp,Math.max(0,before-monster.nativeDamage),'native damage is forwarded instead of forcing one HP');
   monster.hp=0;s.arenaSimulator.tick(.01);assert.equal(match.state.monsters.alive,11);
   s.arenaSimulator.tick(20);assert.equal(match.state.monsters.alive,12);
   assert.ok(!s.l.enemies.includes(monster));
@@ -1069,7 +1069,7 @@ test('Tống Kim soldiers have curated team skins, reject allied hits, and hosti
  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
  const soldiers=s.l.enemies.filter(actor=>actor.battlefieldMonster),song=soldiers.filter(actor=>actor.battlefieldTeam==='song'),jin=soldiers.filter(actor=>actor.battlefieldTeam==='jin');
  assert.equal(song.length,6);assert.equal(jin.length,6);
- assert.ok(song.every(actor=>[595,596,597,598,599].includes(actor.tid)));assert.ok(jin.every(actor=>[141,152,153,158,159,160,163,167].includes(actor.tid)));
+ for(const units of [song,jin])assert.ok(units.every(actor=>[599,588,597,600,598,595,589,144,566].includes(actor.tid)));
  const health=s.l.life;s.U9(song[0]);assert.equal(s.l.life,health);
  Object.assign(song[0],{res:{...s.l.P.res},def:0,series:0});const hp=song[0].hp;s.hs({parts:{phys:100},crit:0,series:0,series5:0},song[0]);assert.equal(song[0].hp,hp);
  const [ally]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1}),[opponent]=match.add({team:'jin',faction:'gaibang',level:150,strength:'normal',count:1});
@@ -1099,16 +1099,16 @@ test('native soldier contacts damage only opposing soldiers through the shared c
  s.arenaSimulator.receiveSoldierHit(friendly,attacker);assert.equal(friendly.hp,allyHP);
 });
 
-test('Tống Kim soldiers have increased HP and pursue enemies within a 1600-unit leash',()=>{
+test('Tống Kim soldiers have increased HP and respect each configured home leash',()=>{
  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
  const soldier=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam==='jin');
  assert.ok(s.l.enemies.filter(actor=>actor.battlefieldMonster).every(actor=>actor.hp>=1200000&&actor.max>=1200000));
  for(const other of s.l.enemies.filter(actor=>actor.battlefieldMonster&&actor!==soldier)) other.dead=true;
  const [enemy]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
- soldier.x-=500;enemy.x=soldier.x-600;enemy.y=soldier.y;
- assert.equal(s.combatSandbox.nearestTarget(soldier),enemy,'soldier still acquires enemies 500 units away from home');
+ soldier.x-=100;enemy.x=soldier.x-200;enemy.y=soldier.y;
+ assert.equal(s.combatSandbox.nearestTarget(soldier),enemy,'soldier acquires enemies within its home leash');
  enemy.x=soldier.x-1201;assert.equal(s.combatSandbox.nearestTarget(soldier),null,'detection range remains bounded');
- soldier.x=soldier.battlefieldHome.x-1601;enemy.x=soldier.x;
+ soldier.x=soldier.battlefieldHome.x-soldier.battlefieldLeashRadius-1;enemy.x=soldier.x;
  assert.equal(s.combatSandbox.nearestTarget(soldier),null,'stop attacking beyond new leash');
  s.arenaSimulator.tick(.01);assert.equal(soldier.x,soldier.battlefieldHome.x,'out-of-range soldier returns home');
 });
@@ -1119,8 +1119,8 @@ test('soldier hits use the SIM recipient team rather than the real player team',
   const enemyTeam=playerTeam==='song'?'jin':'song';
   const [enemy]=match.add({team:enemyTeam,faction:'wudang',level:150,strength:'normal',count:1});
   const soldier=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam===playerTeam);
-  const hp=enemy.hp,playerHP=s.l.life;s.arenaSimulator.receiveMonsterHit(enemy,soldier);
-  assert.equal(enemy.hp,hp-1,'allied soldier damages hostile SIM');assert.equal(s.l.life,playerHP);
+  const hp=enemy.hp,playerHP=s.l.life;s.nativeIncoming=attacker=>{s.l.life=Math.max(0,s.l.life-attacker.dmg);};s.arenaSimulator.receiveMonsterHit(enemy,soldier);
+  assert.equal(enemy.hp,Math.max(0,hp-soldier.nativeDamage),'allied soldier forwards native damage to hostile SIM');assert.equal(s.l.life,playerHP);
   const [ally]=match.add({team:playerTeam,faction:'wudang',level:150,strength:'normal',count:1});
   const allyHP=ally.hp;s.arenaSimulator.receiveMonsterHit(ally,soldier);assert.equal(ally.hp,allyHP);
  }

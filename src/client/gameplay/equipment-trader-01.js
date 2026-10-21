@@ -244,8 +244,8 @@ var equipmentTrader = (function () {
     }
     render();
   }
-  function place({ x, y, visible = () => true, name = "Thần Trang Sứ Giả" }) {
-    const npc = { x, y, name, visible, equipmentTrader: true, remove() { const index = placements.indexOf(npc); if (index >= 0) placements.splice(index, 1); } };
+  function place({ x, y, visible = () => true, name = "Thần Trang Sứ Giả", onInteract = open, subtitle = "Giao dịch trang bị", animation = "boss019" }) {
+    const npc = { x, y, name, visible, onInteract, subtitle, animation, equipmentTrader: true, remove() { const index = placements.indexOf(npc); if (index >= 0) placements.splice(index, 1); } };
     placements.push(npc);
     return npc;
   }
@@ -253,14 +253,14 @@ var equipmentTrader = (function () {
   function draw(context, npc) {
     context.save();
     context.fillStyle = "#0007"; context.beginPath(); context.ellipse(npc.x, npc.y, 18, 7, 0, 0, 7); context.fill();
-    // Static first idle frame: independent of time, player and equipped items.
-    Va("boss019", "st", 0, 0, npc.x, npc.y, Jn);
+    // Each NPC uses its configured idle sprite, independent of player equipment.
+    Va(npc.animation, "st", 0, 0, npc.x, npc.y, Jn);
     context.font = '12px "IBM Plex Mono", monospace'; context.textAlign = "center";
     context.strokeStyle = "#000"; context.lineWidth = 3; context.fillStyle = "#f6d27c";
     const top = npc.y - 105;
     context.strokeText(npc.name, npc.x, top); context.fillText(npc.name, npc.x, top);
     context.font = '10px "IBM Plex Mono", monospace';
-    context.strokeText("Giao dịch trang bị", npc.x, top - 16); context.fillText("Giao dịch trang bị", npc.x, top - 16);
+    context.strokeText(npc.subtitle, npc.x, top - 16); context.fillText(npc.subtitle, npc.x, top - 16);
     context.restore();
   }
   // Capture only NPC taps so movement, loot and combat targeting stay unchanged.
@@ -271,7 +271,7 @@ var equipmentTrader = (function () {
     const npc = entities().find(npc => Math.abs(x - npc.x) <= 30 && y >= npc.y - 150 && y <= npc.y + 12);
     if (!npc) return;
     event.preventDefault(); event.stopImmediatePropagation();
-    open();
+    npc.onInteract();
   }, true);
   const style = document.createElement("style");
   style.textContent = `body:has(#modal:not(.hidden) .equipment-trader) #combat-sandbox{visibility:hidden}#modal:has(.equipment-trader){z-index:95000!important}.equipment-trader .trader-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin:14px 0}.equipment-trader label{display:block;margin:0 0 10px}.equipment-trader select{display:block;width:100%;margin-top:4px;background:#1b211b;color:#eddfba;border:1px solid #807653;padding:6px;font:inherit}.equipment-trader .trader-preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(85px,1fr));gap:6px}.equipment-trader .trader-piece{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 5px;background:#172019;color:#ebd49b;border:1px solid #6b654b;font:inherit;font-size:11px;cursor:pointer}.equipment-trader .trader-piece img{width:44px;height:44px;object-fit:contain;image-rendering:pixelated}.equipment-trader .trader-details{margin-top:12px;line-height:1.6;font-size:12px}.equipment-trader .on{border-color:#f3cd73}.equipment-trader h4{margin:0 0 6px}@media(max-width:540px){.equipment-trader .trader-layout{grid-template-columns:1fr}}`;
@@ -303,7 +303,7 @@ var equipmentTrader = (function () {
     place({ x: 1240, y: 2139, visible: () => !!l.town && !l.dg && !l.tower });
   }
   if (typeof combatSandbox !== "undefined" && combatSandbox) {
-    place({ x: O0.w / 2 - 350, y: O0.h / 2 - 160, visible: () => !l.town && !l.dg && !l.tower });
+    place({ x: O0.w / 2 - 350, y: O0.h / 2 - 160, visible: () => !l.town && !l.dg && !l.tower && !l.battlefield });
     const button = document.createElement("button");
     button.type = "button"; button.textContent = "Thần Trang Sứ Giả · Đồ xanh / HKMP";
     button.onclick = open;

@@ -708,7 +708,12 @@ var nP = function (A) {
 
 var tP = function (A) {
   const n = T[A.id];
-  return !n || E3(n) ? !1 : S3() ? (Ka(!l.mounted, !0), !0) : null;
+  if (!n || E3(n)) return false;
+  // A pending ride cooldown must not let a grounded skill cast while mounted.
+  // true means retry after switching (or while waiting); null means blocked.
+  if (!S3()) return null;
+  Ka(!l.mounted, true);
+  return true;
 };
 
 var O3 = function () {

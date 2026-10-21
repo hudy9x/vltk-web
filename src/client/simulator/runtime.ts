@@ -1,10 +1,17 @@
+import { battlefieldHealthColor, battlefieldTitleColor } from './presentation';
+import { createSimNames } from './sim-names';
+import { SOLDIER_TITLES, SOLDIER_RANKS } from './soldier-config';
+import { mountWarPharmacy } from './pharmacy';
+import { buildWarStandings, mountWarLeaderboard } from './leaderboard';
 import { createWarSupplies, SUPPLY_RADIUS } from './supplies';
 import { createWarInventory } from './war-inventory';
 import { applyArmySetEquipment } from './set-equipment';
 import { SOLDIER_DETECTION_RADIUS, SOLDIER_LEASH_RADIUS, soldierRank } from './soldier-rules';
 import { skillDefense, statusDuration } from './defense';
 import { BATTLEFIELD_PVP_DAMAGE } from './balance';
-import { soldierSkin } from './soldiers';
+import { patrolSoldier } from './soldier-patrol';
+import { soldierSkillOptions } from './soldier-skills';
+import { SOLDIER_RANK_SKINS, soldierSkin } from './soldiers';
 import { createWarRewards, WAR_ITEMS } from './war-rewards';
 import { createRoadMonsters } from './road-monsters';
 import { createArmyEquipment } from './equipment';
@@ -31,6 +38,7 @@ import type { SimulatorTemplate } from './types';
 // These declarations bind to the existing shared game IIFE. No duplicate state
 // and no window globals: the bundler keeps these references in the original scope.
 declare var combatSandbox: SandboxAPI | null;
+declare var horseTrader: { close(): void; readonly isOpen: boolean } | null;
 declare var o: SimulatorProfile, l: SimulatorWorld, v: LegacyEntity;
 declare var I: Record<string, Faction>, T: Record<string, LegacyRecord>, r0: Record<string, LegacyRecord>;
 declare var MapsEngine: { getMapBackground(id: number): string };
@@ -38,7 +46,7 @@ declare var Z0: LegacyRecord;
 declare var k0: LegacyRecord[];
 declare var z2: number;
 declare var mapNavigation: { clear(x: number, y: number, tx: number, ty: number): boolean };
-declare var equipmentTrader: { blueCatalog(sex: number): LegacyRecord[]; goldCatalog(faction: string): {key: string; items: LegacyRecord[]}[]; affixes(item: LegacyRecord, series: number, index: number): LegacyRecord[] };
+declare var equipmentTrader: { blueCatalog(sex: number): LegacyRecord[]; goldCatalog(faction: string): {key: string; items: LegacyRecord[]}[]; affixes(item: LegacyRecord, series: number, index: number): LegacyRecord[]; place?(options:LegacyRecord):LegacyRecord };
 declare var G5: Record<string, string[]>, V2: Record<number, number>;
 declare function yf(): LegacyRecord;
 declare function N8(): LegacyRecord | null;
@@ -47,6 +55,7 @@ declare var S: LegacyRecord, R: boolean;
 declare var X9: (dt: number) => void, Ms: (kind: 'life' | 'mana') => void;
 declare var be: Record<number, number>, ao: number;
 declare function applyPotionRecovery(world: SimulatorWorld, kind: 'life' | 'mana', potion: LegacyRecord): void;
+declare function Ot(potion:LegacyRecord):number;
 declare function Ta(kind: string, template: LegacyRecord, quality: number): LegacyRecord;
 declare function g3(name: string): LegacyRecord | null;
 declare function os(item: LegacyRecord): void;
@@ -140,6 +149,7 @@ export function createSimulator() {
     return result;
   };
   let battlefield: ReturnType<typeof createBattlefield> | undefined;
+  const simNames=createSimNames();
   // Local Tống Kim balance parameter, not an asserted original-VLTK formula.
   function pvpDamageScale(source: LegacyEntity, target: LegacyEntity): number {
     const fighter = (actor: LegacyEntity) => !actor.battlefieldBoss && !actor.battlefieldMonster &&
@@ -222,7 +232,7 @@ export function createSimulator() {
   function asSim<T>(actor: SimulatorActor, action: () => T, quiet = true, loadout?: { profile: SimulatorProfile; stats: SimulatorStats }): T {
     const player = o, world = l, hero = v;
     o = loadout?.profile || actor.profile; v = actor;
-    l = Object.assign({}, world, { P: actor.battlefieldBoss && loadout ? { ...loadout.stats, life: actor.max } : loadout?.stats || actor.stats || world.P, life: actor.hp, mana: actor.mana, sim: true, quiet,
+    l = Object.assign({}, world, { P: actor.battlefieldBoss && loadout ? { ...loadout.stats, life: actor.max } : loadout?.stats || actor.stats || world.P, life: actor.hp, mana: actor.mana, sim: true, quiet, mounted: false,
       buffs: {}, skCd: {}, look: null, jx: null, ignoreEqt: null, buffAssume: true });
     try { return action(); }
     finally { actor.hp = l.life; actor.mana = actor.battlefieldTeam && !actor.battlefieldBoss ? l.mana : actor.stats.mana; o = player; l = world; v = hero; }
@@ -406,41 +416,57 @@ export function createSimulator() {
     if (!monster.battlefieldMonster) return nearestArenaTarget.call(sandbox,monster);
     if (!battlefield?.running) return null;
     const home = monster.battlefieldHome;
-    if (home && Math.hypot(monster.x-home.x,(monster.y-home.y)*2) > SOLDIER_LEASH_RADIUS) return null;
+    if (home && Math.hypot(monster.x-home.x,(monster.y-home.y)*2) > (monster.battlefieldLeashRadius || SOLDIER_LEASH_RADIUS) || monster.battlefieldReturning) return null;
     const candidates: LegacyEntity[] = actors.filter(actor => !actor.dead && actor.hp > 0);
     if (battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0)) candidates.push(battlefieldHero);
     const distance = (target: LegacyEntity) => Math.hypot(target.x-monster.x,(target.y-monster.y)*2);
     candidates.push(...roadMonsters.actors.filter(target => target !== monster && !target.dead && target.hp>0));
-    return candidates.filter(target => battlefield!.canHit(monster,target) && distance(target) < SOLDIER_DETECTION_RADIUS).sort((a,b) => distance(a)-distance(b))[0] || null;
+    return candidates.filter(target => battlefield!.canHit(monster,target) && distance(target) < Math.min(SOLDIER_DETECTION_RADIUS, monster.battlefieldLeashRadius || SOLDIER_LEASH_RADIUS) && (!home || Math.hypot(target.x-home.x,(target.y-home.y)*2) <= (monster.battlefieldLeashRadius || SOLDIER_LEASH_RADIUS))).sort((a,b) => distance(a)-distance(b))[0] || null;
   };
   const roadMonsters = createRoadMonsters({
-    create(index, x, y) {
+    create(index, x, y, spawn) {
       const team = x < 1792 ? 'song' : 'jin';
-      const id = soldierSkin(r0,team,index);
+      const id = soldierSkin(r0,team,Math.floor(index/2),spawn?.rank || 'soldier');
       const [px,py] = X0(x,y), monster = n1(id,120,'normal',px,py);
-      const rank = soldierRank(index);
-      const maximum = Math.max(rank.minimumHP, monster.max || 0);
-      Object.assign(monster, { battlefieldMonster: true, battlefieldTeam: team, arenaMonster: true, n: `${team === 'song' ? 'Tống' : 'Kim'} · ${rank.name} · ${r0[id].n}`, battlefieldRank: rank.name,
+      const rankIndex=spawn?SOLDIER_RANKS.indexOf(spawn.rank):0;
+      const rank = spawn?{name:SOLDIER_TITLES[spawn.rank],minimumHP:spawn.hp,attackIntervalFactor:Math.max(.4,.85-rankIndex*.1),movementFactor:1.15+rankIndex*.08}:soldierRank(index);
+      const maximum = spawn?spawn.hp:Math.max(rank.minimumHP, monster.max || 0);
+      Object.assign(monster, { battlefieldMonster: true, battlefieldTeam: team, arenaMonster: true, n: r0[id].n, battlefieldRank: rank.name,
         cd: Math.max(.25, (monster.cd || 1) * rank.attackIntervalFactor), spd: (monster.spd || 40) * rank.movementFactor,
-        hp: maximum, max: maximum, nativeDamage: monster.dmg, dmg: sandbox.oneDamage ? 1 : monster.dmg, battlefieldHome: { x:px, y:py } });
+        hp: maximum, max: maximum, nativeDamage: monster.dmg, dmg: monster.dmg, battlefieldPatrolRadius: spawn?.patrolRadius || 180, battlefieldLeashRadius: spawn?.leashRadius || 800, battlefieldSkills: spawn?.skills || [], battlefieldHome: { x:px, y:py } });
       delete monster.home; l.enemies.push(monster); return monster;
     },
     defeated(actor) { warRewards.killed(actor); },
     cancel: cancelRoadMonster,
     remove(actor) { cancelRoadMonster(actor); l.enemies = l.enemies.filter(enemy => enemy !== actor); l.corpses = (l.corpses || []).filter((corpse: LegacyEntity) => corpse !== actor); },
     tick(actor,dt) {
-      const home = actor.battlefieldHome, returning = Math.hypot(actor.x-home.x,(actor.y-home.y)*2) > SOLDIER_LEASH_RADIUS;
-      // Native ticking still expires poison/cold/stun while the leash suppresses targets.
+      const home = actor.battlefieldHome;
+      if (Math.hypot(actor.x-home.x,(actor.y-home.y)*2) > actor.battlefieldLeashRadius) actor.battlefieldReturning = true;
+      const target = arenaTargets.nearestTarget(actor);
+      const loadouts = (actor.battlefieldSkills as number[]).map(id => soldierLoadout(id));
+      actor.battlefieldSkillCooldown = Math.max(0,(actor.battlefieldSkillCooldown || 0)-dt*coldSpeedFactor(actor));
+      const loadout = loadouts.length ? loadouts[(actor.battlefieldSkillIndex || 0) % loadouts.length] : null;
+      if (loadout) {
+        // Native AI still handles statuses/movement; suppress its basic contact
+        // when the configurable skill deck owns this unit's attacks.
+        actor.atkCd = Math.max(1,dt*2); actor.ranged = true; actor.reach = loadout.stats.main.rad;
+      }
       monsterTick(actor,dt);
-      if (returning && actor.hp > 0 && !actorActionLocked(actor)) { actor.moving = true; Mw(actor,home.x,home.y,actor.spd*coldSpeedFactor(actor)*dt); }
+      if (actor.hp <= 0 || actorActionLocked(actor) || actor.stun > 0) return;
+      if (!target || actor.battlefieldReturning) {
+        patrolSoldier(actor,dt*coldSpeedFactor(actor),{move:Mw,direction:kn,clear:(x,y,tx,ty)=>typeof mapNavigation!=='undefined'?mapNavigation.clear(x,y,tx,ty):mt(x,y,tx,ty)});
+      } else if (loadout && actor.battlefieldSkillCooldown <= 0) {
+        castSoldierSkill(actor, target, loadout);
+      }
     },
   });
   const arenaTick = sandbox.tick;
   sandbox.tick = function (dt) { arenaTick(dt); tick(dt); };
   function tick(dt: number) {
     battlefield?.tick(dt);
+    updateWarNpcs();
     refreshTime += dt;
-    if (refreshTime >= .25) { refreshTime = 0; updateInfo(); battlePanel.render(); }
+    if (refreshTime >= .25) { refreshTime = 0; updateInfo(); battlePanel.render(); pharmacy.refresh(); leaderboard.render(); }
     warRewards.tick(dt);
     roadMonsters.tick(dt, !!battlefield?.running);
     const bodies = battlefield?.active ? [...actors, ...roadMonsters.actors, { ...battlefieldHero, hp: battlefieldWorld.life, dead: !battlefieldWorld.life || battlefieldWorld.deadT > 0 }] : actors;
@@ -563,9 +589,10 @@ export function createSimulator() {
     if (actor.curse && typeof WP === "function") WP(context, actor, Jn);
     if (actor.stFx && typeof ZP === "function") ZP(context, actor, height ? Math.min(height, 110) : 50, Jn, dt);
     const earned = battlefield?.active ? warRewards.rank(actor) : null;
-    const actorName = earned && earned.points > 0 ? `${actor.n} · ${earned.name}` : actor.n;
+    const actorName = actor.n;
+    const title=actor.battlefieldBoss?'<Nguyên soái>':earned?`<${earned.name}>`:'';
     const color = actor.battlefieldTeam === 'song' ? '#ffcc00' : actor.battlefieldTeam === 'jin' ? '#c77bff' : '#6ee7e0';
-    L3(actor.x, actor.y - nameplateOffset(look?.anim, Jn, 1, 0, 55), actorName, color, 12, actor.hp / actor.max, color);
+    L3(actor.x, actor.y - nameplateOffset(look?.anim, Jn, 1, 0, 55), actorName, color, 12, actor.hp / actor.max, actor.battlefieldTeam && battlefield?.active ? battlefieldHealthColor(actor.battlefieldTeam, battlefield.state.team) : color, title, battlefieldTitleColor(actor.battlefieldBoss ? 'Nguyên soái' : earned?.name || 'Binh sĩ'));
   }
   function text(simOnly = false) { return JSON.stringify({ format: "arena-damage-v1", exportedAt: new Date().toISOString(), oneDamage: sandbox.oneDamage,
     simulators: actors.map(actor => ({ id: actor.simId, name: actor.n, faction: actor.profile.fac, skill: actor.profile.main, attr: actor.profile.attr, skills: actor.profile.sk, pk: actor.pk, farm: actor.farm })),
@@ -826,13 +853,52 @@ export function createSimulator() {
     } finally { o = player; l = world; }
     return profile;
   }
+  type SoldierLoadout = { profile: SimulatorProfile; stats: SimulatorStats };
+  const soldierLoadouts = new Map<number,SoldierLoadout>();
+  function soldierLoadout(id: number): SoldierLoadout {
+    const cached = soldierLoadouts.get(id);
+    if (cached) return cached;
+    const option = soldierSkillOptions(T,Object.values(I),UA).find(skill => skill.id === id);
+    if (!option) throw new Error('Quái chỉ dùng chiêu tấn công cấp 50–70.');
+    const profile = battleProfile({team:'song',faction:option.faction,level:120,strength:'weak',count:1},option.faction,true,id);
+    profile.sk[id] = T[id].max || 1; profile.skL[id] = {lv:profile.sk[id],xp:0};
+    const player = o, world = l;
+    try {
+      o = profile; l = Object.assign({},world,{sim:true,quiet:true,buffAssume:true,look:null,jx:null,ignoreEqt:null});
+      const stats = j0(); stats.main = resolvedSkill(stats,id);
+      const loadout = {profile,stats}; soldierLoadouts.set(id,loadout); return loadout;
+    } finally { o = player; l = world; }
+  }
+  function castSoldierSkill(monster: LegacyEntity,target: LegacyEntity,loadout: SoldierLoadout) {
+    const skill = loadout.stats.main;
+    const reach = skill.geo?.k === 'self' ? skill.geo.r || skill.rad : skill.rad;
+    if (skillCastDistance(monster,target) > reach + (target.r || 12)/QA + 4 ||
+      (!skillIgnoresTerrain(skill) && !mt(monster.x,monster.y,target.x,target.y))) return;
+    const caster = monster as SimulatorActor;
+    Object.assign(caster,{profile:loadout.profile,stats:loadout.stats,mana:loadout.stats.mana,battlefieldLoadout:loadout});
+    const revision = caster.actionRevision || 0;
+    const targets = () => [...actors,...roadMonsters.actors,battlefieldHero].filter(candidate=>battlefield!.canHit(caster,candidate));
+    castSimulatorSkill(caster,target,skill,
+      ()=>!!battlefield?.running && roadMonsters.actors.includes(caster) && !caster.dead && caster.hp>0 && (caster.actionRevision || 0)===revision,
+      targets,(ability,contact)=>{
+        // Delayed missiles keep the profile of the skill that launched them,
+        // even after the monster rotates to a different faction's next skill.
+        const previous = caster.battlefieldLoadout; caster.battlefieldLoadout = loadout;
+        try { return hit(caster,ability,contact); } finally { caster.battlefieldLoadout = previous; }
+      },action=>asSim(caster,action,false,loadout));
+    caster.battlefieldSkillCooldown = Math.max(caster.cd || 1,1/Math.max(.1,skill.rate || 1),skill.cd || 0);
+    caster.battlefieldSkillIndex = (caster.battlefieldSkillIndex || 0)+1;
+    caster.lastCast = {id:skill.id || 0,name:skill.n || '',level:skill.L || 1};
+    caster.act = 'at'; caster.actT = 0; caster.casts = (caster.casts || 0)+1;
+  }
   function spawnBattleActor(build: ArmyBuild, bossElement?: number) {
     const profile = battleProfile(build, build.faction, bossElement !== undefined);
     const skill = profile.main;
     const actor = create(profile.fac, skill, false, false, { version: 1, id: 'battle', name: I[profile.fac].n, updatedAt: '', profile, autoSkills: false, autoPotential: true, pk: true, farm: false });
+    if(bossElement===undefined){actor.n=simNames.next(actor.profile.sex);actor.profile.name=actor.n;}
     actor.battlefieldTeam = build.team;
     if (bossElement !== undefined) {
-      const ids = [...new Set(k0.map(zone => zone.boss))].filter(id => r0[id]);
+      const ids = SOLDIER_RANK_SKINS.marshal.filter(id => r0[id]);
       const bossId = ids.find(id => j2(id) === bossElement) ?? ids[0];
       if (bossId === undefined) { remove(actor); throw new Error('Không có boss Hoàng Kim trong catalog.'); }
       actor.tid = bossId; actor.n = r0[bossId].n; actor.goldBoss = true; actor.cls = 'boss';
@@ -862,13 +928,15 @@ export function createSimulator() {
     alive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
     team: () => battlefield!.state.team, position: () => battlefieldHero,
     changed: () => { if(typeof R !== 'undefined')R=true; },
-    recover(resource) {
+    catalog: () => (S.potions || []).filter((potion:LegacyRecord) => typeof be==='undefined'||o.lvl >= (be[potion.tier] || 999)).map((potion:LegacyRecord) => ({...potion,key:`${potion.kind}:${potion.tier}`,price:typeof Ot==='function'?Ot(potion):potion.price||0})),
+    pay(amount){if(!Number.isFinite(amount)||amount<0||o.gold<amount)return false;o.gold-=amount;battlefieldWorld.dirty=true;return true;},
+    recover(resource,selectedPotion) {
       if ((battlefieldWorld.potCd?.[resource] || 0) > 0) return false;
-      const potions = (S.potions || []).filter((potion: LegacyRecord) => potion.kind === resource && o.lvl >= (be[potion.tier] || 999));
-      const potion = potions.sort((first:LegacyRecord,second:LegacyRecord) => second.tier-first.tier)[0];
-      if (!potion || battlefieldWorld[resource] >= battlefieldWorld.P[resource]) return false;
+      const potion=selectedPotion;
+      if (!potion || (potion.kind==='both' ? battlefieldWorld.life>=battlefieldWorld.P.life && battlefieldWorld.mana>=battlefieldWorld.P.mana : battlefieldWorld[resource]>=battlefieldWorld.P[resource])) return false;
       applyPotionRecovery(battlefieldWorld, resource, potion);
       battlefieldWorld.potCd ||= { life:0, mana:0 }; battlefieldWorld.potCd[resource] = ao;
+      if(potion.kind==='both')battlefieldWorld.potCd.life=battlefieldWorld.potCd.mana=ao;
       return true;
     },
   });
@@ -920,7 +988,7 @@ export function createSimulator() {
   }
   battlefield = createBattlefield({
     actors: () => [...actors], monsters: () => roadMonsters.actors, player: () => battlefieldHero, playerAlive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
-    playerDPS: () => estimateDPS({ stats: battlefieldWorld.P } as SimulatorActor), create: spawnBattleActor, cancel: cancelCasts, remove,
+    playerDPS: () => estimateDPS({ stats: battlefieldWorld.P } as SimulatorActor), create: spawnBattleActor, cancel: actor => {if(actor.hp<=0)warRewards.killed(actor);cancelCasts(actor);}, remove,
     enter(team) {
       previousField = { key: Z0.key, bgImg: l.bgImg, zoneShown: l.zoneShown, town: l.town, name: o.name, x: v.x, y: v.y, life: l.life, mana: l.mana, ctrl: o.ctrl, autoMap: o.autoMap };
       for (const actor of [...actors]) remove(actor);
@@ -929,7 +997,7 @@ export function createSimulator() {
       l.town = false; l.battlefield = true; o.ctrl = 'manual'; o.autoMap = false;
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = true;
       Object.assign(v, CAMPS[team]); l.life = l.P.life; l.mana = l.P.mana;
-      warRewards.reset(); supplies.reset(true); roadMonsters.start();
+      simNames.reset(); warRewards.reset(); supplies.reset(true); roadMonsters.start(); updateWarNpcs();
     },
     leave() {
       roadMonsters.clear(); warRewards.reset(); supplies.reset();
@@ -941,12 +1009,14 @@ export function createSimulator() {
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = false;
     },
     respawnPlayer(team) {
+      warRewards.revived(battlefieldHero);
       l.life = l.P.life; l.mana = l.P.mana; l.deadT = 0;
       l.slowT = l.slowPower = l.stunT = l.hpDotT = l.hpDot = 0;
       Object.assign(v, CAMPS[team], { act: 'st', actT: 0, castT: 0, hurtT: 0 });
       v.actionRevision = (v.actionRevision || 0) + 1;
     },
     setPlayerDead(team) {
+      warRewards.killed(battlefieldHero);
       Object.assign(battlefieldHero, CAMPS[team]);
       battlefieldWorld.life = 0; battlefieldWorld.deadT = 6; battlefieldWorld.manTgt = battlefieldWorld.tgt = battlefieldWorld.moveTo = null;
       battlefieldWorld.slowT = battlefieldWorld.stunT = battlefieldWorld.hpDotT = battlefieldWorld.hpDot = 0;
@@ -955,6 +1025,7 @@ export function createSimulator() {
     },
     position(actor, x, y) { [actor.x, actor.y] = X0(x, y); actor._pp = null; actor._pk = ''; },
     restore(actor) {
+      warRewards.revived(actor);
       cancelCasts(actor); actor.hp = actor.max; actor.mana = actor.stats.mana;
       actor.dead = false; actor.target = null; actor.cooldown = 0;
       actor.poison = actor.poisonDmg = actor.stun = actor.slowT = actor.slowPower = actor.hurtT = actor.castT = 0;
@@ -962,9 +1033,41 @@ export function createSimulator() {
       l.corpses = (l.corpses || []).filter((corpse: LegacyEntity) => corpse !== actor);
     },
   });
-  const battlePanel = mountBattlefieldPanel(battlefield, Object.values(I), D, warRewards, supplies);
+  const pharmacy=mountWarPharmacy(supplies,D);
+  const leaderboard=mountWarLeaderboard(()=>buildWarStandings([
+    {id:'player',name:previousField?.name||o.name,team:battlefield!.state.team,points:warRewards.rank(battlefieldHero).points,title:warRewards.rank(battlefieldHero).name,player:true},
+    ...actors.filter(actor=>actor.battlefieldTeam&&!actor.battlefieldBoss).map(actor=>({id:actor.simId,name:actor.n,team:actor.battlefieldTeam,points:warRewards.rank(actor).points,title:warRewards.rank(actor).name,player:false})),
+  ]),D);
+  const battlePanel=mountBattlefieldPanel(battlefield,Object.values(I),D,warRewards,supplies,{configureSoldiers: (configuration,applyNow=false) => {
+      const available = soldierSkillOptions(T,Object.values(I),UA);
+      for (const settings of Object.values(configuration)) for (const id of settings.skills || []) {
+        if (!available.some(skill => skill.id === id)) throw new Error('Chỉ chọn chiêu tấn công cấp 50–70 trong catalog.');
+      }
+      if (applyNow && !battlefield!.running) throw new Error('Trận không còn chạy.');
+      roadMonsters.configure(configuration);
+      if (applyNow) roadMonsters.start();
+    }, skills: soldierSkillOptions(T,Object.values(I),UA),
+    openPharmacy:()=>pharmacy.open(),openLeaderboard:()=>leaderboard.open()});
+  const idleNpcPosition={x:battlefieldHero.x+110,y:battlefieldHero.y};
+  let recruitmentNpc:LegacyRecord|null=null,pharmacyNpc:LegacyRecord|null=null;
+  function updateWarNpcs(){
+    if(typeof equipmentTrader==='undefined'||!equipmentTrader.place)return;
+    if(!recruitmentNpc)recruitmentNpc=equipmentTrader.place({...idleNpcPosition,name:'Chiêu Mộ Sứ',animation:r0[716].anim,subtitle:'Cài đặt Tống Kim',onInteract:()=>battlePanel.open(),visible:()=>true});
+    if(!pharmacyNpc)pharmacyNpc=equipmentTrader.place({...idleNpcPosition,name:'Chủ Dược Điếm',animation:r0[852].anim,subtitle:'Thuốc sinh lực · Nội lực',onInteract:()=>pharmacy.open(),visible:()=>!!battlefield?.active});
+    const camp=battlefield?.active?CAMPS[battlefield.state.team]:idleNpcPosition;
+    Object.assign(recruitmentNpc,battlefield?.active?{x:camp.x+105,y:camp.y+50}:idleNpcPosition);
+    Object.assign(pharmacyNpc,{x:camp.x+145,y:camp.y-45});
+  }
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='Escape'||event.repeat)return;
+    if(!battlefield?.active){if(battlePanel.isOpen)battlePanel.close();return;}
+    event.preventDefault?.();event.stopImmediatePropagation?.();
+    if(typeof horseTrader !== 'undefined' && horseTrader?.isOpen)horseTrader.close();else if(battlePanel.isOpen)battlePanel.close();else if(pharmacy.isOpen)pharmacy.close();else if(leaderboard.isOpen)leaderboard.close();
+    else {const modal=typeof m==='function'?m('#modal'):null;if(modal&&!modal.classList.contains('hidden'))n0(true);else leaderboard.open();}
+  },true);
+  updateWarNpcs();
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { battlefield, supplies, warInventory, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  return { battlefieldHealthColor, battlefieldTitleColor, battlefield, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }

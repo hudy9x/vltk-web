@@ -20,6 +20,7 @@
     "src/client/render/**/*.ts",
     "src/client/simulator/**/*.ts",
     "src/client/status/**/*.ts",
-    "src/client/maps/**/*.ts"
+    "src/client/maps/**/*.ts",
+    "src/client/gameplay/horse-trader/**/*.ts"
   ]
 }

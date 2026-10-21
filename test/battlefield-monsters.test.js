@@ -14,13 +14,13 @@ test('twelve roadside encounters respawn at their original road positions after 
   road.clear();assert.equal(actors.length,0);assert.equal(road.actors.length,0);
 });
 
-test('road monsters cover all three lanes symmetrically without placing encounters in water',()=>{
+test('road monsters spread symmetrically across both banks without placing encounters in water',()=>{
   const spawns=scope.Road.ROAD_MONSTER_SPAWNS;
   assert.equal(spawns.length,12);
-  for(const center of [1152,1792,2432]) {
-    const lane=spawns.filter(point=>Math.abs(point.y-center)<=64);assert.equal(lane.length,4);
-    assert.equal(lane.filter(point=>point.x<1792).length,2);assert.equal(lane.filter(point=>point.x>1792).length,2);
-  }
+  assert.equal(spawns.filter(point=>point.x<1792).length,6);
+  assert.equal(spawns.filter(point=>point.x>1792).length,6);
+  assert.ok(Math.max(...spawns.map(point=>point.y))-Math.min(...spawns.map(point=>point.y))>1500);
+  assert.ok(new Set(spawns.map(point=>point.x)).size>6);
   const maps={atob,btoa};vm.runInNewContext(compileTypeScriptEntry('maps/index.ts','Maps').code,maps);
   const nav=maps.Maps.createNavigationRuntime();nav.load(9001,maps.Maps.createLegacyCatalog().navigation[9001]);
   for(const point of spawns)assert.equal(nav.canStand(point.x,point.y),true);
