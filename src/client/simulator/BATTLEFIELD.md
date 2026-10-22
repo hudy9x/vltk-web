@@ -51,3 +51,23 @@ Hiệu ứng kỹ năng chung (`l.fx`: vùng đánh, đạn, đường và vòng
 Chiêu 150 kế thừa hạn chế cưỡi ngựa từ chiêu 90 cùng nhánh vũ khí trong registry hiện tại. Chiêu yêu cầu đánh bộ chờ xuống ngựa trước khi trừ tài nguyên hoặc thi triển; tắt tự đổi trạng thái thì không dùng được chiêu đó trên ngựa. Luồng chiêu đặc biệt và đột kích cũng kiểm tra cùng điều kiện. SIM không kế thừa trạng thái đang cưỡi ngựa của người chơi khi tính chỉ số hoặc vẽ hình.
 
 Thanh máu trên đầu người chơi/SIM/binh lính/boss và HUD boss dùng xanh lá `#4fd04f` cho cùng phe người chơi, đỏ cam `#ff6038` cho đối địch. Màu tên vẫn vàng (Tống), tím (Kim). Danh hiệu dùng một bảng màu chung trong `presentation.ts`: Binh sĩ ngà, Hiệu úy xanh dương, Thống lĩnh xanh lá nhạt, Đại thống lĩnh tím nhạt, Tướng quân cam vàng, Nguyên soái hồng đỏ.
+
+### Tâm pháp 60, ngựa và Chéo Doanh
+
+SIM dành điểm kỹ năng thường cho tâm pháp/hỗ trợ cấp 60 đã triển khai (`passive`, `buff`, `aura`) trước khi bộ gợi ý tiêu phần còn lại. Không tăng ngân sách điểm. Hỗ trợ được tính qua `j0`/`Vi`; buff dùng chính sách `buffAssume` hiện có của mô phỏng, hào quang theo kỹ năng đã học. Dòng Tâm pháp/hỗ trợ 60 trong bảng SIM cho biết tên và cấp đã học; kỹ năng bị động không cần animation thi triển.
+
+SIM có trang bị nhận thêm ngựa thường gốc đủ cấp sử dụng, tách khỏi mười ô đồ năm dòng. SIM tự quyết định lên/xuống theo `E3` của chiêu đang đánh; trạng thái riêng đi vào hình composite, tốc độ đi bộ/cưỡi và công thức cooldown. Người chơi lên ngựa không làm SIM khác lên theo. Boss và binh lính không cưỡi ngựa.
+
+Chiêu Mộ Sứ có lựa chọn Song Doanh/Chéo Doanh trước trận. Chéo Doanh dùng map 9002, hai doanh trại đối góc; hồi sinh, tiếp tế, NPC và tuần tra theo map đang chọn. Script tái lập và nguồn hình ở `maps/content/9002/README.md`. Map mới dùng grid navigation, không dùng waypoint ba cầu của map cũ.
+
+Màu danh hiệu được tách khỏi vàng/tím phe: Đại thống lĩnh hồng nhạt, Tướng quân đỏ san hô; các màu còn lại ngà, xanh dương, xanh lá và hồng đỏ.
+
+## Chọn chiêu, ngựa và khả năng tự hỗ trợ của SIM
+
+- Bấm trực tiếp một mục tiêu trong Tống Kim dùng chiêu chính. Auto chỉ xoay các chiêu đang gán khi bật Xoay chiêu; tắt xoay hoặc chỉ gán một chiêu sẽ không lấy chiêu đã học ngoài cấu hình. Thiếu MP thì tạm đánh thường và quay về chiêu đã chọn khi đủ MP. Hồi chiêu không tự mở một chiêu khác.
+- Checkbox **Ưu tiên PK SIM** trong tab **Quân SIM** ưu tiên SIM địch; khi không còn SIM hợp lệ thì chọn quái/boss theo quy tắc hiện tại. Bấm chọn mục tiêu thủ công vẫn giữ mục tiêu đó.
+- Hình Tiêu Cốt Lập giữ tầm tung chiêu, vùng sát thương chính quanh mục tiêu có bán kính 100 đơn vị (cả người chơi và SIM, kể cả tắt hiệu ứng).
+- Ngựa chiến có thể chọn cụ thể, ngẫu nhiên theo cấp hoặc không cưỡi. Chỉ cấp ngựa đủ điều kiện level, không cấp ngựa yêu cầu quân hàm. Chiêu cần đánh bộ vẫn tự xuống ngựa.
+- Mỗi SIM chiến trường có túi riêng 30 bình máu + 30 bình mana, dùng mức hồi và cooldown bình gốc theo level. Tự bơm theo ngưỡng HP/MP của profile (mặc định 50%), bơm MP sớm khi không đủ hai lần tung chiêu chính. Không dùng bình của người chơi; không hồi sinh miễn phí túi thuốc. Boss không bơm bình.
+- Ngoài hỗ trợ cấp 60, SIM dành điểm thường cho buff/hào quang đủ cấp, gồm khinh công và La Hán Trận. Chỉ số hỗ trợ theo cơ chế `buffAssume` của mô phỏng. Phản đòn trực tiếp giải quyết một lần sau phòng thủ, phân biệt đánh gần/xa, không phản đòn nối tiếp vô hạn.
+- Áo/mũ hiển thị random riêng cho SIM, giữ nguyên chỉ số trang bị/vũ khí. Chỉ chọn sprite đủ ảnh cho giới tính, tư thế ngựa và vũ khí hiện tại; giữ lựa chọn ổn định giữa các frame. Sau khi thêm ảnh gốc, chạy `node tools/sync-simulator-clothes.cjs` để cập nhật danh sách ảnh có sẵn.

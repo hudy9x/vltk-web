@@ -182,28 +182,77 @@
       }
     }
   });
-  test('SIM and golden boss health colors follow either viewer team without copying the player mount', () => {
+  test("SIM and golden boss health colors follow either viewer team without copying the player mount", () => {
     const game = createHeadlessGame(process.cwd());
-    const simulator = game.arenaSimulator, labels: any[][] = [], mounts: boolean[] = [];
-    Object.assign(game,{E0:{anim:{'sim-body':{st:{h:80}}}},Jn:1,H8(){},ps(){},M8:()=>true,bA:()=>({}),
-      L3:(...args: any[])=>labels.push(args),kf:()=>{mounts.push(game.l.mounted);return 80;}});
-    vm.runInContext(compileTypeScriptEntry('render/nameplates.ts','nameplateOffset').code,game);
-    for(const playerTeam of ['song','jin']) {
+    const simulator = game.arenaSimulator,
+      labels: any[][] = [],
+      mounts: { actual: boolean; expected: boolean }[] = [];
+    Object.assign(game, {
+      E0: { anim: { "sim-body": { st: { h: 80 } } } },
+      Jn: 1,
+      H8() {},
+      ps() {},
+      M8: () => true,
+      bA: () => ({}),
+      L3: (...args: any[]) => labels.push(args),
+      kf: () => {
+        mounts.push({
+          actual: !!game.l.mounted,
+          expected: !!game.v.mounted && !game.v.battlefieldBoss,
+        });
+        return 80;
+      },
+    });
+    vm.runInContext(
+      compileTypeScriptEntry("render/nameplates.ts", "nameplateOffset").code,
+      game,
+    );
+    for (const playerTeam of ["song", "jin"]) {
       simulator.battlefield.start(playerTeam);
-      const own = simulator.battlefield.add({team:playerTeam,faction:'wudang',level:150,strength:'normal',count:1})[0];
-      const hostileTeam = playerTeam==='song'?'jin':'song';
-      const enemy = simulator.battlefield.add({team:hostileTeam,faction:'wudang',level:150,strength:'normal',count:1})[0];
-      game.l.mounted=true;
-      for(const actor of [own,enemy,...simulator.actors.filter((actor: any)=>actor.battlefieldBoss)]) {
-        actor.look={anim:'sim-body'};
-        simulator.draw({},actor,.016);
-        const row=labels.at(-1)!;
-        assert.equal(row[6],actor.battlefieldTeam===playerTeam?'#4fd04f':'#ff6038');
-        assert.equal(row[8],simulator.battlefieldTitleColor(actor.battlefieldBoss?'Nguyên soái':'Binh sĩ'));
+      const own = simulator.battlefield.add({
+        team: playerTeam,
+        faction: "wudang",
+        level: 150,
+        strength: "normal",
+        count: 1,
+      })[0];
+      const hostileTeam = playerTeam === "song" ? "jin" : "song";
+      const enemy = simulator.battlefield.add({
+        team: hostileTeam,
+        faction: "wudang",
+        level: 150,
+        strength: "normal",
+        count: 1,
+      })[0];
+      game.l.mounted = true;
+      for (const actor of [
+        own,
+        enemy,
+        ...simulator.actors.filter((actor: any) => actor.battlefieldBoss),
+      ]) {
+        actor.look = { anim: "sim-body" };
+        simulator.draw({}, actor, 0.016);
+        const row = labels.at(-1)!;
+        assert.equal(
+          row[6],
+          actor.battlefieldTeam === playerTeam ? "#4fd04f" : "#ff6038",
+        );
+        assert.equal(
+          row[8],
+          simulator.battlefieldTitleColor(
+            actor.battlefieldBoss ? "Nguyên soái" : "Binh sĩ",
+          ),
+        );
       }
-      assert.equal(game.l.mounted,true,'player mount state restored after each SIM render');
+      assert.equal(
+        game.l.mounted,
+        true,
+        "player mount state restored after each SIM render",
+      );
     }
-    assert.ok(mounts.every(mounted=>mounted===false),'SIMs do not inherit a player horse');
+    assert.ok(
+      mounts.every((mounted) => mounted.actual === mounted.expected),
+      "SIMs use their own riding state",
+    );
   });
-
 }

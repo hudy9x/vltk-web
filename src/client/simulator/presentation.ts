@@ -13,8 +13,8 @@ const TITLE_COLORS: Record<string, string> = {
   "Binh sĩ": "#d6d3b8",
   "Hiệu úy": "#65cfff",
   "Thống lĩnh": "#80e06f",
-  "Đại thống lĩnh": "#e1a7ff",
-  "Tướng quân": "#ffad55",
+  "Đại thống lĩnh": "#f2a0c5",
+  "Tướng quân": "#ff805f",
   "Nguyên soái": "#ff6385",
 };
 /** The same rank palette is shared by humans, SIMs, soldiers and standings. */

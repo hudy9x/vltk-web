@@ -8,6 +8,7 @@ import type { LegacyEntity } from "./types";
 export const ROAD_MONSTER_RESPAWN = 20;
 export const ROAD_MONSTER_SPAWNS = soldierSpawnPlan(DEFAULT_SOLDIERS);
 interface Host {
+  mapId?(): number;
   create(
     index: number,
     x: number,
@@ -40,7 +41,7 @@ export function createRoadMonsters(host: Host) {
   }
   function start() {
     clear();
-    soldierSpawnPlan(configuration).forEach((spawn, index) =>
+    soldierSpawnPlan(configuration, host.mapId?.() || 9001).forEach((spawn, index) =>
       slots.push({
         actor: host.create(index, spawn.x, spawn.y, spawn),
         due: null,

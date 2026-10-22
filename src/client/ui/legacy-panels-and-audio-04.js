@@ -255,7 +255,9 @@ var Y = {
   },
   stopAfterCast() {
     if (!hA() || !l.manTgt) return;
-    l.clickHold = true;
+    // A battlefield target is an ongoing attack command: keep following it.
+    // Ordinary manual training retains its existing stand-after-cast behavior.
+    l.clickHold = !l.battlefield;
     l.moveTo = null;
     l.pickTarget = null;
     Y.target = null;

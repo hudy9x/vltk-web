@@ -1,3 +1,4 @@
+import diagonalLayout from '../maps/content/9002/layout.json';
 export const SOLDIER_RANKS = [
   "soldier",
   "captain",
@@ -90,6 +91,7 @@ export function validateSoldierConfiguration(
 }
 export function soldierSpawnPlan(
   configuration: SoldierConfiguration,
+  mapId = 9001,
 ): SoldierSpawn[] {
   const settings = validateSoldierConfiguration(configuration);
   const units = SOLDIER_RANKS.flatMap((rank) =>
@@ -114,6 +116,10 @@ export function soldierSpawnPlan(
     return result;
   }
   return units.flatMap((unit, index) => {
+    if (mapId === 9002) {
+      const point = diagonalLayout.patrolPoints[index % diagonalLayout.patrolPoints.length];
+      return [point,{x:3584-point.x,y:3584-point.y}].map(position=>({...unit,...position}));
+    }
     const x = 800 + fraction(index + 1, 2) * 704;
     const y = 256 + fraction(index + 1, 3) * 3072;
     return [x, 3584 - x].map((positionX) => ({ ...unit, x: positionX, y }));

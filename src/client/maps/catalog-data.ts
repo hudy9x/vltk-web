@@ -43,6 +43,7 @@ import map342 from './content/342/map.json';
 import map397 from './content/397/map.json';
 import map398 from './content/398/map.json';
 import map9001 from './content/9001/map.json';
+import map9002 from './content/9002/map.json';
 
-export const mapDocuments: readonly unknown[] = [map2, map3, map4, map7, map19, map21, map37, map41, map42, map43, map56, map68, map70, map74, map75, map90, map92, map93, map122, map123, map140, map145, map167, map179, map193, map195, map201, map205, map224, map225, map226, map227, map319, map320, map321, map322, map336, map337, map340, map341, map342, map397, map398, map9001];
+export const mapDocuments: readonly unknown[] = [map2, map3, map4, map7, map19, map21, map37, map41, map42, map43, map56, map68, map70, map74, map75, map90, map92, map93, map122, map123, map140, map145, map167, map179, map193, map195, map201, map205, map224, map225, map226, map227, map319, map320, map321, map322, map336, map337, map340, map341, map342, map397, map398, map9001, map9002];
 export const unavailableMaps: readonly { id: number; name: string }[] = [{"id":8,"name":"Map 8"},{"id":50,"name":"Map 50"},{"id":141,"name":"Map 141"},{"id":206,"name":"Map 206"},{"id":212,"name":"Map 212"}];

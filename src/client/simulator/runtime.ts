@@ -1,3 +1,8 @@
+import { chooseWarMount, warMountOptions } from './war-mounts';
+import { recoverSimulator } from './recovery';
+import { randomSimulatorClothes } from './appearance';
+import { reflectedSkillDamage } from './reflection';
+import { prioritizeLevel60Support } from './support-skills';
 import { battlefieldHealthColor, battlefieldTitleColor } from './presentation';
 import { createSimNames } from './sim-names';
 import { SOLDIER_TITLES, SOLDIER_RANKS } from './soldier-config';
@@ -43,6 +48,8 @@ declare var o: SimulatorProfile, l: SimulatorWorld, v: LegacyEntity;
 declare var I: Record<string, Faction>, T: Record<string, LegacyRecord>, r0: Record<string, LegacyRecord>;
 declare var MapsEngine: { getMapBackground(id: number): string };
 declare var Z0: LegacyRecord;
+declare var P0: LegacyRecord;
+declare function ea(): number;
 declare var k0: LegacyRecord[];
 declare var z2: number;
 declare var mapNavigation: { clear(x: number, y: number, tx: number, ty: number): boolean };
@@ -51,6 +58,8 @@ declare var G5: Record<string, string[]>, V2: Record<number, number>;
 declare function yf(): LegacyRecord;
 declare function N8(): LegacyRecord | null;
 declare function J3(): boolean;
+declare function wn(skill: LegacyRecord): string;
+declare function E3(skill: LegacyRecord | undefined, mounted?: boolean): boolean;
 declare var S: LegacyRecord, R: boolean;
 declare var X9: (dt: number) => void, Ms: (kind: 'life' | 'mana') => void;
 declare var be: Record<number, number>, ao: number;
@@ -196,6 +205,7 @@ export function createSimulator() {
         defender.slowT = Math.max(statusBefore.slow, statusDuration(defender.slowT || 0, defense.freezeRed));
         defender.stun = Math.max(statusBefore.stun, statusDuration(defender.stun || 0, defense.stunRed));
         if (!(skill.parts.cold > 0)) applyActorHurt(defender, resolved.damage, defender.max);
+        reflectHit(defender, v, skill, resolved.damage);
         step("Phòng thủ SIM sau kháng: khiên → hấp thụ → hồi MP → nội lực hộ thân", resolved);
       }
       if (before > target.hp || (target.poison || 0) * (target.poisonDmg || 0) > poisonBefore) recordBattlefieldHit(v,target);
@@ -232,7 +242,7 @@ export function createSimulator() {
   function asSim<T>(actor: SimulatorActor, action: () => T, quiet = true, loadout?: { profile: SimulatorProfile; stats: SimulatorStats }): T {
     const player = o, world = l, hero = v;
     o = loadout?.profile || actor.profile; v = actor;
-    l = Object.assign({}, world, { P: actor.battlefieldBoss && loadout ? { ...loadout.stats, life: actor.max } : loadout?.stats || actor.stats || world.P, life: actor.hp, mana: actor.mana, sim: true, quiet, mounted: false,
+    l = Object.assign({}, world, { P: actor.battlefieldBoss && loadout ? { ...loadout.stats, life: actor.max } : loadout?.stats || actor.stats || world.P, life: actor.hp, mana: actor.mana, sim: true, quiet, mounted: !!actor.mounted && !actor.battlefieldBoss && !actor.battlefieldMonster,
       buffs: {}, skCd: {}, look: null, jx: null, ignoreEqt: null, buffAssume: true });
     try { return action(); }
     finally { actor.hp = l.life; actor.mana = actor.battlefieldTeam && !actor.battlefieldBoss ? l.mana : actor.stats.mana; o = player; l = world; v = hero; }
@@ -297,7 +307,7 @@ export function createSimulator() {
         actor.stats = stats;
       });
     } catch (error) { actor.profile = previous; actor.stats = statsBefore; throw error; }
-    cancelCasts(); actor.cooldown = 0; actor.waiting = "";
+    syncMount(actor); cancelCasts(); actor.cooldown = 0; actor.waiting = "";
     Object.assign(actor, { hp: actor.stats.life * hpRatio, max: actor.stats.life, mana: actor.stats.mana * manaRatio,
       series: actor.stats.series, res: actor.stats.res, def: actor.stats.def, ar: actor.stats.ar, spd: 100 * (actor.stats.speed || 1) });
     field("sim-skill").value = String(actor.profile.main);
@@ -366,6 +376,16 @@ export function createSimulator() {
       actor.slowT = l.slowT; actor.slowPower = l.slowPower; actor.stun = l.stunT;
     }, false);
   }
+  function reflectHit(defender: LegacyEntity, attacker: LegacyEntity, skill: SimulatorSkill, damage: number, stats: SimulatorStats = defender.stats) {
+    const amount = reflectedSkillDamage(damage, stats, skill.melee === false) * (typeof ea === 'function' ? ea() : 1);
+    if (!(amount > 0)) return;
+    if (attacker === v) l.life = Math.max(0, l.life - amount);
+    else attacker.hp = Math.max(0, attacker.hp - amount);
+    applyActorHurt(attacker, amount, attacker === v ? l.P.life : attacker.max);
+    showDamageNumber(attacker, amount);
+    recordBattlefieldHit(defender, attacker);
+    if (battlefield?.running && attacker === battlefieldHero && battlefieldWorld.life <= 0) battlefield.playerDied();
+  }
   function hit(actor: SimulatorActor, skill: SimulatorSkill, target: LegacyEntity) {
     const world = battlefield?.active ? battlefieldWorld : l, hero = battlefield?.active ? battlefieldHero : v;
     const isPlayer = target === hero;
@@ -396,6 +416,7 @@ export function createSimulator() {
           applyColdPower(world, receiver.slowPower || 0, seconds);
         }
         world.stunT = Math.max(world.stunT || 0, receiver.stun * (1 - (defense.stunRed || 0) / 100));
+        reflectHit(hero, actor, skill, damage, defense);
         step("HP thực mất", { before, after: world.life, actualLoss: before - world.life });
       });
     }
@@ -424,6 +445,7 @@ export function createSimulator() {
     return candidates.filter(target => battlefield!.canHit(monster,target) && distance(target) < Math.min(SOLDIER_DETECTION_RADIUS, monster.battlefieldLeashRadius || SOLDIER_LEASH_RADIUS) && (!home || Math.hypot(target.x-home.x,(target.y-home.y)*2) <= (monster.battlefieldLeashRadius || SOLDIER_LEASH_RADIUS))).sort((a,b) => distance(a)-distance(b))[0] || null;
   };
   const roadMonsters = createRoadMonsters({
+    mapId: () => BATTLE_MAP,
     create(index, x, y, spawn) {
       const team = x < 1792 ? 'song' : 'jin';
       const id = soldierSkin(r0,team,Math.floor(index/2),spawn?.rank || 'soldier');
@@ -486,12 +508,21 @@ export function createSimulator() {
     return actor.pk && l.life > 0 ? [v] : actor.farm ?
       l.enemies.filter(enemy => !enemy.arenaSim && !enemy.dead && enemy.hp > 0) : [];
   }
+  function syncMount(actor:SimulatorActor, skillId:SkillId=actor.profile.main) {
+    const mounted = !actor.battlefieldBoss && !actor.battlefieldMonster && !!actor.profile.eq.horse &&
+      (skillId==='basic' || typeof E3!=='function' || E3(T[skillId],true));
+    if (!!actor.mounted===mounted) return;
+    actor.mounted=mounted;
+    asSim(actor,()=>{const stats=j0();stats.main=resolvedSkill(stats,actor.profile.main);actor.stats=stats;});
+    actor.spd=100*(mounted?actor.stats.speed:actor.stats.speedFoot||actor.stats.speed||1);
+  }
   function tickActor(actor: SimulatorActor, dt: number) {
     if (battlefield?.active && actor.target === battlefieldHero && !battlefield.canHit(actor,battlefieldHero)) { actor.target=null; actor.moving=false; }
     actor.resBrkT = Math.max(0, (actor.resBrkT || 0) - dt);
     if (actor.battlefieldTeam && !actor.battlefieldBoss) {
       actor.hp = Math.min(actor.max, actor.hp + (actor.stats.regen || 0) * dt);
       actor.mana = Math.min(actor.stats.mana, actor.mana + (actor.stats.manaRegen || 0) * dt);
+      recoverSimulator(actor, dt, S.potions || [], typeof be === 'undefined' ? {} : be, typeof ao === 'undefined' ? 1 : ao);
     } else actor.mana = actor.stats.mana;
     const stunned = actor.stun > 0;
     actor.stun = Math.max(0, (actor.stun || 0) - dt);
@@ -526,7 +557,11 @@ export function createSimulator() {
     const recovering = actor.battlefieldTeam && !actor.battlefieldBoss && !preferred.costLife && actor.mana < (preferred.cost || 0);
     // Keep fighting with the equipped weapon while MP recovers, rather than
     // standing still until the expensive primary skill is affordable again.
-    const skill = recovering ? actor.stats.basic : preferred;
+    let skill = recovering ? actor.stats.basic : preferred;
+    syncMount(actor, skill.id || 'basic');
+    // Re-read the resolved skill after a mount change: horseback cooldowns differ.
+    skill = recovering ? actor.stats.basic : loadout?.stats.main || actor.stats.main;
+    actor.spd=100*(actor.mounted?actor.stats.speed||1:actor.stats.speedFoot||actor.stats.speed||1);
     const reach = skill.geo?.k === "self" ? skill.geo.r || skill.rad : skill.rad;
     const distance = () => Math.max(0, skillCastDistance(actor, target) - (target.r || 12) / QA);
     actor.dir = kn(target.x - actor.x, target.y - actor.y);
@@ -581,6 +616,13 @@ export function createSimulator() {
       // Composite sprites read the current profile/world. Give each SIM its own equipment.
       l.look = actor.battlefieldBoss || typeof yf !== 'function' ? null : yf();
       l.jx = !actor.battlefieldBoss && typeof J3 === 'function' && J3() && typeof N8 === 'function' ? N8() : null;
+      if (actor.battlefieldTeam && !actor.battlefieldBoss && l.jx && typeof P0 !== 'undefined' && P0) {
+        const key = `${l.jx.sx}:${l.jx.ride}:${l.jx.rows.weapon}`;
+        const wardrobe = actor.wardrobe ||= {};
+        const clothes = wardrobe[key] ||= randomSimulatorClothes(P0.tabs[l.jx.sx] || {}, l.jx.asc, l.jx.sx);
+        Object.assign(l.jx.rows, clothes);
+        l.jx.key = JSON.stringify([l.jx.sx, l.jx.rows, l.jx.ride]);
+      }
       return kf(look.anim, actor.act || 'st', actor.dir || 0, actor.actT || 0, actor.x, actor.y, Jn);
     }) : 0;
     if (!height && !(look && M8(bA(look.img), look.sz, actor.x, actor.y, 1, actor.face < 0, 1))) {
@@ -631,7 +673,7 @@ export function createSimulator() {
   function renderBuild() {
     if (!sim) { field("sim-build").innerHTML = '<p>Tạo hoặc chọn một SIM để cộng điểm và lưu template.</p>'; return; }
     const profile = sim.profile;
-    field("sim-build").innerHTML = `<h3>Tiềm năng · còn ${profile.attrPts} điểm</h3><table><thead><tr><th>Thuộc tính</th><th>Đã cộng</th><th>Tổng</th><th></th></tr></thead><tbody>${Object.entries(POTENTIALS).map(([key, name]) => `<tr><td>${name}</td><td><input aria-label="${name}" data-potential="${key}" type="number" min="0" max="${(profile.attr[key] || 0) + profile.attrPts}" value="${profile.attr[key] || 0}"></td><td>${sim!.stats[key] ?? "—"}</td><td><button type="button" data-attr-plus="${key}" ${profile.attrPts ? "" : "disabled"}>+1</button></td></tr>`).join("")}</tbody></table><h3>Kỹ năng · còn ${profile.skPts} điểm</h3><table><thead><tr><th>Kỹ năng</th><th>Cấp</th><th>Tối đa</th><th></th></tr></thead><tbody>${I[profile.fac].skills.filter(id => T[id]).map(id => { const value = profile.sk[id] || 0, cap = skillLimit(profile, T[id]); return `<tr><td>${T[id].tier === 90 ? "9x · " : ""}${D(T[id].n)}</td><td><input aria-label="Cấp ${D(T[id].n)}" data-skill-level="${id}" type="number" min="0" max="${Math.min(cap, value + profile.skPts)}" value="${value}"></td><td>${cap}</td><td><button type="button" data-skill-plus="${id}" ${profile.skPts && value < cap ? "" : "disabled"}>+1</button></td></tr>`; }).join("")}</tbody></table><button type="button" data-build-apply="1">Áp dụng điểm đã nhập</button>`;
+    field("sim-build").innerHTML = `<p>Trấn phái & hỗ trợ: ${(profile.simSupportSkills || []).map((skill:LegacyRecord)=>`${D(skill.name)} cấp ${profile.sk[skill.id] || 0}`).join(" · ") || "Chưa có"}. Bị động, hào quang và buff được đưa vào chỉ số SIM qua cơ chế gốc.</p><h3>Tiềm năng · còn ${profile.attrPts} điểm</h3><table><thead><tr><th>Thuộc tính</th><th>Đã cộng</th><th>Tổng</th><th></th></tr></thead><tbody>${Object.entries(POTENTIALS).map(([key, name]) => `<tr><td>${name}</td><td><input aria-label="${name}" data-potential="${key}" type="number" min="0" max="${(profile.attr[key] || 0) + profile.attrPts}" value="${profile.attr[key] || 0}"></td><td>${sim!.stats[key] ?? "—"}</td><td><button type="button" data-attr-plus="${key}" ${profile.attrPts ? "" : "disabled"}>+1</button></td></tr>`).join("")}</tbody></table><h3>Kỹ năng · còn ${profile.skPts} điểm</h3><table><thead><tr><th>Kỹ năng</th><th>Cấp</th><th>Tối đa</th><th></th></tr></thead><tbody>${I[profile.fac].skills.filter(id => T[id]).map(id => { const value = profile.sk[id] || 0, cap = skillLimit(profile, T[id]); return `<tr><td>${T[id].tier === 90 ? "9x · " : ""}${D(T[id].n)}</td><td><input aria-label="Cấp ${D(T[id].n)}" data-skill-level="${id}" type="number" min="0" max="${Math.min(cap, value + profile.skPts)}" value="${value}"></td><td>${cap}</td><td><button type="button" data-skill-plus="${id}" ${profile.skPts && value < cap ? "" : "disabled"}>+1</button></td></tr>`; }).join("")}</tbody></table><button type="button" data-build-apply="1">Áp dụng điểm đã nhập</button>`;
   }
   function editProfile(action: () => void) {
     if (!sim) throw new Error("Hãy chọn một SIM trước.");
@@ -718,7 +760,7 @@ export function createSimulator() {
   function updateInfo() {
     const rosterHTML = renderSimulatorRoster(actors, sim?.simId, D);
     if (field("sim-list").innerHTML !== rosterHTML) field("sim-list").innerHTML = rosterHTML;
-    field("sim-info").textContent = sim ? `${actors.length} SIM trên sân · ${sim.n} · HP ${Math.ceil(Math.max(0, sim.hp))}/${Math.ceil(sim.max)} · MP ∞ · Chiêu ${T[sim.profile.main]?.tier === 90 ? "9x · " : ""}${sim.stats.main.n || "Đánh thường"} cấp ${sim.stats.main.L || 1} · Đã tung ${sim.casts} lần${sim.waiting ? " · " + sim.waiting : ""} · Điểm KN ${sim.profile.skPts} / TN ${sim.profile.attrPts} · ${sim.pk ? "PK" : sim.farm ? "Đánh quái" : "Đứng chờ"}` : `${actors.length} SIM trên sân. Chọn cấu hình rồi bấm Tạo thêm SIM.`;
+    field("sim-info").textContent = sim ? `${actors.length} SIM trên sân · ${sim.n} · HP ${Math.ceil(Math.max(0, sim.hp))}/${Math.ceil(sim.max)} · MP ${sim.battlefieldTeam ? Math.ceil(sim.mana) + "/" + Math.ceil(sim.stats.mana) : "∞"} · Chiêu ${T[sim.profile.main]?.tier === 90 ? "9x · " : ""}${sim.stats.main.n || "Đánh thường"} cấp ${sim.stats.main.L || 1} · Đã tung ${sim.casts} lần${sim.waiting ? " · " + sim.waiting : ""} · Điểm KN ${sim.profile.skPts} / TN ${sim.profile.attrPts} · ${sim.pk ? "PK" : sim.farm ? "Đánh quái" : "Đứng chờ"}` : `${actors.length} SIM trên sân. Chọn cấu hình rồi bấm Tạo thêm SIM.`;
   }
   field("sim-faction").value = o.fac;
   function applySelectedSkill() {
@@ -845,6 +887,11 @@ export function createSimulator() {
           }, profile.eq, { faction, sex:profile.sex || 0, level:build.level, weapon, kind:build.equipmentKind });
         }
       }
+      if (!boss) {
+        const horse = build.equipped !== false ? chooseWarMount(S.items?.[10]?.list || [], build.level, build.mount) : null;
+        if (horse) { const item = _A(10,horse.k,horse.lvl,0); if(item)profile.eq.horse=item; }
+        profile.simSupportSkills = prioritizeLevel60Support(profile, eligible.map(id=>T[id]), skill=>typeof wn==='function'?wn(skill):UA(skill)?'atk':'passive');
+      }
       // Use the existing suggestion engines, after assigning gear so its requirements are met.
       if (typeof j5 === 'function') j5();
       if (!boss) Pt();
@@ -897,6 +944,7 @@ export function createSimulator() {
     const actor = create(profile.fac, skill, false, false, { version: 1, id: 'battle', name: I[profile.fac].n, updatedAt: '', profile, autoSkills: false, autoPotential: true, pk: true, farm: false });
     if(bossElement===undefined){actor.n=simNames.next(actor.profile.sex);actor.profile.name=actor.n;}
     actor.battlefieldTeam = build.team;
+    if (bossElement === undefined) syncMount(actor);
     if (bossElement !== undefined) {
       const ids = SOLDIER_RANK_SKINS.marshal.filter(id => r0[id]);
       const bossId = ids.find(id => j2(id) === bossElement) ?? ids[0];
@@ -984,7 +1032,7 @@ export function createSimulator() {
     if(!battlefield?.canHit(source,target))return;
     if(Math.random()*100>=Pe(source.ar||0,target.def||0))return;
     const damage=Math.max(0,ja((source.dmg||0)*Z(.8,1.2),'phys',source.series,target.series,target.res,75,0));
-    target.hp=Math.max(0,target.hp-damage);if(damage>0)recordBattlefieldHit(source,target);applyActorHurt(target,damage,target.max);showDamageNumber(target,damage);
+    target.hp=Math.max(0,target.hp-damage);if(target.arenaSim)reflectHit(target,source,{parts:{phys:damage},rad:source.reach||0,melee:!source.ranged},damage);if(damage>0)recordBattlefieldHit(source,target);applyActorHurt(target,damage,target.max);showDamageNumber(target,damage);
   }
   battlefield = createBattlefield({
     actors: () => [...actors], monsters: () => roadMonsters.actors, player: () => battlefieldHero, playerAlive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
@@ -1047,6 +1095,9 @@ export function createSimulator() {
       roadMonsters.configure(configuration);
       if (applyNow) roadMonsters.start();
     }, skills: soldierSkillOptions(T,Object.values(I),UA),
+    mounts: warMountOptions(S.items?.[10]?.list || []),
+    preferPKSim: () => !!o.preferPKSim,
+    setPreferPKSim(value) { o.preferPKSim = value; l.tgt = null; l.dirty = true; },
     openPharmacy:()=>pharmacy.open(),openLeaderboard:()=>leaderboard.open()});
   const idleNpcPosition={x:battlefieldHero.x+110,y:battlefieldHero.y};
   let recruitmentNpc:LegacyRecord|null=null,pharmacyNpc:LegacyRecord|null=null;
