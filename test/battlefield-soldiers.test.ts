@@ -185,7 +185,7 @@
     for (const setting of Object.values(configuration) as any[])
       setting.count = 0;
     configuration.commander = {
-      count: 1,
+      count: 2,
       hp: 100000,
       skills: [11, 19],
       patrolRadius: 180,

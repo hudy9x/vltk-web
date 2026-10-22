@@ -17,6 +17,7 @@ export const SOLDIER_TITLES: Record<SoldierRank, string> = {
 export interface SoldierSettings {
   count: number;
   hp: number;
+  respawnSeconds?: number;
   /** Empty means native basic attacks. At most two native attacks in level 50–70. */
   skills?: number[];
   patrolRadius?: number;
@@ -24,13 +25,15 @@ export interface SoldierSettings {
 }
 export type SoldierConfiguration = Record<SoldierRank, SoldierSettings>;
 export const DEFAULT_SOLDIERS: SoldierConfiguration = {
-  soldier: { count: 2, hp: 1_200_000 },
-  captain: { count: 1, hp: 1_800_000 },
-  commander: { count: 1, hp: 2_700_000 },
-  general: { count: 1, hp: 4_000_000 },
-  marshal: { count: 1, hp: 8_000_000 },
+  soldier: { count: 50, hp: 50_000 },
+  captain: { count: 10, hp: 60_000 },
+  commander: { count: 6, hp: 80_000 },
+  general: { count: 4, hp: 100_000 },
+  marshal: { count: 1, hp: 200_000 },
 };
 export interface SoldierSpawn {
+  team: "song" | "jin";
+  respawnSeconds: number;
   x: number;
   y: number;
   rank: SoldierRank;
@@ -39,8 +42,8 @@ export interface SoldierSpawn {
   patrolRadius: number;
   leashRadius: number;
 }
-/** Counts are per side. Store a validated snapshot so later edits cannot mutate
- * an active spawn/respawn plan. Golden bosses remain separate from these NPCs.
+/** Patrol counts are totals across both teams. Store a validated snapshot so later edits cannot mutate
+ * an active spawn/respawn plan. Marshals are the two camp bosses and are excluded from patrol spawns.
  */
 export function validateSoldierConfiguration(
   configuration: SoldierConfiguration,
@@ -84,9 +87,11 @@ export function validateSoldierConfiguration(
       throw new Error(
         "Tuần tra 40–1.200; truy đuổi từ bán kính tuần tra đến 1.600.",
       );
-    snapshot[rank] = { ...entry, skills, patrolRadius, leashRadius };
+    const respawnSeconds = entry.respawnSeconds ?? 20;
+    if (![10, 20, 30].includes(respawnSeconds)) throw new Error("Hồi sinh binh sĩ: chọn 10, 20 hoặc 30 giây.");
+    snapshot[rank] = { ...entry, skills, patrolRadius, leashRadius, respawnSeconds };
   }
-  if (total > 200) throw new Error("Tối đa 200 quái mỗi phe.");
+  if (total > 200) throw new Error("Tối đa 200 quái tổng hai phe.");
   return snapshot;
 }
 export function soldierSpawnPlan(
@@ -94,34 +99,39 @@ export function soldierSpawnPlan(
   mapId = 9001,
 ): SoldierSpawn[] {
   const settings = validateSoldierConfiguration(configuration);
-  const units = SOLDIER_RANKS.flatMap((rank) =>
-    Array.from({ length: settings[rank].count }, () => ({
-      rank,
-      hp: settings[rank].hp,
-      skills: [...settings[rank].skills!],
-      patrolRadius: settings[rank].patrolRadius!,
-      leashRadius: settings[rank].leashRadius!,
-    })),
-  );
-  // Low-discrepancy points spread units across each bank, outside camp walls.
-  // Mirroring keeps the same coverage for both teams without spawning in water.
-  function fraction(index: number, base: number) {
-    let result = 0,
-      divisor = 1;
-    while (index > 0) {
-      divisor *= base;
-      result += (index % base) / divisor;
-      index = Math.floor(index / base);
+  const result: SoldierSpawn[] = [];
+  const songPoints = diagonalLayout.patrolPoints.filter(point => soldierTeamAt(point.x, point.y, 9002) === "song");
+  let sideIndex = { song: 0, jin: 0 };
+  for (const rank of SOLDIER_RANKS.filter(rank => rank !== "marshal")) {
+    const entry = settings[rank];
+    for (let index = 0; index < entry.count; index++) {
+      const team = index % 2 ? "jin" : "song";
+      const ordinal = sideIndex[team]++;
+      let x: number, y: number;
+      if (mapId === 9002) {
+        const point = songPoints[ordinal % songPoints.length];
+        x = team === "song" ? point.x : 3584 - point.x;
+        y = team === "song" ? point.y : 3584 - point.y;
+      } else {
+        x = 800 + fraction(ordinal + 1, 2) * 704;
+        y = 256 + fraction(ordinal + 1, 3) * 3072;
+        if (team === "jin") x = 3584 - x;
+      }
+      result.push({ x, y, team, rank, hp: entry.hp, skills: [...entry.skills!], patrolRadius: entry.patrolRadius!, leashRadius: entry.leashRadius!, respawnSeconds: entry.respawnSeconds! });
     }
-    return result;
   }
-  return units.flatMap((unit, index) => {
-    if (mapId === 9002) {
-      const point = diagonalLayout.patrolPoints[index % diagonalLayout.patrolPoints.length];
-      return [point,{x:3584-point.x,y:3584-point.y}].map(position=>({...unit,...position}));
-    }
-    const x = 800 + fraction(index + 1, 2) * 704;
-    const y = 256 + fraction(index + 1, 3) * 3072;
-    return [x, 3584 - x].map((positionX) => ({ ...unit, x: positionX, y }));
-  });
+  return result;
+}
+
+/** The diagonal battlefield is divided by the two camps, not by the x axis. */
+export function soldierTeamAt(x: number, y: number, mapId: number): "song" | "jin" {
+  if (mapId !== 9002) return x < 1792 ? "song" : "jin";
+  const {song, jin} = diagonalLayout.camps;
+  return (x-song.x)**2 + (y-song.y)**2 <= (x-jin.x)**2 + (y-jin.y)**2 ? "song" : "jin";
+}
+
+function fraction(index: number, base: number) {
+  let result = 0, divisor = 1;
+  while (index > 0) { divisor *= base; result += (index % base) / divisor; index = Math.floor(index / base); }
+  return result;
 }

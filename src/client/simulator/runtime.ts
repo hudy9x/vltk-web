@@ -448,8 +448,9 @@ export function createSimulator() {
   };
   const roadMonsters = createRoadMonsters({
     mapId: () => BATTLE_MAP,
+    appearanceDelay: () => battlefield ? Math.max(0, battlefield.state.deployment.soldierAppearanceSeconds - battlefield.state.elapsed) : 0,
     create(index, x, y, spawn) {
-      const team = x < 1792 ? 'song' : 'jin';
+      const team = spawn?.team || (x < 1792 ? 'song' : 'jin');
       const id = soldierSkin(r0,team,Math.floor(index/2),spawn?.rank || 'soldier');
       const [px,py] = X0(x,y), monster = n1(id,120,'normal',px,py);
       const rankIndex=spawn?SOLDIER_RANKS.indexOf(spawn.rank):0;
@@ -1041,7 +1042,8 @@ export function createSimulator() {
     target.hp=Math.max(0,target.hp-damage);if(target.arenaSim)reflectHit(target,source,{parts:{phys:damage},rad:source.reach||0,melee:!source.ranged},damage);if(damage>0)recordBattlefieldHit(source,target);applyActorHurt(target,damage,target.max);showDamageNumber(target,damage);
   }
   battlefield = createBattlefield({
-    actors: () => [...actors], monsters: () => roadMonsters.actors, player: () => battlefieldHero, playerAlive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
+    actors: () => [...actors], monsters: () => roadMonsters.actors, monsterCount: () => roadMonsters.totalCount, player: () => battlefieldHero, playerAlive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
+    marshalHP: () => roadMonsters.configuration.marshal.hp,
     playerDPS: () => estimateDPS({ stats: battlefieldWorld.P } as SimulatorActor), create: spawnBattleActor, cancel: actor => {if(actor.hp<=0)warRewards.killed(actor);cancelCasts(actor);}, remove,
     enter(team) {
       previousField = { key: Z0.key, bgImg: l.bgImg, zoneShown: l.zoneShown, town: l.town, name: o.name, x: v.x, y: v.y, life: l.life, mana: l.mana, ctrl: o.ctrl, autoMap: o.autoMap };
@@ -1058,7 +1060,7 @@ export function createSimulator() {
       if (!previousField) return;
       sandbox.clearCombat?.(false);
       ma(previousField.key); Object.assign(v, { x: previousField.x, y: previousField.y });
-      Object.assign(l, { bgImg: previousField.bgImg, zoneShown: previousField.zoneShown, town: previousField.town, life: previousField.life, mana: previousField.mana, battlefield: false });
+      Object.assign(l, { bgImg: previousField.bgImg, zoneShown: previousField.zoneShown, town: previousField.town, life: previousField.life, mana: previousField.mana, battlefield: false, deadT: 0 });
       o.ctrl = previousField.ctrl; o.autoMap = previousField.autoMap; previousField = null;
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = false;
     },
@@ -1069,10 +1071,10 @@ export function createSimulator() {
       Object.assign(v, CAMPS[team], { act: 'st', actT: 0, castT: 0, hurtT: 0 });
       v.actionRevision = (v.actionRevision || 0) + 1;
     },
-    setPlayerDead(team) {
+    setPlayerDead(team, waitSeconds) {
       warRewards.killed(battlefieldHero);
       Object.assign(battlefieldHero, CAMPS[team]);
-      battlefieldWorld.life = 0; battlefieldWorld.deadT = 6; battlefieldWorld.manTgt = battlefieldWorld.tgt = battlefieldWorld.moveTo = null;
+      battlefieldWorld.life = 0; battlefieldWorld.deadT = waitSeconds; battlefieldWorld.manTgt = battlefieldWorld.tgt = battlefieldWorld.moveTo = null;
       battlefieldWorld.slowT = battlefieldWorld.stunT = battlefieldWorld.hpDotT = battlefieldWorld.hpDot = 0;
       battlefieldHero.actionRevision = (battlefieldHero.actionRevision || 0) + 1;
       for (const key of ['combatProjectiles', 'fx', 'fxQ']) battlefieldWorld[key] = (battlefieldWorld[key] || []).filter((effect: LegacyRecord) => effect.combat?.actor !== battlefieldHero);
@@ -1099,7 +1101,7 @@ export function createSimulator() {
       }
       if (applyNow && !battlefield!.running) throw new Error('Trận không còn chạy.');
       roadMonsters.configure(configuration);
-      if (applyNow) roadMonsters.start();
+      if (applyNow) roadMonsters.restart();
     }, skills: soldierSkillOptions(T,Object.values(I),UA),
     mounts: warMountOptions(S.items?.[10]?.list || []),
     preferPKSim: () => !!o.preferPKSim,

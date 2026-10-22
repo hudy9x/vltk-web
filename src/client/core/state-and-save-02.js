@@ -15,7 +15,11 @@ var Td = function (A) {
   const n = l.P;
   if (typeof combatSandbox !== "undefined" && combatSandbox) combatSandbox.tick(A);
   advanceSkillContacts(A);
-  if (typeof arenaSimulator !== "undefined" && arenaSimulator && arenaSimulator.battlefield.active && !arenaSimulator.battlefield.running) return;
+  if (typeof arenaSimulator !== "undefined" && arenaSimulator && arenaSimulator.battlefield.active) {
+    if (!arenaSimulator.battlefield.running) return;
+    const wait = arenaSimulator.battlefield.state.playerRespawn;
+    if (wait > 0) { l.deadT = wait; return; }
+  }
   if (l.deadT > 0) {
     ((l.deadT -= A),
       l.deadT <= 0 && ((l.life = n.life), (l.mana = n.mana), (o.wave = 1), Ga() || o8()));
