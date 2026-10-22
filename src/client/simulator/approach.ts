@@ -15,7 +15,7 @@ export function createBattlefieldApproach() {
   const safe = (point: Point, y: number) => point.x >= ENTRY_LEFT && point.x <= ENTRY_RIGHT && Math.abs(point.y - y) <= 96;
   const nearest = (point: Point) => BATTLEFIELD_ROUTES.reduce((best,y) => Math.abs(point.y-y) < Math.abs(point.y-best) ? y : best, BATTLEFIELD_ROUTES[1]);
   return (actor: Walker, target: Point): Point | null => {
-    if (BATTLE_MAP === 9002) { crossings.delete(actor); return null; }
+    if (BATTLE_MAP !== 9001) { crossings.delete(actor); return null; }
     if (BATTLEFIELD_ROUTES.some(y => safe(actor,y) && safe(target,y))) { crossings.delete(actor); return null; }
     let route = crossings.get(actor);
     if (route && (route.revision !== actor.generation || (route.direction === 1 ? target.x <= LEFT_BANK : target.x >= RIGHT_BANK))) {
