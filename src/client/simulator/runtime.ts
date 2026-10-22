@@ -1,3 +1,4 @@
+import { mountBattlefieldResult } from './battlefield-result';
 import { chooseWarMount, warMountOptions } from './war-mounts';
 import { mapNpcs } from '../npcs';
 import type { MapDefinition } from '../maps/types';
@@ -85,7 +86,7 @@ declare var Pe: (attack: number, defense: number, ignore?: number) => number;
 declare var hs: (skill: SimulatorSkill, target: LegacyEntity) => number;
 declare var U9: (attacker: LegacyEntity) => unknown;
 declare var $d: (monster: LegacyEntity, dt: number) => unknown;
-declare var combatLog: { registerSimulatorLog?(provider: SimulatorLogProvider): void; record(type: string, target: LegacyEntity | string, amount: number, detail?: string, outcome?: string): void } | null;
+declare var combatLog: { war?(message:string):void; registerSimulatorLog?(provider: SimulatorLogProvider): void; record(type: string, target: LegacyEntity | string, amount: number, detail?: string, outcome?: string): void } | null;
 declare function Rn(target: LegacyEntity): LegacyRecord | null;
 declare function y1(from: number, to: number): boolean;
 declare function j1(skill: LegacyRecord): number | null;
@@ -160,6 +161,7 @@ export function createSimulator() {
     return result;
   };
   let battlefield: ReturnType<typeof createBattlefield> | undefined;
+  const warEvents: string[] = [];
   const simNames=createSimNames();
   // Local Tống Kim balance parameter, not an asserted original-VLTK formula.
   function pvpDamageScale(source: LegacyEntity, target: LegacyEntity): number {
@@ -488,6 +490,7 @@ export function createSimulator() {
   const arenaTick = sandbox.tick;
   sandbox.tick = function (dt) { arenaTick(dt); tick(dt); };
   function tick(dt: number) {
+    if (battlefield?.running && battlefield.state.remaining <= dt) for (const unit of roadMonsters.actors) if (unit.dead || unit.hp <= 0) warRewards.killed(unit);
     battlefield?.tick(dt);
     updateWarNpcs();
     refreshTime += dt;
@@ -505,6 +508,7 @@ export function createSimulator() {
       if (!l.enemies.includes(actor) || actor.dead || actor.hp <= 0) { remove(actor); continue; }
       if (!l.town && !(l.deadT > 0)) tickActor(actor, dt);
     }
+    if (typeof combatLog !== "undefined" && combatLog?.war) for (const message of warEvents.splice(0)) combatLog.war(message);
   }
   function availableTargets(actor: SimulatorActor): LegacyEntity[] {
     if (battlefield?.active && actor.battlefieldTeam) return battlefield.targets(actor);
@@ -974,7 +978,10 @@ export function createSimulator() {
   }
   // asSim swaps v/l synchronously; team identity must always refer to the real player.
   const battlefieldHero = v, battlefieldWorld = l;
-  const warRewards = createWarRewards({ player: () => battlefieldHero, team: () => battlefield!.state.team,
+  const warRewards = createWarRewards({
+    event(message) { warEvents.push(message); if(warEvents.length>300)warEvents.shift(); },
+    name: actor => actor === battlefieldHero ? previousField?.name || battlefieldHero.n || "Người chơi" : actor.n,
+    player: () => battlefieldHero, team: () => battlefield!.state.team,
     running: () => !!battlefield?.running, alive: () => battlefieldWorld.life>0 && !(battlefieldWorld.deadT>0), changed: () => { battlefieldWorld.dirty=true; if(typeof R !== 'undefined')R=true; } });
   const supplies = createWarSupplies({ running: () => !!battlefield?.running,
     pharmacyPositions: () => {
@@ -1044,6 +1051,12 @@ export function createSimulator() {
   }
   battlefield = createBattlefield({
     actors: () => [...actors], monsters: () => roadMonsters.actors, monsterCount: () => roadMonsters.totalCount, player: () => battlefieldHero, playerAlive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
+    teamPoints: () => warRewards.totals,
+    finished(result, points) {
+      battlePanel.close(); pharmacy.close(); leaderboard.close();
+      if(typeof horseTrader !== "undefined") horseTrader?.close();
+      resultDialog.open(result,points);
+    },
     marshalHP: () => roadMonsters.configuration.marshal.hp,
     inAttackRange(actor, target) {
       const preferred = actor.stats.main;
@@ -1061,7 +1074,7 @@ export function createSimulator() {
       l.town = false; l.battlefield = true; o.ctrl = 'manual'; o.autoMap = false;
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = true;
       Object.assign(v, CAMPS[team]); l.life = l.P.life; l.mana = l.P.mana;
-      simNames.reset(); warRewards.reset(); supplies.reset(true); roadMonsters.start(); updateWarNpcs();
+      simNames.reset(); warEvents.length=0; warRewards.reset(); supplies.reset(true); roadMonsters.start(); updateWarNpcs();
     },
     leave() {
       roadMonsters.clear(); warRewards.reset(); supplies.reset();
@@ -1099,9 +1112,10 @@ export function createSimulator() {
   });
   const pharmacy=mountWarPharmacy(supplies,D);
   const leaderboard=mountWarLeaderboard(()=>buildWarStandings([
-    {id:'player',name:previousField?.name||o.name,team:battlefield!.state.team,points:warRewards.rank(battlefieldHero).points,title:warRewards.rank(battlefieldHero).name,player:true},
-    ...actors.filter(actor=>actor.battlefieldTeam&&!actor.battlefieldBoss).map(actor=>({id:actor.simId,name:actor.n,team:actor.battlefieldTeam,points:warRewards.rank(actor).points,title:warRewards.rank(actor).name,player:false})),
-  ]),D);
+    {id:'player',name:previousField?.name||o.name,team:battlefield!.state.team,points:warRewards.rank(battlefieldHero).points,title:warRewards.rank(battlefieldHero).name,soldierKills:warRewards.rank(battlefieldHero).soldierKills,player:true},
+    ...actors.filter(actor=>actor.battlefieldTeam&&!actor.battlefieldBoss).map(actor=>({id:actor.simId,name:actor.n,team:actor.battlefieldTeam,points:warRewards.rank(actor).points,title:warRewards.rank(actor).name,soldierKills:warRewards.rank(actor).soldierKills,player:false})),
+  ]),D,()=>warRewards.totals,()=>battlefield!.state);
+  const resultDialog = mountBattlefieldResult(() => battlefield!.acknowledgeResult());
   const battlePanel=mountBattlefieldPanel(battlefield,Object.values(I),D,warRewards,supplies,{configureSoldiers: (configuration,applyNow=false) => {
       const available = soldierSkillOptions(T,Object.values(I),UA);
       for (const settings of Object.values(configuration)) for (const id of settings.skills || []) {
@@ -1127,6 +1141,7 @@ export function createSimulator() {
   }
   document.addEventListener('keydown',event=>{
     if(event.key!=='Escape'||event.repeat)return;
+    if(resultDialog.isOpen){event.preventDefault?.();event.stopImmediatePropagation?.();return;}
     if(!battlefield?.active){if(battlePanel.isOpen)battlePanel.close();return;}
     event.preventDefault?.();event.stopImmediatePropagation?.();
     if(typeof horseTrader !== 'undefined' && horseTrader?.isOpen)horseTrader.close();else if(battlePanel.isOpen)battlePanel.close();else if(pharmacy.isOpen)pharmacy.close();else if(leaderboard.isOpen)leaderboard.close();
@@ -1135,6 +1150,6 @@ export function createSimulator() {
   updateWarNpcs();
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { battlefieldHealthColor, battlefieldTitleColor, battlefield, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  return { battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }

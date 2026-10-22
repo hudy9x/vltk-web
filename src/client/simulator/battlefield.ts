@@ -33,6 +33,8 @@ export interface BattlefieldHost {
   player(): LegacyEntity;
   playerAlive(): boolean;
   playerDPS(): number;
+  teamPoints?(): Record<Team,number>;
+  finished?(result: string, points: Record<Team,number>): void;
   marshalHP?(): number;
   inAttackRange?(actor: SimulatorActor, target: LegacyEntity): boolean;
   create(build: ArmyBuild, bossElement?: number): SimulatorActor;
@@ -54,6 +56,7 @@ export function createBattlefield(host: BattlefieldHost) {
   let nextDeployment = validateDeploymentSettings(DEFAULT_DEPLOYMENT), deployment = { ...nextDeployment }, playerDeaths = 0;
   let result = '', elements = { song: 3, jin: 2 };
   const score = { song: 0, jin: 0 };
+  let finalScore: Record<Team,number> | null = null;
   const respawns = new Map<SimulatorActor, number>();
   const bosses = new Map<Team, SimulatorActor>();
   const owns = (actor: LegacyEntity) => isTeam(actor.battlefieldTeam);
@@ -154,11 +157,12 @@ export function createBattlefield(host: BattlefieldHost) {
     // Alternate sides so a long creation batch never gives one army an early advantage.
     return createPlan(plans[0].flatMap((item,index) => [item, plans[1][index]]), progress, schedule);
   }
-  function reset() {
+  function reset(confirmed = false) {
+    if (phase === "finished" && !confirmed) throw new Error("Bấm Đồng ý trong kết quả trận để rời chiến trường.");
     generation++;
     for (const actor of host.actors().filter(owns)) host.remove(actor);
     bosses.clear(); respawns.clear(); playerDue = null; elapsed = 0; playerDeaths = 0; phase = 'idle'; result = '';
-    score.song = score.jin = 0;
+    score.song = score.jin = 0; finalScore = null;
     host.leave();
   }
   function start(playerTeam: Team, bossElements = { song: 3, jin: 2 }, mapId = 9001) {
@@ -206,10 +210,10 @@ export function createBattlefield(host: BattlefieldHost) {
     if (!host.playerAlive() && playerDue === null) playerDied();
     if (elapsed >= BATTLE_DURATION) {
       phase = 'finished';
-      const songAlive = !!bosses.get('song') && alive(bosses.get('song')!);
-      const jinAlive = !!bosses.get('jin') && alive(bosses.get('jin')!);
-      result = songAlive !== jinAlive ? `${songAlive ? 'Tống' : 'Kim'} thắng · Bảo vệ Nguyên Soái` : 'Hòa · ' + (songAlive ? 'Hai boss còn sống' : 'Hai boss đều bị hạ');
+      finalScore = { ...(host.teamPoints?.() || score) };
+      result = finalScore.song === finalScore.jin ? 'Hòa · Hai phe bằng quân trạng' : `${finalScore.song > finalScore.jin ? 'Tống' : 'Kim'} thắng · Tổng quân trạng`;
       for (const actor of host.actors().filter(owns)) { host.cancel(actor); actor.moving = false; }
+      host.finished?.(result, {...finalScore});
       return;
     }
     for (const [actor, due] of respawns) if (elapsed + 1e-9 >= due) {
@@ -219,9 +223,9 @@ export function createBattlefield(host: BattlefieldHost) {
     if (playerDue !== null && elapsed + 1e-9 >= playerDue) { host.respawnPlayer(team); playerDue = null; }
   }
   function configureDeployment(settings: DeploymentSettings) { nextDeployment = validateDeploymentSettings(settings); }
-  return { configureDeployment, start, reset, add, addAsync, addBothAsync, targets, canHit, died, playerDied, tick, owns,
+  return { acknowledgeResult() { if (phase === "finished") reset(true); }, configureDeployment, start, reset, add, addAsync, addBothAsync, targets, canHit, died, playerDied, tick, owns,
     get active() { return phase !== 'idle'; }, get running() { return phase === 'running'; },
-    get state() { return { mapId: BATTLE_MAP, camps: {song:{...CAMPS.song},jin:{...CAMPS.jin}}, deployment: { ...deployment }, playerDeaths, monsters: { count: host.monsterCount?.() ?? (host.monsters?.().length || 0), alive: (host.monsters?.() || []).filter(alive).length }, phase, elapsed, remaining: BATTLE_DURATION - elapsed, team, result, score: { ...score }, elements: { ...elements }, playerRespawn: playerDue === null ? 0 : Math.max(0, playerDue - elapsed),
+    get state() { return { mapId: BATTLE_MAP, camps: {song:{...CAMPS.song},jin:{...CAMPS.jin}}, deployment: { ...deployment }, playerDeaths, monsters: { count: host.monsterCount?.() ?? (host.monsters?.().length || 0), alive: (host.monsters?.() || []).filter(alive).length }, phase, elapsed, remaining: BATTLE_DURATION - elapsed, team, result, score: { ...(finalScore || host.teamPoints?.() || score) }, elements: { ...elements }, playerRespawn: playerDue === null ? 0 : Math.max(0, playerDue - elapsed),
       armies: Object.fromEntries((['song', 'jin'] as const).map(side => [side, { count: host.actors().filter(a => a.battlefieldTeam === side && !a.battlefieldBoss).length, alive: host.actors().filter(a => a.battlefieldTeam === side && !a.battlefieldBoss && alive(a)).length, bossHP: Math.max(0, bosses.get(side)?.hp || 0), bossMax: bosses.get(side)?.max || 0 }])) }; },
   };
 }

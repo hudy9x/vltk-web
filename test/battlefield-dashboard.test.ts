@@ -31,7 +31,7 @@
     assert.ok(SIM_NAME_POOLS[0].includes(names.next(0)));
   });
 
-  test("five NPC rank settings support zero counts and retain HP and spawn locations through respawns", () => {
+  test("patrol rank settings support zero counts and retain HP and spawn locations through respawns", () => {
     const { DEFAULT_SOLDIERS, validateSoldierConfiguration } =
       loadDashboardModule<
         typeof import("../src/client/simulator/soldier-config.ts")
@@ -41,7 +41,7 @@
     >("simulator/road-monsters.ts");
     const configuration = validateSoldierConfiguration(DEFAULT_SOLDIERS);
     configuration.soldier = { count: 0, hp: 100 };
-    configuration.marshal = { count: 3, hp: 9876543 };
+    configuration.general = { count: 3, hp: 9876543 };
     const road = createRoadMonsters({
       create(_index, x, y, spawn) {
         return {
@@ -63,25 +63,25 @@
     });
     road.configure(configuration);
     road.start();
-    assert.equal(road.actors.length, 12);
+    assert.equal(road.actors.length, 19);
     assert.equal(
-      road.actors.filter((actor) => actor.rank === "marshal").length,
-      6,
+      road.actors.filter((actor) => actor.rank === "general").length,
+      3,
     );
     assert.ok(!road.actors.some((actor) => actor.rank === "soldier"));
-    const original = road.actors.find((actor) => actor.rank === "marshal")!;
+    const original = road.actors.find((actor) => actor.rank === "general")!;
     original.hp = 0;
     road.tick(0.1, true);
-    configuration.marshal.hp = 1;
+    configuration.general.hp = 1;
     road.configure(configuration);
     road.tick(20, true);
-    const respawn = road.actors.find((actor) => actor.rank === "marshal")!;
+    const respawn = road.actors.find((actor) => actor.rank === "general")!;
     assert.notEqual(respawn, original);
     assert.equal(respawn.hp, 9876543);
     assert.equal(respawn.x, original.x);
     assert.equal(respawn.y, original.y);
-    road.start();
-    assert.equal(road.actors.find((actor) => actor.rank === "marshal")!.hp, 1);
+    road.restart();
+    assert.equal(road.actors.find((actor) => actor.rank === "general")!.hp, 1);
     configuration.captain.count = -1;
     assert.throws(() => road.configure(configuration));
   });
@@ -215,6 +215,42 @@
     rewards.record(player, ally);
     rewards.killed(ally);
     assert.equal(rewards.state.points, 100);
+  });
+
+  test("recruitment offers battlefield selection and joins the selected map/team only after pressing Join", () => {
+    const { createHeadlessGame } = require("../tools/sim-balance/legacy-runtime.ts");
+    for (const mapId of [9001, 9002, 9003]) for (const team of ["song", "jin"]) {
+      const game = createHeadlessGame(process.cwd()), simulator = game.arenaSimulator;
+      simulator.tick(.01);
+      const recruiter = game.equipmentTrader.entities().find((npc: any) => npc.name === "Chiêu Mộ Sứ");
+      assert.ok(recruiter);
+      recruiter.onInteract();
+      const panel = game.simNodes.find((node: any) => node.id === "battlefield-panel");
+      const field = (id: string) => panel.querySelector("#battlefield-" + id);
+      assert.equal(panel.hidden, false);
+      assert.equal(field("section-join").hidden, false);
+      assert.equal(field("section-match").hidden, true);
+      assert.match(panel.innerHTML, /Tham gia chiến trường Tống Kim/);
+      for (const id of [9001, 9002, 9003]) assert.ok(panel.innerHTML.includes(`value="${id}"`));
+      field("map").value = String(mapId);
+      field("player").value = team;
+      field("tab-match").onclick();
+      assert.equal(field("section-join").hidden, true);
+      assert.equal(field("section-match").hidden, false);
+      field("tab-join").onclick();
+      assert.equal(field("map").value, String(mapId));
+      assert.equal(field("player").value, team);
+      assert.equal(simulator.battlefield.active, false, "choosing a map does not start a match");
+      field("start").onclick();
+      assert.equal(field("error").textContent, "");
+      assert.equal(simulator.battlefield.running, true);
+      assert.equal(simulator.battlefield.state.mapId, mapId);
+      assert.equal(simulator.battlefield.state.team, team);
+      const camp = simulator.battlefield.state.camps[team];
+      assert.equal(game.v.x, camp.x);
+      assert.equal(game.v.y, camp.y);
+      assert.equal(panel.hidden, true, "joining closes the recruitment panel");
+    }
   });
 
   test("runtime NPCs open settings and pharmacy, and SIM targeting prefers humans then SIMs then soldiers", () => {
