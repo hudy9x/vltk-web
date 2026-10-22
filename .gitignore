@@ -10,3 +10,9 @@ src/client/game.js
 src/client/game.js.map
 .gitnexus
 .map-tool/
+
+# Local generation drafts and verification screenshots.
+/output/
+
+# Unused cursor draft; runtime cursor assets remain tracked.
+/public/img/cursors/click.png
