@@ -62,9 +62,11 @@ export type Tool =
   | "entry"
   | "spawn"
   | "spawn-select"
+  | "npc"
   | "path"
   | "preview";
 export type Selection =
+  | { kind: "npc"; id: string }
   | { kind: "object"; layerId: string; id: string }
   | { kind: "spawn"; id: string }
   | { kind: "spawns"; ids: string[] }

@@ -1,4 +1,6 @@
 import { mapListForDraft } from "@/lib/presentation";
+import { NpcPanel } from './NpcPanel';
+import type { AssetStore } from '@/lib/native';
 import type React from "react";
 import {
   Map as MapIcon,
@@ -31,8 +33,12 @@ interface Props {
   workspace: Workspace | null;
   document: EditorDocument | null;
   busy: string;
-  leftTab: "maps" | "layers";
-  setLeftTab(value: "maps" | "layers"): void;
+  leftTab: "maps" | "layers" | "npcs";
+  setLeftTab(value: "maps" | "layers" | "npcs"): void;
+  assets: AssetStore;
+  activeNpcId: string;
+  onChooseNpc(id: string): void;
+  onDeleteNpc(id: string): void;
   search: string;
   setSearch(value: string): void;
   selection: Selection;
@@ -47,6 +53,10 @@ interface Props {
   onImportObject(): void;
 }
 export function MapSidebar({
+  assets,
+  activeNpcId,
+  onChooseNpc,
+  onDeleteNpc,
   workspace,
   document,
   busy,
@@ -85,8 +95,10 @@ export function MapSidebar({
           <Layers />
           Layers
         </Button>
+        <Button variant={leftTab === 'npcs' ? 'secondary' : 'ghost'} size="sm" disabled={!document || !!busy} onClick={() => setLeftTab('npcs')}>NPC</Button>
       </div>
-      {leftTab === "maps" ? (
+      {leftTab === 'npcs' ? <ScrollArea className="map-list">{document && <NpcPanel map={document.map} assets={assets} activeNpcId={activeNpcId}
+        selection={selection} onChoose={onChooseNpc} onSelect={setSelection} onRemove={onDeleteNpc} />}</ScrollArea> : leftTab === "maps" ? (
         <>
           <div className="sidebar-search">
             <Search size={14} />

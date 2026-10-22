@@ -1,4 +1,5 @@
 import type { EncounterDefinition, MapDefinition } from './types';
+import { getNpc } from '../npcs';
 
 function record(value: unknown, path: string): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${path}: expected object`);
@@ -84,6 +85,25 @@ export function parseMapDefinition(value: unknown): MapDefinition {
     if (Number(position.x) < 0 || Number(position.y) < 0 || Number(position.x) >= size.width || Number(position.y) >= size.height) throw new Error(`${path}: spawn outside map`);
     if (!['normal', 'elite', 'boss'].includes(String(spawn.rank))) throw new Error(`${path}: invalid spawn rank`);
     if (typeof spawn.initialDelaySeconds !== 'number' || !Number.isFinite(spawn.initialDelaySeconds) || spawn.initialDelaySeconds < 0) throw new Error(`${path}: invalid spawn delay`);
+  }
+  if (map.npcs !== undefined) {
+    if (!Array.isArray(map.npcs)) throw new Error(`${path}.npcs: expected array`);
+    const npcIds = new Set<string>();
+    for (const value of map.npcs) {
+      const npc = record(value, `${path}.npc`);
+      text(npc.id, `${path}.npc.id`);
+      text(npc.npcId, `${path}.npc.npcId`);
+      if (!getNpc(npc.npcId)) throw new Error(`${path}: unknown NPC ${npc.npcId}`);
+      if (npcIds.has(npc.id)) throw new Error(`${path}: duplicate NPC ${npc.id}`);
+      npcIds.add(npc.id);
+      point(npc.position, `${path}.npc.position`);
+      const p = record(npc.position, `${path}.npc.position`);
+      if (Number(p.x) < 0 || Number(p.y) < 0 || Number(p.x) >= size.width || Number(p.y) >= size.height) throw new Error(`${path}: NPC outside map`);
+      if (npc.team !== undefined && !['song', 'jin'].includes(String(npc.team))) throw new Error(`${path}: invalid NPC team`);
+      if (npc.direction !== undefined && (!Number.isInteger(npc.direction) || Number(npc.direction) < 0 || Number(npc.direction) >= getNpc(npc.npcId)!.directions)) throw new Error(`${path}: invalid NPC direction`);
+      if (npc.animated !== undefined && typeof npc.animated !== 'boolean') throw new Error(`${path}: invalid NPC animation`);
+      if (npc.scale !== undefined) positive(npc.scale, `${path}.npc.scale`);
+    }
   }
   return value as MapDefinition;
 }

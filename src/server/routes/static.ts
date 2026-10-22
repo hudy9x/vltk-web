@@ -6,6 +6,7 @@ import { isAssetPath } from '../assets.ts';
 import { sendJson } from '../http.ts';
 import { buildApp } from '../../../tools/build-app.js';
 import type { ServerServices } from '../types.ts';
+import npcCatalog from '../../client/npcs/catalog.json' with { type: 'json' };
 
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -17,6 +18,7 @@ const TYPES: Record<string, string> = {
 const STATIC = new Set(['index.html', 'data.js', 'setvi.js', 'jxlook.js', 'style.css', 'jx1ui.css',
   'jx1ui2.css', 'ui20.css', 'manifest.json', 'sw.js', 'client/bootstrap.js', 'fonts/ibm-plex-mono.css',
   'app/maps/availability.json']);
+for (const npc of npcCatalog) STATIC.add(npc.image);
 
 /** Không mở toàn bộ ROOT làm static: save SQLite, source server và .git vẫn riêng tư. */
 export function registerStaticRoutes(app: FastifyInstance, services: ServerServices): void {

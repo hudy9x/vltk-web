@@ -1,4 +1,6 @@
 import { chooseWarMount, warMountOptions } from './war-mounts';
+import { mapNpcs } from '../npcs';
+import type { MapDefinition } from '../maps/types';
 import { recoverSimulator } from './recovery';
 import { randomSimulatorClothes } from './appearance';
 import { reflectedSkillDamage } from './reflection';
@@ -46,7 +48,7 @@ declare var combatSandbox: SandboxAPI | null;
 declare var horseTrader: { close(): void; readonly isOpen: boolean } | null;
 declare var o: SimulatorProfile, l: SimulatorWorld, v: LegacyEntity;
 declare var I: Record<string, Faction>, T: Record<string, LegacyRecord>, r0: Record<string, LegacyRecord>;
-declare var MapsEngine: { getMapBackground(id: number): string };
+declare var MapsEngine: { getMapBackground(id: number): string; getMap?(id: number): MapDefinition | undefined };
 declare var Z0: LegacyRecord;
 declare var P0: LegacyRecord;
 declare function ea(): number;
@@ -973,6 +975,10 @@ export function createSimulator() {
   const warRewards = createWarRewards({ player: () => battlefieldHero, team: () => battlefield!.state.team,
     running: () => !!battlefield?.running, alive: () => battlefieldWorld.life>0 && !(battlefieldWorld.deadT>0), changed: () => { battlefieldWorld.dirty=true; if(typeof R !== 'undefined')R=true; } });
   const supplies = createWarSupplies({ running: () => !!battlefield?.running,
+    pharmacyPositions: () => {
+      const state = battlefield?.state, map = state && typeof MapsEngine !== 'undefined' && MapsEngine.getMap?.(state.mapId);
+      return map ? mapNpcs(map).filter(npc => npc.npcId === 'pharmacy' && (!npc.team || npc.team === state!.team)).map(npc => npc.position) : undefined;
+    },
     alive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
     team: () => battlefield!.state.team, position: () => battlefieldHero,
     changed: () => { if(typeof R !== 'undefined')R=true; },

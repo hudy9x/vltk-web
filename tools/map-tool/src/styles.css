@@ -158,7 +158,10 @@
 }
 .sidebar-tabs button {
   flex: 1;
-  font-size: 12px;
+  min-width: 0;
+  padding-inline: 6px;
+  gap: 4px;
+  font-size: 11px;
 }
 .tab-count {
   font-size: 10px;
@@ -847,3 +850,17 @@
 .spawn-boss {
   color: #ff49c5;
 }
+/* NPC library reuses the editor's existing pane and button language. */
+.npc-panel { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.npc-library { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.npc-card { height: auto; min-width: 0; padding: 8px 4px; display: flex; flex-direction: column; gap: 5px; white-space: normal; }
+.npc-card strong { font-size: 11px; line-height: 1.4; }
+.npc-card small { font-size: 10px; color: var(--muted-foreground); }
+.npc-card[aria-pressed="true"] { border-color: #e9c98a; background: #e9c98a18; }
+.npc-placement { width: 100%; height: auto; padding: 8px; justify-content: space-between; text-align: left; font-size: 11px; }
+.npc-placement span { min-width: 0; }
+.npc-placement span small { display: block; font-size: 9px; opacity: .65; }
+.npc-placement-row { display: flex; align-items: center; gap: 4px; }
+.npc-placement-row .npc-placement { flex: 1; min-width: 0; }
+.npc-remove { flex: none; color: var(--muted-foreground); }
+.npc-remove:hover { color: var(--destructive); }

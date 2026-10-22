@@ -29,6 +29,15 @@ export interface MapSpawn {
   rank: MonsterRank;
   initialDelaySeconds: number;
 }
+export interface MapNpc {
+  id: string;
+  npcId: string;
+  position: Point;
+  team?: 'song' | 'jin';
+  direction?: number;
+  animated?: boolean;
+  scale?: number;
+}
 export interface MapDefinition {
   schemaVersion: 1;
   status?: 'available' | 'test';
@@ -41,6 +50,8 @@ export interface MapDefinition {
   /** Omitted: legacy auto mode (fixed when spawns is nonempty). */
   spawnMode?: 'procedural' | 'fixed';
   spawns: MapSpawn[];
+  /** Reusable NPC instances. Omitted uses the shared legacy layout; [] is intentionally empty. */
+  npcs?: MapNpc[];
 }
 /** Combat balance lives outside map documents. Equipment weights are NOT monster elements. */
 export interface EncounterDefinition {
