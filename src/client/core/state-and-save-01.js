@@ -461,6 +461,7 @@ var W9 = function (A) {
 };
 
 var Z9 = function (A, n) {
+  if (typeof manaNotice === "function") manaNotice(A.main);
   const t = S3() && !E3(T[A.main.id], !!l.mounted) ? !l.mounted : !!l.mounted;
   l.rotNext = null;
   const manualWarTarget = l.battlefield && typeof hA === "function" && hA() && l.manTgt;
