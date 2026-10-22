@@ -1,4 +1,5 @@
 import { stepZoom, type ZoomAction } from "@/lib/zoom";
+import { mapNpcs, editableNpcs, getNpc, drawNpc, hitNpc, npcBounds, type MapNpc } from '../../../../src/client/npcs';
 import { drawPreviewActor } from "@/lib/preview-actor";
 import actorSheetUrl from "../../../../public/img/a/pl_shaolin_st.webp";
 import { spawnIdsInRegion } from "@/lib/spawn-selection";
@@ -31,6 +32,7 @@ interface Props {
   assets: AssetStore;
   monsters: Monster[];
   tool: Tool;
+  activeNpcId?: string;
   brush: number;
   selection: Selection;
   hidden: Set<string>;
@@ -208,7 +210,7 @@ export function MapCanvas(props: Props) {
         JSON.stringify(previous) === JSON.stringify(counts) ? previous : counts,
       );
     }
-    function marker(point: Point, color: string, label: string) {
+    function marker(point: Point, color: string, label: string, labelTop?: number) {
       context.save();
       context.lineWidth = 2 / camera.zoom;
       context.strokeStyle = "#071018";
@@ -220,7 +222,7 @@ export function MapCanvas(props: Props) {
         context.font = `600 ${12 / camera.zoom}px -apple-system,sans-serif`;
         context.textAlign = "center";
         const w = context.measureText(label).width + 12 / camera.zoom;
-        const top = point.y - 29 / camera.zoom;
+        const top = labelTop ?? point.y - 29 / camera.zoom;
         context.fillStyle = "#071018";
         context.fillRect(point.x - w / 2, top, w, 19 / camera.zoom);
         context.strokeStyle = color;
@@ -326,14 +328,19 @@ export function MapCanvas(props: Props) {
       const queue: Array<{
         y: number;
         object?: ReturnType<typeof objects>[number]["object"];
+        npc?: MapNpc;
         actor?: boolean;
       }> = scene
         .worldObjects(view)
         .map((item) => ({ y: item.y, object: item.mapObject }));
       if (p.showActor) queue.push({ y: actor.y, actor: true });
+      for (const npc of mapNpcs(map)) queue.push({ y: npc.position.y, npc });
       queue.sort((a, b) => a.y - b.y);
       for (const item of queue) {
-        if (item.object) scene.drawObject(context, item.object);
+        if (item.npc) {
+          const definition = getNpc(item.npc.npcId)!;
+          drawNpc(context, p.assets.imageFor(definition.image), item.npc, time);
+        } else if (item.object) scene.drawObject(context, item.object);
         else drawActor();
       }
       scene.drawForeground(context);
@@ -378,6 +385,19 @@ export function MapCanvas(props: Props) {
         context.stroke();
       }
       marker(map.entry, "#00e5ff", "Điểm vào");
+      for (const npc of mapNpcs(map)) {
+        const definition = getNpc(npc.npcId)!, box = npcBounds(npc);
+        const selected = p.selection?.kind === 'npc' && p.selection.id === npc.id;
+        const near = hitNpc([npc], hover, 4 / camera.zoom);
+        if (selected) {
+          context.strokeStyle = '#ffe39b'; context.lineWidth = 2 / camera.zoom;
+          context.strokeRect(box.x, box.y, box.width, box.height);
+        }
+        marker(npc.position, selected ? '#ffffff' : '#e9c98a',
+          near || selected || camera.zoom > .8
+            ? `${definition.name}${npc.team === 'song' ? ' · Tống' : npc.team === 'jin' ? ' · Kim' : ''}${near || selected ? ` (${npc.position.x}, ${npc.position.y})` : ''}` : '',
+          box.y - 24 / camera.zoom);
+      }
       if (p.showSpawns || p.tool === "spawn" || p.tool === "spawn-select")
         for (const spawn of spawnPoints) {
           const color =
@@ -499,7 +519,7 @@ export function MapCanvas(props: Props) {
         y: Math.round(hover.y),
         zoom: Math.round(camera.zoom * 100),
       });
-      if (p.tool === "preview" && target) invalidate();
+      if ((p.tool === "preview" && target) || mapNpcs(map).some(npc => npc.animated)) invalidate();
     }
     function down(event: PointerEvent) {
       if (event.button !== 0 && event.button !== 1) return;
@@ -559,6 +579,16 @@ export function MapCanvas(props: Props) {
         return;
       }
       const next = cloneDocument(p.document);
+      if (p.tool === 'npc') {
+        const definition = getNpc(p.activeNpcId ?? 'equipment');
+        if (!definition) { p.onError('Chọn NPC trong thư viện trước.'); return; }
+        const id = `npc-${crypto.randomUUID().slice(0, 8)}`;
+        editableNpcs(next.map).push({ id, npcId: definition.id, position });
+        p.onChange(next);
+        p.onSelect({ kind: 'npc', id });
+        invalidate();
+        return;
+      }
       if (p.tool === "spawn-select") {
         prepare(p.document);
         hover = position;
@@ -596,10 +626,13 @@ export function MapCanvas(props: Props) {
       }
       let selection: Selection = null;
       if (p.tool === "select") {
+        const npc = hitNpc(mapNpcs(next.map), position, 6 / camera.zoom);
         const spawn = (p.showSpawns ? [...spawnPoints] : [])
           .reverse()
           .find((point) => Math.hypot(point.x - position.x, point.y - position.y) < 14 / camera.zoom);
-        if (spawn) {
+        if (npc) {
+          selection = { kind: 'npc', id: npc.id };
+        } else if (spawn) {
           retainSpawnPoints(next, spawnPoints);
           selection = { kind: "spawn", id: spawn.id };
         }
@@ -669,6 +702,12 @@ export function MapCanvas(props: Props) {
               (spawn) => spawn.id === (drag!.selection as { id: string }).id,
             );
             if (spawn) spawn.position = hover;
+          }
+          if (drag.selection?.kind === 'npc') {
+            const id = drag.selection.id;
+            const npc = editableNpcs(drag.document.map).find(npc => npc.id === id);
+            if (npc) npc.position = bounded({ x: npc.position.x + hover.x - drag.last.x,
+              y: npc.position.y + hover.y - drag.last.y }, drag.document);
           }
           drag.last = hover;
           if (!drag.stroke) prepared = null;
@@ -777,6 +816,7 @@ export function MapCanvas(props: Props) {
     props.showActor,
     props.showRegions,
     props.tool,
+    props.activeNpcId,
     showSpawns,
     spawnSeed,
     props.monsters,
@@ -829,7 +869,7 @@ export function MapCanvas(props: Props) {
         <canvas ref={canvas} aria-label="Canvas chỉnh sửa bản đồ" />
       </div>
       <div className="canvas-hint">
-        {props.tool === "preview"
+        {props.tool === 'npc' ? `Đặt ${getNpc(props.activeNpcId ?? 'equipment')?.name ?? 'NPC'} · Bấm lên map để đặt · V để chọn / kéo` : props.tool === "preview"
           ? "Bấm để nhân vật thử di chuyển"
           : props.tool === "path"
             ? "Chọn điểm đầu và điểm cuối"

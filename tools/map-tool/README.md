@@ -2,7 +2,13 @@
 
 Desktop editor dùng **Tauri 2 + React + TypeScript + shadcn/ui**. Làm việc trực tiếp với repository game, không cần server ghi file hay sửa registry thủ công.
 
-## Chạy
+## NPC dùng chung
+
+Mở tab **NPC**, chọn một trong bốn mẫu (bán đồ, mua máu, Tống Kim, mua ngựa), rồi bấm trên map để đặt. Phím **N** bật công cụ đặt NPC. Bấm **V** để chọn và kéo NPC; có thể chọn NPC từ danh sách bên trái để sửa tọa độ, phe, hướng đứng, tỉ lệ ảnh và animation trong bảng Thuộc tính. Bấm **thùng rác cạnh từng NPC** trong danh sách để xóa trực tiếp, hoặc **Delete** để xóa NPC đang chọn. Xóa riêng NPC của một phe vẫn giữ NPC bên phe còn lại. Undo/Redo hoạt động như các thao tác map khác. **Lưu map** lưu vị trí và build game; reload game để áp dụng.
+
+Hỗ trợ Biện Kinh, Song Doanh và Chéo Doanh. Editor hiện cả hai phe trên map; game chỉ hiện NPC thuộc phe người chơi hoặc NPC không gán phe. Có thể đặt cùng một mẫu nhiều lần. Toàn bộ mẫu và sprite nằm trong [`src/client/npcs`](../../src/client/npcs/README.md), các map chỉ lưu vị trí và ID tham chiếu.
+
+## Chạy ứng dụng
 
 Cần Node.js >= 24, pnpm và môi trường Rust/Tauri đã cài. Cài dependencies ở root repository trước (`npm install`), sau đó:
 

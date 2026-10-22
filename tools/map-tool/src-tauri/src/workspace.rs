@@ -203,16 +203,22 @@ pub fn read_asset(path: String, state: State<'_, WorkspaceState>) -> Result<Resp
 }
 fn asset_target(workspace: &Workspace, path: &str) -> Result<PathBuf> {
     let map_asset = path.starts_with("app/maps/content/");
+    // Only idle sprites explicitly listed in the shared NPC catalog are readable.
+    let npc_catalog = workspace.root.join("src/client/npcs/catalog.json");
+    let npc_asset = path.starts_with("app/npcs/assets/") && fs::read(npc_catalog).ok()
+        .and_then(|data| serde_json::from_slice::<Value>(&data).ok())
+        .and_then(|catalog| catalog.as_array().map(|items| items.iter().any(|npc| npc["image"].as_str() == Some(path))))
+        .unwrap_or(false);
     // Shared monster previews are explicitly catalogued; map images cannot use img/.
     let monster_asset = workspace.monsters.as_array().is_some_and(|monsters| {
         monsters
             .iter()
             .any(|monster| monster["image"].as_str() == Some(path))
     });
-    if !transactions::image_path(&path) || (!map_asset && !monster_asset) {
+    if !transactions::image_path(&path) || (!map_asset && !monster_asset && !npc_asset) {
         return Err("Ảnh map phải nằm trong src/client/maps/content".into());
     }
-    let relative = if map_asset {
+    let relative = if map_asset || npc_asset {
         format!("src/client/{}", &path[4..])
     } else {
         format!("public/{path}")
@@ -222,7 +228,9 @@ fn asset_target(workspace: &Workspace, path: &str) -> Result<PathBuf> {
         .join(relative)
         .canonicalize()
         .map_err(|_| format!("Không tìm thấy ảnh: {path}"))?;
-    let allowed_root = if map_asset {
+    let allowed_root = if npc_asset {
+        workspace.root.join("src/client/npcs/assets")
+    } else if map_asset {
         workspace.root.join("src/client/maps/content")
     } else {
         workspace.root.join("public")
@@ -308,6 +316,25 @@ pub async fn save_map(request: SaveRequest, state: State<'_, WorkspaceState>) ->
 #[cfg(test)]
 mod asset_tests {
     use super::*;
+    #[test]
+    fn reads_only_catalogued_npc_sheets_and_rejects_symlink_escape() {
+        let root = std::env::temp_dir().join(format!("npc-assets-{}", std::process::id()));
+        fs::create_dir_all(root.join("src/client/npcs/assets")).unwrap();
+        fs::write(root.join("src/client/npcs/catalog.json"), br#"[{"image":"app/npcs/assets/horse.webp"}]"#).unwrap();
+        fs::write(root.join("src/client/npcs/assets/horse.webp"), b"sprite").unwrap();
+        fs::write(root.join("src/client/npcs/assets/unlisted.webp"), b"unlisted").unwrap();
+        let workspace = Workspace { root: root.canonicalize().unwrap(), monsters: json!([]) };
+        assert!(asset_target(&workspace, "app/npcs/assets/horse.webp").is_ok());
+        assert!(asset_target(&workspace, "app/npcs/assets/unlisted.webp").is_err());
+        assert!(asset_target(&workspace, "app/npcs/assets/../catalog.json").is_err());
+        #[cfg(unix)] {
+            fs::write(root.join("outside.webp"), b"outside").unwrap();
+            fs::remove_file(root.join("src/client/npcs/assets/horse.webp")).unwrap();
+            std::os::unix::fs::symlink(root.join("outside.webp"), root.join("src/client/npcs/assets/horse.webp")).unwrap();
+            assert!(asset_target(&workspace, "app/npcs/assets/horse.webp").is_err());
+        }
+        fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn reads_map_local_artwork_and_catalogued_monsters_only() {
         let root = std::env::temp_dir().join(format!("map-assets-{}", std::process::id()));

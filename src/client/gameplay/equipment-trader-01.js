@@ -249,12 +249,43 @@ var equipmentTrader = (function () {
     placements.push(npc);
     return npc;
   }
-  function entities() { return placements.filter(npc => o?.fac && npc.visible()); }
+  function entities() {
+    const legacy = placements.filter(npc => o?.fac && npc.visible());
+    if (!o?.fac || typeof MapsEngine === 'undefined' || !MapsEngine.mapNpcs) return legacy;
+    const battle = typeof arenaSimulator !== 'undefined' && arenaSimulator?.battlefield.active ? arenaSimulator.battlefield.state : null;
+    const mapId = battle ? battle.mapId : l.dg || l.tower ? 0 : l.town ? 37 : typeof Z0 !== 'undefined' ? Number(Z0.key) : 0;
+    const map = MapsEngine.getMap(mapId);
+    if (!map || (map.npcs === undefined && ![37, 9001, 9002].includes(map.id))) return legacy;
+    const names = new Set(MapsEngine.npcCatalog.map(npc => npc.name));
+    const actions = {
+      equipment: open,
+      pharmacy: () => {
+        if (battle) arenaSimulator.openPharmacy();
+        else { Nt = 'med'; lh(); }
+      },
+      horse: () => { if (typeof horseTrader !== 'undefined' && horseTrader) horseTrader.open(); },
+      tongkim: () => {
+        if (typeof arenaSimulator !== 'undefined' && arenaSimulator) arenaSimulator.openSettings();
+        else k('Mở phòng Tống Kim để cài đặt trận đấu.');
+      },
+    };
+    return legacy.filter(npc => !names.has(npc.name)).concat(MapsEngine.mapNpcs(map)
+      .filter(npc => !battle || !npc.team || npc.team === battle.team)
+      .map(placement => {
+        const definition = MapsEngine.getNpc(placement.npcId);
+        return { ...placement.position, name: definition.name, subtitle: definition.subtitle,
+          animation: definition.animation, equipmentTrader: true, mapNpc: placement,
+          onInteract: actions[placement.npcId] };
+      }));
+  }
   function draw(context, npc) {
     context.save();
     context.fillStyle = "#0007"; context.beginPath(); context.ellipse(npc.x, npc.y, 18, 7, 0, 0, 7); context.fill();
     // Each NPC uses its configured idle sprite, independent of player equipment.
-    Va(npc.animation, "st", 0, 0, npc.x, npc.y, Jn);
+    if (npc.mapNpc) {
+      const definition = MapsEngine.getNpc(npc.mapNpc.npcId);
+      MapsEngine.drawNpc(context, bA(definition.image), npc.mapNpc, performance.now());
+    } else Va(npc.animation, "st", 0, 0, npc.x, npc.y, Jn);
     context.font = '12px "IBM Plex Mono", monospace'; context.textAlign = "center";
     context.strokeStyle = "#000"; context.lineWidth = 3; context.fillStyle = "#f6d27c";
     const top = npc.y - 105;
@@ -268,7 +299,9 @@ var equipmentTrader = (function () {
   if (canvas) canvas.addEventListener("pointerdown", event => {
     const rect = canvas.getBoundingClientRect(), scale = $8();
     const x = (event.clientX - rect.left) / scale + B0.x, y = (event.clientY - rect.top) / scale + B0.y;
-    const npc = entities().find(npc => Math.abs(x - npc.x) <= 30 && y >= npc.y - 150 && y <= npc.y + 12);
+    const npc = entities().find(npc => npc.mapNpc
+      ? MapsEngine.hitNpc([npc.mapNpc], { x, y }, 6)
+      : Math.abs(x - npc.x) <= 30 && y >= npc.y - 150 && y <= npc.y + 12);
     if (!npc) return;
     event.preventDefault(); event.stopImmediatePropagation();
     npc.onInteract();

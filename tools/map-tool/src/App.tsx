@@ -1,4 +1,5 @@
 import { stageLayerImage } from "@/lib/image-editing";
+import { removeNpc } from '../../../src/client/npcs';
 import { deleteMapLayer } from "@/lib/layer-editing";
 import type { ZoomAction } from "@/lib/zoom";
 import { ensureMapListed } from "@/lib/progression";
@@ -100,6 +101,7 @@ const tools: { id: Tool; label: string; key: string; icon: typeof Hand }[] = [
   { id: "entry", label: "Đặt điểm vào", key: "I", icon: MapPin },
   { id: "spawn", label: "Đặt spawn", key: "S", icon: CircleDot },
   { id: "spawn-select", label: "Chọn vùng spawn", key: "Q", icon: LassoSelect },
+  { id: "npc", label: "Đặt NPC", key: "N", icon: MapPin },
   { id: "path", label: "Thử đường đi", key: "P", icon: Route },
   { id: "preview", label: "Thử di chuyển", key: "T", icon: Play },
 ];
@@ -112,7 +114,9 @@ export default function App() {
   const [selection, setSelection] = useState<Selection>(null),
     [tool, setTool] = useState<Tool>("select");
   const [search, setSearch] = useState(""),
-    [leftTab, setLeftTab] = useState<"maps" | "layers">("maps");
+    [leftTab, setLeftTab] = useState<"maps" | "layers" | "npcs">("maps");
+  const [activeNpcId, setActiveNpcId] = useState('equipment');
+  useEffect(() => { if (tool === 'npc') setLeftTab('npcs'); }, [tool]);
   const [hidden, setHidden] = useState<Set<string>>(new Set()),
     [showCollision, setShowCollision] = useState(false);
   const [collisionOpacity, setCollisionOpacity] = useState(65);
@@ -273,6 +277,7 @@ export default function App() {
   const removeSelection = () => {
     if (!selection) return;
     edit((next) => {
+      if (selection.kind === 'npc') removeNpc(next.map, selection.id);
       if (selection.kind === "object") {
         const layer = next.map.layers.find(
           (layer) => layer.id === selection.layerId,
@@ -606,6 +611,13 @@ export default function App() {
         </header>
         <div className="editor-main">
           <MapSidebar
+            assets={assets}
+            activeNpcId={activeNpcId}
+            onChooseNpc={id => { setActiveNpcId(id); setTool('npc'); }}
+            onDeleteNpc={id => {
+              edit(next => { removeNpc(next.map, id); });
+              if (selection?.kind === 'npc' && selection.id === id) setSelection(null);
+            }}
             workspace={workspace}
             document={document}
             busy={busy}
@@ -614,7 +626,7 @@ export default function App() {
             search={search}
             setSearch={setSearch}
             selection={selection}
-            setSelection={setSelection}
+            setSelection={selection => { setSelection(selection); if (selection?.kind === 'npc') setTool('select'); }}
             hidden={hidden}
             setHidden={setHidden}
             startNew={startNew}
@@ -722,6 +734,7 @@ export default function App() {
             )}
             {document ? (
               <MapCanvas
+                activeNpcId={activeNpcId}
                 document={document}
                 assets={assets}
                 monsters={workspace?.monsters ?? []}

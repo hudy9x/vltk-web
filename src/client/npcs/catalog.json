@@ -1,0 +1,6 @@
+[
+  { "id": "equipment", "name": "Thần Trang Sứ Giả", "category": "NPC bán đồ", "subtitle": "Giao dịch trang bị", "image": "app/npcs/assets/equipment.webp", "animation": "boss019", "width": 64, "height": 62, "anchor": { "x": 30, "y": 59 }, "frames": 8, "directions": 8, "frameMs": 143, "scale": 1.35 },
+  { "id": "pharmacy", "name": "Chủ Dược Điếm", "category": "NPC mua máu", "subtitle": "Thuốc sinh lực · Nội lực", "image": "app/npcs/assets/pharmacy.webp", "animation": "enemy081", "width": 22, "height": 46, "anchor": { "x": 11, "y": 44 }, "frames": 10, "directions": 8, "frameMs": 143, "scale": 1.35 },
+  { "id": "tongkim", "name": "Chiêu Mộ Sứ", "category": "NPC Tống Kim", "subtitle": "Cài đặt Tống Kim", "image": "app/npcs/assets/tongkim.webp", "animation": "enemy050", "width": 52, "height": 48, "anchor": { "x": 26, "y": 46 }, "frames": 15, "directions": 8, "frameMs": 143, "scale": 1.35 },
+  { "id": "horse", "name": "Mã Phu", "category": "NPC mua ngựa", "subtitle": "Ngựa · 10 KNB/con", "image": "app/npcs/assets/horse.webp", "animation": "enemy051", "width": 29, "height": 52, "anchor": { "x": 14, "y": 49 }, "frames": 10, "directions": 8, "frameMs": 143, "scale": 1.35 }
+]

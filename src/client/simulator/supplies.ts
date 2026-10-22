@@ -19,6 +19,8 @@ interface SupplyHost {
   alive(): boolean;
   team(): Team;
   position(): { x: number; y: number };
+  /** Authored pharmacy locations for the player's team; [] disables purchases. */
+  pharmacyPositions?(): { x: number; y: number }[] | undefined;
   recover(resource: PotionResource, potion?: WarPotion): boolean;
   catalog?(): WarPotion[];
   pay?(amount: number): boolean;
@@ -64,12 +66,9 @@ export function createWarSupplies(host: SupplyHost) {
     )[0];
   }
   function nearCamp() {
-    const position = host.position(),
-      camp = CAMPS[host.team()];
-    return (
-      Math.hypot(position.x - camp.x, (position.y - camp.y) * 2) <=
-      SUPPLY_RADIUS
-    );
+    const position = host.position();
+    const locations = host.pharmacyPositions?.() ?? [CAMPS[host.team()]];
+    return locations.some(camp => Math.hypot(position.x - camp.x, (position.y - camp.y) * 2) <= SUPPLY_RADIUS);
   }
   function reset(initialStock = false) {
     stock.clear();

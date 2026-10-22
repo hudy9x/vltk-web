@@ -1,4 +1,5 @@
 import { Switch } from "@/components/ui/switch";
+import { editableNpcs, mapNpcs, getNpc } from '../../../../src/client/npcs';
 import { ensureMapListed } from "@/lib/progression";
 import { useEffect, useState } from "react";
 import { setSpawnMonster } from "@/lib/spawn-editing";
@@ -40,6 +41,8 @@ export function Inspector({
   const [tab, setTab] = useState("space");
   useEffect(() => { if (selection) setTab("space"); }, [selection]);
   const map = document.map;
+  const npc = selection?.kind === 'npc' ? mapNpcs(map).find(npc => npc.id === selection.id) : undefined;
+  const npcDefinition = npc && getNpc(npc.npcId);
   const selectedObject =
     selection?.kind === "object"
       ? objects(map).find(
@@ -90,7 +93,23 @@ export function Inspector({
         <ScrollArea className="min-h-0 flex-1">
           <div className="inspector-body">
             <TabsContent value="space" className="space-y-5 mt-0">
-              {selection?.kind === "spawns" ? (
+              {npc && npcDefinition ? <>
+                <div className="section-heading"><span>{npcDefinition.name}</span><Button variant="ghost" size="icon" aria-label="Xóa NPC" onClick={onDelete}><Trash2 /></Button></div>
+                <div className="quiet-code">{npc.id}</div>
+                <p className="help-text">{npcDefinition.category} · Kéo trực tiếp trên map bằng công cụ Chọn (V).</p>
+                <div className="two-fields">{(['x', 'y'] as const).map(axis => <NumberField key={axis} label={axis.toUpperCase()} value={npc.position[axis]}
+                  min={0} max={axis === 'x' ? map.size.width - 1 : map.size.height - 1}
+                  onChange={value => onEdit(next => { editableNpcs(next.map).find(item => item.id === npc.id)!.position[axis] = Math.round(value); })} />)}</div>
+                <Choice label="Phe hiển thị" value={npc.team ?? 'all'} options={[{ value: 'all', label: 'Cả hai phe' }, { value: 'song', label: 'Tống' }, { value: 'jin', label: 'Kim' }]}
+                  onChange={value => onEdit(next => { const item = editableNpcs(next.map).find(item => item.id === npc.id)!; if (value === 'all') delete item.team; else item.team = value as 'song' | 'jin'; })} />
+                <Choice label="Hướng đứng" value={String(npc.direction ?? 0)} options={['Đông nam', 'Nam', 'Tây nam', 'Tây', 'Tây bắc', 'Bắc', 'Đông bắc', 'Đông'].map((label, value) => ({ value: String(value), label: `${value} · ${label}` }))}
+                  onChange={value => onEdit(next => { editableNpcs(next.map).find(item => item.id === npc.id)!.direction = Number(value); })} />
+                <NumberField label="Tỉ lệ ảnh" min={0.1} step={0.1} value={npc.scale ?? npcDefinition.scale}
+                  onChange={value => onEdit(next => { editableNpcs(next.map).find(item => item.id === npc.id)!.scale = value; })} />
+                <Label className="check-row"><Checkbox checked={npc.animated ?? false}
+                  onCheckedChange={value => onEdit(next => { editableNpcs(next.map).find(item => item.id === npc.id)!.animated = !!value; })} />Animation đứng nhẹ</Label>
+                <p className="help-text">Ảnh tĩnh dùng khung đầu của sprite. Save lưu vị trí vào map; ⌘/Ctrl+Z để hoàn tác.</p>
+              </> : selection?.kind === "spawns" ? (
                 <>
                   <div className="section-heading">Chọn vùng spawn</div>
                   <p className="help-text">Đã chọn {selection.ids.length} điểm spawn. Chỉ các điểm trong khung được xóa; các điểm khác được giữ nguyên.</p>
