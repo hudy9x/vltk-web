@@ -1,3 +1,4 @@
+import { WAR_RANKS, warRank } from './war-rewards';
 import type { createBattlefield } from './battlefield';
 import { TEAM_NAMES } from './battlefield';
 import { battlefieldTitleColor } from './presentation';
@@ -39,7 +40,13 @@ export function mountWarLeaderboard(
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-label", "Bảng xếp hạng Tống Kim");
   panel.innerHTML =
-    '<header><h2>Bảng xếp hạng · Tống Kim</h2><button class="war-close" aria-label="Đóng bảng xếp hạng">×</button></header><div class="war-content"><p id="war-match-status"></p><p id="war-team-totals"></p><p id="war-personal-rank"></p><table><thead><tr><th>Hạng</th><th>Nhân vật</th><th>Phe</th><th>Danh hiệu</th><th>Binh sĩ hạ</th><th>Điểm</th></tr></thead><tbody></tbody></table><p>Top 10 quân trạng · Esc để đóng</p></div>';
+    '<header><h2>Bảng xếp hạng · Tống Kim</h2><button class="war-close" aria-label="Đóng bảng xếp hạng">×</button></header><div class="war-content"><p id="war-match-status"></p><p id="war-team-totals"></p><p id="war-personal-rank"></p><p id="war-personal-bonus"></p><table><thead><tr><th>Hạng</th><th>Nhân vật</th><th>Phe</th><th>Danh hiệu</th><th>Binh sĩ hạ</th><th>Điểm</th></tr></thead><tbody></tbody></table><p>Top 10 quân trạng · Esc để đóng</p><details><summary>Mốc quân hàm và chỉ số thưởng (tối đa 20%)</summary><div id="war-rank-guide"></div><p>Thưởng theo quân hàm hiện tại, không cộng dồn. Kháng tăng theo tỷ lệ trên giá trị dương hiện có; 50% kháng → 60% ở Đại tướng. Giữ thưởng qua hồi sinh, hết hiệu lực khi rời trận. Boss doanh trại mang danh hiệu Nguyên soái.</p></details></div>';
+  panel.querySelector("#war-rank-guide")!.innerHTML = '<table><thead><tr><th>Danh hiệu</th><th>Quân trạng</th><th>ST vật lý ngoại/nội công</th><th>Tốc độ đánh/thi triển</th><th>Kháng</th></tr></thead><tbody>' + WAR_RANKS.map((rank,index) => {
+    const next = WAR_RANKS[index+1];
+    const range = next ? `${rank.points.toLocaleString("vi-VN")}–${(next.points-1).toLocaleString("vi-VN")}` : `Từ ${rank.points.toLocaleString("vi-VN")}`;
+    const bonus = Math.round(rank.bonus*100);
+    return `<tr><td style="color:${battlefieldTitleColor(rank.name)}">${rank.name}</td><td>${range}</td><td>+${bonus}%</td><td>+${bonus}%</td><td>+${bonus}%</td></tr>`;
+  }).join('') + '</tbody></table>';
   const close = () => {
     panel.hidden = true;
   };
@@ -58,6 +65,12 @@ export function mountWarLeaderboard(
     panel.querySelector("#war-team-totals")!.innerHTML = `<span style="color:#ffcc00">Tống: ${points.song.toLocaleString("vi-VN")}</span> · <span style="color:#c77bff">Kim: ${points.jin.toLocaleString("vi-VN")}</span> quân trạng`;
     panel.querySelector("#war-personal-rank")!.textContent = player
       ? `Bạn: ${player.name} · Hạng ${player.position}/${rows.length} · ${player.points} điểm · <${player.title}>`
+      : "";
+    const rank = player && warRank(player.points);
+    const next = player && WAR_RANKS.find(rank=>rank.points>player.points);
+    panel.querySelector("#war-personal-bonus")!.textContent = rank
+      ? `Thưởng quân hàm: +${Math.round(rank.bonus*100)}% sát thương vật lý ngoại/nội công, tốc độ đánh/thi triển và kháng` +
+        (next ? ` · Còn ${(next.points-player!.points).toLocaleString("vi-VN")} điểm để đạt ${next.name}` : " · Quân hàm cao nhất")
       : "";
     panel.querySelector("tbody")!.innerHTML = rows
       .slice(0, 10)

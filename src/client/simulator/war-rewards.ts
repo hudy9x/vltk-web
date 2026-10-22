@@ -1,6 +1,12 @@
 import type { LegacyEntity, LegacyRecord } from './types';
 import type { Team } from './battlefield';
-export const WAR_RANKS = [{ points:0, name:'Binh sĩ' },{ points:100, name:'Hiệu úy' },{ points:300, name:'Thống lĩnh' },{ points:700, name:'Đại thống lĩnh' },{ points:1500, name:'Tướng quân' },{ points:3000, name:'Nguyên soái' }];
+export const WAR_RANKS = [
+  { points:0, name:'Binh sĩ', bonus:0 },
+  { points:3000, name:'Hiệu úy', bonus:.05 },
+  { points:9000, name:'Thống lĩnh', bonus:.10 },
+  { points:18000, name:'Phó tướng', bonus:.15 },
+  { points:30000, name:'Đại tướng', bonus:.20 },
+] as const;
 export const WAR_ITEMS = {
   resistance: { name:'Hộ Thể Hoàn', description:'+20 điểm kháng mọi loại', color:'#7bc6ff' },
   attack: { name:'Thần Lực Hoàn', description:'+25% tốc độ đánh/thi triển', color:'#ffc56e' },
@@ -10,7 +16,7 @@ export type WarItem = keyof typeof WAR_ITEMS;
 export const WAR_BUFF_SECONDS = 180;
 export function warRank(points: number) { return [...WAR_RANKS].reverse().find(rank => points >= rank.points)!; }
 interface Credit { source: LegacyEntity; at: number; player: boolean; team: Team }
-export function createWarRewards(host: { player(): LegacyEntity; team(): Team; running(): boolean; alive(): boolean; changed(): void; event?(message: string): void; name?(actor: LegacyEntity): string }, random = () => Math.random()) {
+export function createWarRewards(host: { player(): LegacyEntity; team(): Team; running(): boolean; alive(): boolean; changed(): void; promoted?(actor: LegacyEntity): void; event?(message: string): void; name?(actor: LegacyEntity): string }, random = () => Math.random()) {
   let elapsed=0, nextId=0, credits=new WeakMap<LegacyEntity,Credit>(), defeated=new WeakSet<LegacyEntity>();
   let merits=new WeakMap<LegacyEntity,number>(), soldierKills=new WeakMap<LegacyEntity,number>();
   const totals: Record<Team,number> = {song:0,jin:0};
@@ -41,7 +47,10 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     const name = (actor:LegacyEntity) => host.name?.(actor) || actor.n || (actor===host.player()?'Người chơi':'SIM');
     host.event?.(`${credit.team==='song'?'Tống':'Kim'} · ${name(credit.source)} tiêu diệt ${name(target)} <${victimTitle}> (+${points} quân trạng)`);
     const title = warRank(before+points).name;
-    if(title!==warRank(before).name) host.event?.(`${name(credit.source)} đạt danh hiệu mới: <${title}> (${before+points} quân trạng)`);
+    if(title!==warRank(before).name) {
+      host.promoted?.(credit.source);
+      host.event?.(`${name(credit.source)} đạt danh hiệu mới: <${title}> (${before+points} quân trạng · +${Math.round(warRank(before+points).bonus*100)}% sát thương vật lý ngoại/nội công, tốc độ đánh và kháng)`);
+    }
     if(credit.player) host.changed();
     if(target.battlefieldMonster && random()<.35 && credit.team===host.team()) {
       const kinds=Object.keys(WAR_ITEMS) as WarItem[], kind=kinds[Math.floor(random()*kinds.length)];
@@ -65,8 +74,18 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     if(!(kind in WAR_ITEMS)||inventory[kind]<1)throw new Error('Chưa có loại hoàn này.');
     inventory[kind]--;until[kind]=elapsed+WAR_BUFF_SECONDS;host.changed();
   }
-  function apply(stats:LegacyRecord) {
+  function apply(stats:LegacyRecord, actor:LegacyEntity = host.player()) {
     if(!host.running())return;
+    if(actor.battlefieldBoss || actor.battlefieldMonster || (actor!==host.player() && actor.battlefieldTeam!=='song' && actor.battlefieldTeam!=='jin'))return;
+    const multiplier=1+Math.min(.20,Math.max(0,warRank(merits.get(actor)||0).bonus));
+    stats.warPhysicalMultiplier=multiplier;
+    for(const key of ['phys','cold','fire','poison','light']) {
+      const resistance=stats.res[key]||0;
+      // Negative resistance must not become a larger penalty when promoted.
+      stats.res[key]=resistance>0?resistance*multiplier:resistance;
+    }
+    stats.aspdP=Math.min(3,stats.aspdP*multiplier);stats.aspdC=Math.min(2.7,stats.aspdC*multiplier);stats.aspd=stats.aspdP;
+    if(actor!==host.player())return;
     if(until.resistance>elapsed)for(const key of ['phys','cold','fire','poison','light'])stats.res[key]=(stats.res[key]||0)+20;
     if(until.attack>elapsed) { stats.aspdP=Math.min(3,stats.aspdP*1.25);stats.aspdC=Math.min(2.7,stats.aspdC*1.25);stats.aspd=stats.aspdP; }
     if(until.movement>elapsed) { stats.speed*=1.25;stats.speedFoot=(stats.speedFoot||stats.speed/1.25)*1.25; }

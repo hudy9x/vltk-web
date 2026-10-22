@@ -26,6 +26,7 @@ var F2 = function (A, n, t) {
     const T0 = 1 + (A.eng || 0) / 500;
     for (const aA in r) r[aA] *= T0;
   }
+  if (r.phys) r.phys *= Math.min(1.2, Math.max(1, A.warPhysicalMultiplier || 1));
   let c = 0;
   for (const T0 in r) ((r[T0] *= i), (c += r[T0]));
   const d = (b0(n, "skill_attackradius", t) || [n.radius || 60])[0] || 60,
@@ -121,6 +122,7 @@ var F2 = function (A, n, t) {
 var Ow = function (A) {
   const t = { phys: ((A.wmin + A.wmax) / 2) * (1 + A.physPct / 100) * A.physStat };
   for (const a in A.add) A.add[a] && (t[a] = A.add[a]);
+  t.phys *= Math.min(1.2, Math.max(1, A.warPhysicalMultiplier || 1));
   let e = 0;
   for (const a in t) ((t[a] *= A.dmgMul || 1), (e += t[a]));
   return {

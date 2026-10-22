@@ -138,6 +138,8 @@
       "Thống lĩnh",
       "Đại thống lĩnh",
       "Tướng quân",
+      "Phó tướng",
+      "Đại tướng",
       "Nguyên soái",
     ];
     assert.equal(
