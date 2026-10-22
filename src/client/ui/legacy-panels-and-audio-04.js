@@ -62,7 +62,7 @@ var Rv = function () {
     lA.addEventListener("pointermove", (e) => {
       if (Hs() && e.pointerType !== "touch") {
         const [x, y] = A(e);
-        lA.style.cursor = Y.pendingSupport ? "crosshair" : eh(x + B0.x, y + B0.y) ? 'url("img/ui/attack-dagger.svg") 2 2, pointer' : "default";
+        lA.style.cursor = Y.pendingSupport ? "crosshair" : eh(x + B0.x, y + B0.y) ? 'url("img/cursors/attack.png") 13 12, pointer' : 'url("img/cursors/move.png") 12 10, default';
       }
       if (!Y.active || e.pointerId !== Y.id) return;
       if (Y.selected) return;

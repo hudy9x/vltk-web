@@ -180,10 +180,10 @@ test('manual idle consumes attack timer; selecting does not bypass a still-activ
 });
 test('monster click in auto takes manual control and wins over overlapping loot; hover agrees with head hit-testing', () => {
   const s=game(),e=enemy(s);s.o.ctrl='auto';s.$6=()=>({x:150,y:100,it:{n:'Đồ'}});
-  pointer(s,'pointermove',150,20);assert.equal(s.lA.style.cursor,'url("img/ui/attack-dagger.svg") 2 2, pointer');
+  pointer(s,'pointermove',150,20);assert.equal(s.lA.style.cursor,'url("img/cursors/attack.png") 13 12, pointer');
   pointer(s,'pointerdown',150,20);assert.equal(s.o.ctrl,'manual');assert.equal(s.l.manTgt,e);assert.equal(s.l.pickTarget,null);
   pointer(s,'pointerup',150,20);
-  pointer(s,'pointermove',800,800);assert.equal(s.lA.style.cursor,'default');
+  pointer(s,'pointermove',800,800);assert.equal(s.lA.style.cursor,'url("img/cursors/move.png") 12 10, default');
 });
 test('touch tap selects and flashes without a ground move; a later ground tap releases the hold', () => {
   const s=game(),e=enemy(s);

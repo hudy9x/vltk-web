@@ -8,6 +8,16 @@ html,body{height:100%;background:#050807;color:var(--text);font:14px/1.4 var(--f
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 button[disabled]{opacity:.4;cursor:default}
 .hidden{display:none!important}
+/* Keep the canvas' target cursor and native text-entry cursors. */
+@media (any-hover:hover) {
+  body,body :where(*:not(#arena):not(input):not(textarea):not([contenteditable="true"])){cursor:url("img/cursors/move.png") 12 10, default!important}
+  #arena{cursor:url("img/cursors/move.png") 12 10, default}
+  html body.game-pointer-down,html body.game-pointer-down *{cursor:url("img/cursors/move.png") 12 10, default!important}
+}
+.mouse-click-wave{position:fixed;z-index:2147483647;width:0;height:0;pointer-events:none;transform:scaleY(.5) rotate(45deg)}
+.mouse-click-wave i{position:absolute;left:-7px;top:-6px;width:14px;height:12px;background:#f4d779;clip-path:polygon(0 0,100% 50%,0 100%,30% 50%);filter:drop-shadow(0 0 2px #9c622b);animation:mouse-click-converge 450ms ease-out both;transform-origin:7px 6px}
+@keyframes mouse-click-converge{0%{opacity:0;transform:rotate(var(--direction)) translateX(-35px) scale(1.1)}20%{opacity:1}75%{opacity:.85;transform:rotate(var(--direction)) translateX(-13px) scale(.8)}100%{opacity:0;transform:rotate(var(--direction)) translateX(-6px) scale(.35)}}
+@media(prefers-reduced-motion:reduce){.mouse-click-wave i{animation:none;opacity:.85;transform:rotate(var(--direction)) translateX(-16px)}}
 .dim{color:var(--dim)} .small{font-size:12px}
 #app{position:relative;height:100dvh;width:min(100vw,calc(100dvh*9/16));margin:0 auto;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 40px #000}
 
