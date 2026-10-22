@@ -25,6 +25,7 @@ var Td = function (A) {
       l.deadT <= 0 && ((l.life = n.life), (l.mana = n.mana), (o.wave = 1), Ga() || o8()));
     return;
   }
+  if (l.mana <= 0 && l.life > 0 && typeof manaNotice === "function") manaNotice({cost:1});
   advanceConsumableCooldowns(l, A);
   if (
     ((l.life = Math.min(n.life, l.life + n.regen * A)),
