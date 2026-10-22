@@ -67,7 +67,7 @@ test('manual and automatic battlefield potions share finite stock and preserve n
   assert.equal(game.arenaSimulator.supplies.state.life, 0);
   assert.equal(JSON.stringify(game.o.potStock), normalStock); assert.equal(game.o.gold, goldBefore);
   game.v.x = 1700; assert.throws(() => game.arenaSimulator.supplies.refill(), /điểm tập trung/);
-  game.l.life = 0; match.playerDied(); game.arenaSimulator.tick(5);
+  game.l.life = 0; match.playerDied(); game.arenaSimulator.tick(30);
   assert.equal(game.arenaSimulator.supplies.state.life, 0, 'respawn does not give free potions');
   game.arenaSimulator.supplies.refill(); assert.equal(game.arenaSimulator.supplies.state.life, 30);
   match.reset(); assert.equal(game.arenaSimulator.supplies.state.life, 0);

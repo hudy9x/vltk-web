@@ -4,6 +4,7 @@ export interface SoldierSkillOption {
   name: string;
   level: number;
   faction: string;
+  icon: string;
 }
 /** Use native required levels (some catalogs label these attacks at level 60).
  * Buffs, curses and passive skills cannot be selected as monster attacks.
@@ -24,6 +25,7 @@ export function soldierSkillOptions(
         name: `${faction.n} · ${catalog[id].n}`,
         level: catalog[id].req,
         faction: faction.key,
+        icon: catalog[id].ic || "",
       })),
   );
 }
