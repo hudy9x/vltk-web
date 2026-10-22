@@ -103,3 +103,36 @@ test('browser outbox survives interrupted writes and reload; SQLite reset reject
     assert.deepEqual(Array.from(legacyUrl.loadedScripts),['data.js?v=622','setvi.js?v=622','app/game.js?v=622']);
   } finally { await app.close(); db.close(); }
 });
+
+test('recruitment settings are written to SQLite, restored in a fresh browser, and isolated by character slot', async () => {
+  const { compileTypeScriptEntry } = require('../tools/build-app');
+  const scope = {};
+  vm.runInNewContext(compileTypeScriptEntry('simulator/battlefield-settings.ts', 'Settings').code, scope);
+  const { createBattlefieldSettingsStore } = scope.Settings;
+  const db = openDatabase(':memory:');
+  const { app, server } = createServer({ db, downloadAssets:false });
+  await app.ready();
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const settings = { version:1, fields:{ 'redeployment':'60', 'soldier-appearance':'45', 'soldier-soldier-count':'0', 'soldier-soldier-hp':'50000', 'soldier-marshal-hp':'200000', 'soldier-commander-skill-0':'11', 'soldier-commander-patrol':'250', 'prefer-pk':true, map:'9002' }, ratios:{ song:{shaolin:100}, jin:{wudang:100} } };
+  try {
+    const first = await boot(base, new Map());
+    first.localStorage.setItem('jxidle_slot', '0');
+    const store = createBattlefieldSettingsStore(first.localStorage);
+    store.save(settings);
+    await first.localGameStorage.flush();
+    assert.deepEqual(JSON.parse(snapshot(db).entries.jxidle_battlefield_settings_0), settings);
+    // No local cache: the second browser obtains settings from the database.
+    const fresh = await boot(base, new Map());
+    fresh.localStorage.setItem('jxidle_slot', '0');
+    const restored = createBattlefieldSettingsStore(fresh.localStorage);
+    assert.equal(JSON.stringify(restored.load()), JSON.stringify(settings));
+    fresh.localStorage.setItem('jxidle_slot', '1');
+    assert.equal(restored.load(), null);
+    restored.save({ ...settings, fields:{map:'9001'} });
+    await fresh.localGameStorage.flush();
+    fresh.localStorage.setItem('jxidle_slot', '0');
+    assert.equal(restored.load().fields.map, '9002');
+    assert.equal(JSON.parse(snapshot(db).entries.jxidle_battlefield_settings_1).fields.map, '9001');
+  } finally { await app.close(); db.close(); }
+});
