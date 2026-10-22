@@ -543,7 +543,8 @@ export function createSimulator() {
     if (actorActionLocked(actor)) { actor.moving = false; return; }
     const targets = availableTargets(actor);
     const hostilePlayer = battlefield?.running && targets.includes(battlefieldHero) && battlefield.canHit(actor,battlefieldHero) ? battlefieldHero : null;
-    if (hostilePlayer) actor.target = hostilePlayer;
+    if (battlefield?.running && actor.battlefieldTeam && !actor.battlefieldBoss) actor.target = targets[0] || null;
+    else if (hostilePlayer) actor.target = hostilePlayer;
     if (!actor.target || !targets.includes(actor.target)) {
       actor.target = targets.sort((a, b) => skillCastDistance(actor, a) - skillCastDistance(actor, b))[0] || null;
       actor.seeT = 0;
@@ -1044,6 +1045,13 @@ export function createSimulator() {
   battlefield = createBattlefield({
     actors: () => [...actors], monsters: () => roadMonsters.actors, monsterCount: () => roadMonsters.totalCount, player: () => battlefieldHero, playerAlive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
     marshalHP: () => roadMonsters.configuration.marshal.hp,
+    inAttackRange(actor, target) {
+      const preferred = actor.stats.main;
+      const skill = !preferred.costLife && actor.mana < (preferred.cost || 0) ? actor.stats.basic : preferred;
+      const reach = skill.geo?.k === 'self' ? skill.geo.r || skill.rad : skill.rad;
+      return skillCastDistance(actor,target) <= reach + (target.r || 12)/QA + 4 &&
+        (skillIgnoresTerrain(skill) || mt(actor.x,actor.y,target.x,target.y));
+    },
     playerDPS: () => estimateDPS({ stats: battlefieldWorld.P } as SimulatorActor), create: spawnBattleActor, cancel: actor => {if(actor.hp<=0)warRewards.killed(actor);cancelCasts(actor);}, remove,
     enter(team) {
       previousField = { key: Z0.key, bgImg: l.bgImg, zoneShown: l.zoneShown, town: l.town, name: o.name, x: v.x, y: v.y, life: l.life, mana: l.mana, ctrl: o.ctrl, autoMap: o.autoMap };

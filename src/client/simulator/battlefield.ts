@@ -34,6 +34,7 @@ export interface BattlefieldHost {
   playerAlive(): boolean;
   playerDPS(): number;
   marshalHP?(): number;
+  inAttackRange?(actor: SimulatorActor, target: LegacyEntity): boolean;
   create(build: ArmyBuild, bossElement?: number): SimulatorActor;
   cancel(actor: SimulatorActor): void;
   remove(actor: SimulatorActor): void;
@@ -72,15 +73,19 @@ export function createBattlefield(host: BattlefieldHost) {
     const candidates: LegacyEntity[] = [...host.actors(), ...(host.monsters?.() || [])].filter(target => canHit(actor, target));
     if (playerDue === null && host.playerAlive() && canHit(actor, host.player())) candidates.push(host.player());
     const distance = (target:LegacyEntity) => Math.hypot(target.x-actor.x,(target.y-actor.y)*2);
-    const nearby = candidates.filter(target=>distance(target)<(actor.battlefieldBoss?650:500));
-    if(actor.battlefieldBoss)return nearby;
-    const playerThreat = nearby.find(target=>target===host.player());
-    if(playerThreat)return [playerThreat];
-    // Fight opposing SIMs before farming NPCs, even if a soldier is closer.
-    const fighters = candidates.filter(target=>owns(target)&&target!==host.player()&&!target.battlefieldBoss&&!target.battlefieldMonster);
-    if(fighters.length)return fighters;
-    return nearby.length?nearby:candidates.filter(target=>target.battlefieldBoss);
+    if (actor.battlefieldBoss) return candidates.filter(target => distance(target) < 650);
+    const priority = (target: LegacyEntity) => target === host.player() ? 0 : !target.battlefieldMonster && !target.battlefieldBoss ? 1 : 2;
+    const inRange = (target: LegacyEntity) => host.inAttackRange?.(actor, target) ?? distance(target) < 500;
+    const ranged = new Set(candidates.filter(inRange));
+    // Only enemies that can be attacked now participate in type priority.
+    // Keep all enemies in the list so area attacks still hit every hostile body.
+    return candidates.sort((a,b) => {
+      const aReady = ranged.has(a), bReady = ranged.has(b);
+      if (aReady !== bReady) return aReady ? -1 : 1;
+      return (aReady ? priority(a) - priority(b) : 0) || distance(a) - distance(b);
+    });
   }
+
   function place(actor: SimulatorActor, index = 0) {
     const side = actor.battlefieldTeam as Team;
     const camp = CAMPS[side];
