@@ -986,9 +986,10 @@ test('Tống Kim percentage roster creates exact factions and every equipped ite
   assert.equal(army.length,20);
   for(const faction of Object.keys(s.I)) assert.equal(army.filter(actor=>actor.profile.fac===faction).length,2);
   for(const actor of army) {
-    const eq=actor.profile.eq; assert.equal(Object.keys(eq).length,10);
+    const eq=actor.profile.eq; assert.equal(Object.keys(eq).length,11);
+    assert.equal(eq.horse.d,10); // Native horse is separate from the ten five-line armor/weapon slots.
     assert.equal(actor.profile.skPts,0);assert.equal(actor.profile.attrPts,0);
-    for(const [slot,item] of Object.entries(eq)) {
+    for(const [slot,item] of Object.entries(eq).filter(([slot])=>slot!=="horse")) {
       assert.equal(item.lvl,10);assert.equal(item.r,1);assert.equal(item.mag.length,5);
       assert.equal(new Set(item.mag.map(line=>line.a)).size,5);
       for(let i=0;i<5;i++) assert.ok(s.equipmentTrader.affixes(item,item.s,i).some(entry=>entry.a===item.mag[i].a));
@@ -1210,4 +1211,34 @@ test('Vô Hình Độc uses the PvP coefficient and poison duration reduction wi
  assert.equal(soldier.poison,3);assert.equal(soldier.poison*soldier.poisonDmg,100);
  // Existing poison is not reduced again when the aura pulses.
  s.b7(69,.6);assert.ok(Math.abs(enemy.poison*enemy.poisonDmg-2)<1e-8);
+});
+
+test('Tống Kim SIMs drink their own potions, respect cooldown and never consume player bottles',()=>{
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const [actor]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
+  s.S.potions=[{kind:'life',tier:1,total:200},{kind:'mana',tier:1,total:60}];s.be={1:1};s.ao=.3;
+  actor.hp=100;actor.mana=0;actor.stats.main.cost=20;actor.cooldown=9999;
+  const playerHP=s.l.life,playerMP=s.l.mana;
+  s.arenaSimulator.tick(.01);
+  assert.equal(actor.hp,300);assert.equal(actor.potionBag.life,29);assert.equal(actor.potionBag.mana,29);
+  const mana=actor.mana;
+  s.arenaSimulator.tick(.1);assert.equal(actor.hp,300);assert.equal(actor.potionBag.life,29);assert.ok(actor.mana>=mana);
+  s.arenaSimulator.tick(.21);assert.equal(actor.hp,500);assert.equal(actor.potionBag.life,28);
+  assert.equal(s.l.life,playerHP);assert.equal(s.l.mana,playerMP);
+  actor.potionBag.life=0;actor.hp=10;s.arenaSimulator.tick(.5);assert.equal(actor.hp,10);
+});
+
+test('Tống Kim direct hits trigger SIM reflection once after defenses and never recurse',()=>{
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const [defender]=match.add({team:'jin',faction:'shaolin',level:150,strength:'normal',count:1});
+  Object.assign(defender.stats,{sorb:20,retMelee:10,retMeleeP:50,retRangeP:25});
+  const before=s.l.life,base={...s.l.P.main,parts:{phys:100},useAR:false,crit:0,series5:0,series:0};
+  const hp=defender.hp;s.hs({...base,melee:true},defender);
+  const damage=hp-defender.hp;
+  assert.ok(damage>0);assert.ok(Math.abs(s.l.life-(before-10-damage*.5))<1e-6);
+  const next=s.l.life,nextHP=defender.hp;s.hs({...base,melee:false},defender);
+  assert.ok(Math.abs(s.l.life-(next-(nextHP-defender.hp)*.25))<1e-6);
+  const ally=match.add({team:'song',faction:'shaolin',level:150,strength:'normal',count:1})[0];
+  ally.stats.retMeleeP=100;
+  const protectedHP=s.l.life;s.hs({...base,melee:true},ally);assert.equal(s.l.life,protectedHP);
 });

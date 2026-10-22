@@ -15,7 +15,7 @@ declare var INV_MAX: number,
   Mc: Record<number, number>,
   combatSandbox: unknown;
 declare var arenaSimulator: {
-  battlefield: { active: boolean; state: { team: Team } };
+  battlefield: { active: boolean; state: { team: Team; camps?:Record<Team,{x:number;y:number}> } };
 } | null;
 declare var equipmentTrader: { place(options: LegacyRecord): LegacyRecord };
 declare function st(item: LegacyRecord): number;
@@ -80,10 +80,10 @@ const warNpc = equipmentTrader.place({
 });
 Object.defineProperties(warNpc, {
   x: {
-    get: () => CAMPS[arenaSimulator?.battlefield.state.team || "song"].x - 120,
+    get: () => (arenaSimulator?.battlefield.state.camps || CAMPS)[arenaSimulator?.battlefield.state.team || "song"].x - 120,
   },
   y: {
-    get: () => CAMPS[arenaSimulator?.battlefield.state.team || "song"].y - 65,
+    get: () => (arenaSimulator?.battlefield.state.camps || CAMPS)[arenaSimulator?.battlefield.state.team || "song"].y - 65,
   },
 });
 placements.push(warNpc);

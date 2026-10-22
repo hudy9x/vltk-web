@@ -3,7 +3,7 @@ import type { SoldierSkillOption } from "./soldier-skills";
 import type { WarSupplies } from "./supplies";
 import type { WarRewards } from "./war-rewards";
 import { ARMY_FACTIONS, distributeArmy } from "./composition";
-import { splitArmyTotal, TEAM_NAMES } from "./battlefield";
+import { BATTLEFIELD_MAPS, splitArmyTotal, TEAM_NAMES } from "./battlefield";
 import {
   DEFAULT_SOLDIERS,
   SOLDIER_RANKS,
@@ -13,9 +13,12 @@ import {
 import { mountWarDialogStyle } from "./dialog-style";
 import type { SoldierConfiguration } from "./soldier-config";
 import type { Team, BothArmyBuild, createBattlefield } from "./battlefield";
-import type { Faction } from "./types";
+import type { LegacyRecord, Faction } from "./types";
 interface PanelHost {
   skills?: SoldierSkillOption[];
+  mounts?: LegacyRecord[];
+  preferPKSim?(): boolean;
+  setPreferPKSim?(value: boolean): void;
   configureSoldiers(configuration: SoldierConfiguration, applyNow?: boolean): void;
   openPharmacy(): void;
   openLeaderboard(): void;
@@ -54,8 +57,8 @@ export function mountBattlefieldPanel(
     )
     .join("")}</nav>
   <div class="war-content">
-  <section id="battlefield-section-match" role="tabpanel"><p>20 phút · Boss Hoàng Kim · Hồi sinh sau 5 giây</p><div class="war-grid"><label>Phe người chơi<select id="battlefield-player"><option value="song">Tống</option><option value="jin">Kim</option></select></label>${(["song", "jin"] as const).map((team) => `<label>Hệ boss ${TEAM_NAMES[team]}<select id="battlefield-boss-${team}">${elements.map((name, index) => `<option value="${index}" ${index === (team === "song" ? 3 : 2) ? "selected" : ""}>${name}</option>`).join("")}</select></label>`).join("")}</div><p>Quân và quái được cài ở các tab bên cạnh. Thay đổi quái có hiệu lực khi bắt đầu trận mới hoặc bấm Cập nhật quái trong trận.</p><div class="war-actions"><button id="battlefield-start">Bắt đầu trận mới</button><button id="battlefield-reset">Rời chiến trường</button></div></section>
-  <section id="battlefield-section-army" role="tabpanel" hidden><div class="war-grid"><label>Cấu hình tỉ lệ phe<select id="battlefield-team"><option value="song">Tống</option><option value="jin">Kim</option></select></label><label>Tổng SIM hai phe<input id="battlefield-count" type="number" min="2" max="200" step="2" value="40"></label></div><div class="war-card"><h3>Tỉ lệ 10 môn phái (%)</h3><div class="war-grid">${armyFactions.map((faction) => `<label>${escape(faction.n)}<input id="battlefield-ratio-${faction.key}" aria-label="Tỉ lệ ${escape(faction.n)} (%)" type="number" min="0" max="100" step="0.1" value="10"></label>`).join("")}</div><p id="battlefield-composition"></p></div><div class="war-grid"><label>Level<input id="battlefield-level" type="number" min="1" max="200" value="150"></label><label>Sức mạnh<select id="battlefield-strength"><option value="weak">Yếu</option><option value="normal" selected>Trung bình</option><option value="strong">Mạnh · Cường hóa +8</option></select></label><label>Chiêu chính SIM<select id="battlefield-skill-tier"><option value="90">Chiêu 90</option><option value="150">Chiêu 150</option></select></label><label>Loại trang bị<select id="battlefield-equipment-kind"><option value="blue">Đồ xanh cấp 10 · 5 dòng</option><option value="gold">Hoàng Kim môn phái</option><option value="thientu">Thiên Tứ môn phái</option></select></label></div><label><span><input id="battlefield-equipped" type="checkbox" checked> Mặc trang bị cho SIM</span></label><p>Món chưa có Thiên Tứ giữ Hoàng Kim gốc; ô ngoài bộ dùng đồ xanh tương thích.</p><button id="battlefield-add">Thêm SIM cho cả hai phe</button></section>
+  <section id="battlefield-section-match" role="tabpanel"><p>20 phút · Boss Hoàng Kim · Hồi sinh sau 5 giây</p><div class="war-grid"><label>Chiến trường<select id="battlefield-map">${BATTLEFIELD_MAPS.map(map=>`<option value="${map.id}" ${map.id===9002?"selected":""}>${map.name}</option>`).join("")}</select></label><label>Phe người chơi<select id="battlefield-player"><option value="song">Tống</option><option value="jin">Kim</option></select></label>${(["song", "jin"] as const).map((team) => `<label>Hệ boss ${TEAM_NAMES[team]}<select id="battlefield-boss-${team}">${elements.map((name, index) => `<option value="${index}" ${index === (team === "song" ? 3 : 2) ? "selected" : ""}>${name}</option>`).join("")}</select></label>`).join("")}</div><p>Quân và quái được cài ở các tab bên cạnh. Thay đổi quái có hiệu lực khi bắt đầu trận mới hoặc bấm Cập nhật quái trong trận.</p><div class="war-actions"><button id="battlefield-start">Bắt đầu trận mới</button><button id="battlefield-reset">Rời chiến trường</button></div></section>
+  <section id="battlefield-section-army" role="tabpanel" hidden><label><span><input id="battlefield-prefer-pk" type="checkbox"> Ưu tiên PK SIM (tự đánh)</span></label><div class="war-grid"><label>Cấu hình tỉ lệ phe<select id="battlefield-team"><option value="song">Tống</option><option value="jin">Kim</option></select></label><label>Tổng SIM hai phe<input id="battlefield-count" type="number" min="2" max="200" step="2" value="40"></label></div><div class="war-card"><h3>Tỉ lệ 10 môn phái (%)</h3><div class="war-grid">${armyFactions.map((faction) => `<label>${escape(faction.n)}<input id="battlefield-ratio-${faction.key}" aria-label="Tỉ lệ ${escape(faction.n)} (%)" type="number" min="0" max="100" step="0.1" value="10"></label>`).join("")}</div><p id="battlefield-composition"></p></div><div class="war-grid"><label>Level<input id="battlefield-level" type="number" min="1" max="200" value="150"></label><label>Sức mạnh<select id="battlefield-strength"><option value="weak">Yếu</option><option value="normal" selected>Trung bình</option><option value="strong">Mạnh · Cường hóa +8</option></select></label><label>Chiêu chính SIM<select id="battlefield-skill-tier"><option value="90">Chiêu 90</option><option value="150">Chiêu 150</option></select></label><label>Ngựa chiến SIM<select id="battlefield-mount"><option value="random">Ngẫu nhiên theo cấp (90–150)</option><option value="none">Không cưỡi ngựa</option>${(host?.mounts || []).map(horse => `<option value="${horse.key}">${escape(horse.n)} · yêu cầu cấp ${horse.req.find(([kind]: number[]) => kind === 36)?.[1] || 0}</option>`).join('')}</select></label><label>Loại trang bị<select id="battlefield-equipment-kind"><option value="blue">Đồ xanh cấp 10 · 5 dòng</option><option value="gold">Hoàng Kim môn phái</option><option value="thientu">Thiên Tứ môn phái</option></select></label></div><label><span><input id="battlefield-equipped" type="checkbox" checked> Mặc trang bị cho SIM</span></label><p>Món chưa có Thiên Tứ giữ Hoàng Kim gốc; ô ngoài bộ dùng đồ xanh tương thích.</p><button id="battlefield-add">Thêm SIM cho cả hai phe</button></section>
   <section id="battlefield-section-soldiers" role="tabpanel" hidden><p>Số lượng và HP áp dụng cho <b>mỗi phe</b>. Tối đa 200 quái/phe, hồi sinh sau 20 giây. Các quái này tách riêng hai boss Hoàng Kim.</p><table><thead><tr><th>Cấp quái</th><th>Số lượng/phe</th><th>HP mỗi quái</th></tr></thead><tbody>${SOLDIER_RANKS.map((rank) => `<tr><td>${SOLDIER_TITLES[rank]}</td><td><input id="battlefield-soldier-${rank}-count" aria-label="Số lượng ${SOLDIER_TITLES[rank]} mỗi phe" type="number" min="0" max="100" value="${DEFAULT_SOLDIERS[rank].count}"></td><td><input id="battlefield-soldier-${rank}-hp" aria-label="HP ${SOLDIER_TITLES[rank]}" type="number" min="1" max="1000000000000" value="${DEFAULT_SOLDIERS[rank].hp}"></td></tr>`).join("")}</tbody></table><p>Đặt số lượng 0 để không tạo cấp quái đó. Thiết lập tuần tra và võ công tại tab Tuần tra & chiêu; bấm Cập nhật quái trong trận hoặc bắt đầu trận mới để áp dụng.</p></section><section id="battlefield-section-behaviour" role="tabpanel" hidden><label>Cấp quái<select id="battlefield-soldier-setup-rank">${SOLDIER_RANKS.map((rank) => `<option value="${rank}" ${rank === "commander" ? "selected" : ""}>${SOLDIER_TITLES[rank]}</option>`).join("")}</select></label>${SOLDIER_RANKS.map((rank) => `<div class="war-card" id="battlefield-soldier-card-${rank}" ${rank === "commander" ? "" : "hidden"}><h3>${SOLDIER_TITLES[rank]}</h3><p>${SOLDIER_RANK_SKINS[rank].map((id) => SOLDIER_SKIN_NAMES[id]).join(" · ")}</p><div class="war-grid"><label>Bán kính tuần tra<input id="battlefield-soldier-${rank}-patrol" type="number" min="40" max="1200" value="180"></label><label>Bán kính truy đuổi<input id="battlefield-soldier-${rank}-leash" type="number" min="40" max="1600" value="800"></label>${["commander", "general", "marshal"].includes(rank) ? [0, 1].map((slot) => `<label>Chiêu ${slot + 1} · cấp 50–70<select id="battlefield-soldier-${rank}-skill-${slot}"><option value="0">Không dùng · đánh thường nếu tắt cả hai</option>${(host?.skills || []).map((skill) => `<option value="${skill.id}">Cấp ${skill.level} · ${escape(skill.name)}</option>`).join("")}</select></label>`).join("") : "<p>Đánh thường theo chỉ số gốc.</p>"}</div></div>`).join("")}<p>Quái được rải trên hai bờ, chỉ truy đuổi trong phạm vi đã đặt rồi quay về. Chiêu giữ cấp yêu cầu của catalog, luân phiên qua hệ thống đạn/va chạm thật.</p><p>Bấm Cập nhật quái trong trận hoặc bắt đầu trận mới để áp dụng thiết lập.</p></section>
   <section id="battlefield-section-info" role="tabpanel" hidden><h3>Quân trạng</h3><p id="battlefield-merit"></p><p>10 điểm hạ quái · 50 điểm hạ SIM/người chơi · 1.000 điểm hạ boss. Esc mở top 10 cùng thứ hạng và danh hiệu của bạn.</p><button id="battlefield-ranking">Bảng xếp hạng</button><h3>Dược điếm</h3><p id="battlefield-supplies"></p><p>Tổng sức chứa 60 bình máu + mana. Mua thêm từ Chủ dược điếm ở điểm tập trung. Hồi sinh không tự nạp thuốc.</p><p>Gặp NPC Chủ Dược Điếm riêng tại doanh trại để mua thuốc.</p><p>Hoàn nhặt được nằm trong Hành trang. Mở vật phẩm rồi bấm Sử dụng để nhận hiệu ứng 180 giây.</p></section>
   <div class="war-actions"><button id="battlefield-update-monsters">Cập nhật quái trong trận</button></div><p>Sinh lại binh lính theo cấu hình mới; giữ thời gian, quân trạng, SIM và boss. Chỉ dùng khi trận đang chạy.</p><p id="battlefield-status" role="status"></p><p id="battlefield-error" class="war-note" role="alert"></p></div>`;
@@ -63,6 +66,8 @@ export function mountBattlefieldPanel(
     panel.querySelector<HTMLInputElement>("#battlefield-" + id)!;
   const button = (id: string) =>
     panel.querySelector<HTMLButtonElement>("#battlefield-" + id)!;
+  input("prefer-pk").checked = host?.preferPKSim?.() || false;
+  input("prefer-pk").onchange = () => host?.setPreferPKSim?.(input("prefer-pk").checked);
   const tabs = ["match", "army", "soldiers", "behaviour", "info"];
   for (const tab of tabs)
     button("tab-" + tab).onclick = () => {
@@ -137,7 +142,7 @@ export function mountBattlefieldPanel(
       match.start(input("player").value as Team, {
         song: +input("boss-song").value,
         jin: +input("boss-jin").value,
-      });
+      }, Number(input("map").value || 9001));
     });
   button("reset").onclick = () => act(() => match.reset());
   button('update-monsters').onclick = () => act(() => {
@@ -193,6 +198,7 @@ export function mountBattlefieldPanel(
           compositions: { song: { ...ratios.song }, jin: { ...ratios.jin } },
           faction: "shaolin",
           equipped: input("equipped").checked,
+          mount: input("mount").value || "random",
           skillTier: +(input("skill-tier").value || 90),
           equipmentKind: input("equipment-kind").value || "blue",
           level: +input("level").value,
@@ -231,6 +237,7 @@ export function mountBattlefieldPanel(
       ? `Máu ${supply.life} · Mana ${supply.mana} · Tổng ${supply.total}/60 bình`
       : "";
     button("add").disabled = !match.running || adding;
+    input("map").disabled = match.active;
     button("update-monsters").disabled = !match.running || adding;
     button("start").disabled = adding;
     for (const id of ["player", "boss-song", "boss-jin"])

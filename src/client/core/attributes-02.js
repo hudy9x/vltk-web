@@ -61,7 +61,7 @@ var F2 = function (A, n, t) {
       geo: n.tier === 150 && n.form === 7
         ? { k: "self", r: f, pierce: true }
         : n.tier === 150 && n.form === 6
-          ? { k: "spot", r: f, pierce: true }
+          ? { k: "spot", r: +n.id === 1066 ? 100 : f, pierce: true }
           : h ? g : U2(n) && n.form < 8 ? N5(n, t, f) : null,
       many: h || null,
       id: n.id,

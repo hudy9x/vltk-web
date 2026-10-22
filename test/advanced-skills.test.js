@@ -1178,3 +1178,20 @@ test('Kiếm Hoa registers tier 1091 from level 11 and applies one delayed 30% c
     assert.ok(hits.every(({a})=>a.ev2&&a.id===1091&&Math.abs(a.parts.cold/ability.tot-.3)<1e-9));
   }
 });
+
+test('Hình Tiêu Cốt Lập has a 100-unit impact footprint independent of cast range and FX availability',()=>{
+  for(const level of [1,25])for(const mode of ['native','quiet','missing']) {
+    const {s,skill}=advancedCombat(),ability=skill(1066,level),range=ability.rad;
+    const target={x:400,y:200,hp:1000,r:12};
+    const inside={x:target.x+60,y:target.y,hp:1000,r:12};
+    const outside={x:target.x+150,y:target.y,hp:1000,r:12};
+    const above={x:target.x,y:target.y-70,hp:1000,r:12};
+    s.l.quiet=mode==='quiet';if(mode==='missing')delete s.A0.m[s.A0.f[1066].c];
+    const cast=s.queueSkillContact(s.v,target,ability,hit=>hit.hp-=10,{targets:()=>[target,inside,outside,above]});
+    assert.equal(cast.skill.rad,range);assert.ok(range>100);assert.equal(cast.skill.geo.r,100);
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.ok(target.hp<1000);assert.ok(inside.hp<1000);
+    assert.equal(outside.hp,1000,`${mode}/${level}: outside horizontal edge`);
+    assert.equal(above.hp,1000,`${mode}/${level}: outside vertical edge`);
+  }
+});

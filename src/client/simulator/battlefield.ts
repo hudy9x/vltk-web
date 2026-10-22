@@ -1,3 +1,4 @@
+import diagonalLayout from '../maps/content/9002/layout.json';
 import type { ArmyEquipmentKind } from './set-equipment';
 import { BATTLEFIELD_ROUTES } from './routes';
 import { distributeArmy } from './composition';
@@ -5,7 +6,7 @@ import type { LegacyEntity, SimulatorActor } from './types';
 
 export type Team = 'song' | 'jin';
 export type Strength = 'weak' | 'normal' | 'strong';
-export interface ArmyBuild { team: Team; faction: string; level: number; strength: Strength; count: number; composition?: Record<string, number>; equipped?: boolean; skillTier?: 90 | 150; equipmentKind?: ArmyEquipmentKind }
+export interface ArmyBuild { team: Team; faction: string; level: number; strength: Strength; count: number; composition?: Record<string, number>; equipped?: boolean; skillTier?: 90 | 150; equipmentKind?: ArmyEquipmentKind; mount?: string }
 export interface BothArmyBuild extends Omit<ArmyBuild, 'team' | 'composition'> { compositions?: Record<Team, Record<string, number>> }
 export function splitArmyTotal(count: number) {
   if (!Number.isSafeInteger(count) || count < 2 || count > 200 || count % 2) throw new Error('Tổng SIM phải là số chẵn từ 2 đến 200 để chia đều hai phe.');
@@ -14,9 +15,11 @@ export function splitArmyTotal(count: number) {
 export const BATTLE_DURATION = 20 * 60;
 export const RESPAWN_SECONDS = 5;
 export const MIN_BOSS_SECONDS = 10 * 60;
-export const BATTLE_MAP = 9001;
+export let BATTLE_MAP: number = 9001;
+export const BATTLEFIELD_MAPS = [{id:9001,name:"Song Doanh · ba cầu"},{id:9002,name:"Chéo Doanh · doanh trại chéo"}];
 export const TEAM_NAMES = { song: 'Tống', jin: 'Kim' } as const;
-export const CAMPS = { song: { x: 450, y: 1792 }, jin: { x: 3134, y: 1792 } } as const;
+export const CAMPS: Record<Team,{x:number;y:number}> = { song: { x: 450, y: 1792 }, jin: { x: 3134, y: 1792 } };
+const ORIGINAL_CAMPS = JSON.parse(JSON.stringify(CAMPS)) as typeof CAMPS;
 export const ELEMENT_FACTIONS = [ ['shaolin', 'tianwang'], ['tangmen', 'wudu'], ['emei', 'cuiyan'], ['gaibang', 'tianren'], ['wudang', 'kunlun'] ] as const;
 export const otherTeam = (team: Team): Team => team === 'song' ? 'jin' : 'song';
 export const isTeam = (value: unknown): value is Team => value === 'song' || value === 'jin';
@@ -156,9 +159,12 @@ export function createBattlefield(host: BattlefieldHost) {
     score.song = score.jin = 0;
     host.leave();
   }
-  function start(playerTeam: Team, bossElements = { song: 3, jin: 2 }) {
+  function start(playerTeam: Team, bossElements = { song: 3, jin: 2 }, mapId = 9001) {
+    if (!BATTLEFIELD_MAPS.some(map=>map.id===mapId)) throw new Error('Chiến trường không hợp lệ.');
     if (!isTeam(playerTeam) || ![bossElements.song, bossElements.jin].every(value => Number.isInteger(value) && value >= 0 && value <= 4)) throw new Error('Phe hoặc hệ boss không hợp lệ.');
-    reset(); team = playerTeam; elements = { ...bossElements };
+    reset(); BATTLE_MAP = mapId;
+    for (const side of ['song','jin'] as const) Object.assign(CAMPS[side], mapId===9002 ? diagonalLayout.camps[side] : ORIGINAL_CAMPS[side]);
+    team = playerTeam; elements = { ...bossElements };
     try {
       host.enter(team); phase = 'running';
       for (const side of ['song', 'jin'] as const) {
@@ -208,7 +214,7 @@ export function createBattlefield(host: BattlefieldHost) {
   }
   return { start, reset, add, addAsync, addBothAsync, targets, canHit, died, playerDied, tick, owns,
     get active() { return phase !== 'idle'; }, get running() { return phase === 'running'; },
-    get state() { return { monsters: { count: host.monsters?.().length || 0, alive: (host.monsters?.() || []).filter(alive).length }, phase, elapsed, remaining: BATTLE_DURATION - elapsed, team, result, score: { ...score }, elements: { ...elements }, playerRespawn: playerDue === null ? 0 : Math.max(0, playerDue - elapsed),
+    get state() { return { mapId: BATTLE_MAP, camps: {song:{...CAMPS.song},jin:{...CAMPS.jin}}, monsters: { count: host.monsters?.().length || 0, alive: (host.monsters?.() || []).filter(alive).length }, phase, elapsed, remaining: BATTLE_DURATION - elapsed, team, result, score: { ...score }, elements: { ...elements }, playerRespawn: playerDue === null ? 0 : Math.max(0, playerDue - elapsed),
       armies: Object.fromEntries((['song', 'jin'] as const).map(side => [side, { count: host.actors().filter(a => a.battlefieldTeam === side && !a.battlefieldBoss).length, alive: host.actors().filter(a => a.battlefieldTeam === side && !a.battlefieldBoss && alive(a)).length, bossHP: Math.max(0, bosses.get(side)?.hp || 0), bossMax: bosses.get(side)?.max || 0 }])) }; },
   };
 }

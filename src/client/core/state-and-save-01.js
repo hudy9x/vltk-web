@@ -463,22 +463,22 @@ var W9 = function (A) {
 var Z9 = function (A, n) {
   const t = S3() && !E3(T[A.main.id], !!l.mounted) ? !l.mounted : !!l.mounted;
   l.rotNext = null;
-  const e = n ? [] : W9(A).filter((r) => E3(T[r.id], t)),
+  const manualWarTarget = l.battlefield && typeof hA === "function" && hA() && l.manTgt;
+  const e = n || manualWarTarget ? [] : W9(A).filter((r) => E3(T[r.id], t)),
     a = (r) => !r.cd || ((l.skCd || {})[r.id] || 0) <= (l.clock || 0);
   if (e.length < 2) {
-    if (a(A.main)) return ji(A.main) ? A.main : null;
-    const r = A.actives
-      .filter((c) => c !== A.main && a(c) && ji(c) && E3(T[c.id], t))
-      .sort((c, d) => d.dps - c.dps)[0];
-    return r && r.dps > A.basic.dps ? r : A.basic;
+    // Learned skills outside the configured slots must never be a fallback.
+    // War uses only a free basic attack while the primary waits for MP.
+    if (a(A.main) && ji(A.main)) return A.main;
+    return l.battlefield && a(A.main) && !ji(A.main) && ji(A.basic) ? A.basic : null;
   }
   const i = e.length;
-  l.rotI = (l.rotI || 0) % i;
+  l.rotI = (l.rotI ?? Math.max(0, e.findIndex(skill => skill.id === A.main.id))) % i;
   for (let r = 0; r < i; r++) {
     const c = e[(l.rotI + r) % i];
     if (a(c) && ji(c)) return ((l.rotNext = (l.rotI + r + 1) % i), c);
   }
-  return e.some(a) ? null : A.basic;
+  return l.battlefield && e.some(a) && ji(A.basic) ? A.basic : null;
 };
 
 var AD = function (A, n, t) {
@@ -681,6 +681,8 @@ var aD = function (A, n, t) {
   if (actorActionLocked(v)) return 0;
   if (hA() && l.clickHold) return 0;
   if (!o.sk[gs] || l.dash || l.town) return 0;
+  if (l.battlefield && +A.main.id !== gs &&
+    (o.rot === false || (hA() && l.manTgt) || !(o.slots || []).includes(gs))) return 0;
   const e = A.actives.find((d) => d.id === gs);
   if (
     !e ||
@@ -752,6 +754,10 @@ var iD = function (A) {
       const w = A.filter((x) => !u.includes(x) && q0(v, x) < 140);
       ((a = w.length ? u.concat(w) : u), (i = !0));
     }
+  }
+  if (l.battlefield && o.preferPKSim) {
+    const sims = a.filter(target => target.arenaSim && !target.battlefieldBoss);
+    if (sims.length) a = sims;
   }
   const r = jd();
   if (n && r !== "near")
