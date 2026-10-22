@@ -208,7 +208,13 @@ var combatSandbox = (function () {
     refreshPanel();
   }
   const panel = document.createElement("details");
-  panel.id = "combat-sandbox"; panel.open = true;
+  panel.id = "combat-sandbox"; panel.open = typeof developerTools === "undefined";
+  if (typeof developerTools !== "undefined") {
+    const toggle = document.createElement("button"); toggle.id = "test-room-toggle";
+    toggle.setAttribute("aria-controls","combat-sandbox"); toggle.setAttribute("aria-expanded","false");
+    toggle.onclick = () => { if (panel.inert) return; panel.open = !panel.open; toggle.setAttribute("aria-expanded",String(panel.open)); };
+    developerTools.register(toggle,"room","Test room · Phòng thử nghiệm");
+  }
   const style = document.createElement("style");
   style.textContent = `#combat-sandbox{position:fixed;top:50px;left:8px;z-index:89990;width:min(400px,calc(100vw - 16px));max-height:calc(100dvh - 70px);overflow:auto;background:#17201bee;color:#efdfb0;border:1px solid #9f8c51;padding:10px;font:13px inherit}#combat-sandbox summary{cursor:pointer;font-weight:bold;padding-bottom:8px}#combat-sandbox .arena-factions{display:grid;grid-template-columns:1fr 1fr;gap:4px}#combat-sandbox button{cursor:pointer;background:#34462c;color:#f4e7ba;border:1px solid #78825a;padding:6px}#combat-sandbox button.on{background:#806529;border-color:#f2d17b}#combat-sandbox .arena-skills{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}#combat-sandbox input,#combat-sandbox select{max-width:100%;background:#101a14;color:#efdfb0;border:1px solid #78825a;padding:5px}#combat-sandbox label{display:block;margin:7px 0}#arena-info{margin:6px 0;color:#cdd1bc}`;
   document.head.appendChild(style);
@@ -233,7 +239,7 @@ var combatSandbox = (function () {
       (level == null || level === "" || entry.ranges.some(([lo, hi]) => +level >= lo && +level <= hi)) &&
       `${entry.id} ${entry.name}`.toLocaleLowerCase("vi").includes(query));
   }
-  panel.innerHTML = `<summary>Phòng test · 10 môn phái</summary><div class="arena-factions">${factions.map(faction => `<button type="button" data-faction="${faction.key}">${D(faction.n)}</button>`).join("")}</div><p id="arena-info"></p><div class="arena-skills"></div><label>Lọc quái <input id="arena-filter" placeholder="Tên hoặc ID quái"></label><label>Cấp quái <input id="arena-level" type="number" min="1" max="200" placeholder="Tất cả" value="${options.level || ""}" style="width:90px"></label><label>Độ hiếm <select id="arena-rarity"><option value="all">Tất cả</option><option value="normal">Thường</option><option value="boss">Boss</option><option value="gold">Hoàng Kim</option></select></label><label>Quái <select id="arena-monster"></select></label><label>Số lượng (1–10.000) <input id="arena-count" type="number" min="1" max="10000" step="1" value="${options.count}" style="width:65px"></label><label>Máu quái <select id="arena-health"><option value="100000">100k HP</option><option value="1000000">1m HP</option><option value="10000000">10m HP</option><option value="100000000">100m HP</option></select></label><label><input id="arena-still" type="checkbox" ${options.stationary ? "checked" : ""}> Quái đứng yên</label><button type="button" data-spawn>Tạo lại quái</button> <button type="button" data-clear>Xóa quái</button>`;
+  panel.innerHTML = `<summary><span>Phòng test · 10 môn phái</span><button type="button" data-room-close aria-label="Đóng Test room">×</button></summary><div class="dev-tool-content"><div class="arena-factions">${factions.map(faction => `<button type="button" data-faction="${faction.key}">${D(faction.n)}</button>`).join("")}</div><p id="arena-info"></p><div class="arena-skills"></div><label>Lọc quái <input id="arena-filter" placeholder="Tên hoặc ID quái"></label><label>Cấp quái <input id="arena-level" type="number" min="1" max="200" placeholder="Tất cả" value="${options.level || ""}" style="width:90px"></label><label>Độ hiếm <select id="arena-rarity"><option value="all">Tất cả</option><option value="normal">Thường</option><option value="boss">Boss</option><option value="gold">Hoàng Kim</option></select></label><label>Quái <select id="arena-monster"></select></label><label>Số lượng (1–10.000) <input id="arena-count" type="number" min="1" max="10000" step="1" value="${options.count}" style="width:65px"></label><label>Máu quái <select id="arena-health"><option value="100000">100k HP</option><option value="1000000">1m HP</option><option value="10000000">10m HP</option><option value="100000000">100m HP</option></select></label><label><input id="arena-still" type="checkbox" ${options.stationary ? "checked" : ""}> Quái đứng yên</label><button type="button" data-spawn>Tạo lại quái</button> <button type="button" data-clear>Xóa quái</button></div>`;
   function refreshPanel() {
     if (!panel || !o || !I[o.fac]) return;
     panel.querySelectorAll("[data-faction]").forEach(button => button.classList.toggle("on", button.dataset.faction === o.fac));
@@ -244,7 +250,11 @@ var combatSandbox = (function () {
     const button = event.target.closest("button");
     if (!button) return;
     try {
-      if (button.dataset.faction) switchFaction(button.dataset.faction);
+      if (button.hasAttribute("data-room-close")) {
+        event.preventDefault(); panel.open = false;
+        document.getElementById("test-room-toggle")?.setAttribute("aria-expanded","false");
+      }
+      else if (button.dataset.faction) switchFaction(button.dataset.faction);
       else if (button.dataset.skill) selectSkill(button.dataset.skill);
       else if (button.dataset.skillInfo) R8(+button.dataset.skillInfo);
       else if (button.hasAttribute("data-spawn")) {
