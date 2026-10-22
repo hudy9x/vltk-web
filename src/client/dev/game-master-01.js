@@ -238,7 +238,7 @@ var gameMaster = (function () {
       status.textContent = error.message;
     }
   };
-  document.body.appendChild(toggle);
+  if (typeof developerTools === "undefined") document.body.appendChild(toggle);
   document.body.appendChild(panel);
   const quickSaleButton = document.createElement("button");
   quickSaleButton.id = "quick-sale-toggle";
@@ -247,11 +247,20 @@ var gameMaster = (function () {
   let quickSale = false;
   function setQuickSale(active) {
     quickSale = active;
-    quickSaleButton.textContent = active ? "Bán nhanh · Esc để thoát" : "Bán nhanh";
+    quickSaleButton.textContent = typeof developerTools !== "undefined" ? "" : active ? "Bán nhanh · Esc để thoát" : "Bán nhanh";
+    quickSaleButton.title = active ? "Bán nhanh · Esc để thoát" : "Bán nhanh";
     quickSaleButton.setAttribute("aria-pressed", String(active));
     document.body.classList.toggle("quick-sale", active);
   }
   setQuickSale(false);
+  if (typeof developerTools !== "undefined") { developerTools.register(toggle,"gm","GM · GameMaster"); developerTools.register(quickSaleButton,"sale","Bán nhanh", () => {
+    if (!quickSale) return false;
+    setQuickSale(false);
+    if (typeof A5 === "function") A5();
+    if (typeof _r === "function") _r();
+    if (typeof n0 === "function") n0(true);
+    return true;
+  }); }
   quickSaleButton.onclick = () => {
     if (!o || !o.fac) return k("Hãy vào game với một nhân vật trước.");
     setQuickSale(!quickSale);
@@ -274,7 +283,7 @@ var gameMaster = (function () {
   document.addEventListener(
     "keydown",
     (event) => {
-      if (event.key !== "Escape" || !quickSale) return;
+      if (event.key !== "Escape" || !quickSale || typeof developerTools !== "undefined") return;
       event.preventDefault();
       event.stopImmediatePropagation();
       setQuickSale(false);
@@ -282,7 +291,7 @@ var gameMaster = (function () {
     },
     true,
   );
-  document.body.appendChild(quickSaleButton);
+  if (typeof developerTools === "undefined") document.body.appendChild(quickSaleButton);
   return {
     grant,
     drawSkillRange,

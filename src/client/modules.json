@@ -2819,6 +2819,7 @@
       ],
       "lines": 667
     },
+    {"file":"ui/developer-tools-01.js","symbols":["developerTools","manaNotice"]},
     {
       "file": "dev/game-master-01.js",
       "symbols": [

@@ -1,5 +1,6 @@
 import type { Faction } from './types';
 
+declare var developerTools: { register(button: HTMLButtonElement, kind: string, label: string): void } | undefined;
 interface SimulatorElements {
   'sim-roster': HTMLSelectElement;
   'sim-list': HTMLUListElement;
@@ -47,7 +48,7 @@ export function mountSimulatorPanel(content: string) {
   toggle.setAttribute('aria-controls', 'sim-panel'); toggle.setAttribute('aria-expanded', 'false');
   const panel = document.createElement('section');
   panel.id = 'sim-panel'; panel.hidden = true; panel.setAttribute('aria-label', 'Simulator');
-  panel.innerHTML = '<header><span>SIM · Nhân vật mô phỏng</span><button id="sim-close" type="button" aria-label="Đóng SIM">×</button></header>' + content;
+  panel.innerHTML = '<header><span>SIM · Nhân vật mô phỏng</span><button id="sim-close" type="button" aria-label="Đóng SIM">×</button></header><div class="dev-tool-content">' + content + '</div>';
   function setOpen(open: boolean): void {
     panel.hidden = !open; toggle.setAttribute('aria-expanded', String(open));
     if (open) {
@@ -62,7 +63,9 @@ export function mountSimulatorPanel(content: string) {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !panel.hidden) { setOpen(false); toggle.focus(); }
   });
-  document.body.appendChild(toggle); document.body.appendChild(panel);
+  if (typeof developerTools !== "undefined") developerTools.register(toggle,"sim","SIM · Nhân vật mô phỏng");
+  else document.body.appendChild(toggle);
+  document.body.appendChild(panel);
   function field<K extends keyof SimulatorElements>(id: K): SimulatorElements[K] {
     return panel.querySelector<SimulatorElements[K]>('#' + id)!;
   }

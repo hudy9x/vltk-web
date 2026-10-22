@@ -45,6 +45,7 @@ import type { SimulatorTemplate } from './types';
 
 // These declarations bind to the existing shared game IIFE. No duplicate state
 // and no window globals: the bundler keeps these references in the original scope.
+declare var developerTools: { closeOpen(): boolean } | undefined;
 declare var combatSandbox: SandboxAPI | null;
 declare var horseTrader: { close(): void; readonly isOpen: boolean } | null;
 declare var o: SimulatorProfile, l: SimulatorWorld, v: LegacyEntity;
@@ -1153,6 +1154,7 @@ export function createSimulator() {
   document.addEventListener('keydown',event=>{
     if(event.key!=='Escape'||event.repeat)return;
     if(resultDialog.isOpen){event.preventDefault?.();event.stopImmediatePropagation?.();return;}
+    if(typeof developerTools !== 'undefined' && developerTools.closeOpen()){event.preventDefault?.();event.stopImmediatePropagation?.();return;}
     if(!battlefield?.active){if(battlePanel.isOpen)battlePanel.close();return;}
     event.preventDefault?.();event.stopImmediatePropagation?.();
     if(typeof horseTrader !== 'undefined' && horseTrader?.isOpen)horseTrader.close();else if(battlePanel.isOpen)battlePanel.close();else if(pharmacy.isOpen)pharmacy.close();else if(leaderboard.isOpen)leaderboard.close();
