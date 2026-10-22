@@ -10,14 +10,15 @@ export type WarItem = keyof typeof WAR_ITEMS;
 export const WAR_BUFF_SECONDS = 180;
 export function warRank(points: number) { return [...WAR_RANKS].reverse().find(rank => points >= rank.points)!; }
 interface Credit { source: LegacyEntity; at: number; player: boolean; team: Team }
-export function createWarRewards(host: { player(): LegacyEntity; team(): Team; running(): boolean; alive(): boolean; changed(): void }, random = () => Math.random()) {
+export function createWarRewards(host: { player(): LegacyEntity; team(): Team; running(): boolean; alive(): boolean; changed(): void; event?(message: string): void; name?(actor: LegacyEntity): string }, random = () => Math.random()) {
   let elapsed=0, nextId=0, credits=new WeakMap<LegacyEntity,Credit>(), defeated=new WeakSet<LegacyEntity>();
-  let merits=new WeakMap<LegacyEntity,number>();
+  let merits=new WeakMap<LegacyEntity,number>(), soldierKills=new WeakMap<LegacyEntity,number>();
+  const totals: Record<Team,number> = {song:0,jin:0};
   const inventory: Record<WarItem,number> = { resistance:0, attack:0, movement:0 };
   const until: Record<WarItem,number> = { resistance:0, attack:0, movement:0 };
   const drops: { id:number; kind:WarItem; x:number; y:number; expires:number }[] = [];
   function reset() {
-    elapsed=0; nextId=0; credits=new WeakMap(); defeated=new WeakSet(); merits=new WeakMap(); drops.length=0;
+    elapsed=0; nextId=0; credits=new WeakMap(); defeated=new WeakSet(); merits=new WeakMap(); soldierKills=new WeakMap(); totals.song=totals.jin=0; drops.length=0;
     for(const kind of Object.keys(WAR_ITEMS) as WarItem[]) inventory[kind]=until[kind]=0;
     host.changed();
   }
@@ -33,7 +34,14 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     defeated.add(target);
     const credit=credits.get(target);
     if(!credit || elapsed-credit.at>15 || credit.team===(target===host.player()?host.team():target.battlefieldTeam)) return;
-    merits.set(credit.source,(merits.get(credit.source)||0)+(target.battlefieldBoss?1000:target.battlefieldMonster?10:50));
+    const before = merits.get(credit.source)||0, points = target.battlefieldBoss?1000:target.battlefieldMonster?10:50;
+    const victimTitle = target.battlefieldBoss ? 'Nguyên soái' : target.battlefieldRank || warRank(merits.get(target)||0).name;
+    merits.set(credit.source,before+points); totals[credit.team]+=points;
+    if(target.battlefieldMonster) soldierKills.set(credit.source,(soldierKills.get(credit.source)||0)+1);
+    const name = (actor:LegacyEntity) => host.name?.(actor) || actor.n || (actor===host.player()?'Người chơi':'SIM');
+    host.event?.(`${credit.team==='song'?'Tống':'Kim'} · ${name(credit.source)} tiêu diệt ${name(target)} <${victimTitle}> (+${points} quân trạng)`);
+    const title = warRank(before+points).name;
+    if(title!==warRank(before).name) host.event?.(`${name(credit.source)} đạt danh hiệu mới: <${title}> (${before+points} quân trạng)`);
     if(credit.player) host.changed();
     if(target.battlefieldMonster && random()<.35 && credit.team===host.team()) {
       const kinds=Object.keys(WAR_ITEMS) as WarItem[], kind=kinds[Math.floor(random()*kinds.length)];
@@ -63,8 +71,8 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     if(until.attack>elapsed) { stats.aspdP=Math.min(3,stats.aspdP*1.25);stats.aspdC=Math.min(2.7,stats.aspdC*1.25);stats.aspd=stats.aspdP; }
     if(until.movement>elapsed) { stats.speed*=1.25;stats.speedFoot=(stats.speedFoot||stats.speed/1.25)*1.25; }
   }
-  return {reset,record,killed,tick,use,apply,revived(actor:LegacyEntity){defeated.delete(actor);credits.delete(actor);}, get drops(){return drops.map(drop=>({...drop}));},
-    rank(actor:LegacyEntity){const points=merits.get(actor)||0;return{...warRank(points),points,next:WAR_RANKS.find(rank=>rank.points>points)?.points||null};},
+  return {reset,record,killed,tick,use,apply,get totals(){return {...totals};},revived(actor:LegacyEntity){defeated.delete(actor);credits.delete(actor);}, get drops(){return drops.map(drop=>({...drop}));},
+    rank(actor:LegacyEntity){const points=merits.get(actor)||0;return{...warRank(points),points,soldierKills:soldierKills.get(actor)||0,next:WAR_RANKS.find(rank=>rank.points>points)?.points||null};},
     get state(){const points=merits.get(host.player())||0;return{points,title:warRank(points).name,next:WAR_RANKS.find(rank=>rank.points>points)?.points||null,inventory:{...inventory},buffs:Object.fromEntries(Object.entries(until).map(([kind,value])=>[kind,Math.max(0,value-elapsed)])) as Record<WarItem,number>};} };
 }
 export type WarRewards = ReturnType<typeof createWarRewards>;

@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const { compileTypeScriptEntry } = require('../tools/build-app');
 const sandbox = {};
 vm.runInNewContext(compileTypeScriptEntry('simulator/battlefield.ts', 'Battle').code, sandbox);
-const { createBattlefield, BATTLE_DURATION, MIN_BOSS_SECONDS, estimateDPS } = sandbox.Battle;
+const { createBattlefield, BATTLE_DURATION, estimateDPS } = sandbox.Battle;
 function fixture() {
   const actors = [], player = { x: 0, y: 0, n: 'Player', hp: 1000 }, events = [];
   let alive = true;
@@ -19,7 +19,7 @@ function fixture() {
 }
 test('20 minute match uses two camps and only opposing teams are eligible, including the player', () => {
   const { match, actors, player } = fixture(); match.start('song');
-  assert.equal(BATTLE_DURATION, 1200); assert.equal(MIN_BOSS_SECONDS, 600);
+  assert.equal(BATTLE_DURATION, 1200);
   assert.equal(actors.length, 2); assert.equal(match.state.remaining, 1200);
   const song = match.add({ team: 'song', faction: 'shaolin', level: 90, strength: 'weak', count: 3 });
   const jin = match.add({ team: 'jin', faction: 'gaibang', level: 150, strength: 'strong', count: 2 });
@@ -28,26 +28,26 @@ test('20 minute match uses two camps and only opposing teams are eligible, inclu
   assert.equal(match.canHit(player, song[0]), false); assert.equal(match.canHit(jin[0], player), true);
   assert.equal(match.canHit(song[0], player), false);
 });
-test('SIM death is counted once and respawns after 5 seconds; boss death never respawns or ends match early', () => {
+test('SIM death is counted once and respawns after 30 seconds; boss death never respawns or ends match early', () => {
   const { match, actors } = fixture(); match.start('song');
   const [sim] = match.add({ team: 'jin', faction: 'gaibang', level: 150, strength: 'normal', count: 1 });
   const home = { x: sim.x, y: sim.y }; sim.x = 1800; sim.y = 1792;
-  sim.hp = 0; match.tick(.01); assert.equal(sim.x, home.x); assert.equal(sim.y, home.y); match.tick(4.99); assert.equal(sim.hp, 0); assert.equal(match.state.score.song, 1);
+  sim.hp = 0; match.tick(.01); assert.equal(sim.x, home.x); assert.equal(sim.y, home.y); match.tick(29.99); assert.equal(sim.hp, 0); assert.equal(match.state.score.song, 1);
   match.tick(.01); assert.equal(sim.hp, sim.max); assert.equal(sim.dead, false);
   const boss = actors.find(a => a.battlefieldTeam === 'jin' && a.battlefieldBoss); boss.hp = 0;
   match.tick(1); match.tick(10); assert.equal(boss.hp, 0); assert.equal(match.running, true); assert.equal(match.state.score.song, 1001);
 });
 test('player respawns at own camp without stopping the match or replacing SIM identities', () => {
   const { match, actors, events, killPlayer } = fixture(); match.start('jin'); const originals = [...actors];
-  killPlayer(); match.playerDied(); match.playerDied(); match.tick(4.99);
+  killPlayer(); match.playerDied(); match.playerDied(); match.tick(29.99);
   assert.equal(match.state.score.song, 1); assert.ok(match.state.playerRespawn > 0);
   match.tick(.01); assert.deepEqual(actors, originals); assert.ok(events.some(e => e[0] === 'respawn' && e[1] === 'jin'));
 });
-test('reinforcements increase boss HP preserving damage dealt and invalid input cannot mutate armies', () => {
+test('reinforcements preserve configured boss HP and damage dealt and invalid input cannot mutate armies', () => {
   const { match, actors } = fixture(); match.start('song'); const boss = actors.find(a => a.battlefieldTeam === 'jin');
   boss.hp -= 1234; const max = boss.max;
   match.add({ team: 'song', faction: 'shaolin', level: 150, strength: 'strong', count: 100 });
-  assert.ok(boss.max >= max); assert.equal(boss.max - boss.hp, 1234);
+  assert.equal(max, 200000); assert.equal(boss.max, max); assert.equal(boss.max - boss.hp, 1234);
   const count = actors.length;
   for (const build of [{ level: NaN }, { level: 201 }, { count: 0 }, { count: 101 }, { team: 'oops' }, { strength: 'oops' }]) {
     assert.throws(() => match.add({ team: 'song', faction: 'shaolin', level: 150, strength: 'normal', count: 1, ...build }));
@@ -63,7 +63,7 @@ test('result is decided at 20 minutes; both bosses dead is a draw regardless of 
     assert.match(match.state.result, both ? /^Hòa/ : /^Tống thắng/);
     assert.equal(match.canHit(actors[0], actors[1]), false);
     const before = match.state.elapsed; match.tick(100); assert.equal(match.state.elapsed, before);
-    match.reset(); assert.equal(actors.length, 0); assert.equal(match.active, false);
+    assert.throws(()=>match.reset(), /Đồng ý/); match.acknowledgeResult(); assert.equal(actors.length, 0); assert.equal(match.active, false);
   }
 });
 
@@ -126,6 +126,6 @@ test('each camp assigns balanced upper/middle/lower routes and preserves a soldi
     const soldiers=army.filter(actor=>actor.battlefieldTeam===side);
     assert.deepEqual([0,1,2].map(lane=>soldiers.filter(actor=>actor.battlefieldLane===lane).length),[7,7,6]);
   }
-  const actor=army[0],lane=actor.battlefieldLane;actor.hp=0;match.tick(.1);match.tick(5);
+  const actor=army[0],lane=actor.battlefieldLane;actor.hp=0;match.tick(.1);match.tick(30);
   assert.equal(actor.battlefieldLane,lane);
 });

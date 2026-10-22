@@ -39,7 +39,7 @@ test('continuous damage preserves mounted controls and filter preferences',()=>{
  assert.equal(s.combatLog.entries().length,300);assert.equal(s.combatLog.entries()[0].amount,201);
  const container=logContainer();s.combatLog.render(container);
  const filter=container.querySelector('#combat-log-filter'),handler=filter.onchange;
- assert.match(container.toolbar,/Cả hai/);
+ assert.match(container.toolbar,/Tất cả/);assert.match(container.toolbar,/Tống Kim/);
  assert.match(container.querySelector('.combat-log-rows').innerHTML,/&lt;Quái&gt;/);
  assert.doesNotMatch(container.querySelector('.combat-log-rows').innerHTML,/Chiêu test|<Quái>/);
  filter.onchange({target:{value:'in'}});assert.equal(s.o.combatLogFilter,'in');assert.equal(s.saved,1);assert.equal(s.refreshes,1);
