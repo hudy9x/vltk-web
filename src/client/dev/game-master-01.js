@@ -163,8 +163,7 @@ var gameMaster = (function () {
       "."
     );
   }
-  const saleCursorSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path d="M2 2v23l6-6 4 9 5-2-4-9h9z" fill="#f4edcf" stroke="#171810" stroke-width="2" stroke-linejoin="round"/><circle cx="23" cy="23" r="8" fill="#dca93a" stroke="#241b08" stroke-width="2"/><circle cx="23" cy="23" r="5.5" fill="none" stroke="#ffdf77"/><path d="M25.5 19.5c-4-2-6 2-2.5 3.5s1.5 5.5-2.5 3.5M23 17.5v11" fill="none" stroke="#503510" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-  const saleCursor = `url("data:image/svg+xml,${encodeURIComponent(saleCursorSvg)}") 2 2, pointer`;
+  const saleCursor = 'url("img/cursors/sell.png") 11 9, pointer';
   const style = document.createElement("style");
   style.textContent = `
     #gm-toggle{position:fixed;top:8px;left:8px;z-index:90000;min-width:44px;min-height:34px;padding:5px 10px;font-family:inherit;font-size:14px;cursor:pointer}
