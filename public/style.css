@@ -345,3 +345,28 @@ body.fclose #u20log,body.fclose #chatBox{z-index:99995!important;pointer-events:
 body.fclose #u20log{display:block!important}
 #fclose .fcbox{position:relative}#fclose .fcx{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:1px solid #a33a2a;background:#2a0f0b;color:#f3d6c0;font-size:16px;cursor:pointer;line-height:1}
 #fclose .fcx:hover{background:#4a1a12}
+
+/* Native pixel tool rail, matching the stable and auto-play controls. */
+#dev-tools{position:fixed;left:max(8px,env(safe-area-inset-left));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px;z-index:90010}
+#dev-tools button{position:static!important;min-width:0!important;min-height:0!important;width:22px!important;height:22px!important;padding:0!important;border:0!important;border-radius:50%!important;background-color:transparent!important;background-image:var(--tool-icon)!important;background-size:66px 22px!important;background-position:0 0!important;background-repeat:no-repeat!important;box-shadow:0 2px 5px #0009!important;image-rendering:pixelated;cursor:pointer;font-size:0!important}
+#dev-tools [data-dev-tool=gm]{--tool-icon:url(img/u2/forge.png);order:0}#dev-tools [data-dev-tool=sim]{--tool-icon:url(img/u2/team.png);order:1}#dev-tools [data-dev-tool=sale]{--tool-icon:url(img/u2/inv.png);order:2}#dev-tools [data-dev-tool=room]{--tool-icon:url(img/u2/map.png);order:3}
+#dev-tools button:hover{background-position:-22px 0!important}#dev-tools button[aria-expanded=true],#dev-tools button[aria-pressed=true]{background-position:-44px 0!important;outline:2px solid #f0cf75;outline-offset:2px}#dev-tools button:focus-visible{outline:2px solid #fff4b0;outline-offset:3px}
+#toast{position:fixed;bottom:max(220px,calc(env(safe-area-inset-bottom) + 220px));max-width:min(620px,82vw);width:max-content;box-sizing:border-box;text-align:center;white-space:normal;z-index:94000}
+.combat-war{color:#f2d78d}.combat-war b{color:#ffebad}
+@media(max-height:480px){#dev-tools{gap:2px}#dev-tools button{width:18px!important;height:18px!important;background-size:54px 18px!important}#dev-tools button:hover{background-position:-18px 0!important}#dev-tools button[aria-expanded=true],#dev-tools button[aria-pressed=true]{background-position:-36px 0!important}}
+#battlefield-result[hidden]{display:none!important}
+body:has(#dev-tools) #gm-panel,body:has(#dev-tools) #sim-panel,body:has(#dev-tools) #combat-sandbox{left:42px!important;width:min(420px,calc(100vw - 58px))!important;max-width:calc(100vw - 58px)}
+body:has(#dev-tools) #combat-sandbox:not([open]){display:none}
+/* Tool windows share GameMaster's frame, title bar and close control. */
+body:has(#dev-tools) :is(#sim-panel,#combat-sandbox),body.quick-sale :is(#u2bagw,#panel){padding:0!important;box-sizing:border-box;color:var(--w2tx,#e8e0c0);background:var(--w2bg,#1b1e17)!important;border:1px solid var(--w2ln,#8c876a)!important;outline:1px solid #000;border-radius:4px;box-shadow:inset 0 0 0 1px var(--w2ln2,#3c3b2e),0 4px 22px #000!important;font-family:inherit;font-size:14px}
+body:has(#dev-tools) :is(#sim-panel>header,#combat-sandbox>summary),body.quick-sale :is(#u2bwh,#u20wh){position:relative;display:flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:43px;height:auto!important;margin:0;padding:0 42px!important;list-style:none;background:linear-gradient(#55564a,#2a2b24 55%,#1d1e19)!important;border-bottom:1px solid #8c876a!important;letter-spacing:.5px;text-shadow:0 1px 2px #000;font-size:17px;font-weight:600}
+body:has(#dev-tools) #combat-sandbox>summary::-webkit-details-marker{display:none}
+body:has(#dev-tools) :is(#sim-panel>header,#combat-sandbox>summary)::before,body:has(#dev-tools) :is(#sim-panel>header,#combat-sandbox>summary)::after,body.quick-sale :is(#u2bwh,#u20wh)::before,body.quick-sale :is(#u2bwh,#u20wh)::after{content:'';position:absolute;top:21px;width:17%;height:1px;background:linear-gradient(90deg,transparent,#a59c78);pointer-events:none}
+body:has(#dev-tools) :is(#sim-panel>header,#combat-sandbox>summary)::before,body.quick-sale :is(#u2bwh,#u20wh)::before{left:12px}
+body:has(#dev-tools) :is(#sim-panel>header,#combat-sandbox>summary)::after,body.quick-sale :is(#u2bwh,#u20wh)::after{right:45px;transform:scaleX(-1)}
+body:has(#dev-tools) :is(#sim-close,[data-room-close]),body.quick-sale :is(#u2bwx,#u20wx){position:absolute;right:7px!important;top:6px!important;width:30px!important;height:30px!important;padding:0!important;border-radius:50%!important;border:2px solid #c9c6b6!important;background:radial-gradient(circle at 40% 35%,#6a6a66,#1d1d1b)!important;color:#fff!important;font-size:20px;line-height:24px;box-shadow:0 0 3px #000;cursor:pointer}
+body:has(#dev-tools) .dev-tool-content{padding:12px}
+body:has(#dev-tools) :is(#sim-panel,#combat-sandbox) .dev-tool-content button{background:linear-gradient(#5d684d,#2e3825);border:1px solid #a6ad80;color:#f3edc8;border-radius:3px;box-shadow:inset 0 1px 0 #ffffff22,0 1px 2px #000;text-shadow:0 1px 2px #000}
+body:has(#dev-tools) #combat-sandbox .dev-tool-content button.on{background:linear-gradient(#8a7434,#4a3c14);border-color:#e8c860}
+body:has(#dev-tools) #combat-sandbox>label{margin:7px 12px}
+body:has(#dev-tools) #combat-sandbox>button{margin:0 12px 12px}

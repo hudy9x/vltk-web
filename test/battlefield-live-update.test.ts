@@ -40,7 +40,7 @@
     }
     field("#battlefield-update-monsters").onclick();
     assert.equal(field("#battlefield-error").textContent, "");
-    assert.equal(simulator.roadMonsters.actors.length, 4);
+    assert.equal(simulator.roadMonsters.actors.length, 2);
     assert.ok(
       simulator.roadMonsters.actors.every((actor: any) => actor.max === 123456),
     );

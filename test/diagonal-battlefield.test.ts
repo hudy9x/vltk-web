@@ -65,7 +65,7 @@
     assert.equal(sim.battlefield.state.mapId, 9002);
     assert.equal(game.v.x, 2734);
     assert.equal(game.v.y, 2634);
-    assert.equal(sim.roadMonsters.actors.length, 12);
+    assert.equal(sim.roadMonsters.actors.length, 70);
     for (const actor of sim.roadMonsters.actors)
       assert.ok(
         actor.x > 128 && actor.x < 3456 && actor.y > 128 && actor.y < 3456,

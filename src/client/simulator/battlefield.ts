@@ -1,3 +1,6 @@
+import { DEFAULT_DEPLOYMENT, PLAYER_DEATH_PENALTY_THRESHOLD, validateDeploymentSettings } from './deployment-settings';
+import type { DeploymentSettings } from './deployment-settings';
+import { DEFAULT_SOLDIERS } from './soldier-config';
 import diagonalLayout from '../maps/content/9002/layout.json';
 import type { ArmyEquipmentKind } from './set-equipment';
 import { BATTLEFIELD_ROUTES } from './routes';
@@ -13,8 +16,7 @@ export function splitArmyTotal(count: number) {
   return { song: count / 2, jin: count / 2 };
 }
 export const BATTLE_DURATION = 20 * 60;
-export const RESPAWN_SECONDS = 5;
-export const MIN_BOSS_SECONDS = 10 * 60;
+export const RESPAWN_SECONDS = DEFAULT_DEPLOYMENT.respawnSeconds;
 export let BATTLE_MAP: number = 9001;
 export const BATTLEFIELD_MAPS = [{id:9001,name:"Song Doanh · ba cầu"},{id:9002,name:"Chéo Doanh · doanh trại chéo"}];
 export const TEAM_NAMES = { song: 'Tống', jin: 'Kim' } as const;
@@ -27,16 +29,18 @@ export const isStrength = (value: unknown): value is Strength => ['weak', 'norma
 export interface BattlefieldHost {
   actors(): SimulatorActor[];
   monsters?(): LegacyEntity[];
+  monsterCount?(): number;
   player(): LegacyEntity;
   playerAlive(): boolean;
   playerDPS(): number;
+  marshalHP?(): number;
   create(build: ArmyBuild, bossElement?: number): SimulatorActor;
   cancel(actor: SimulatorActor): void;
   remove(actor: SimulatorActor): void;
   enter(team: Team): void;
   leave(): void;
   respawnPlayer(team: Team): void;
-  setPlayerDead(team: Team): void;
+  setPlayerDead(team: Team, waitSeconds: number): void;
   position(actor: SimulatorActor, x: number, y: number): void;
   restore(actor: SimulatorActor): void;
 }
@@ -46,6 +50,7 @@ export function createBattlefield(host: BattlefieldHost) {
   let phase: 'idle' | 'running' | 'finished' = 'idle';
   let elapsed = 0, team: Team = 'song', playerDue: number | null = null;
   let generation = 0, adding = false;
+  let nextDeployment = validateDeploymentSettings(DEFAULT_DEPLOYMENT), deployment = { ...nextDeployment }, playerDeaths = 0;
   let result = '', elements = { song: 3, jin: 2 };
   const score = { song: 0, jin: 0 };
   const respawns = new Map<SimulatorActor, number>();
@@ -58,7 +63,8 @@ export function createBattlefield(host: BattlefieldHost) {
     const from = source === host.player() ? team : source.battlefieldTeam;
     const to = target === host.player() || target.battlefieldPlayer ? team : target.battlefieldTeam;
     const targetAlive = target === host.player() || target.battlefieldPlayer ? host.playerAlive() && playerDue === null : alive(target);
-    if (source.battlefieldMonster && !alive(source)) return false;
+    if ((source === host.player() || source.battlefieldPlayer) && (playerDue !== null || !host.playerAlive())) return false;
+    if (owns(source) && source !== host.player() && !alive(source)) return false;
     return isTeam(from) && isTeam(to) && from !== to && targetAlive;
   }
   function targets(actor: SimulatorActor): LegacyEntity[] {
@@ -76,7 +82,8 @@ export function createBattlefield(host: BattlefieldHost) {
     return nearby.length?nearby:candidates.filter(target=>target.battlefieldBoss);
   }
   function place(actor: SimulatorActor, index = 0) {
-    const camp = CAMPS[actor.battlefieldTeam as Team];
+    const side = actor.battlefieldTeam as Team;
+    const camp = CAMPS[side];
     if (!actor.battlefieldSpawn) {
       if (!actor.battlefieldBoss) actor.battlefieldLane = index % BATTLEFIELD_ROUTES.length;
       const direction = actor.battlefieldTeam === 'song' ? 1 : -1;
@@ -87,16 +94,6 @@ export function createBattlefield(host: BattlefieldHost) {
       };
     }
     host.position(actor, actor.battlefieldSpawn.x, actor.battlefieldSpawn.y);
-  }
-  function updateBossHealth() {
-    for (const [side, boss] of bosses) {
-      if (!alive(boss)) continue;
-      const attackers = host.actors().filter(actor => actor.battlefieldTeam === otherTeam(side) && !actor.battlefieldBoss);
-      const dps = attackers.reduce((sum, actor) => sum + estimateDPS(actor), 0) + (team !== side ? host.playerDPS() : 0);
-      // Conservative HP estimate, updated when reinforcements join. Never heal damage already dealt.
-      const maximum = Math.max(100_000_000, Math.ceil(dps * MIN_BOSS_SECONDS * 4));
-      if (maximum > boss.max) { boss.hp += maximum - boss.max; boss.max = maximum; boss.stats.life = maximum; }
-    }
   }
   function validateBuild(build: ArmyBuild) {
     if (!isTeam(build.team) || !isStrength(build.strength) || !Number.isSafeInteger(build.level) || build.level < 1 || build.level > 200 ||
@@ -120,7 +117,7 @@ export function createBattlefield(host: BattlefieldHost) {
         created.push(actor);
       }
     } catch (error) { created.forEach(actor => host.remove(actor)); throw error; }
-    updateBossHealth(); return created;
+    return created;
   }
   function buildPlan(build: ArmyBuild) {
     validateBuild(build);
@@ -155,15 +152,18 @@ export function createBattlefield(host: BattlefieldHost) {
   function reset() {
     generation++;
     for (const actor of host.actors().filter(owns)) host.remove(actor);
-    bosses.clear(); respawns.clear(); playerDue = null; elapsed = 0; phase = 'idle'; result = '';
+    bosses.clear(); respawns.clear(); playerDue = null; elapsed = 0; playerDeaths = 0; phase = 'idle'; result = '';
     score.song = score.jin = 0;
     host.leave();
   }
   function start(playerTeam: Team, bossElements = { song: 3, jin: 2 }, mapId = 9001) {
     if (!BATTLEFIELD_MAPS.some(map=>map.id===mapId)) throw new Error('Chiến trường không hợp lệ.');
     if (!isTeam(playerTeam) || ![bossElements.song, bossElements.jin].every(value => Number.isInteger(value) && value >= 0 && value <= 4)) throw new Error('Phe hoặc hệ boss không hợp lệ.');
-    reset(); BATTLE_MAP = mapId;
-    for (const side of ['song','jin'] as const) Object.assign(CAMPS[side], mapId===9002 ? diagonalLayout.camps[side] : ORIGINAL_CAMPS[side]);
+    const marshalHP = host.marshalHP?.() ?? DEFAULT_SOLDIERS.marshal.hp;
+    if (!Number.isSafeInteger(marshalHP) || marshalHP < 1 || marshalHP > 1_000_000_000_000) throw new Error("HP Nguyên soái không hợp lệ.");
+    reset(); deployment = { ...nextDeployment }; BATTLE_MAP = mapId;
+    const camps = mapId === 9002 ? diagonalLayout.camps : ORIGINAL_CAMPS;
+    for (const side of ['song','jin'] as const) Object.assign(CAMPS[side], camps[side]);
     team = playerTeam; elements = { ...bossElements };
     try {
       host.enter(team); phase = 'running';
@@ -171,10 +171,9 @@ export function createBattlefield(host: BattlefieldHost) {
         const actor = host.create({ team: side, faction: ELEMENT_FACTIONS[elements[side]][0], level: 150, strength: 'strong', count: 1 }, elements[side]);
         actor.battlefieldTeam = side; actor.battlefieldBoss = true;
         actor.n = `Hoàng Kim · ${actor.n}`;
-        actor.max = actor.hp = actor.stats.life = 100_000_000;
+        actor.max = actor.hp = actor.stats.life = marshalHP;
         bosses.set(side, actor); place(actor);
       }
-      updateBossHealth();
     } catch (error) { reset(); throw error; }
   }
   function died(actor: SimulatorActor) {
@@ -185,13 +184,15 @@ export function createBattlefield(host: BattlefieldHost) {
     if (!actor.battlefieldBoss) {
       actor.moving = false; actor.target = null;
       place(actor); // Return home immediately; stay untargetable until the timer expires.
-      respawns.set(actor, elapsed + RESPAWN_SECONDS);
+      respawns.set(actor, elapsed + deployment.respawnSeconds);
     }
   }
   function playerDied() {
     if (phase !== 'running' || playerDue !== null) return;
-    playerDue = elapsed + RESPAWN_SECONDS; score[otherTeam(team)]++;
-    host.setPlayerDead(team);
+    playerDeaths++;
+    const wait = deployment.respawnSeconds * (playerDeaths >= PLAYER_DEATH_PENALTY_THRESHOLD ? 2 : 1);
+    playerDue = elapsed + wait; score[otherTeam(team)]++;
+    host.setPlayerDead(team, wait);
   }
   function tick(dt: number) {
     if (phase !== 'running' || !Number.isFinite(dt) || dt <= 0) return;
@@ -212,9 +213,10 @@ export function createBattlefield(host: BattlefieldHost) {
     }
     if (playerDue !== null && elapsed + 1e-9 >= playerDue) { host.respawnPlayer(team); playerDue = null; }
   }
-  return { start, reset, add, addAsync, addBothAsync, targets, canHit, died, playerDied, tick, owns,
+  function configureDeployment(settings: DeploymentSettings) { nextDeployment = validateDeploymentSettings(settings); }
+  return { configureDeployment, start, reset, add, addAsync, addBothAsync, targets, canHit, died, playerDied, tick, owns,
     get active() { return phase !== 'idle'; }, get running() { return phase === 'running'; },
-    get state() { return { mapId: BATTLE_MAP, camps: {song:{...CAMPS.song},jin:{...CAMPS.jin}}, monsters: { count: host.monsters?.().length || 0, alive: (host.monsters?.() || []).filter(alive).length }, phase, elapsed, remaining: BATTLE_DURATION - elapsed, team, result, score: { ...score }, elements: { ...elements }, playerRespawn: playerDue === null ? 0 : Math.max(0, playerDue - elapsed),
+    get state() { return { mapId: BATTLE_MAP, camps: {song:{...CAMPS.song},jin:{...CAMPS.jin}}, deployment: { ...deployment }, playerDeaths, monsters: { count: host.monsterCount?.() ?? (host.monsters?.().length || 0), alive: (host.monsters?.() || []).filter(alive).length }, phase, elapsed, remaining: BATTLE_DURATION - elapsed, team, result, score: { ...score }, elements: { ...elements }, playerRespawn: playerDue === null ? 0 : Math.max(0, playerDue - elapsed),
       armies: Object.fromEntries((['song', 'jin'] as const).map(side => [side, { count: host.actors().filter(a => a.battlefieldTeam === side && !a.battlefieldBoss).length, alive: host.actors().filter(a => a.battlefieldTeam === side && !a.battlefieldBoss && alive(a)).length, bossHP: Math.max(0, bosses.get(side)?.hp || 0), bossMax: bosses.get(side)?.max || 0 }])) }; },
   };
 }
