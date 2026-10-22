@@ -979,6 +979,15 @@ export function createSimulator() {
   // asSim swaps v/l synchronously; team identity must always refer to the real player.
   const battlefieldHero = v, battlefieldWorld = l;
   const warRewards = createWarRewards({
+    promoted(actor) {
+      if(actor===battlefieldHero)return;
+      if(!actor.arenaSim || actor.battlefieldBoss || actor.battlefieldMonster)return;
+      const fighter=actor as SimulatorActor;
+      asSim(fighter,()=>{
+        const stats=j0();stats.life=fighter.max;stats.main=resolvedSkill(stats,fighter.profile.main);fighter.stats=stats;
+      });
+      fighter.res=fighter.stats.res;
+    },
     event(message) { warEvents.push(message); if(warEvents.length>300)warEvents.shift(); },
     name: actor => actor === battlefieldHero ? previousField?.name || battlefieldHero.n || "Người chơi" : actor.n,
     player: () => battlefieldHero, team: () => battlefield!.state.team,
@@ -1029,7 +1038,9 @@ export function createSimulator() {
     },
   });
   function recordBattlefieldHit(source: LegacyEntity,target: LegacyEntity) { warRewards.record(source,target); }
-  function applyBattlefieldBonuses(stats: LegacyRecord) { if (!l.sim && l.battlefield) warRewards.apply(stats); }
+  function applyBattlefieldBonuses(stats: LegacyRecord) {
+    if(l.battlefield)warRewards.apply(stats,l.sim?v:battlefieldHero);
+  }
   function drawBattlefieldLoot(context: CanvasRenderingContext2D) {
     if (!battlefield?.active) return;
     context.save(); context.textAlign='center'; context.font='11px sans-serif';
