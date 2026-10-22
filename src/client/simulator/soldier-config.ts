@@ -1,4 +1,5 @@
 import diagonalLayout from '../maps/content/9002/layout.json';
+import wildernessLayout from '../maps/content/9003/layout.json';
 export const SOLDIER_RANKS = [
   "soldier",
   "captain",
@@ -108,7 +109,11 @@ export function soldierSpawnPlan(
       const team = index % 2 ? "jin" : "song";
       const ordinal = sideIndex[team]++;
       let x: number, y: number;
-      if (mapId === 9002) {
+      if (mapId === 9003) {
+        const point = wildernessLayout.patrolPoints[ordinal % wildernessLayout.patrolPoints.length];
+        x = team === "song" ? point.x : 3584 - point.x;
+        y = team === "song" ? point.y : 3584 - point.y;
+      } else if (mapId === 9002) {
         const point = songPoints[ordinal % songPoints.length];
         x = team === "song" ? point.x : 3584 - point.x;
         y = team === "song" ? point.y : 3584 - point.y;
@@ -125,8 +130,8 @@ export function soldierSpawnPlan(
 
 /** The diagonal battlefield is divided by the two camps, not by the x axis. */
 export function soldierTeamAt(x: number, y: number, mapId: number): "song" | "jin" {
-  if (mapId !== 9002) return x < 1792 ? "song" : "jin";
-  const {song, jin} = diagonalLayout.camps;
+  if (mapId !== 9002 && mapId !== 9003) return x < 1792 ? "song" : "jin";
+  const {song, jin} = mapId === 9003 ? wildernessLayout.camps : diagonalLayout.camps;
   return (x-song.x)**2 + (y-song.y)**2 <= (x-jin.x)**2 + (y-jin.y)**2 ? "song" : "jin";
 }
 

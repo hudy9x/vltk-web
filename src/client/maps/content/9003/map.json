@@ -1,0 +1,1976 @@
+{
+  "schemaVersion": 1,
+  "id": 9003,
+  "name": "Tống Kim · Hoang Nguyên",
+  "status": "available",
+  "size": {
+    "width": 3584,
+    "height": 3584
+  },
+  "entry": {
+    "x": 680,
+    "y": 2784
+  },
+  "layers": [
+    {
+      "id": "ground",
+      "type": "ground",
+      "image": "./assets/ground.webp"
+    },
+    {
+      "id": "contact-shadows",
+      "type": "shadow",
+      "image": "./assets/shadows.webp"
+    },
+    {
+      "id": "world",
+      "type": "world",
+      "objects": [
+        {
+          "id": "song-platform",
+          "image": "./assets/song-platform.png",
+          "position": {
+            "x": 1000,
+            "y": 2610
+          },
+          "anchor": {
+            "x": 418.5,
+            "y": 517.08
+          },
+          "scale": 0.4778972520908005,
+          "depthOffsetY": -160
+        },
+        {
+          "id": "song-muster-tent-0",
+          "image": "./assets/camp-atlas-0-0.png",
+          "position": {
+            "x": 470,
+            "y": 2760
+          },
+          "anchor": {
+            "x": 304.0,
+            "y": 585.6
+          },
+          "scale": 0.4276315789473684,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-muster-tent-1",
+          "image": "./assets/camp-atlas-0-0.png",
+          "position": {
+            "x": 950,
+            "y": 3040
+          },
+          "anchor": {
+            "x": 304.0,
+            "y": 585.6
+          },
+          "scale": 0.4276315789473684,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-tower-0",
+          "image": "./assets/camp-atlas-2-0.png",
+          "position": {
+            "x": 900,
+            "y": 2204
+          },
+          "anchor": {
+            "x": 326.04,
+            "y": 570.57
+          },
+          "scale": 0.28708133971291866,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-tower-1",
+          "image": "./assets/camp-atlas-2-0.png",
+          "position": {
+            "x": 1620,
+            "y": 2684
+          },
+          "anchor": {
+            "x": 326.04,
+            "y": 570.57
+          },
+          "scale": 0.28708133971291866,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-tower-2",
+          "image": "./assets/camp-atlas-2-0.png",
+          "position": {
+            "x": 900,
+            "y": 3164
+          },
+          "anchor": {
+            "x": 326.04,
+            "y": 570.57
+          },
+          "scale": 0.28708133971291866,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-tower-3",
+          "image": "./assets/camp-atlas-2-0.png",
+          "position": {
+            "x": 180,
+            "y": 2684
+          },
+          "anchor": {
+            "x": 326.04,
+            "y": 570.57
+          },
+          "scale": 0.28708133971291866,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NE-0-0",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 931.5,
+            "y": 2225.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NE-0-1",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 994.5,
+            "y": 2267.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NE-0-2",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 1057.5,
+            "y": 2309.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NE-0-3",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 1120.5,
+            "y": 2351.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NE-1-0",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 1399.5,
+            "y": 2537.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NE-1-1",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 1462.5,
+            "y": 2579.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NE-1-2",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 1525.5,
+            "y": 2621.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NE-1-3",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 1588.5,
+            "y": 2663.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SE-0-0",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 1588.5,
+            "y": 2705.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SE-0-1",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 1525.5,
+            "y": 2747.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SE-0-2",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 1462.5,
+            "y": 2789.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SE-0-3",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 1399.5,
+            "y": 2831.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SE-1-0",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 1120.5,
+            "y": 3017.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SE-1-1",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 1057.5,
+            "y": 3059.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SE-1-2",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 994.5,
+            "y": 3101.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SE-1-3",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 931.5,
+            "y": 3143.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SW-0-0",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 864.0,
+            "y": 3140.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SW-0-1",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 792.0,
+            "y": 3092.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SW-0-2",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 720.0,
+            "y": 3044.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SW-0-3",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 648.0,
+            "y": 2996.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SW-0-4",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 576.0,
+            "y": 2948.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SW-0-5",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 503.99999999999994,
+            "y": 2900.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SW-0-6",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 432.0,
+            "y": 2852.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SW-0-7",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 360.0,
+            "y": 2804.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SW-0-8",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 288.0,
+            "y": 2756.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-SW-0-9",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 216.0,
+            "y": 2708.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NW-0-0",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 211.5,
+            "y": 2663.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NW-0-1",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 274.5,
+            "y": 2621.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NW-0-2",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 337.5,
+            "y": 2579.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NW-0-3",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 400.5,
+            "y": 2537.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NW-1-0",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 679.5,
+            "y": 2351.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NW-1-1",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 742.5,
+            "y": 2309.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NW-1-2",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 805.5,
+            "y": 2267.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-wall-NW-1-3",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 868.5,
+            "y": 2225.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-brazier-0",
+          "image": "./assets/terrain-props-7-0.png",
+          "position": {
+            "x": 1150,
+            "y": 2470
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 397.1
+          },
+          "scale": 0.14354066985645933,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "song-brazier-1",
+          "image": "./assets/terrain-props-7-0.png",
+          "position": {
+            "x": 1210,
+            "y": 2720
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 397.1
+          },
+          "scale": 0.14354066985645933,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-platform",
+          "image": "./assets/jin-platform.png",
+          "position": {
+            "x": 2584,
+            "y": 974
+          },
+          "anchor": {
+            "x": 415.5,
+            "y": 483.6
+          },
+          "scale": 0.4813477737665463,
+          "depthOffsetY": -160
+        },
+        {
+          "id": "jin-muster-tent-0",
+          "image": "./assets/camp-atlas-1-0.png",
+          "position": {
+            "x": 3114,
+            "y": 824
+          },
+          "anchor": {
+            "x": 300.0,
+            "y": 588.48
+          },
+          "scale": 0.43333333333333335,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-muster-tent-1",
+          "image": "./assets/camp-atlas-1-0.png",
+          "position": {
+            "x": 2634,
+            "y": 544
+          },
+          "anchor": {
+            "x": 300.0,
+            "y": 588.48
+          },
+          "scale": 0.43333333333333335,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-tower-0",
+          "image": "./assets/camp-atlas-3-0.png",
+          "position": {
+            "x": 2684,
+            "y": 420
+          },
+          "anchor": {
+            "x": 316.68,
+            "y": 528.71
+          },
+          "scale": 0.2955665024630542,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-tower-1",
+          "image": "./assets/camp-atlas-3-0.png",
+          "position": {
+            "x": 3404,
+            "y": 900
+          },
+          "anchor": {
+            "x": 316.68,
+            "y": 528.71
+          },
+          "scale": 0.2955665024630542,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-tower-2",
+          "image": "./assets/camp-atlas-3-0.png",
+          "position": {
+            "x": 2684,
+            "y": 1380
+          },
+          "anchor": {
+            "x": 316.68,
+            "y": 528.71
+          },
+          "scale": 0.2955665024630542,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-tower-3",
+          "image": "./assets/camp-atlas-3-0.png",
+          "position": {
+            "x": 1964,
+            "y": 900
+          },
+          "anchor": {
+            "x": 316.68,
+            "y": 528.71
+          },
+          "scale": 0.2955665024630542,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NE-0-0",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2720.0,
+            "y": 444.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NE-0-1",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2792.0,
+            "y": 492.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NE-0-2",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2864.0,
+            "y": 540.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NE-0-3",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2936.0,
+            "y": 588.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NE-0-4",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 3008.0,
+            "y": 636.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NE-0-5",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 3080.0,
+            "y": 684.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NE-0-6",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 3152.0,
+            "y": 732.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NE-0-7",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 3224.0,
+            "y": 780.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NE-0-8",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 3296.0,
+            "y": 828.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NE-0-9",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 3368.0,
+            "y": 876.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SE-0-0",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 3372.5,
+            "y": 921.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SE-0-1",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 3309.5,
+            "y": 963.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SE-0-2",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 3246.5,
+            "y": 1005.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SE-0-3",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 3183.5,
+            "y": 1047.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SE-1-0",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2904.5,
+            "y": 1233.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SE-1-1",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2841.5,
+            "y": 1275.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SE-1-2",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2778.5,
+            "y": 1317.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SE-1-3",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2715.5,
+            "y": 1359.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SW-0-0",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2652.5,
+            "y": 1359.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SW-0-1",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2589.5,
+            "y": 1317.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SW-0-2",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2526.5,
+            "y": 1275.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SW-0-3",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2463.5,
+            "y": 1233.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SW-1-0",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2184.5,
+            "y": 1047.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SW-1-1",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2121.5,
+            "y": 1005.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SW-1-2",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 2058.5,
+            "y": 963.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-SW-1-3",
+          "image": "./assets/terrain-props-6-0.png",
+          "position": {
+            "x": 1995.5,
+            "y": 921.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NW-0-0",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 1995.5,
+            "y": 879.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NW-0-1",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2058.5,
+            "y": 837.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NW-0-2",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2121.5,
+            "y": 795.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NW-0-3",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2184.5,
+            "y": 753.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NW-1-0",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2463.5,
+            "y": 567.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NW-1-1",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2526.5,
+            "y": 525.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NW-1-2",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2589.5,
+            "y": 483.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-wall-NW-1-3",
+          "image": "./assets/terrain-props-6-1.png",
+          "position": {
+            "x": 2652.5,
+            "y": 441.0
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 363.6
+          },
+          "scale": 0.29904306220095694,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-brazier-0",
+          "image": "./assets/terrain-props-7-0.png",
+          "position": {
+            "x": 2434,
+            "y": 1114
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 397.1
+          },
+          "scale": 0.14354066985645933,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "jin-brazier-1",
+          "image": "./assets/terrain-props-7-0.png",
+          "position": {
+            "x": 2374,
+            "y": 864
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 397.1
+          },
+          "scale": 0.14354066985645933,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-0-0",
+          "image": "./assets/terrain-props-0-0.png",
+          "position": {
+            "x": 282,
+            "y": 503
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 355.12
+          },
+          "scale": 0.3827751196172249,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-0-1",
+          "image": "./assets/terrain-props-0-0.png",
+          "position": {
+            "x": 3302,
+            "y": 3081
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 355.12
+          },
+          "scale": 0.3827751196172249,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-1-0",
+          "image": "./assets/terrain-props-1-0.png",
+          "position": {
+            "x": 1481,
+            "y": 1676
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 359.45
+          },
+          "scale": 0.45454545454545453,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-1-1",
+          "image": "./assets/terrain-props-1-0.png",
+          "position": {
+            "x": 2103,
+            "y": 1908
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 359.45
+          },
+          "scale": 0.45454545454545453,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-2-0",
+          "image": "./assets/terrain-props-2-0.png",
+          "position": {
+            "x": 582,
+            "y": 3232
+          },
+          "anchor": {
+            "x": 208.5,
+            "y": 368.1
+          },
+          "scale": 0.4196642685851319,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-2-1",
+          "image": "./assets/terrain-props-2-0.png",
+          "position": {
+            "x": 3002,
+            "y": 352
+          },
+          "anchor": {
+            "x": 208.5,
+            "y": 368.1
+          },
+          "scale": 0.4196642685851319,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-3-0",
+          "image": "./assets/terrain-props-3-0.png",
+          "position": {
+            "x": 258,
+            "y": 806
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 369.46
+          },
+          "scale": 0.40669856459330145,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-3-1",
+          "image": "./assets/terrain-props-3-0.png",
+          "position": {
+            "x": 3326,
+            "y": 2778
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 369.46
+          },
+          "scale": 0.40669856459330145,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-4-0",
+          "image": "./assets/terrain-props-4-0.png",
+          "position": {
+            "x": 1134,
+            "y": 2050
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 384.56
+          },
+          "scale": 0.22727272727272727,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-4-1",
+          "image": "./assets/terrain-props-4-0.png",
+          "position": {
+            "x": 2450,
+            "y": 1534
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 384.56
+          },
+          "scale": 0.22727272727272727,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-5-0",
+          "image": "./assets/terrain-props-5-0.png",
+          "position": {
+            "x": 360,
+            "y": 1223
+          },
+          "anchor": {
+            "x": 202.5,
+            "y": 376.2
+          },
+          "scale": 0.41975308641975306,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-5-1",
+          "image": "./assets/terrain-props-5-0.png",
+          "position": {
+            "x": 3224,
+            "y": 2361
+          },
+          "anchor": {
+            "x": 202.5,
+            "y": 376.2
+          },
+          "scale": 0.41975308641975306,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-6-0",
+          "image": "./assets/terrain-props-0-0.png",
+          "position": {
+            "x": 596,
+            "y": 1090
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 355.12
+          },
+          "scale": 0.3827751196172249,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-6-1",
+          "image": "./assets/terrain-props-0-0.png",
+          "position": {
+            "x": 2988,
+            "y": 2494
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 355.12
+          },
+          "scale": 0.3827751196172249,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-7-0",
+          "image": "./assets/terrain-props-1-0.png",
+          "position": {
+            "x": 594,
+            "y": 671
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 359.45
+          },
+          "scale": 0.45454545454545453,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-7-1",
+          "image": "./assets/terrain-props-1-0.png",
+          "position": {
+            "x": 2990,
+            "y": 2913
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 359.45
+          },
+          "scale": 0.45454545454545453,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-8-0",
+          "image": "./assets/terrain-props-2-0.png",
+          "position": {
+            "x": 340,
+            "y": 1576
+          },
+          "anchor": {
+            "x": 208.5,
+            "y": 368.1
+          },
+          "scale": 0.4196642685851319,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-8-1",
+          "image": "./assets/terrain-props-2-0.png",
+          "position": {
+            "x": 3244,
+            "y": 2008
+          },
+          "anchor": {
+            "x": 208.5,
+            "y": 368.1
+          },
+          "scale": 0.4196642685851319,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-9-0",
+          "image": "./assets/terrain-props-3-0.png",
+          "position": {
+            "x": 805,
+            "y": 272
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 369.46
+          },
+          "scale": 0.40669856459330145,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-9-1",
+          "image": "./assets/terrain-props-3-0.png",
+          "position": {
+            "x": 2779,
+            "y": 3312
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 369.46
+          },
+          "scale": 0.40669856459330145,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-10-0",
+          "image": "./assets/terrain-props-4-0.png",
+          "position": {
+            "x": 930,
+            "y": 970
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 384.56
+          },
+          "scale": 0.22727272727272727,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-10-1",
+          "image": "./assets/terrain-props-4-0.png",
+          "position": {
+            "x": 2654,
+            "y": 2614
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 384.56
+          },
+          "scale": 0.22727272727272727,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-11-0",
+          "image": "./assets/terrain-props-5-0.png",
+          "position": {
+            "x": 1420,
+            "y": 612
+          },
+          "anchor": {
+            "x": 202.5,
+            "y": 376.2
+          },
+          "scale": 0.41975308641975306,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-11-1",
+          "image": "./assets/terrain-props-5-0.png",
+          "position": {
+            "x": 2164,
+            "y": 2972
+          },
+          "anchor": {
+            "x": 202.5,
+            "y": 376.2
+          },
+          "scale": 0.41975308641975306,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-12-0",
+          "image": "./assets/terrain-props-0-0.png",
+          "position": {
+            "x": 1177,
+            "y": 711
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 355.12
+          },
+          "scale": 0.3827751196172249,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-12-1",
+          "image": "./assets/terrain-props-0-0.png",
+          "position": {
+            "x": 2407,
+            "y": 2873
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 355.12
+          },
+          "scale": 0.3827751196172249,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-13-0",
+          "image": "./assets/terrain-props-1-0.png",
+          "position": {
+            "x": 940,
+            "y": 1143
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 359.45
+          },
+          "scale": 0.45454545454545453,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-13-1",
+          "image": "./assets/terrain-props-1-0.png",
+          "position": {
+            "x": 2644,
+            "y": 2441
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 359.45
+          },
+          "scale": 0.45454545454545453,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-14-0",
+          "image": "./assets/terrain-props-2-0.png",
+          "position": {
+            "x": 299,
+            "y": 3029
+          },
+          "anchor": {
+            "x": 208.5,
+            "y": 368.1
+          },
+          "scale": 0.4196642685851319,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-14-1",
+          "image": "./assets/terrain-props-2-0.png",
+          "position": {
+            "x": 3285,
+            "y": 555
+          },
+          "anchor": {
+            "x": 208.5,
+            "y": 368.1
+          },
+          "scale": 0.4196642685851319,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-15-0",
+          "image": "./assets/terrain-props-3-0.png",
+          "position": {
+            "x": 1094,
+            "y": 442
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 369.46
+          },
+          "scale": 0.40669856459330145,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-15-1",
+          "image": "./assets/terrain-props-3-0.png",
+          "position": {
+            "x": 2490,
+            "y": 3142
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 369.46
+          },
+          "scale": 0.40669856459330145,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-16-0",
+          "image": "./assets/terrain-props-4-0.png",
+          "position": {
+            "x": 1254,
+            "y": 304
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 384.56
+          },
+          "scale": 0.22727272727272727,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-16-1",
+          "image": "./assets/terrain-props-4-0.png",
+          "position": {
+            "x": 2330,
+            "y": 3280
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 384.56
+          },
+          "scale": 0.22727272727272727,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-17-0",
+          "image": "./assets/terrain-props-5-0.png",
+          "position": {
+            "x": 256,
+            "y": 2183
+          },
+          "anchor": {
+            "x": 202.5,
+            "y": 376.2
+          },
+          "scale": 0.41975308641975306,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-17-1",
+          "image": "./assets/terrain-props-5-0.png",
+          "position": {
+            "x": 3328,
+            "y": 1401
+          },
+          "anchor": {
+            "x": 202.5,
+            "y": 376.2
+          },
+          "scale": 0.41975308641975306,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-18-0",
+          "image": "./assets/terrain-props-0-0.png",
+          "position": {
+            "x": 1682,
+            "y": 2332
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 355.12
+          },
+          "scale": 0.3827751196172249,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-18-1",
+          "image": "./assets/terrain-props-0-0.png",
+          "position": {
+            "x": 1902,
+            "y": 1252
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 355.12
+          },
+          "scale": 0.3827751196172249,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-19-0",
+          "image": "./assets/terrain-props-1-0.png",
+          "position": {
+            "x": 1689,
+            "y": 405
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 359.45
+          },
+          "scale": 0.45454545454545453,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-19-1",
+          "image": "./assets/terrain-props-1-0.png",
+          "position": {
+            "x": 1895,
+            "y": 3179
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 359.45
+          },
+          "scale": 0.45454545454545453,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-20-0",
+          "image": "./assets/terrain-props-2-0.png",
+          "position": {
+            "x": 1466,
+            "y": 316
+          },
+          "anchor": {
+            "x": 208.5,
+            "y": 368.1
+          },
+          "scale": 0.4196642685851319,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-20-1",
+          "image": "./assets/terrain-props-2-0.png",
+          "position": {
+            "x": 2118,
+            "y": 3268
+          },
+          "anchor": {
+            "x": 208.5,
+            "y": 368.1
+          },
+          "scale": 0.4196642685851319,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-21-0",
+          "image": "./assets/terrain-props-3-0.png",
+          "position": {
+            "x": 274,
+            "y": 1966
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 369.46
+          },
+          "scale": 0.40669856459330145,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-21-1",
+          "image": "./assets/terrain-props-3-0.png",
+          "position": {
+            "x": 3310,
+            "y": 1618
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 369.46
+          },
+          "scale": 0.40669856459330145,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-22-0",
+          "image": "./assets/terrain-props-4-0.png",
+          "position": {
+            "x": 1684,
+            "y": 3261
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 384.56
+          },
+          "scale": 0.22727272727272727,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-22-1",
+          "image": "./assets/terrain-props-4-0.png",
+          "position": {
+            "x": 1900,
+            "y": 323
+          },
+          "anchor": {
+            "x": 209.0,
+            "y": 384.56
+          },
+          "scale": 0.22727272727272727,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-23-0",
+          "image": "./assets/terrain-props-5-0.png",
+          "position": {
+            "x": 1584,
+            "y": 723
+          },
+          "anchor": {
+            "x": 202.5,
+            "y": 376.2
+          },
+          "scale": 0.41975308641975306,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "flank-23-1",
+          "image": "./assets/terrain-props-5-0.png",
+          "position": {
+            "x": 2000,
+            "y": 2861
+          },
+          "anchor": {
+            "x": 202.5,
+            "y": 376.2
+          },
+          "scale": 0.41975308641975306,
+          "depthOffsetY": 0
+        }
+      ]
+    }
+  ],
+  "navigation": {
+    "kind": "grid",
+    "cellSize": {
+      "width": 32,
+      "height": 16
+    },
+    "columns": 112,
+    "rows": 224,
+    "blockedBase64": "/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAHAAAAAAAAAAAA8A8AAAcAAAAAAAAAAADwDwAAAADwAAAAAAAAAPAPAAAAAPAAAAAAAAAA8A8AAAAA8AAAAAAA8ADwDwAAAAAAAAAAAADwAPAPAAAAAAAAAAAAAPAA8A8AAAAAAAAAAAAAAADwDwAAAAAAEAAAAAAAAPAPAAAAAAAQAAAAHAAA8A8AAAAOAAAAAAAcAADwDwAAAA4AAAAAADwAAPAPAAAAAAAAAAAAdgAA8A8AAAAAAAAAAADnAADwjwMAAAAAAAAAgMMAAPCPAwAAAAAAAACAnwEA8A8AAAAAAAAAAMCfAwDwDwAAAAAAAAAA4B8H4PAPAAAAAAAAAABwHwbg8A8AAAAAAAAAADAADADwDwAAAAA4AAAAGAAcAPAPAAAAADgAAAAYADgA8A8AAAAAOAAAAAAAMADwDwAAAAAAAAAAAABgAPAPAAAAAAAAAAAAAOAA8A8ABAAAAAAAAAAAwAHwDwAEAAAAAAAAAACAAfAPAAAAOAAHAAAAAAAD8A8AAAA4AAcAIAAAAAfwDwAAAAAABwAwAAAADvAPAAAAAAAAADgAAAAM8A8AAAAAAAAAGAAAABjwDwAAAAAAAAAMAAAAOPDPAwAAAAAAAA4AAIB/8M8DAAAAAAAABwAAgG/wDwAAAAAAAAADAACAz/APAAAAAAAAgAEAAADA8Q8AAAAAAADAAQAAAIDzDwAAAAAAAOAAAAAAAPMPAAAAAAAAcAAAAAAA/g8AAAAAAABwAAAAAAD+DwAAAAAAAOAAAAAAAPcPAAAAAAAAwAAAAACA8w8AAAAAAACAAQAAAIDxDwAAAAAAAIADAAAAwPAPAAAAAAAAAAcAAADg8A8AAAAAAAAABgAAAHDwDwAAAAAAAAAMAAAAMPAPAAAAAAAAABwAAAAY8A8AAAAAAAAAOAAAABzwDwAOAAAAAAAwAAAADPAPAA4AAAAAACAAAAAE8A8ADgAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AACAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAACADwDxwAAAAAAAAAGAAIAPAPHAAAAAAAAAA4AAwA8A8AAAAAAAAcAHAADgDwDwAAAAAAABwAYAAHAPAPAAAAAAAAAADAAAMA8A8AAAAAAAAAAMCBAQDwDwAAAAAAAAAAgMMBAPAPAAAAAAAAAAAA4wAA8A8AAAAAAAAAAABmAADwDwAAAAAAAAAAAD4AAPAPAAAAAAAAAAAAPAAA8A8AAAAAAAAAAAAcAMDzDwAAAAAAAAAAAAAAwPMPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPDgAAAAAAAAAAAAAA8A8OAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAADA8Q8AAAAAAAAAAAAAAMDxDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAQAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAIAAAAA8A8AAAAAAAAAAgAAAADwDwAAAAAAAAAAAAAAAPCPAwAAAAAAAAAAAAAA8I8DAAAAAAAAAAAAAADwjwMAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAABw8A8AAAAAAAAAAAAAAHDwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwzwMAAAAAAAAAAAAAAPDPAwA4AAAAAAAAAAAA8A8AADgAAAAAAAAAAADwDwAAPAAAAAAAAAAAAPAPAAB8AAAAAAAAAAAA8A8AAGYAAAAAAAAAAADwDwAAxwAAAAAAAAAAAPAPAIDDAQAAAAAAAAAA8A8AgIEDAAAAAAAAAADwDwDAAAMAOAAAAAAAAPAPAOAABgA4AAAAAAAA8A8AcAAOAAAAAAAAADjwDwAwABwAAAAAAAAAOPAPABAAGAAAAAAAAAAA8A8AEAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAEAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAHAA8A8AAAAAAAAAAAAAcADwDyAAAAAEAAAAAABwAPAPMAAAAAwAAAAAAAAA8A84AAAAHAAAAAAAAADwDxgAAAA4AAAAAAAAAPAPDAAAADAAAAAAAAAA8A8OAAAAYAAAAAAAAADwDwcAAADgAAAAAAAAAPAPAwAAAMABAAAAAAAA8I8BAAAAgAEAAAAAAADwzwEAAAAAAwAAAAAAAPD/AAAAAAAPAAAAAAAA8H8AAAAAAA4AAAAAAADwbwAAAAAABgAAAAAAAPDPAAAAAAAHAAAAAAAA8M/xAQAAgAMAAAAAAADwj/MBAACAAQAAAAAAAPAP8wEAAMAAAAAAAADA8w8GAAAA4AAAAAAAAMDzDw4AAABwAAAAAAAAAPAPHAAAADAAAAAAAAAA8A8YAAAAGAAAAAAAAADwDzAAAAAcAOAAAAAAAPAPcAAAAAwA4AAcAAAA8A/gAAAABADgABwAAADwD8AAAAAAAAAAAAAAAPAPgAEAAAAAAAAAACAA8A+AAwAAAAAAAAAAIADwDwAHAAAAAAAAAAAAAPAPAAYAAAAAABwAAAAA8A8ADAAAAAAAHAAAAADwDwAcABgAAAAcAAAAAPAPADj4GAAAAAAAAAAA8A8HMPgMAAAAAAAAAADwDwdg+A4AAAAAAAAAAPAPAOD4BwAAAAAAAAAA8A8AwAEDAAAAAAAAAMDxDwCAgQEAAAAAAAAAwPEPAADDAQAAAAAAAAAA8A8AAOcAAAAAAAAAAADwDwAAbgAAAAAAcAAAAPAPAAA8AAAAAABwAAAA8A8AADgAAAAAAAAAAADwDwAAGAAAAAgAAAAAAPAPAAAAAAAAAAAAAAAA8A8ADwAAAAAAAAAAAADwDwAPAAAAAAAAAAAAAPAPAA8AAAAAAAAAAAAA8A8AAAAAAAAADwAAAADwDwAAAAAAAAAPAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAADgAADwDwAAAAAAAAAAAOAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADwDwAAAAAAAAAAAAAAAPAPAAAAAAAAAAAAAAAA8A8AAAAAAAAAAAAAAADw/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////w=="
+  },
+  "spawnMode": "fixed",
+  "spawns": [],
+  "npcs": [
+    {
+      "id": "song-tongkim",
+      "npcId": "tongkim",
+      "team": "song",
+      "position": {
+        "x": 785,
+        "y": 2834
+      }
+    },
+    {
+      "id": "song-pharmacy",
+      "npcId": "pharmacy",
+      "team": "song",
+      "position": {
+        "x": 825,
+        "y": 2739
+      }
+    },
+    {
+      "id": "song-horse",
+      "npcId": "horse",
+      "team": "song",
+      "position": {
+        "x": 560,
+        "y": 2719
+      }
+    },
+    {
+      "id": "jin-tongkim",
+      "npcId": "tongkim",
+      "team": "jin",
+      "position": {
+        "x": 3009,
+        "y": 850
+      }
+    },
+    {
+      "id": "jin-pharmacy",
+      "npcId": "pharmacy",
+      "team": "jin",
+      "position": {
+        "x": 3049,
+        "y": 755
+      }
+    },
+    {
+      "id": "jin-horse",
+      "npcId": "horse",
+      "team": "jin",
+      "position": {
+        "x": 2784,
+        "y": 735
+      }
+    }
+  ]
+}

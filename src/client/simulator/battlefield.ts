@@ -2,6 +2,7 @@ import { DEFAULT_DEPLOYMENT, PLAYER_DEATH_PENALTY_THRESHOLD, validateDeploymentS
 import type { DeploymentSettings } from './deployment-settings';
 import { DEFAULT_SOLDIERS } from './soldier-config';
 import diagonalLayout from '../maps/content/9002/layout.json';
+import wildernessLayout from '../maps/content/9003/layout.json';
 import type { ArmyEquipmentKind } from './set-equipment';
 import { BATTLEFIELD_ROUTES } from './routes';
 import { distributeArmy } from './composition';
@@ -18,7 +19,7 @@ export function splitArmyTotal(count: number) {
 export const BATTLE_DURATION = 20 * 60;
 export const RESPAWN_SECONDS = DEFAULT_DEPLOYMENT.respawnSeconds;
 export let BATTLE_MAP: number = 9001;
-export const BATTLEFIELD_MAPS = [{id:9001,name:"Song Doanh · ba cầu"},{id:9002,name:"Chéo Doanh · doanh trại chéo"}];
+export const BATTLEFIELD_MAPS = [{id:9001,name:"Song Doanh · ba cầu"},{id:9002,name:"Chéo Doanh · doanh trại chéo"},{id:9003,name:"Hoang Nguyên · ba đường đất"}];
 export const TEAM_NAMES = { song: 'Tống', jin: 'Kim' } as const;
 export const CAMPS: Record<Team,{x:number;y:number}> = { song: { x: 450, y: 1792 }, jin: { x: 3134, y: 1792 } };
 const ORIGINAL_CAMPS = JSON.parse(JSON.stringify(CAMPS)) as typeof CAMPS;
@@ -96,7 +97,9 @@ export function createBattlefield(host: BattlefieldHost) {
       if (!actor.battlefieldBoss) actor.battlefieldLane = index % BATTLEFIELD_ROUTES.length;
       const direction = actor.battlefieldTeam === 'song' ? 1 : -1;
       // Distinct camp slots, also retained for this actor's subsequent respawns.
-      actor.battlefieldSpawn = actor.battlefieldBoss ? { ...camp } : {
+      actor.battlefieldSpawn = BATTLE_MAP === 9003 ? {
+        ...(actor.battlefieldBoss ? wildernessLayout.marshals[side] : wildernessLayout.armySpawns[side][index % wildernessLayout.armySpawns[side].length]),
+      } : actor.battlefieldBoss ? { ...camp } : {
         x: camp.x + direction * (130 + Math.floor(index / 25) * 40),
         y: camp.y + ((index % 25) - 12) * 28,
       };
@@ -171,7 +174,7 @@ export function createBattlefield(host: BattlefieldHost) {
     const marshalHP = host.marshalHP?.() ?? DEFAULT_SOLDIERS.marshal.hp;
     if (!Number.isSafeInteger(marshalHP) || marshalHP < 1 || marshalHP > 1_000_000_000_000) throw new Error("HP Nguyên soái không hợp lệ.");
     reset(); deployment = { ...nextDeployment }; BATTLE_MAP = mapId;
-    const camps = mapId === 9002 ? diagonalLayout.camps : ORIGINAL_CAMPS;
+    const camps = mapId === 9003 ? wildernessLayout.camps : mapId === 9002 ? diagonalLayout.camps : ORIGINAL_CAMPS;
     for (const side of ['song','jin'] as const) Object.assign(CAMPS[side], camps[side]);
     team = playerTeam; elements = { ...bossElements };
     try {
