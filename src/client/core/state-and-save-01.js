@@ -287,9 +287,10 @@ var hs = function (A, n) {
     l.P.hurtP &&
       Math.random() * 100 < l.P.hurtP &&
       (n.atkCd = Math.max(n.atkCd || 0, 0.25 + (l.P.hurtT || 0) / 18)));
+  // Battlefield secondary hits inherit steal percentages, each applied to that hit's own damage.
   const M = A.basic || A.wpn,
-    B = ((M && l.P.leech) || 0) + (A.ev2 ? 0 : A.skLeech || 0),
-    O = ((M && l.P.manaLeech) || 0) + (A.ev2 ? 0 : A.skMLeech || 0);
+    B = ((M && l.P.leech) || 0) + (A.ev2 && !l.battlefield ? 0 : A.skLeech || 0),
+    O = ((M && l.P.manaLeech) || 0) + (A.ev2 && !l.battlefield ? 0 : A.skMLeech || 0);
   (B && za((i * B) / 100, !0), O && (l.mana = Math.min(l.P.mana, l.mana + (i * O) / 100)));
   const G = p ? " ⚡" : P ? " 🛡" : "";
   // Poison is deferred: display only actual HP loss from its later ticks.
@@ -917,7 +918,9 @@ var $d = function (A, n) {
   }
   if (actorActionLocked(A)) { A.moving = false; A.atkCd = Math.max(0, (A.atkCd || 0) - n * t); return; }
   if (A.home && KD(A, n)) return;
-  const e = A.arenaMonster && typeof combatSandbox !== "undefined" && combatSandbox
+  const e = A.battlefieldMonster && typeof arenaSimulator !== "undefined" && arenaSimulator
+    ? arenaSimulator.nearestMonsterTarget(A)
+    : A.arenaMonster && typeof combatSandbox !== "undefined" && combatSandbox
     ? combatSandbox.nearestTarget(A) : (typeof om == "function" && om(A)) || v;
   if (!e) { A.moving = false; return; }
   const a = q0(A, e),
@@ -939,8 +942,10 @@ var $d = function (A, n) {
         target => target === v ? U9(A) : target.battlefieldMonster && typeof arenaSimulator !== "undefined" && arenaSimulator
           ? arenaSimulator.receiveSoldierHit(target,A) : target.arenaSim && typeof arenaSimulator !== "undefined" && arenaSimulator
           ? arenaSimulator.receiveMonsterHit(target, A) : hB(target, A),
-        { maxTargets: 1, targets: () => [e].filter(target => target === v ? l.life > 0 :
-          (target.arenaSim || target.battlefieldMonster) ? l.enemies.includes(target) && !target.dead && target.hp > 0 && (!A.battlefieldMonster || arenaSimulator.battlefield.canHit(A,target)) : (l.allies || []).includes(target)), visual: () => {} }),
+        { maxTargets: 1, targets: () => [e].filter(target =>
+          (!A.battlefieldMonster || arenaSimulator.battlefield.canHit(A,target)) &&
+          (target === v ? l.life > 0 : (target.arenaSim || target.battlefieldMonster)
+            ? l.enemies.includes(target) && !target.dead && target.hp > 0 : (l.allies || []).includes(target))), visual: () => {} }),
       (A.act = "at"),
       (A.actT = 0),
       W3(A.animKey || r0[A.tid].anim, "at", 0.35)));

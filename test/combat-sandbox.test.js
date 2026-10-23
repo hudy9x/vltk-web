@@ -1369,3 +1369,99 @@ test('battlefield labels use the active map instead of the saved training zone',
     assert.equal(texts.at(-1),`Tống Kim ${id}`);
   }
 });
+
+
+test('native soldier AI uses battlefield enemies in both production and arena, including contact-time team checks',()=>{
+  for(const arena of [false,true]) for(const side of ['song','jin']) {
+    const s=battlefieldGame(arena,true),match=s.arenaSimulator.battlefield;match.start(side);s.arenaSimulator.tick(5);
+    const friend=s.arenaSimulator.roadMonsters.actors.find(actor=>actor.battlefieldTeam===side);
+    const [ally]=match.add({team:side,faction:'shaolin',level:90,strength:'normal',count:1});
+    const [enemy]=match.add({team:side==='song'?'jin':'song',faction:'wudang',level:90,strength:'normal',count:1});
+    const origin={x:friend.x,y:friend.y};
+    for(const unit of s.l.enemies) {unit.dead=true;unit.hp=0;}
+    for(const unit of [friend,ally,enemy]){unit.dead=false;unit.hp=unit.max;Object.assign(unit,origin);}
+    Object.assign(s.v,origin);s.l.life=1000;
+    Object.assign(friend,{ar:99999,r:12,ranged:false,reach:100,atkCd:0,stun:0,poison:0,spd:0});
+    s.q0=(a,b)=>Math.hypot(a.x-b.x,(a.y-b.y)*2)/s.QA;s.coldSpeedFactor=()=>1;s.actorActionLocked=()=>false;s.queueSkillContact=(actor,target,ability,hit,options)=>{s.lastContact={actor,target,hit,options};return {};};
+    // Isolate the basic soldier tick; SIM skill casting must not replace this contact.
+    ally.cooldown=enemy.cooldown=999;
+    s.arenaSimulator.tick(.01);
+    assert.ok(s.lastContact,`soldier acquired an enemy in arena=${arena}`);
+    assert.equal(s.lastContact.actor,friend);
+    assert.equal(s.lastContact.target,enemy,'nearby player and SIM on the same team are ignored');
+    enemy.battlefieldTeam=side;
+    assert.equal(s.lastContact.options.targets().length,0,'a launched contact cannot hit an actor that became friendly');
+    s.lastContact=null;friend.atkCd=0;s.arenaSimulator.tick(.01);
+    assert.equal(s.lastContact,null,'no basic attack when only friendly bodies remain');
+    // An opposing soldier must still acquire the player, and recheck friendship at impact.
+    ally.dead=enemy.dead=true;ally.hp=enemy.hp=0;
+    friend.battlefieldTeam=side==='song'?'jin':'song';friend.atkCd=0;friend.battlefieldReturning=false;Object.assign(friend,origin);Object.assign(s.v,origin);
+    s.arenaSimulator.tick(.01);assert.ok(s.lastContact);assert.equal(s.lastContact.target,s.v);
+    assert.ok(s.lastContact.options.targets().includes(s.v));
+    friend.battlefieldTeam=side;
+    assert.equal(s.lastContact.options.targets().length,0,'player contacts also recheck the source team');
+  }
+});
+
+test('weapon and skill HP/MP steal work for direct and secondary battlefield hits',()=>{
+  for(const arena of [false,true]) for(const secondary of [false,true]) for(const source of ['weapon','skill','both']) {
+    const s=battlefieldGame(arena),match=s.arenaSimulator.battlefield;match.start('song');
+    loadDeclaration(s,'src/client/core/state-and-save-01.js','za');
+    s.o.eq.weapon={d:0,k:0};
+    Object.assign(s.l.P,{leech:source==='skill'?0:10,manaLeech:source==='skill'?0:20,life:1000,mana:100,antiBlock:100,series5:0});
+    s.l.life=500;s.l.mana=20;
+    const [enemy]=match.add({team:'jin',faction:'wudang',level:90,strength:'normal',count:1});
+    Object.assign(enemy,{hp:10000,max:10000,series:0,res:{phys:0,cold:0,fire:0,poison:0,light:0}});
+    Object.assign(enemy.stats,{sorb:0,dmgShield:0,manaShield:0,from:{},retMelee:0,retMeleeP:0});
+    const skill={parts:{fire:100},rad:100,series:0,crit:0,wpn:true,ev2:secondary,skLeech:source==='weapon'?0:5,skMLeech:source==='weapon'?0:10};
+    const before=enemy.hp;s.hs(skill,enemy);const damage=before-enemy.hp;
+    assert.ok(damage>0);
+    assert.equal(s.l.life,500+damage*(source==='weapon'?10:source==='skill'?5:15)/100,source);
+    assert.equal(s.l.mana,20+damage*(source==='weapon'?20:source==='skill'?10:30)/100,source);
+    const hp=s.l.life,mp=s.l.mana;enemy.battlefieldTeam='song';s.hs(skill,enemy);
+    assert.equal(s.l.life,hp);assert.equal(s.l.mana,mp,'friendly contacts cannot grant steal');
+    enemy.battlefieldTeam='jin';s.l.life=999.9;s.l.mana=99.9;s.hs(skill,enemy);
+    assert.equal(s.l.life,1000);assert.equal(s.l.mana,100,'steal respects the current resource maxima');
+  }
+});
+
+test('Thiên Nhẫn kích and Côn Lôn đao retain weapon steal on their 90/150 skills',()=>{
+  for(const id of [361,1075,372,1080]) {
+    const s=battlefieldGame(false);s.arenaSimulator.battlefield.start('song');
+    loadDeclaration(s,'src/client/core/state-and-save-01.js','za');
+    loadDeclaration(s,'src/client/core/helpers-and-config-01.js','j1');
+    const native=s.T[id],level=Math.min(20,native.max||20);
+    const percent=key=>{const value=native.attr[key]?.[level-1];return Array.isArray(value)?value[0]:value||0;};
+    Object.assign(s.l.P,{life:1000,mana:100,leech:10,manaLeech:20,antiBlock:100});
+    const target={x:0,y:0,hp:10000,max:10000,cls:'normal',tid:0,series:0,res:{phys:0,cold:0,fire:0,poison:0,light:0},battlefieldTeam:'jin'};
+    const skill={id,parts:{phys:100},series:0,crit:0,wpn:s.j1(native)!==null,skLeech:percent('steallife_p'),skMLeech:percent('stealmana_p')};
+    assert.equal(skill.wpn,true,native.n);
+    for(const secondary of [false,true]) {
+      s.l.life=500;s.l.mana=20;const before=target.hp;
+      s.hs({...skill,ev2:secondary},target);const damage=before-target.hp;
+      assert.ok(damage>0,native.n);
+      assert.equal(s.l.life,500+damage*(10+skill.skLeech)/100,native.n);
+      assert.equal(s.l.mana,20+damage*(20+skill.skMLeech)/100,native.n);
+    }
+  }
+});
+
+test('a SIM keeps stolen HP and MP in its own state after a delayed battlefield contact',()=>{
+  for(const arena of [false,true]) {
+    const s=battlefieldGame(arena),match=s.arenaSimulator.battlefield;match.start('song');
+    loadDeclaration(s,'src/client/core/state-and-save-01.js','za');
+    const [attacker]=match.add({team:'song',faction:'shaolin',level:90,strength:'normal',count:1});
+    const [enemy]=match.add({team:'jin',faction:'wudang',level:90,strength:'normal',count:1});
+    for(const unit of [attacker,enemy]){delete unit.profile.eq.horse;unit.mounted=false;Object.assign(unit,{x:1700,y:1700});}
+    const skill={id:0,n:'Steal test',basic:true,wpn:true,ev2:true,parts:{phys:100},series:0,crit:0,rate:1,rad:100,skLeech:5,skMLeech:10};
+    attacker.profile.main='basic';Object.assign(attacker.stats,{main:skill,basic:skill,life:1000,mana:100,regen:0,manaRegen:0,leech:10,manaLeech:20});
+    attacker.hp=500;attacker.mana=20;attacker.potionBag={life:0,mana:0,potCd:{}};enemy.cooldown=999;
+    Object.assign(enemy.stats,{sorb:0,dmgShield:0,manaShield:0,from:{},retMelee:0,retMeleeP:0});
+    let contact;s.queueSkillContact=(actor,target,ability,hit,options)=>{if(actor===attacker)contact={target,hit,options};return {};};
+    s.arenaSimulator.tick(.01);assert.ok(contact);assert.equal(contact.target,enemy);
+    const heroHP=s.l.life,heroMP=s.l.mana,before=enemy.hp;
+    contact.hit(enemy);const damage=before-enemy.hp;
+    assert.ok(damage>0);assert.equal(attacker.hp,500+damage*.15);assert.equal(attacker.mana,20+damage*.30);
+    assert.equal(s.l.life,heroHP);assert.equal(s.l.mana,heroMP);
+  }
+});
