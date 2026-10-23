@@ -414,7 +414,13 @@ GET asset -> file đã có? -> trả file
 
 Các sprite/audio chưa có cần Internet khi truy cập lần đầu. File đã tải dùng lại
 trên máy. Đây chưa phải bộ tài nguyên offline đầy đủ. JS/CSS/API không được service
-worker cache trong bản local để tránh đọc code hoặc save cũ.
+worker cache để tránh đọc code hoặc save cũ. Khi chạy production, ảnh (bao gồm ảnh
+map), audio và font có HTTP cache một ngày; service worker dùng cache-first một
+ngày, giữ tối đa 512 URL và dùng bản đã cache nếu mạng mất khi hết hạn. Query string
+thuộc cache key, nên có thể thêm `?v=...` để cập nhật một ảnh ngay; tăng version trong
+`public/sw.js` để xóa toàn bộ cache media PWA. Không precache hàng loạt tài nguyên.
+Bootstrap đăng ký worker trong lúc đọc SQLite, trước khi game tải sprite.
+`NODE_ENV=development` tắt cả HTTP cache lẫn cache media PWA và xóa cache PWA cũ.
 
 ## Database và kiểm tra
 

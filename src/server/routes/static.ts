@@ -44,11 +44,19 @@ export function registerStaticRoutes(app: FastifyInstance, services: ServerServi
     const filename = relative === 'client/bootstrap.js' ? path.join(CLIENT_ROOT, 'bootstrap.js')
       : relative.startsWith('app/') ? path.join(CLIENT_ROOT, relative.slice(4))
       : path.join(PUBLIC_ROOT, relative);
+    // The same worker URL updates existing registrations when switching to development.
+    if (relative === 'sw.js' && services.development) {
+      const source = 'self.__JXIDLE_DEVELOPMENT__ = true;\n' + await fs.promises.readFile(filename, 'utf8');
+      reply.type(TYPES['.js']).header('Content-Length', Buffer.byteLength(source));
+      return request.method === 'HEAD' ? reply.send() : reply.send(source);
+    }
     if (isAssetPath(relative)) await services.assets.ensure(relative, { download: services.downloadAssets });
     const info = await fs.promises.stat(filename).catch(() => null);
     if (!info?.isFile() || !info.size) return sendJson(reply, 404, { error: 'Not found' });
     reply.code(200).header('Content-Type', TYPES[path.extname(filename)] || 'application/octet-stream')
-      .header('Content-Length', info.size).header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
+      .header('Content-Length', info.size)
+      .header('Cache-Control', !services.development && (isAssetPath(relative) || mapAsset) ? 'public, max-age=86400' : 'no-store')
+      .header('X-Content-Type-Options', 'nosniff');
     if (request.method === 'HEAD') return reply.send();
     // Fastify pipe stream trực tiếp: không đọc toàn bộ sprite/audio vào RAM.
     return reply.send(fs.createReadStream(filename));
