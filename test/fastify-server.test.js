@@ -64,6 +64,31 @@ test('JSON parsing keeps the old content-type behavior and cross-site rejection 
   } finally { await app.close(); db.close(); }
 });
 
+test('HTTPS behind the loopback proxy accepts same-origin writes and sets Secure session cookies', async () => {
+  const { app, db } = fixture();
+  const headers = { host: 'gamelab.hudy9x.com', origin: 'https://gamelab.hudy9x.com',
+    'x-forwarded-proto': 'https', 'content-type': 'application/json' };
+  try {
+    const registered = await app.inject({ method: 'POST', url: '/api/auth/register',
+      remoteAddress: '127.0.0.1', headers, payload: { username: 'https_test', password: 'test-password' } });
+    assert.equal(registered.statusCode, 200);
+    assert.match(registered.headers['set-cookie'], /; Secure(?:;|$)/);
+    const cookie = registered.headers['set-cookie'].split(';')[0];
+    const written = await app.inject({ method: 'POST', url: '/api/storage/init',
+      remoteAddress: '127.0.0.1', headers: { ...headers, cookie }, payload: { entries: {} } });
+    assert.equal(written.statusCode, 200);
+    const wrongOrigin = await app.inject({ method: 'POST', url: '/api/storage/init',
+      remoteAddress: '127.0.0.1', headers: { ...headers, cookie, origin: 'https://other.example' }, payload: { entries: {} } });
+    assert.equal(wrongOrigin.statusCode, 403);
+    const forgedProxy = await app.inject({ method: 'POST', url: '/api/storage/init',
+      remoteAddress: '203.0.113.10', headers: { ...headers, cookie }, payload: { entries: {} } });
+    assert.equal(forgedProxy.statusCode, 403);
+    const localHttp = await app.inject({ url: '/api/config',
+      headers: { host: 'localhost:3000', origin: 'http://localhost:3000' } });
+    assert.equal(localHttp.statusCode, 200);
+  } finally { await app.close(); db.close(); }
+});
+
 test('the 8 MB body limit is measured in bytes and oversized bodies cannot write SQLite', async () => {
   const { app, db } = fixture();
   const cookie = await accountCookie(app);
