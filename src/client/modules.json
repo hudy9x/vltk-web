@@ -2872,6 +2872,7 @@
       "symbols": [
         "statusInspector"
       ]
-    }
+    },
+    {"file":"core/asset-preload-01.js","symbols":[]}
   ]
 }

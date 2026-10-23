@@ -13,8 +13,23 @@
 <link rel="stylesheet" href="jx1ui.css?v=622">
 <link rel="stylesheet" href="jx1ui2.css?v=622">
 <link rel="stylesheet" href="ui20.css?v=622">
+<style>
+#appLoading{position:fixed;inset:0;z-index:100002;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 25%,#263326,#101612 65%);color:#eadbb4;font-family:system-ui,sans-serif;padding:24px;box-sizing:border-box}
+#appLoading[hidden]{display:none}#appLoading .loading-card{width:min(100%,380px);text-align:center}
+#appLoading .loading-mark{color:#bda365;letter-spacing:5px;font-size:11px;margin-bottom:18px}#appLoading h1{font-family:serif;font-size:32px;letter-spacing:4px;margin:0 0 36px;color:#f2d18c}
+#appLoading progress{display:block;width:100%;height:8px;margin:18px 0 12px;accent-color:#d1ad64;border:0;border-radius:4px;overflow:hidden;background:#354036}
+#appLoading progress::-webkit-progress-bar{background:#354036}#appLoading progress::-webkit-progress-value{background:#d1ad64}#appLoading progress::-moz-progress-bar{background:#d1ad64}
+#appLoading [data-loading-label]{font-size:14px;line-height:1.6}#appLoading [data-loading-count]{min-height:36px;font-size:12px;color:#b7b9a7;line-height:1.6}
+#appLoading button{margin-top:16px;padding:10px 22px;border:1px solid #9f834a;border-radius:5px;background:#3c3421;color:#f2ddb1;font:inherit;cursor:pointer}
+</style>
 </head>
 <body>
+<div id="appLoading" aria-label="Đang chuẩn bị game" aria-busy="true"><div class="loading-card">
+  <div class="loading-mark">TRỞ LẠI GIANG HỒ</div><h1>VÕ LÂM IDLE</h1>
+  <div data-loading-label role="status" aria-live="polite">Đang kết nối máy chủ…</div>
+  <progress max="1" aria-label="Tiến độ tải tài nguyên"></progress><div data-loading-count></div>
+  <button type="button" hidden>Thử tải lại</button>
+</div></div>
 <div id="app">
   <header id="top">
     <div class="lvbox"><span id="lv">1</span></div>
@@ -82,6 +97,7 @@
   <div id="modal" class="hidden" role="dialog" aria-modal="true"><div class="mbox" tabindex="-1"><button class="mx" id="mClose">✕</button><div id="mBody"></div></div></div>
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
+<script src="client/loading.js"></script>
 <script src="client/bootstrap.js"></script>
 </body>
 </html>

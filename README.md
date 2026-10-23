@@ -46,7 +46,7 @@ output/           Ảnh chụp và kết quả kiểm tra
 
 File trên ổ đĩa đã được gom theo vai trò. URL trình duyệt vẫn giữ nguyên:
 `/client/bootstrap.js` trỏ đến `src/client/bootstrap.js`, `/app/...` trỏ đến
-`src/client/...`, còn tài nguyên như `/img/...` được đọc từ `public/`.
+`src/client/...`, riêng ảnh `/app/maps/...` và tài nguyên như `/img/...` được đọc từ `public/`.
 Server chỉ phục vụ các đường dẫn trong allowlist; không mở toàn bộ repository.
 Game được build thành `src/client/game.js` và source map; hai file này không đưa vào Git.
 Map editor chạy từ `tools/map-tool/` và vẫn chọn root repository làm workspace.
@@ -419,7 +419,27 @@ map), audio và font có HTTP cache một ngày; service worker dùng cache-firs
 ngày, giữ tối đa 512 URL và dùng bản đã cache nếu mạng mất khi hết hạn. Query string
 thuộc cache key, nên có thể thêm `?v=...` để cập nhật một ảnh ngay; tăng version trong
 `public/sw.js` để xóa toàn bộ cache media PWA. Không precache hàng loạt tài nguyên.
-Bootstrap đăng ký worker trong lúc đọc SQLite, trước khi game tải sprite.
+Ảnh map nằm tại `public/app/maps/content/<id>/` (và `public/app/maps/objects/`
+nếu có), còn map/project JSON ở `src/client/maps/content/<id>/`. Giữ URL
+`/app/maps/...` và tham chiếu `./assets/...` trong JSON; chuyển thư mục không làm
+mất cache đã tải. `node tools/maps/migrate-assets.ts` chuyển ảnh từ cấu trúc cũ,
+kiểm tra trùng byte trước khi di chuyển và có thể chạy lại an toàn.
+Nginx production có thể phục vụ trực tiếp ảnh map theo cấu hình trong
+`deploy/vltk-web.nginx.conf`; cần áp dụng cấu hình và reload nginx riêng khi nâng cấp.
+
+Màn hình khởi động tải trước ảnh UI chung, sprite/hiệu ứng của nhân vật và ảnh của
+map hiện tại. Màn hình chọn nhân vật chỉ tải portrait và UI; các map khác giữ tải
+theo nhu cầu. Progress đếm số ảnh đã tải và decode thành công, tối đa 4 job đồng
+thời; ảnh lỗi/timeout chưa được tính hoàn tất và có nút thử lại riêng phần lỗi.
+Mô phỏng và xử lý input game tạm dừng trong lúc chờ asset. Tạo nhân vật mới cũng
+chạy cùng preload trước khi mở phiên chơi. Các request ảnh dùng chung cache
+renderer và cơ chế HTTP/PWA hiện có; không thêm cache cho API/save hay script.
+
+Bootstrap đăng ký worker trước khi game tải sprite. Trạng thái khởi động phân biệt
+kết nối máy chủ, kiểm tra đăng nhập, tải nhân vật và tải script. API GET và POST `/api/storage` thử lại một
+lần khi mất mạng/timeout hoặc HTTP 502/503/504. Batch lưu giữ nguyên ID và server
+loại trùng nên gửi lại an toàn; các POST khác không tự thử lại. Lỗi hiển thị
+endpoint cụ thể để phân biệt lỗi cấu hình, phiên đăng nhập và dữ liệu lưu.
 `NODE_ENV=development` tắt cả HTTP cache lẫn cache media PWA và xóa cache PWA cũ.
 
 ## Database và kiểm tra

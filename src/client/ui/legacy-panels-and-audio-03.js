@@ -109,6 +109,8 @@ var V8 = function (A, n, t) {
     C(
       `🌱 Nhận <b>Hỗ Trợ Tân Thủ</b>: vòng sáng hồi ${kt.life * 100}% sinh lực + ${kt.mana * 100}% nội lực mỗi giây, <b>+${qi * 100}% kinh nghiệm</b> luyện cấp đến cấp ${pa}.`,
     ));
+  if (window.localGameAssets && window.localGameLoading)
+    void window.localGameAssets.prepare().catch(error => window.localGameLoading.failed(error));
 };
 
 var U8 = function () {

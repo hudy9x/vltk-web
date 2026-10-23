@@ -2,6 +2,8 @@
   'use strict';
   // The original game detects offline mode through CHAT_CFG. Never contact its production Supabase.
   Object.defineProperty(window, 'CHAT_CFG', { get: () => ({ url:'', key:'' }), set: () => {}, configurable:false });
+  const loading = window.localGameLoading;
+  if (!loading) document.getElementById?.('appLoading')?.remove();
   const storage = window.localStorage;
   const native = {
     set: Storage.prototype.setItem, remove: Storage.prototype.removeItem, clear: Storage.prototype.clear
@@ -12,20 +14,42 @@
   const status = document.createElement('div');
   status.id = 'sqliteStatus';
   status.style.cssText = 'position:fixed;top:4px;left:50%;transform:translateX(-50%);z-index:100001;background:#211b12;color:#efd394;padding:5px 10px;font:12px monospace;border-radius:4px';
-  status.textContent = 'Đang đọc SQLite…'; document.body.appendChild(status);
+  status.textContent = 'Đang kết nối máy chủ…'; document.body.appendChild(status);
   async function request(url, options) {
-    const response = await fetch(url, { cache:'no-store', ...options, signal:AbortSignal.timeout(10000) });
-    if (!response.ok) {
-      const detail = await response.json().catch(() => ({}));
-      throw new Error(detail.error || `SQLite HTTP ${response.status}`);
+    // Storage batches have stable IDs and server-side deduplication, so replay is safe.
+    // Other POSTs (registration, initialization, login) must not be retried here.
+    const retryable = !options?.method || options.method === 'GET' ||
+      (url === '/api/storage' && options.method === 'POST');
+    const attempts = retryable ? 2 : 1;
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      let response;
+      try {
+        response = await fetch(url, { cache:'no-store', ...options, signal:AbortSignal.timeout(10000) });
+      } catch (error) {
+        if (attempt + 1 < attempts) continue;
+        throw new Error(`${url}: ${error.name === 'TimeoutError' ? 'máy chủ phản hồi quá chậm' : error.message}`);
+      }
+      if (!response.ok) {
+        if ([502, 503, 504].includes(response.status) && attempt + 1 < attempts) continue;
+        const detail = await response.json().catch(() => ({}));
+        throw new Error(`${url}: ${detail.error || `HTTP ${response.status}`}`);
+      }
+      try { return await response.json(); }
+      catch (error) {
+        if (error.name === 'SyntaxError') throw new Error(`${url}: phản hồi máy chủ không phải JSON hợp lệ.`);
+        if (attempt + 1 < attempts) continue;
+        throw new Error(`${url}: ${error.name === 'TimeoutError' ? 'máy chủ phản hồi quá chậm' : error.message}`);
+      }
     }
-    return response.json();
   }
   const post = payload => ({ method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(payload) });
   async function waitForAccount() {
+    status.textContent = 'Đang kiểm tra đăng nhập…';
+    loading?.stage(status.textContent);
     const session = await request('/api/auth/session');
     if (session.user) return { user:session.user, signedIn:false };
     status.hidden = true;
+    loading?.hide();
     const style = document.createElement('style');
     style.textContent = `#accountGate{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;overflow:auto;padding:24px 16px;background:linear-gradient(#090c10a8,#080b0fe8),url(img/u2/login/bg20a.jpg) center/cover #101512;color:#ecdfc1;font-family:inherit;box-sizing:border-box}
 #accountGate *{box-sizing:border-box}#accountGate .account-shell{width:min(100%,390px);text-align:center}#accountGate h1{font-family:serif;letter-spacing:4px;font-size:32px;color:#f3d27a;text-shadow:0 2px 12px #000;margin:0 0 6px}#accountGate .account-tagline{color:#c4b68f;font-size:13px;margin:0 0 28px}
@@ -55,6 +79,7 @@
           password.value = '';
           screen.remove(); style.remove();
           status.hidden = false;
+          loading?.stage('Đang tải dữ liệu nhân vật…');
           resolve({ user:result.user, signedIn:true });
         } catch (error) {
           message.textContent = error.message;
@@ -76,7 +101,7 @@
         }
         status.hidden = true;
       } catch (error) {
-        status.hidden = false; status.textContent = `Chưa lưu SQLite: ${error.message}`;
+        status.hidden = false; status.textContent = `Chưa đồng bộ với máy chủ: ${error.message}. Dữ liệu đang chờ trên trình duyệt; sẽ tự thử lại.`;
       }
     })().finally(() => { flushing = null; });
     return flushing;
@@ -91,6 +116,8 @@
     }
     const account = await waitForAccount();
     window.localGameAuth = { user:account.user, logout:() => request('/api/auth/logout', post({})) };
+    status.textContent = 'Đang tải dữ liệu nhân vật…';
+    loading?.stage(status.textContent);
     let state = await request('/api/storage'); generation = state.generation;
     if (!state.initialized) state = await request('/api/storage/init', post({ entries:entries() }));
     let previous;
@@ -136,16 +163,24 @@
     };
     document.addEventListener('visibilitychange', () => { if (document.hidden) sendPending(); });
     window.addEventListener('pagehide', sendPending);
-    for (const src of ['data.js?v=622','setvi.js?v=622','app/game.js?v=622']) {
+    status.textContent = 'Đang tải game…';
+    const scripts = ['data.js?v=622','setvi.js?v=622','jxlook.js?v=622','app/game.js?v=622'];
+    for (const [index, src] of scripts.entries()) {
+      loading?.stage(`Đang chuẩn bị game (${index + 1}/${scripts.length})…`);
       await new Promise((resolve, reject) => {
         const script = document.createElement('script'); script.src = src;
-        script.onload = resolve; script.onerror = () => reject(new Error(`Không tải được ${src}`));
+        const timer = setTimeout(() => { script.remove(); reject(new Error(`Hết thời gian tải ${src}`)); }, 30000);
+        script.onload = () => { clearTimeout(timer); resolve(); };
+        script.onerror = () => { clearTimeout(timer); reject(new Error(`Không tải được ${src}`)); };
         document.body.appendChild(script);
       });
     }
-    status.hidden = true;
+    if (loading && window.localGameAssets) await loading.preload(window.localGameAssets);
+    loading?.finish();
+    status.hidden = queue.length === 0;
   } catch (error) {
     status.hidden = false; status.textContent = `Không thể mở game: ${error.message} — tải lại trang để thử lại.`;
+    loading?.failed(error);
     console.error(error);
   }
 })();

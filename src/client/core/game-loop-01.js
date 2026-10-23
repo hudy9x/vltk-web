@@ -232,6 +232,7 @@ var ra = function (A, n) {
 };
 
 var P_ = function s(A) {
+  if (window.localGameLoading?.active) { o5 = A; Wm = Date.now(); requestAnimationFrame(s); return; }
   Wm = Date.now();
   const n = Math.min(0.25, (A - o5) / 1e3);
   ((o5 = A),
@@ -267,6 +268,7 @@ var Rm = function () {
 };
 
 var Ym = function () {
+  if (window.localGameLoading?.active) { yi = 0; L2 = 0; return; }
   if ((typeof Nr == "function" && Nr(), !o || !o.fac || window.NET_GATE || i0.blocked)) {
     ((yi = 0), (L2 = 0));
     return;

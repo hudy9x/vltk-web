@@ -13,7 +13,7 @@ const manifest = require('../src/client/modules.json');
 test('every legacy script and runtime TS module is included; source map contains original sources', () => {
   const { modules, map, code, inputs } = assemble();
   const sourceFiles = fs.readdirSync(path.join(ROOT, 'src/client'), { recursive: true })
-    .filter(file => file.endsWith('.js') && file !== 'game.js' && file !== 'bootstrap.js')
+    .filter(file => file.endsWith('.js') && !['game.js', 'bootstrap.js', 'loading.js'].includes(file))
     .map(file => file.split(path.sep).join('/'));
   assert.equal(new Set(modules.map(module => module.file)).size, modules.length);
   assert.deepEqual(modules.filter(m => m.file.endsWith('.js')).map(m => m.file).sort(), sourceFiles.sort());

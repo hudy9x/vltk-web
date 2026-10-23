@@ -16,7 +16,7 @@ const TYPES: Record<string, string> = {
   '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.m4a': 'audio/mp4',
 };
 const STATIC = new Set(['index.html', 'data.js', 'setvi.js', 'jxlook.js', 'style.css', 'jx1ui.css',
-  'jx1ui2.css', 'ui20.css', 'manifest.json', 'sw.js', 'client/bootstrap.js', 'fonts/ibm-plex-mono.css',
+  'jx1ui2.css', 'ui20.css', 'manifest.json', 'sw.js', 'client/bootstrap.js', 'client/loading.js', 'fonts/ibm-plex-mono.css',
   'app/maps/availability.json']);
 for (const npc of npcCatalog) STATIC.add(npc.image);
 
@@ -41,7 +41,7 @@ export function registerStaticRoutes(app: FastifyInstance, services: ServerServi
       for (const source of buildApp().map.sources) services.moduleFiles.add('app/' + source);
     }
     // Keep browser URLs stable while source and public files live separately.
-    const filename = relative === 'client/bootstrap.js' ? path.join(CLIENT_ROOT, 'bootstrap.js')
+    const filename = ['client/bootstrap.js', 'client/loading.js'].includes(relative) ? path.join(CLIENT_ROOT, relative.slice(7))
       : mapAsset ? path.join(PUBLIC_ROOT, relative)
       : relative.startsWith('app/') ? path.join(CLIENT_ROOT, relative.slice(4))
       : path.join(PUBLIC_ROOT, relative);

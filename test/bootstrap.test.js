@@ -24,7 +24,7 @@ async function boot(base, values, { failWrites = false, search = '' } = {}) {
   const sandbox = {
     Storage, localStorage:storage, sessionStorage:new Storage(), crypto:{ randomUUID }, AbortSignal,
     location:{ search }, URLSearchParams, loadedScripts:[],
-    setInterval:() => {}, console:{ error:() => {} }, addEventListener:() => {},
+    setInterval:() => {}, setTimeout, clearTimeout, console:{ error:() => {} }, addEventListener:() => {},
     fetch:(url,options) => {
       if (failWrites && url === '/api/storage' && options?.method === 'POST') return Promise.reject(new Error('Network disconnected'));
       return fetch(base+url,{ ...options, headers:{ ...options?.headers, cookie } });
@@ -86,7 +86,7 @@ test('browser outbox survives interrupted writes and reload; SQLite reset reject
     assert.equal(JSON.parse(values.get(OUTBOX)).queue.length,2);
     assert.equal(snapshot(db).entries.jxidle,'{"name":"Imported"}');
     const reloaded = await boot(base,values);
-    assert.deepEqual(Array.from(reloaded.loadedScripts),['data.js?v=622','setvi.js?v=622','app/game.js?v=622']);
+    assert.deepEqual(Array.from(reloaded.loadedScripts),['data.js?v=622','setvi.js?v=622','jxlook.js?v=622','app/game.js?v=622']);
     assert.equal(snapshot(db).entries.jxidle,'{"name":"Updated"}');
     assert.equal(snapshot(db).entries.jxidle_bak,'{"name":"Imported"}');
     assert.equal(reloaded.localStorage.getItem('jxidle'),' {"name":"Updated"}'.trim());
@@ -100,7 +100,7 @@ test('browser outbox survives interrupted writes and reload; SQLite reset reject
     assert.equal(values.get('unrelated'),'keep');
     assert.deepEqual(snapshot(db).entries,{});
     const legacyUrl = await boot(base,values,{ search:'?backup=1' });
-    assert.deepEqual(Array.from(legacyUrl.loadedScripts),['data.js?v=622','setvi.js?v=622','app/game.js?v=622']);
+    assert.deepEqual(Array.from(legacyUrl.loadedScripts),['data.js?v=622','setvi.js?v=622','jxlook.js?v=622','app/game.js?v=622']);
   } finally { await app.close(); db.close(); }
 });
 
@@ -135,4 +135,52 @@ test('recruitment settings are written to SQLite, restored in a fresh browser, a
     assert.equal(restored.load().fields.map, '9002');
     assert.equal(JSON.parse(snapshot(db).entries.jxidle_battlefield_settings_1).fields.map, '9001');
   } finally { await app.close(); db.close(); }
+});
+
+test('autosave safely retries the same batch after the server committed but its response was lost', async () => {
+  const db = openDatabase(':memory:');
+  const { app, server } = createServer({ db, downloadAssets:false });
+  await app.ready();
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const nativeFetch = globalThis.fetch;
+  try {
+    const client = await boot(base, new Map());
+    const batches = [];
+    globalThis.fetch = async (url, options) => {
+      const response = await nativeFetch(url, options);
+      if (url === base + '/api/storage' && options?.method === 'POST') {
+        batches.push(JSON.parse(options.body));
+        if (batches.length === 1) throw new TypeError('Failed to fetch');
+      }
+      return response;
+    };
+    client.localStorage.setItem('jxidle', 'saved-after-disconnect');
+    await client.localGameStorage.flush();
+    assert.equal(batches.length, 2);
+    assert.equal(batches[0].id, batches[1].id);
+    assert.equal(client.localGameStorage.pending, 0);
+    assert.equal(snapshot(db).entries.jxidle, 'saved-after-disconnect');
+    assert.equal(db.prepare('SELECT count(*) AS n FROM account_batches WHERE id=?').get(batches[0].id).n, 1);
+  } finally { globalThis.fetch = nativeFetch; await app.close(); db.close(); }
+});
+
+test('bootstrap reports the failing API endpoint and bounds retries', async () => {
+  for (const kind of ['network', 'gateway', 'html']) {
+    let calls = 0;
+    const status = { style:{} };
+    class Storage {}
+    const sandbox = { Storage, localStorage:{}, AbortSignal, console:{ error:() => {} },
+      document:{ createElement:() => status, body:{ appendChild:() => {} } },
+      fetch:async () => {
+        calls++;
+        if (kind === 'network') throw new TypeError('Failed to fetch');
+        return kind === 'gateway' ? new Response('{}', { status:503 }) : new Response('<html>');
+      } };
+    sandbox.window = sandbox;
+    await vm.runInNewContext(source, sandbox);
+    assert.equal(calls, kind === 'html' ? 1 : 2);
+    assert.match(status.textContent, /Không thể mở game: \/api\/config:/);
+    assert.match(status.textContent, kind === 'html' ? /JSON/ : kind === 'gateway' ? /503/ : /Failed to fetch/);
+  }
 });
