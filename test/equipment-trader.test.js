@@ -280,3 +280,75 @@ test('arena retains its field trader and shows only the town placement when visi
   assert.equal(trader.entities().length, 1);
   assert.equal(trader.entities()[0].x, s.O0.w / 2 - 350);
 });
+
+test('every tier offers all equipment groups, previews and awards the exact selected tier', () => {
+  const s = game(), trader = s.equipmentTrader;
+  const before = JSON.stringify(s.S.items);
+  for (const sex of [0, 1]) for (let level = 1; level <= 10; level++) {
+    const catalog = trader.blueCatalog(sex, level);
+    assert.deepEqual([...new Set(catalog.map(item => item.d))].sort(), [0,1,2,3,4,5,6,7,8,9]);
+    assert.equal(new Set(catalog.map(item => item.key)).size, catalog.length);
+    for (const item of catalog) {
+      assert.equal(item.lvl, level);
+      assert.ok(item.req.every(([id, value]) => id !== 38 || value < 0 || value === sex));
+      const pick = { ...selection(s, item), sex, level };
+      const [preview] = trader.preview(pick);
+      s.o.inv = [];
+      const [received] = trader.trade(pick);
+      for (const result of [preview, received]) {
+        assert.equal(result.lvl, level);
+        assert.equal(result.n, item.n);
+        assert.deepEqual(JSON.parse(JSON.stringify(result.base)), JSON.parse(JSON.stringify(item.base)));
+        assert.deepEqual(JSON.parse(JSON.stringify(result.req)), JSON.parse(JSON.stringify(item.req.map(row => row[0] === 37 && row[1] >= 0 ? [37, pick.series] : row))));
+      }
+    }
+    const weapon = catalog.find(item => item.d === 0);
+    const kit = trader.compatiblePreview({ ...selection(s, weapon), sex, level });
+    assert.equal(kit.length, 10);
+    assert.ok(kit.every(entry => entry.item.lvl === level));
+    const eq = Object.fromEntries(kit.map(entry => [entry.slot, entry.item]));
+    assert.ok(kit.every(entry => s.Dt(entry.item, eq) >= 2));
+  }
+  for (const level of [0, 11, 1.5, 'all', null, NaN]) {
+    assert.throws(() => trader.blueCatalog(0, level), /cấp trang bị/);
+    const pick = { ...selection(s), level };
+    assert.throws(() => trader.trade(pick), /cấp trang bị/);
+  }
+  assert.equal(JSON.stringify(s.S.items), before);
+});
+
+test('tier filter defaults from character level, has ten single choices and keeps every action on that tier', () => {
+  const s = game(), trader = s.equipmentTrader;
+  const root = () => s.m('#mBody .equipment-trader');
+  const click = dataset => root().onclick({ target: { closest: () => ({ dataset, hasAttribute: name => name === 'data-trader-receive' && 'traderReceive' in dataset || name === 'data-trader-compatible' && 'traderCompatible' in dataset }) } });
+  const change = (field, value) => root().onchange({ target: { dataset: { trader: field }, value } });
+  const filter = () => s.html.match(/<select data-trader="level">([\s\S]*?)<\/select>/)[1];
+  for (const sex of [0, 1]) for (const level of [1, 6, 7, 13, 25, 33, 59, 60, 81, 150]) {
+    Object.assign(s.o, { sex, lvl: level });
+    trader.open();
+    const eligible = s.S.items[2].list.filter(item => item.req.every(([id, value]) =>
+      id !== 36 && id !== 38 || value < 0 || (id === 36 ? value <= level : value === sex)));
+    const expected = Math.max(1, ...eligible.map(item => item.lvl));
+    assert.match(filter(), new RegExp(`value="${expected}" selected`));
+    assert.equal((filter().match(/<option /g) || []).length, 10);
+    assert.doesNotMatch(filter(), /all|Tất cả|multiple/);
+  }
+  for (let tier = 1; tier <= 10; tier++) {
+    change('level', String(tier));
+    assert.match(filter(), new RegExp(`value="${tier}" selected`));
+    assert.match(s.html, new RegExp(`món · cấp ${tier}`));
+    click({ traderChoice: 'slot', value: '0' });
+    assert.match(s.html, new RegExp(`9 món xanh cấp ${tier}`));
+    click({ traderKind: 'gold' });
+    click({ traderKind: 'blue' });
+    assert.match(filter(), new RegExp(`value="${tier}" selected`));
+    s.o.inv = [];
+    click({ traderReceive: '' });
+    assert.equal(s.o.inv.length, 1);
+    assert.equal(s.o.inv[0].lvl, tier);
+    s.o.inv = [];
+    click({ traderCompatible: '' });
+    assert.equal(s.o.inv.length, 10);
+    assert.ok(s.o.inv.every(item => item.lvl === tier));
+  }
+});
