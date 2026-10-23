@@ -18,6 +18,13 @@ pub struct WorkspaceState(pub Arc<Mutex<Option<Workspace>>>);
 pub struct Workspace {
     root: PathBuf,
     monsters: Value,
+    image_revisions: Mutex<BTreeMap<PathBuf, ImageRevision>>,
+}
+struct ImageRevision {
+    size: u64,
+    modified: std::time::SystemTime,
+    created: Option<std::time::SystemTime>,
+    hash: String,
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -146,6 +153,7 @@ fn snapshot(workspace: &Workspace) -> Result<Snapshot> {
                 bytes.extend(&data);
                 let value =
                     serde_json::from_slice(&data).map_err(|e| format!("{relative}: {e}"))?;
+                track_image_revisions(workspace, &id, &value, &mut bytes)?;
                 if name == "map.json" {
                     maps.push(value)
                 } else {
@@ -172,6 +180,49 @@ fn snapshot(workspace: &Workspace) -> Result<Snapshot> {
         revision: hash(&bytes),
     })
 }
+
+// Content hashes also stay stable when a failed Save restores the same image bytes.
+// Missing Test-map images participate, so importing/deleting them changes revision.
+fn track_image_revisions(workspace: &Workspace, id: &str, value: &Value, bytes: &mut Vec<u8>) -> Result<()> {
+    let mut images = Vec::new();
+    if let Some(layers) = value["layers"].as_array() {
+        for layer in layers {
+            if let Some(image) = layer["image"].as_str() { images.push(image); }
+            if let Some(objects) = layer["objects"].as_array() {
+                for object in objects {
+                    if let Some(image) = object["image"].as_str() { images.push(image); }
+                }
+            }
+        }
+    }
+    if let Some(originals) = value["originalImages"].as_object() {
+        images.extend(originals.values().filter_map(Value::as_str));
+    }
+    images.sort();
+    images.dedup();
+    for image in images {
+        let local = image.strip_prefix("./").ok_or("Ảnh phải nằm trong map")?;
+        let relative = format!("public/app/maps/content/{id}/{local}");
+        let target = transactions::safe_target(&workspace.root, &relative)?;
+        let mut cache = workspace.image_revisions.lock().map_err(|e| e.to_string())?;
+        let stamp = match fs::metadata(&target) {
+            Ok(meta) if meta.is_file() => {
+                let modified = meta.modified().map_err(|e| e.to_string())?;
+                let created = meta.created().ok();
+                if !cache.get(&target).is_some_and(|entry| entry.size == meta.len() && entry.modified == modified && entry.created == created) {
+                    let fingerprint = hash(&fs::read(&target).map_err(|e| e.to_string())?);
+                    cache.insert(target.clone(), ImageRevision { size:meta.len(), modified, created, hash:fingerprint });
+                }
+                Some(cache[&target].hash.clone())
+            }
+            Ok(_) => return Err(format!("Ảnh không phải file: {relative}")),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => { cache.remove(&target); None }
+            Err(error) => return Err(error.to_string()),
+        };
+        bytes.extend(serde_json::to_vec(&(relative, stamp)).map_err(|e| e.to_string())?);
+    }
+    Ok(())
+}
 #[tauri::command]
 pub async fn open_workspace(
     root: Option<String>,
@@ -186,7 +237,7 @@ pub async fn open_workspace(
             None,
         )?)
         .map_err(|e| e.to_string())?;
-        let workspace = Workspace { root, monsters };
+        let workspace = Workspace { root, monsters, image_revisions:Mutex::default() };
         let result = snapshot(&workspace)?;
         *shared.lock().map_err(|e| e.to_string())? = Some(workspace);
         Ok(result)
@@ -216,13 +267,14 @@ fn asset_target(workspace: &Workspace, path: &str) -> Result<PathBuf> {
             .any(|monster| monster["image"].as_str() == Some(path))
     });
     if !transactions::image_path(&path) || (!map_asset && !monster_asset && !npc_asset) {
-        return Err("Ảnh map phải nằm trong src/client/maps/content".into());
+        return Err("Ảnh map phải nằm trong public/app/maps/content".into());
     }
-    let relative = if map_asset || npc_asset {
+    let relative = if npc_asset {
         format!("src/client/{}", &path[4..])
     } else {
         format!("public/{path}")
     };
+    if map_asset { transactions::safe_target(&workspace.root, &relative)?; }
     let target = workspace
         .root
         .join(relative)
@@ -231,7 +283,7 @@ fn asset_target(workspace: &Workspace, path: &str) -> Result<PathBuf> {
     let allowed_root = if npc_asset {
         workspace.root.join("src/client/npcs/assets")
     } else if map_asset {
-        workspace.root.join("src/client/maps/content")
+        workspace.root.join("public/app/maps/content")
     } else {
         workspace.root.join("public")
     };
@@ -323,7 +375,7 @@ mod asset_tests {
         fs::write(root.join("src/client/npcs/catalog.json"), br#"[{"image":"app/npcs/assets/horse.webp"}]"#).unwrap();
         fs::write(root.join("src/client/npcs/assets/horse.webp"), b"sprite").unwrap();
         fs::write(root.join("src/client/npcs/assets/unlisted.webp"), b"unlisted").unwrap();
-        let workspace = Workspace { root: root.canonicalize().unwrap(), monsters: json!([]) };
+        let workspace = Workspace { root: root.canonicalize().unwrap(), monsters: json!([]), image_revisions:Mutex::default() };
         assert!(asset_target(&workspace, "app/npcs/assets/horse.webp").is_ok());
         assert!(asset_target(&workspace, "app/npcs/assets/unlisted.webp").is_err());
         assert!(asset_target(&workspace, "app/npcs/assets/../catalog.json").is_err());
@@ -338,10 +390,10 @@ mod asset_tests {
     #[test]
     fn reads_map_local_artwork_and_catalogued_monsters_only() {
         let root = std::env::temp_dir().join(format!("map-assets-{}", std::process::id()));
-        fs::create_dir_all(root.join("src/client/maps/content/2/assets")).unwrap();
+        fs::create_dir_all(root.join("public/app/maps/content/2/assets")).unwrap();
         fs::create_dir_all(root.join("public/img/z")).unwrap();
         fs::write(
-            root.join("src/client/maps/content/2/assets/ground.jpg"),
+            root.join("public/app/maps/content/2/assets/ground.jpg"),
             b"image",
         )
         .unwrap();
@@ -350,6 +402,7 @@ mod asset_tests {
         let workspace = Workspace {
             root: root.canonicalize().unwrap(),
             monsters: json!([{ "image": "img/monster.png" }]),
+            image_revisions:Mutex::default(),
         };
         assert!(asset_target(&workspace, "app/maps/content/2/assets/ground.jpg").is_ok());
         assert!(asset_target(&workspace, "img/monster.png").is_ok());
@@ -359,11 +412,142 @@ mod asset_tests {
         {
             std::os::unix::fs::symlink(
                 root.join("public/img/z/2.jpg"),
-                root.join("src/client/maps/content/2/assets/outside.jpg"),
+                root.join("public/app/maps/content/2/assets/outside.jpg"),
             )
             .unwrap();
             assert!(asset_target(&workspace, "app/maps/content/2/assets/outside.jpg").is_err());
         }
         fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod save_integration_tests {
+    use super::*;
+    use base64::Engine;
+
+    struct Fixture(Workspace);
+    impl Drop for Fixture {
+        fn drop(&mut self) { let _ = fs::remove_dir_all(&self.0.root); }
+    }
+    fn copy_tree(from: &Path, to: &Path) {
+        fs::create_dir_all(to).unwrap();
+        for entry in fs::read_dir(from).unwrap().map(|entry| entry.unwrap()) {
+            let destination = to.join(entry.file_name());
+            if entry.file_type().unwrap().is_dir() { copy_tree(&entry.path(), &destination); }
+            else { fs::copy(entry.path(), destination).unwrap(); }
+        }
+    }
+    fn fixture() -> Fixture {
+        let repository = Path::new(env!("CARGO_MANIFEST_DIR")).ancestors().nth(3).unwrap();
+        let root = std::env::temp_dir().join(format!("map-tool-integration-{}-{}", std::process::id(),
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        for directory in ["src/client", "tools/maps", "tools/map-tool/src/lib"] {
+            copy_tree(&repository.join(directory), &root.join(directory));
+        }
+        for file in ["tools/build-app.js", "tsconfig.json"] {
+            fs::copy(repository.join(file), root.join(file)).unwrap();
+        }
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(repository.join("node_modules"), root.join("node_modules")).unwrap();
+        #[cfg(windows)]
+        std::os::windows::fs::symlink_dir(repository.join("node_modules"), root.join("node_modules")).unwrap();
+        Fixture(Workspace { root: root.canonicalize().unwrap(), monsters: json!([]), image_revisions:Mutex::default() })
+    }
+    fn png() -> Vec<u8> {
+        base64::engine::general_purpose::STANDARD.decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN2kAAAAASUVORK5CYII=").unwrap()
+    }
+    fn asset(path: &str, bytes: &[u8]) -> Value {
+        json!({"path":path,"data":base64::engine::general_purpose::STANDARD.encode(bytes)})
+    }
+    fn document(workspace: &Workspace, id: u64) -> Value {
+        let current = snapshot(workspace).unwrap();
+        let mut encounters = current.encounters;
+        let mut profile = encounters[0].clone();
+        profile["id"] = json!(format!("map-{id}")); profile["mapId"] = json!(id);
+        profile.as_object_mut().unwrap().remove("alternate");
+        encounters.as_array_mut().unwrap().push(profile);
+        let mut progression = current.progression;
+        progression.as_array_mut().unwrap().push(json!({"mapId":id,"alternateMapIds":[]}));
+        json!({"map":{"schemaVersion":1,"id":id,"name":"Integration map","status":"available",
+            "size":{"width":256,"height":128},"entry":{"x":128,"y":64},
+            "layers":[{"id":"ground","type":"ground","image":"./assets/default.png"},
+                {"id":"world","type":"world","objects":[]}],"navigation":{"kind":"open"},"spawns":[]},
+            "project":{"schemaVersion":1,"mapId":id,"paintedNavigation":{"kind":"open"},"colliders":{},
+                "originalImages":{"ground":"./assets/default.png"}},"encounters":encounters,"progression":progression,
+            "assets":[asset("./assets/default.png", &png())]})
+    }
+    fn request(document: &Value, current: &Snapshot, is_new: bool) -> SaveRequest {
+        SaveRequest { document:document.clone(), expected_revision:current.revision.clone(), is_new }
+    }
+
+    #[test]
+    fn opens_current_repository_with_public_images_without_writing() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).ancestors().nth(3).unwrap().canonicalize().unwrap();
+        let workspace = Workspace { root, monsters:json!([]), image_revisions:Mutex::default() };
+        let current = snapshot(&workspace).unwrap();
+        assert!(current.maps.iter().any(|map| map["id"] == 37));
+        assert!(!current.revision.is_empty());
+        assert!(asset_target(&workspace, "app/maps/content/2/assets/ground.jpg").is_ok());
+    }
+
+    #[test]
+    fn native_save_create_clone_replace_rollback_and_reopen_use_public_artwork() {
+        let fixture = fixture(); let workspace = &fixture.0;
+        let id = 999995;
+        let mut doc = document(workspace, id);
+        let initial = snapshot(workspace).unwrap();
+        let mut current = save(request(&doc, &initial, true), workspace).unwrap();
+        assert!(workspace.root.join(format!("src/client/maps/content/{id}/map.json")).exists());
+        assert!(!workspace.root.join(format!("src/client/maps/content/{id}/assets/default.png")).exists());
+        let public = workspace.root.join(format!("public/app/maps/content/{id}/assets"));
+        assert_eq!(fs::read(public.join("default.png")).unwrap(), png());
+        assert!(asset_target(workspace, &format!("app/maps/content/{id}/assets/default.png")).is_ok());
+        assert!(save(request(&doc, &current, true), workspace).err().unwrap().contains("đã tồn tại"));
+
+        doc["map"]["layers"][0]["image"] = json!("./assets/ground.png");
+        doc["map"]["layers"][1]["objects"] = json!([{"id":"tree","image":"./assets/tree.png",
+            "position":{"x":80,"y":40},"anchor":{"x":1,"y":1},"scale":1,"depthOffsetY":0}]);
+        doc["assets"] = json!([asset("./assets/ground.png", &png()), asset("./assets/tree.png", &png())]);
+        current = save(request(&doc, &current, false), workspace).unwrap();
+        assert_eq!(fs::read(public.join("default.png")).unwrap(), png());
+        assert!(public.join("tree.png").exists());
+
+        let mut clone = doc.clone(); let clone_id = 999996;
+        clone["map"]["id"] = json!(clone_id); clone["map"]["status"] = json!("test");
+        clone["project"]["mapId"] = json!(clone_id);
+        clone["assets"] = json!([asset("./assets/default.png", &png()), asset("./assets/ground.png", &png()), asset("./assets/tree.png", &png())]);
+        current = save(request(&clone, &current, true), workspace).unwrap();
+        assert!(workspace.root.join(format!("public/app/maps/content/{clone_id}/assets/tree.png")).exists());
+        assert_eq!(fs::read(public.join("tree.png")).unwrap(), png());
+
+        doc["map"]["layers"][0]["image"] = json!("./assets/ground.webp");
+        doc["map"]["layers"].as_array_mut().unwrap().pop(); // Existing world-layer deletion.
+        doc["assets"] = json!([asset("./assets/ground.webp", b"RIFF1234WEBPnew")]);
+        let build_path = workspace.root.join("tools/build-app.js");
+        let build = fs::read(&build_path).unwrap();
+        fs::write(&build_path, "throw new Error('integration build failure')").unwrap();
+        let error = save(request(&doc, &current, false), workspace).err().unwrap();
+        assert!(error.contains("rollback"), "{error}");
+        assert!(public.join("ground.png").exists());
+        assert!(!public.join("ground.webp").exists());
+        assert_eq!(snapshot(workspace).unwrap().revision, current.revision, "rollback preserves the revision so Save can be retried");
+        fs::write(build_path, build).unwrap();
+        current = save(request(&doc, &current, false), workspace).unwrap();
+        assert!(!public.join("ground.png").exists());
+        assert!(public.join("ground.webp").exists());
+        assert!(public.join("default.png").exists());
+        assert!(public.join("tree.png").exists(), "historical object artwork is preserved");
+        let reopened = Workspace { root:check_root(workspace.root.clone()).unwrap(), monsters:json!([]), image_revisions:Mutex::default() };
+        assert_eq!(snapshot(&reopened).unwrap().revision, current.revision);
+        let map = current.maps.iter().find(|map| map["id"] == id).unwrap();
+        assert_eq!(map["layers"].as_array().unwrap().len(), 1);
+        assert_eq!(map["layers"][0]["image"], "./assets/ground.webp");
+
+        let mut changed = png(); changed[0] ^= 1;
+        fs::write(public.join("default.png"), changed).unwrap();
+        let error = save(request(&doc, &current, false), workspace).err().unwrap();
+        assert!(error.contains("thay đổi bên ngoài"), "{error}");
+        assert_eq!(fs::read(public.join("ground.webp")).unwrap(), b"RIFF1234WEBPnew");
     }
 }

@@ -50,7 +50,7 @@ export function validate(document: EditorInput, availableAssets: string[]): void
     let relative: string;
     try { relative = model.resolveMapAsset(document.map.id, asset); }
     catch { throw new Error(`Đường dẫn ảnh phải nằm trong thư mục map: ${asset}`); }
-    const target = path.join(root, relative.replace(/^app\//, 'src/client/')), mapRoot = path.join(root, 'src/client/maps/content');
+    const target = path.join(root, 'public/' + relative), mapRoot = path.join(root, 'public/app/maps/content', String(document.map.id));
     if (fs.existsSync(target)) {
       const resolved = fs.realpathSync(target);
       if (!resolved.startsWith(fs.realpathSync(mapRoot) + path.sep)) throw new Error(`Đường dẫn ảnh nằm ngoài thư mục map: ${asset}`);

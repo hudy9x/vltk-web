@@ -25,7 +25,9 @@ pub fn allowed(path: &str) -> bool {
     ) {
         return true;
     }
-    let Some(rest) = path.strip_prefix("src/client/maps/content/") else {
+    let public_image = path.starts_with("public/app/maps/content/");
+    let Some(rest) = path.strip_prefix("src/client/maps/content/")
+        .or_else(|| path.strip_prefix("public/app/maps/content/")) else {
         return false;
     };
     let Some((id, file)) = rest.split_once('/') else {
@@ -34,7 +36,8 @@ pub fn allowed(path: &str) -> bool {
     if id.parse::<u32>().ok().filter(|id| *id > 0).is_none() {
         return false;
     }
-    matches!(file, "map.json" | "project.json") || image_path(file)
+    // Accept old image journal paths so interrupted pre-migration saves can recover.
+    if public_image { image_path(file) } else { matches!(file, "map.json" | "project.json") || image_path(file) }
 }
 pub fn image_path(path: &str) -> bool {
     let lower = path.to_ascii_lowercase();
@@ -53,6 +56,14 @@ pub fn safe_target(root: &Path, relative: &str) -> Result<PathBuf> {
         return Err(format!("Đường dẫn ghi không được phép: {relative}"));
     }
     let target = root.join(relative);
+    // A link to a sibling map is inside the workspace but still crosses ownership.
+    let mut component_path = root.to_path_buf();
+    for component in Path::new(relative).components() {
+        component_path.push(component);
+        if component_path.symlink_metadata().is_ok_and(|meta| meta.file_type().is_symlink()) {
+            return Err("Không ghi qua symbolic link".into());
+        }
+    }
     let mut ancestor = target.as_path();
     while !ancestor.exists() {
         ancestor = ancestor.parent().ok_or("Đường dẫn không hợp lệ")?;
@@ -250,6 +261,8 @@ mod tests {
         ] {
             assert!(!allowed(path), "{path}");
         }
+        assert!(allowed("public/app/maps/content/2/assets/tree.png"));
+        assert!(!allowed("public/app/maps/content/2/map.json"));
         assert!(allowed("src/client/maps/content/2/assets/tree.png"));
     }
     #[test]
@@ -351,6 +364,11 @@ mod recovery_tests {
         std::os::unix::fs::symlink(&outside, root.join("src/client/maps/content/2/assets"))
             .unwrap();
         assert!(safe_target(&root, "src/client/maps/content/2/assets/tree.png").is_err());
+        fs::remove_file(root.join("src/client/maps/content/2/assets")).unwrap();
+        fs::create_dir_all(root.join("public/app/maps/content/3/assets")).unwrap();
+        fs::create_dir_all(root.join("public/app/maps/content/2")).unwrap();
+        std::os::unix::fs::symlink(root.join("public/app/maps/content/3/assets"), root.join("public/app/maps/content/2/assets")).unwrap();
+        assert!(safe_target(&root, "public/app/maps/content/2/assets/tree.png").is_err(), "links into another map inside the same workspace must also be rejected");
         fs::remove_dir_all(root).unwrap();
         fs::remove_dir_all(outside).unwrap();
     }

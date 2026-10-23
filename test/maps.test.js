@@ -37,7 +37,7 @@ test('all map artwork is local to its map folder and Test maps are excluded from
       assert.ok(image.startsWith('./'), `${id}: ${image}`);
       const resolved = engine.resolveMapAsset(map.id, image);
       assert.ok(resolved.startsWith(`app/maps/content/${id}/`));
-      if (map.status !== 'test') assert.ok(fs.existsSync(path.join(__dirname, '..', resolved.replace(/^app\//, 'src/client/'))), resolved);
+      if (map.status !== 'test') assert.ok(fs.existsSync(path.join(__dirname, '..', 'public/' + resolved)), resolved);
     }
     assert.equal(manifest.maps[id], map.status || 'available');
     if (map.status === 'test') { assert.equal(engine.getMap(map.id), undefined); assert.equal(catalog.navigation[id], undefined); }
@@ -316,12 +316,12 @@ test('local map sprites are served while arbitrary source files remain private',
   const { openDatabase } = require('../src/server/database.ts');
   const { createServer } = require('../src/server/index.ts');
   const db = openDatabase(':memory:'), { app } = createServer({ db, downloadAssets: false });
-  const filename = `probe-${randomUUID()}.png`, relative = `src/client/maps/content/2/${filename}`;
+  const filename = `probe-${randomUUID()}.png`, relative = `public/app/maps/content/2/${filename}`;
   const absolute = path.join(__dirname, '..', relative);
   const bytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN2kAAAAASUVORK5CYII=', 'base64');
   try {
     fs.writeFileSync(absolute, bytes);
-    const result = await app.inject({ method: 'GET', url: '/' + relative.replace(/^src\/client\//, 'app/') });
+    const result = await app.inject({ method: 'GET', url: '/' + relative.replace(/^public\//, '') });
     assert.equal(result.statusCode, 200); assert.deepEqual(result.rawPayload, bytes);
     for (const url of ['/app/maps/not-a-bundled-module.ts', '/app/maps/content/2/not-public.ts', '/app/maps/content/2/.secret.png', '/server/index.ts']) {
       assert.equal((await app.inject({ method: 'GET', url })).statusCode, 404, url);

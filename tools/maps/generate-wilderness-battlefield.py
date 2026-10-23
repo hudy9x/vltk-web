@@ -14,7 +14,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter, ImageOp
 
 
 ROOT = Path(__file__).resolve().parents[2] / 'src/client/maps/content/9003'
-ASSETS = ROOT / 'assets'
+ASSETS = Path(__file__).resolve().parents[2] / 'public/app/maps/content/9003/assets'
 SOURCE = ASSETS / 'source'
 SIZE = 3584
 SEED = 9003
@@ -309,7 +309,7 @@ def build():
         'patrolPoints': patrol, 'patrolMirror': 'center', 'seed': SEED}, indent=2)+'\n')
     preview = Image.alpha_composite(ground.convert('RGBA'), shadow_layer)
     for obj in sorted(objects, key=lambda obj: obj['position']['y'] + obj['depthOffsetY']):
-        sprite = Image.open(ROOT / obj['image']).convert('RGBA')
+        sprite = Image.open(ASSETS.parent / obj['image']).convert('RGBA')
         scale = obj['scale']
         sprite = sprite.resize((round(sprite.width*scale), round(sprite.height*scale)), Image.Resampling.LANCZOS)
         preview.alpha_composite(sprite, (round(obj['position']['x']-obj['anchor']['x']*scale),

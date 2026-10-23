@@ -386,10 +386,12 @@ export default function App() {
       const data = base64(await file.arrayBuffer());
       const image = new Image();
       const url = URL.createObjectURL(file);
-      image.src = url;
-      await image.decode();
-      URL.revokeObjectURL(url);
+      try {
+        image.src = url;
+        await image.decode();
+      } finally { URL.revokeObjectURL(url); }
       const next = cloneDocument(document);
+      let importedSelection: Selection | undefined;
       if (target.kind === "layer") {
         const layer = next.map.layers.find(layer => layer.id === target.id);
         if (!layer || !("image" in layer)) throw new Error("Layer không có ảnh.");
@@ -424,10 +426,14 @@ export default function App() {
             scale: 1,
             depthOffsetY: 0,
           });
-          setSelection({ kind: "object", layerId: layer.id, id });
+          importedSelection = { kind: "object", layerId: layer.id, id };
         }
       }
+      // Decode/readAsset may finish after switching maps, saving, or another edit.
+      if (state.current.document !== document || state.current.busy)
+        throw new Error("Map đã thay đổi trong lúc nhập ảnh. Hãy chọn lại ảnh trên bản đang mở.");
       change(next);
+      if (importedSelection) setSelection(importedSelection);
       setLeftTab("layers");
     } catch (error) {
       setError(String(error));

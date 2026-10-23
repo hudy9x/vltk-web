@@ -53,9 +53,10 @@ pub(crate) fn plan_assets(
     id: u64,
     document: &Value,
 ) -> Result<(Vec<(String, Vec<u8>)>, Vec<String>, Vec<String>)> {
-    let prefix = format!("src/client/maps/content/{id}");
-    let old_map_path = root.join(format!("{prefix}/map.json"));
-    let old_project_path = root.join(format!("{prefix}/project.json"));
+    let prefix = format!("public/app/maps/content/{id}");
+    let document_prefix = format!("src/client/maps/content/{id}");
+    let old_map_path = root.join(format!("{document_prefix}/map.json"));
+    let old_project_path = root.join(format!("{document_prefix}/project.json"));
     let old_map = if old_map_path.exists() {
         read_json(&old_map_path)?
     } else {
@@ -204,7 +205,8 @@ mod managed_image_tests {
                 .unwrap()
                 .as_nanos()
         ));
-        fs::create_dir_all(root.join("src/client/maps/content/2/assets")).unwrap();
+        fs::create_dir_all(root.join("public/app/maps/content/2/assets")).unwrap();
+        fs::create_dir_all(root.join("src/client/maps/content/2")).unwrap();
         root.canonicalize().unwrap()
     }
     fn asset(path: &str, bytes: &[u8]) -> Value {
@@ -233,7 +235,7 @@ mod managed_image_tests {
     #[test]
     fn archives_once_overwrites_current_and_removes_previous_extension_atomically() {
         let root = fixture();
-        let folder = root.join("src/client/maps/content/2/assets");
+        let folder = root.join("public/app/maps/content/2/assets");
         let jpg = b"\xff\xd8original";
         let png1 = b"\x89PNG\r\n\x1a\nfirst";
         let png2 = b"\x89PNG\r\n\x1a\nsecond";
@@ -314,7 +316,7 @@ mod managed_image_tests {
         assert!(
             writes
                 .iter()
-                .all(|(path, _)| path.starts_with("src/client/maps/content/2/"))
+                .all(|(path, _)| path.starts_with("public/app/maps/content/2/"))
         );
         apply(&root, &clone, false).unwrap();
         let unchanged = doc("./assets/ground.png", "./assets/default.jpg", vec![]);
@@ -353,7 +355,7 @@ mod managed_image_tests {
             .push(json!({"id":"world","type":"world","objects":[{"image":"./assets/ground.png"}]}));
         assert!(plan_assets(&root, 2, &shared).is_err());
         assert_eq!(
-            fs::read(root.join("src/client/maps/content/2/assets/ground.png")).unwrap(),
+            fs::read(root.join("public/app/maps/content/2/assets/ground.png")).unwrap(),
             first
         );
         fs::remove_dir_all(root).unwrap();

@@ -2,31 +2,25 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 
-/** One-time, idempotent move. Existing destination bytes must match exactly. */
+/** Idempotently move map artwork to public, preserving browser URLs and JSON references. */
 export function migrateMapAssets(root: string): void {
-  const content = path.join(root, 'src/client/maps/content');
-  for (const id of fs.readdirSync(content).filter(name => /^[1-9]\d*$/.test(name))) {
-    const filename = path.join(content, id, 'map.json');
-    const map = JSON.parse(fs.readFileSync(filename, 'utf8'));
-    let missing = false;
-    const migrate = (image: string): string => {
-      if (!image.startsWith('img/z/')) return image;
-      const target = `src/client/maps/content/${id}/assets/ground${path.extname(image)}`;
-      const source = path.join(root, 'public', image), destination = path.join(root, target);
-      if (fs.existsSync(source)) {
-        fs.mkdirSync(path.dirname(destination), { recursive: true });
-        const hash = (file: string) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-        if (fs.existsSync(destination) && hash(source) !== hash(destination)) throw new Error(`Asset collision: ${target}`);
-        fs.renameSync(source, destination);
-      } else if (!fs.existsSync(destination)) missing = true;
-      return `./assets/ground${path.extname(image)}`;
-    };
-    for (const layer of map.layers) {
-      if (layer.image) layer.image = migrate(layer.image);
-      for (const object of layer.objects || []) object.image = migrate(object.image);
-    }
-    map.status ??= missing ? 'test' : 'available';
-    fs.writeFileSync(filename, JSON.stringify(map, null, 2) + '\n');
+  const sourceRoot = path.join(root, 'src/client/maps');
+  const publicRoot = path.join(root, 'public/app/maps');
+  const files = fs.readdirSync(sourceRoot, { recursive: true, withFileTypes: true })
+    .filter(entry => entry.isFile() && /\.(?:png|jpe?g|webp)$/i.test(entry.name))
+    .map(entry => {
+      const source = path.join(entry.parentPath, entry.name);
+      return { source, destination: path.join(publicRoot, path.relative(sourceRoot, source)) };
+    });
+  const hash = (file: string) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+  // Check every collision before moving any bytes.
+  for (const { source, destination } of files) {
+    if (fs.existsSync(destination) && hash(source) !== hash(destination)) throw new Error(`Asset collision: ${destination}`);
+  }
+  for (const { source, destination } of files) {
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    if (fs.existsSync(destination)) fs.unlinkSync(source);
+    else fs.renameSync(source, destination);
   }
 }
 if (process.argv[1]?.endsWith('migrate-assets.ts')) migrateMapAssets(process.cwd());

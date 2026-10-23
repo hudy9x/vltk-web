@@ -20,7 +20,7 @@ export function base64(bytes: ArrayBuffer): string {
 }
 export class AssetStore {
   private images = new Map<string, HTMLImageElement>();
-  private urls: string[] = [];
+  private urls = new Map<string, string>();
   private pending = new Map<string, string>();
   private listeners = new Set<() => void>();
   errors = new Set<string>();
@@ -42,6 +42,9 @@ export class AssetStore {
     let changed = false;
     for (const path of new Set([...this.pending.keys(), ...next.keys()])) {
       if (this.pending.get(path) === next.get(path)) continue;
+      const url = this.urls.get(path);
+      if (url) URL.revokeObjectURL(url);
+      this.urls.delete(path);
       this.images.delete(path);
       this.errors.delete(path);
       changed = true;
@@ -55,10 +58,12 @@ export class AssetStore {
     const image = new Image();
     this.images.set(path, image);
     image.onload = () => {
+      if (this.images.get(path) !== image) return;
       this.errors.delete(path);
       this.notify();
     };
     image.onerror = () => {
+      if (this.images.get(path) !== image) return;
       this.errors.add(path);
       this.notify();
     };
@@ -68,19 +73,21 @@ export class AssetStore {
     else
       readAsset(path)
         .then((bytes) => {
+          if (this.images.get(path) !== image) return;
           const url = URL.createObjectURL(new Blob([bytes]));
-          this.urls.push(url);
+          this.urls.set(path, url);
           image.src = url;
         })
         .catch(() => {
+          if (this.images.get(path) !== image) return;
           this.errors.add(path);
           this.notify();
         });
     return image;
   };
   dispose() {
-    this.urls.forEach(URL.revokeObjectURL);
-    this.urls = [];
+    this.urls.forEach(url => URL.revokeObjectURL(url));
+    this.urls.clear();
     this.images.clear();
     this.pending.clear();
     this.errors.clear();

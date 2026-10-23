@@ -6,7 +6,7 @@ Desktop editor dùng **Tauri 2 + React + TypeScript + shadcn/ui**. Làm việc t
 
 Mở tab **NPC**, chọn một trong bốn mẫu (bán đồ, mua máu, Tống Kim, mua ngựa), rồi bấm trên map để đặt. Phím **N** bật công cụ đặt NPC. Bấm **V** để chọn và kéo NPC; có thể chọn NPC từ danh sách bên trái để sửa tọa độ, phe, hướng đứng, tỉ lệ ảnh và animation trong bảng Thuộc tính. Bấm **thùng rác cạnh từng NPC** trong danh sách để xóa trực tiếp, hoặc **Delete** để xóa NPC đang chọn. Xóa riêng NPC của một phe vẫn giữ NPC bên phe còn lại. Undo/Redo hoạt động như các thao tác map khác. **Lưu map** lưu vị trí và build game; reload game để áp dụng.
 
-Hỗ trợ Biện Kinh, Song Doanh và Chéo Doanh. Editor hiện cả hai phe trên map; game chỉ hiện NPC thuộc phe người chơi hoặc NPC không gán phe. Có thể đặt cùng một mẫu nhiều lần. Toàn bộ mẫu và sprite nằm trong [`src/client/npcs`](../../src/client/npcs/README.md), các map chỉ lưu vị trí và ID tham chiếu.
+Hỗ trợ Biện Kinh và Hoang Nguyên. Editor hiện cả hai phe trên map; game chỉ hiện NPC thuộc phe người chơi hoặc NPC không gán phe. Có thể đặt cùng một mẫu nhiều lần. Toàn bộ mẫu và sprite nằm trong [`src/client/npcs`](../../src/client/npcs/README.md), các map chỉ lưu vị trí và ID tham chiếu.
 
 ## Chạy ứng dụng
 
@@ -30,7 +30,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 ## Dùng editor
 
-- Danh sách map theo khoảng cấp luyện công; map phụ nằm ngay dưới map chính, các map ngoài tiến trình ở cuối. Chọn map, tạo mới hoặc nhân bản. Toàn bộ ảnh map nằm trong `src/client/maps/content/<id>/assets/`, được tham chiếu bằng đường dẫn `./assets/...`. Tool từ chối ảnh map ngoài thư mục này; preview quái chỉ đọc ảnh có trong catalog quái.
+- Danh sách map theo khoảng cấp luyện công; map phụ nằm ngay dưới map chính, các map ngoài tiến trình ở cuối. Chọn map, tạo mới hoặc nhân bản. Toàn bộ ảnh map nằm trong `public/app/maps/content/<id>/assets/`, được tham chiếu bằng đường dẫn `./assets/...`. Tool từ chối ảnh map ngoài thư mục này; preview quái chỉ đọc ảnh có trong catalog quái.
 - **Layers** thêm shadow, world, foreground hoặc atmosphere. Chọn layer để thay ảnh/opacity. Thêm PNG/WebP trong suốt vào world, kéo object trên canvas hoặc chỉnh anchor/scale/depth bên phải.
 - **Collision** tô/chặn/xóa theo ô 32×16 (map cũ giữ kích thước ô hiện có). Collider ellipse quanh gốc object được compile cùng vùng tô tay; kéo/xóa object không phá vùng đã tô.
 - **Điểm vào** được dùng khi chọn map luyện công chính/phụ hoặc về thành (Biện Kinh); nếu bị chặn, game chọn vị trí đi được gần nhất. Làm mới cùng bãi giữ tọa độ hiện tại; phó bản/tháp/thuyền giữ vị trí riêng.
@@ -40,7 +40,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 - Map cũ tiếp tục dùng bãi procedural nếu chưa đặt điểm. Map đã chỉnh spawn lưu `spawnMode: "fixed"`; xóa hết điểm sẽ giữ map trống, kể cả sau Save và mở lại.
 - **Gameplay** sửa quái/boss/level/trọng số trang bị. Bộ chọn quái/boss có ảnh local, tìm theo tên/ID và lọc theo khoảng cấp bãi; quái xuất hiện ở nhiều bãi có thể thuộc nhiều nhóm cấp. Asset thiếu hiển thị ảnh thay thế, không tự tải từ mạng. UI liệt kê map bị ảnh hưởng; nhân bản profile riêng để tránh sửa chung. HP và damage vẫn do gameplay tính.
 - **Tiến trình** thêm map mới vào cuối danh sách chính hoặc làm map phụ. Thứ tự map chính cũ được giữ để tương thích save.
-- **Lưu map** validate → compile navigation → ghi JSON/asset theo transaction → tự sinh catalog và build game. Reload game để áp dụng. Nếu file bị sửa từ ngoài, tool chặn Save; bản nháp vẫn còn để bạn đối chiếu trước khi tải lại.
+- **Lưu map** validate → compile navigation → ghi JSON/asset theo transaction → tự sinh catalog và build game. Reload game để áp dụng. Revision theo dõi cả JSON và nội dung ảnh được tham chiếu. Nếu file bị sửa từ ngoài, tool chặn Save; bản nháp vẫn còn để bạn đối chiếu trước khi tải lại.
 - **Thay ảnh nền**: ảnh hiện tại được giữ nguyên byte dưới tên `assets/default.<ext>` ở lần thay đầu tiên. Ảnh mới dùng `assets/ground.<ext>` và các lần sau ghi đè cùng tên. Map mới giữ ảnh tải lên đầu tiên làm default. Khi đổi định dạng, transaction dọn file ground ở định dạng trước; nếu Save/build lỗi thì khôi phục cả ảnh cũ. Ảnh layer khác có slot riêng theo ID; ảnh object không ghi đè lẫn nhau. Undo/Redo khôi phục đúng nội dung ảnh ngay cả khi tên file không đổi. Các file lịch sử khác đã có sẵn không được tự động xóa.
 
 

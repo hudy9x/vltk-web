@@ -4,7 +4,7 @@ Runtime map nằm trong `src/client/maps/`, viết TypeScript strict. Xem [READM
 
 ## Dữ liệu không gian
 
-Tạo `src/client/maps/content/<map-id>/map.json` theo `src/client/maps/types.ts`. Sao chép map hiện có làm điểm bắt đầu; thay ID khớp tên thư mục, tên và kích thước. Asset mới đặt cùng thư mục, tham chiếu `./ground.jpg` hoặc `./objects/tree.png`. Asset dùng chung có thể ở `src/client/maps/objects/`. Ảnh cũ vẫn tham chiếu `img/z/<id>.jpg`.
+Tạo `src/client/maps/content/<map-id>/map.json` theo `src/client/maps/types.ts`. Sao chép map hiện có làm điểm bắt đầu; thay ID khớp tên thư mục, tên và kích thước. Asset mới đặt trong `public/app/maps/content/<map-id>/`, tham chiếu `./ground.jpg` hoặc `./objects/tree.png` trong JSON. URL ảnh là `/app/maps/content/<map-id>/...`; `img/z/...` không còn hợp lệ.
 
 | Trường | Nội dung |
 | --- | --- |

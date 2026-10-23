@@ -15,7 +15,7 @@ Quản lý map qua một tool: tạo mới, sửa nền/layer/object/collision/s
 | Progression | `src/client/maps/progression.json` |
 | Phát hiện map/rebuild JSON | `tools/maps/catalog.ts`, `tools/build-app.js` |
 
-Toàn bộ ảnh map nằm trong `src/client/maps/content/<id>/assets/`, tham chiếu tương đối bằng `./assets/...`. Tool từ chối ảnh map ngoài thư mục map (kể cả symlink thoát thư mục). Preview quái chỉ đọc ảnh có trong catalog quái.
+Toàn bộ ảnh map nằm trong `public/app/maps/content/<id>/assets/`, tham chiếu tương đối bằng `./assets/...`. Tool từ chối ảnh map ngoài thư mục map (kể cả symlink thoát thư mục). Preview quái chỉ đọc ảnh có trong catalog quái.
 
 ## Các màn hình tối thiểu
 

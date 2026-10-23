@@ -470,3 +470,66 @@ test('each image layer has an independent slot and preserves other imported obje
   assert.equal(doc.assets[0], object);
   assert.equal(doc.assets.length, 4);
 });
+
+test('late asset reads cannot resurrect images/errors after switching workspaces or replacing a pending image', async () => {
+  const output = buildSync({ entryPoints:[path.join(root, 'tools/map-tool/src/lib/native.ts')], bundle:true, platform:'node',
+    format:'cjs', write:false, external:['@tauri-apps/api/core'], alias:{ '@game':path.join(root, 'src/client/maps') } });
+  const reads = [], created = [], revoked = [];
+  const context = vm.createContext({ module:{ exports:{} }, Uint8Array, Map, Set, Blob,
+    require:() => ({ invoke:() => new Promise((resolve, reject) => reads.push({ resolve, reject })) }),
+    Image:class { src = ''; }, URL:{ createObjectURL:() => { const url = `blob:${created.length}`; created.push(url); return url; }, revokeObjectURL:url => revoked.push(url) } });
+  vm.runInContext(output.outputFiles[0].text, context);
+  const store = new context.module.exports.AssetStore(), imagePath = 'app/maps/content/2/assets/tree.png';
+  const abandoned = store.imageFor(imagePath);
+  store.dispose();
+  const replacement = store.imageFor(imagePath);
+  reads[0].resolve(new ArrayBuffer(1));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(abandoned.src, ''); assert.equal(created.length, 0);
+  reads[1].resolve(new ArrayBuffer(1));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(replacement.src, 'blob:0');
+  store.syncPending(2, [{ path:'./assets/tree.png', data:'updated' }]);
+  assert.deepEqual(revoked, ['blob:0']);
+  replacement.onerror();
+  assert.equal(store.errors.has(imagePath), false, 'stale Image events cannot mark a current pending asset as broken');
+  store.syncPending(2, []);
+  store.imageFor(imagePath);
+  store.dispose();
+  reads[2].reject(new Error('late failure'));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(store.errors.size, 0);
+});
+
+test('native bridge rejects a map image symlink pointing into a different map', () => {
+  const doc = document(); doc.map.status = 'available'; doc.map.layers[0].image = './assets/linked.png';
+  const imageRoot = path.join(root, 'public/app/maps/content', String(doc.map.id));
+  fs.mkdirSync(path.join(imageRoot, 'assets'), { recursive:true });
+  try {
+    fs.symlinkSync(path.join(root, 'public/app/maps/content/2/assets/ground.jpg'), path.join(imageRoot, 'assets/linked.png'));
+    const result = bridge(doc);
+    assert.notEqual(result.status, 0); assert.match(result.stderr, /ngoài thư mục map/);
+  } finally { fs.rmSync(imageRoot, { recursive:true, force:true }); }
+});
+
+test('every saved editor project compiles its existing navigation and resolves artwork from public', () => {
+  const content = path.join(root, 'src/client/maps/content');
+  const maps = [], projects = {};
+  for (const id of fs.readdirSync(content)) {
+    if (!fs.existsSync(path.join(content, id, 'map.json'))) continue;
+    maps.push(JSON.parse(fs.readFileSync(path.join(content, id, 'map.json'))));
+    if (fs.existsSync(path.join(content, id, 'project.json')))
+      projects[id] = JSON.parse(fs.readFileSync(path.join(content, id, 'project.json')));
+  }
+  for (const map of maps) {
+    const doc = model.createDocument({ maps, projects, encounters, progression }, map);
+    assert.deepEqual(plain(model.validateDocument(doc).navigation), map.navigation, `map #${map.id}`);
+    const originalImages = Object.values(doc.project.originalImages ?? {});
+    const images = map.layers.flatMap(layer => 'image' in layer ? [layer.image]
+      : layer.type === 'world' ? layer.objects.map(object => object.image) : []);
+    for (const image of [...images, ...originalImages]) {
+      const filename = path.join(root, 'public', model.resolveMapAsset(map.id, image));
+      if (map.status !== 'test' || originalImages.includes(image)) assert.ok(fs.existsSync(filename), filename);
+    }
+  }
+});

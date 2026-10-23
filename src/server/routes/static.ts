@@ -42,6 +42,7 @@ export function registerStaticRoutes(app: FastifyInstance, services: ServerServi
     }
     // Keep browser URLs stable while source and public files live separately.
     const filename = relative === 'client/bootstrap.js' ? path.join(CLIENT_ROOT, 'bootstrap.js')
+      : mapAsset ? path.join(PUBLIC_ROOT, relative)
       : relative.startsWith('app/') ? path.join(CLIENT_ROOT, relative.slice(4))
       : path.join(PUBLIC_ROOT, relative);
     // The same worker URL updates existing registrations when switching to development.
