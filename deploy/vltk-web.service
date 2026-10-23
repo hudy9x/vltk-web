@@ -1,0 +1,32 @@
+[Unit]
+Description=Vo Lam Idle web game
+After=network.target
+
+[Service]
+Type=simple
+User=vltk
+Group=vltk
+WorkingDirectory=/opt/vltk-web
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=DB_PATH=/var/lib/vltk-web/game.sqlite
+ExecStart=/usr/bin/node src/server/index.ts
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+StateDirectory=vltk-web
+StateDirectoryMode=0750
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/vltk-web/src/client /opt/vltk-web/public
+RestrictSUIDSGID=true
+UMask=0027
+LimitNOFILE=8192
+MemoryMax=700M
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

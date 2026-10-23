@@ -28,6 +28,8 @@ export function createServer({
     moduleFiles: new Set(bundle.map.sources.map(file => 'app/' + file)),
   };
   const app = Fastify({
+    // TLS terminates at the local nginx proxy; remote clients cannot supply trusted forwarding headers.
+    trustProxy: ['127.0.0.1', '::1'],
     logger: false, bodyLimit: 8_000_000, exposeHeadRoutes: false,
     frameworkErrors: (error, _request, reply) => sendJson(reply, 400,
       { error: error.code === 'FST_ERR_BAD_URL' ? 'Invalid path' : error.message }),
@@ -35,7 +37,7 @@ export function createServer({
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
     const headers = request.headers;
-    if (headers.origin && headers.origin !== `http://${headers.host}`) return sendJson(reply, 403, { error: 'Origin rejected' });
+    if (headers.origin && headers.origin !== `${request.protocol}://${headers.host}`) return sendJson(reply, 403, { error: 'Origin rejected' });
     if (headers['sec-fetch-site'] === 'cross-site') return sendJson(reply, 403, { error: 'Cross-site request rejected' });
     // Từ chối route/method lạ trước khi đọc body, giống HTTP server cũ.
     if (request.is404) {
