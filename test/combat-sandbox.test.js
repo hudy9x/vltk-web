@@ -157,8 +157,8 @@ test('one damage can be disabled for living monsters and future respawns, and su
   restored.combatSandbox.setOneDamage(true);assert.ok(restored.l.enemies.every(e=>e.dmg===1));
 });
 
-function simulatorGame(entries) {
-  const s=game(true,entries), fields=s.fields;
+function simulatorGame(entries, arena=true) {
+  const s=game(arena,entries), fields=s.fields;
   s.Math=Object.create(Math);s.Math.random=()=>.5;
   const element=()=>({value:'',checked:false,hidden:false,style:{},attributes:{},listeners:{},
     setAttribute(key,value){this.attributes[key]=value;},addEventListener(key,fn){this.listeners[key]=fn;},
@@ -181,6 +181,7 @@ function simulatorGame(entries) {
       basic:{parts:{phys:100},rad:1000,rate:2,series:0}}),
   });
   for(const name of ['Pe','ja','hs'])loadDeclaration(s,'src/client/core/state-and-save-01.js',name);
+  s.l.enemies ||= [];
   s.l.P=s.j0();for(const enemy of s.l.enemies)Object.assign(enemy,{n:"Quái",res:s.l.P.res,def:0,series:0,act:"at"});s.l.life=1000;s.l.mana=100;s.l.zoneShown=1;s.l.quiet=false;
   vm.runInContext(fs.readFileSync(path.join(ROOT,'src/client/ui/combat-log-01.js'),'utf8'),s);
   loadSimulator(s);
@@ -253,10 +254,25 @@ test('SIM context always restores the player even when automatic allocation fail
   assert.throws(()=>s.arenaSimulator.create('wudang','basic',true,false),/allocation failed/);
   assert.equal(s.o,player);assert.equal(s.l,world);assert.equal(s.v,hero);
 });
-test('SIM and formula hooks are absent outside Arena Test',()=>{
-  const s=game(false),incoming=s.U9;
+test('production initializes Tống Kim without Arena Test profiles or SIM tools',()=>{
+  const s=simulatorGame(undefined,false);
+  assert.equal(s.combatSandbox,null);
+  assert.ok(s.arenaSimulator);
+  assert.equal(s.entries.has('jxidle_arena_profiles'),false);
+  assert.equal(s.simNodes.some(node=>['sim-panel','sim-toggle','combat-sandbox'].includes(node.id)),false);
+  s.U9({n:'Quái',dmg:20});assert.equal(s.originalDamage,1);
+  assert.equal(s.arenaSimulator.events.length,0);
+  s.arenaSimulator.openSettings();
+  assert.equal(s.simNodes.find(node=>node.id==='battlefield-panel').hidden,false);
+});
+
+test('production can initialize before the player selects a faction or has combat stats',()=>{
+  const s=simulatorGame(undefined,false);
+  s.o.fac=null;s.l.P=null;
   loadSimulator(s);
-  assert.equal(s.arenaSimulator,null);assert.equal(s.U9,incoming);
+  assert.ok(s.arenaSimulator);
+  assert.equal(s.arenaSimulator.battlefield.active,false);
+  assert.equal(s.o.fac,null);assert.equal(s.l.P,null);
 });
 
 test('SIM attack context preserves the existing player combat log owner and history',()=>{
@@ -857,8 +873,9 @@ test('SIM cold PK leaves player free to move and retains its movement destinatio
  assert.equal(s.Y.target,destination);assert.equal(s.l.moveTo,destination);
 });
 
-function battlefieldGame() {
-  const s=simulatorGame();
+function battlefieldGame(arena=true) {
+  const s=simulatorGame(undefined,arena);
+  if (!arena) s.o=Object.assign(s.I3(),{name:'Production hero',fac:'wudang',lvl:90,main:'basic',ctrl:'manual'});
   const catalog={};catalog.window=catalog;
   vm.runInNewContext(fs.readFileSync(path.join(ROOT,'public/data.js'),'utf8'),catalog);
   s.S=catalog.JX; s.m=()=>null;
@@ -889,6 +906,40 @@ test('Tống Kim runtime enters a new map, generates equipped armies and restore
   match.reset();assert.equal(s.Z0.key,2);assert.equal(s.l.battlefield,false);
   assert.equal(hero.x,old.x);assert.equal(hero.y,old.y);assert.equal(s.l.life,old.life);
   assert.equal(s.arenaSimulator.actors.length,0);
+});
+test('production recruitment NPC works on arbitrary maps and the game loop advances and restores the battle',()=>{
+  const s=battlefieldGame(false), match=s.arenaSimulator.battlefield;
+  const npc={npcId:'tongkim',position:{x:345,y:678}};
+  Object.assign(s.MapsEngine,{
+    npcCatalog:[{name:'Chiêu Mộ Sứ'}],
+    getMap:id=>({id,npcs:[npc]}),mapNpcs:map=>map.npcs,
+    getNpc:()=>({name:'Chiêu Mộ Sứ',subtitle:'Tống Kim',animation:'enemy050'}),
+  });
+  for(const mapId of [37,12345]) {
+    s.Z0.key=mapId;s.l.town=mapId===37;
+    Object.assign(s.v,{x:456,y:789});s.l.life=321;s.l.mana=42;
+    const before=JSON.stringify(s.o), panel=s.simNodes.find(node=>node.id==='battlefield-panel');
+    const [recruiter]=s.equipmentTrader.entities();
+    assert.equal(recruiter.name,'Chiêu Mộ Sứ');assert.equal(recruiter.x,345);
+    recruiter.onInteract();assert.equal(panel.hidden,false);
+    s.fields.get('#battlefield-player').value='song';
+    s.fields.get('#battlefield-map').value='9002';
+    s.fields.get('#battlefield-start').onclick();
+    assert.equal(match.running,true,s.fields.get('#battlefield-status')?.textContent);
+    assert.equal(s.Z0.key,9002);
+    Object.assign(s,{$w(){},Sb(){},advanceSkillContacts(){throw new Error('after-runtime-tick');}});
+    s.l.sweepT=0;s.l.dirty=false;
+    loadDeclaration(s,'src/client/core/state-and-save-02.js','Td');
+    assert.throws(()=>s.Td(5),/after-runtime-tick/);
+    assert.equal(match.state.elapsed,5);
+    assert.ok(s.arenaSimulator.roadMonsters.actors.length>0);
+    const [fighter]=match.add({team:'jin',faction:'gaibang',level:90,strength:'normal',count:1});
+    assert.equal(fighter.profile.fac,'gaibang');assert.ok(fighter.profile.eq.weapon);
+    match.reset();
+    assert.equal(s.Z0.key,mapId);assert.equal(s.v.x,456);assert.equal(s.v.y,789);
+    assert.equal(s.l.life,321);assert.equal(s.l.mana,42);assert.equal(JSON.stringify(s.o),before);
+    assert.equal(s.combatSandbox,null);
+  }
 });
 test('Hoàng Kim boss decks include active 90 and 150 skills from both same-element factions',()=>{
   const s=battlefieldGame(),match=s.arenaSimulator.battlefield;

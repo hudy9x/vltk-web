@@ -22,7 +22,7 @@ interface SimulatorElements {
 }
 
 /** Independent developer panel. Closing it never changes a running simulation. */
-export function mountSimulatorPanel(content: string) {
+export function mountSimulatorPanel(content: string, enabled = true) {
   const style = document.createElement('style');
   style.textContent = `
     #sim-toggle{position:fixed;top:8px;left:60px;z-index:90000;min-width:44px;min-height:34px;padding:5px 10px;font-family:inherit;font-size:14px;cursor:pointer}
@@ -42,7 +42,7 @@ export function mountSimulatorPanel(content: string) {
     #sim-panel h3{font-size:14px;margin:12px 0 8px}
     #sim-list{list-style:none;padding:0;max-height:220px;overflow:auto}#sim-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px;padding:7px 0;border-bottom:1px solid #78825a55}#sim-list li>button:first-child{text-align:left;overflow-wrap:anywhere}#sim-list li>span{grid-column:1;font-size:11px}#sim-list li>button:last-child{grid-column:2;grid-row:1 / 3}#sim-list li[aria-current="true"]>button:first-child{border-color:#e8c860}
   `;
-  document.head.appendChild(style);
+  if (enabled) document.head.appendChild(style);
   const toggle = document.createElement('button');
   toggle.id = 'sim-toggle'; toggle.type = 'button'; toggle.textContent = 'SIM';
   toggle.setAttribute('aria-controls', 'sim-panel'); toggle.setAttribute('aria-expanded', 'false');
@@ -63,9 +63,11 @@ export function mountSimulatorPanel(content: string) {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !panel.hidden) { setOpen(false); toggle.focus(); }
   });
-  if (typeof developerTools !== "undefined") developerTools.register(toggle,"sim","SIM · Nhân vật mô phỏng");
-  else document.body.appendChild(toggle);
-  document.body.appendChild(panel);
+  if (enabled) {
+    if (typeof developerTools !== "undefined") developerTools.register(toggle,"sim","SIM · Nhân vật mô phỏng");
+    else document.body.appendChild(toggle);
+    document.body.appendChild(panel);
+  }
   function field<K extends keyof SimulatorElements>(id: K): SimulatorElements[K] {
     return panel.querySelector<SimulatorElements[K]>('#' + id)!;
   }

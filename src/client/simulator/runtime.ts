@@ -50,6 +50,8 @@ import type { SimulatorTemplate } from './types';
 // and no window globals: the bundler keeps these references in the original scope.
 declare var developerTools: { closeOpen(): boolean } | undefined;
 declare var combatSandbox: SandboxAPI | null;
+declare function I3(): SimulatorProfile;
+declare var Y: LegacyRecord;
 declare var horseTrader: { close(): void; readonly isOpen: boolean } | null;
 declare var o: SimulatorProfile, l: SimulatorWorld, v: LegacyEntity;
 declare var I: Record<string, Faction>, T: Record<string, LegacyRecord>, r0: Record<string, LegacyRecord>;
@@ -126,8 +128,23 @@ declare function applyActorHurt(actor: CombatTarget, damage: number, maximumHP: 
 const errorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 
 export function createSimulator() {
-  if (typeof combatSandbox === "undefined" || !combatSandbox) return null;
-  const sandbox = combatSandbox;
+  const arenaEnabled = typeof combatSandbox !== "undefined" && !!combatSandbox;
+  // Production needs army profiles and combat cleanup, without enabling Arena Test.
+  const sandbox: SandboxAPI = arenaEnabled ? combatSandbox! : {
+    oneDamage: false,
+    tick() {},
+    createProfile(faction) {
+      return Object.assign(I3(), { name: faction.n, fac: faction.key, lvl: 150,
+        skPts: 500, attrPts: 149 * z2, main: "basic", mainLock: true, rot: false,
+        autoPts: false, autoEquip: false, autoForge: false, autoBuy: false });
+    },
+    clearCombat() {
+      for (const key of ["enemies", "corpses", "ground", "fx", "fxQ", "combatProjectiles", "traps", "allies", "txt"]) l[key] = [];
+      for (const key of ["manTgt", "tgt", "moveTo", "pickTarget", "clickedTarget", "dash", "dashTrail"]) l[key] = null;
+      for (const key of ["atkT", "deadT", "stunT", "slowT", "hpDotT", "hpDot", "hurtT", "stall", "spawnT"]) l[key] = 0;
+      l.skCd = {}; l.clickHold = false; Y.target = null; Y.active = false; Y.keys = {};
+    },
+  };
   const battlefieldApproach = createBattlefieldApproach();
   const crowd = createCrowdSteering(createPathWorkerClient());
   let sim: SimulatorActor | null = null, nextSimId = 0, refreshTime = 0;
@@ -136,6 +153,7 @@ export function createSimulator() {
   let pk = false, farm = false;
   const diagnostics = createDiagnostics(() => o.name, (source, target) =>
     l.sim && v.arenaSim ? v.simId : actors.find(actor => actor.n === source || actor.n === target.n)?.simId);
+  diagnostics.enabled = arenaEnabled;
   const { step, capture } = diagnostics;
   let previousLogging = diagnostics.enabled;
   function statsSnapshot(stats: SimulatorStats) {
@@ -771,7 +789,7 @@ export function createSimulator() {
     return create(template.profile.fac, template.profile.main, false, false, template);
   }
 
-  const { field } = mountSimulatorPanel(renderSimulatorControls(Object.values(I), D));
+  const { field } = mountSimulatorPanel(renderSimulatorControls(Object.values(I), D), arenaEnabled);
   function updateSkills() {
     const faction = I[field("sim-faction").value];
     const active = faction.skills.filter(id => T[id] && UA(T[id]));
@@ -789,7 +807,7 @@ export function createSimulator() {
     if (field("sim-list").innerHTML !== rosterHTML) field("sim-list").innerHTML = rosterHTML;
     field("sim-info").textContent = sim ? `${actors.length} SIM trên sân · ${sim.n} · HP ${Math.ceil(Math.max(0, sim.hp))}/${Math.ceil(sim.max)} · MP ${sim.battlefieldTeam ? Math.ceil(sim.mana) + "/" + Math.ceil(sim.stats.mana) : "∞"} · Chiêu ${T[sim.profile.main]?.tier === 90 ? "9x · " : ""}${sim.stats.main.n || "Đánh thường"} cấp ${sim.stats.main.L || 1} · Đã tung ${sim.casts} lần${sim.waiting ? " · " + sim.waiting : ""} · Điểm KN ${sim.profile.skPts} / TN ${sim.profile.attrPts} · ${sim.pk ? "PK" : sim.farm ? "Đánh quái" : "Đứng chờ"}` : `${actors.length} SIM trên sân. Chọn cấu hình rồi bấm Tạo thêm SIM.`;
   }
-  field("sim-faction").value = o.fac;
+  field("sim-faction").value = I[o.fac] && !I[o.fac].novice ? o.fac : Object.values(I).find(faction => !faction.novice && faction.skills?.length)!.key;
   function applySelectedSkill() {
     if (!sim) return;
     try { selectSkill(field("sim-skill").value); renderBuild(); }
@@ -1177,7 +1195,7 @@ export function createSimulator() {
   const idleNpcPosition={x:battlefieldHero.x+110,y:battlefieldHero.y};
   let recruitmentNpc:LegacyRecord|null=null,pharmacyNpc:LegacyRecord|null=null;
   function updateWarNpcs(){
-    if(typeof equipmentTrader==='undefined'||!equipmentTrader.place)return;
+    if(!arenaEnabled||typeof equipmentTrader==='undefined'||!equipmentTrader.place)return;
     if(!recruitmentNpc)recruitmentNpc=equipmentTrader.place({...idleNpcPosition,name:'Chiêu Mộ Sứ',animation:r0[716].anim,subtitle:'Cài đặt Tống Kim',onInteract:()=>battlePanel.open(),visible:()=>true});
     if(!pharmacyNpc)pharmacyNpc=equipmentTrader.place({...idleNpcPosition,name:'Chủ Dược Điếm',animation:r0[852].anim,subtitle:'Thuốc sinh lực · Nội lực',onInteract:()=>pharmacy.open(),visible:()=>!!battlefield?.active});
     const camp=battlefield?.active?CAMPS[battlefield.state.team]:idleNpcPosition;
@@ -1195,7 +1213,7 @@ export function createSimulator() {
   },true);
   updateWarNpcs();
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
-  if (typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
+  if (arenaEnabled && typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
   return { battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, advanceAnimation, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }
