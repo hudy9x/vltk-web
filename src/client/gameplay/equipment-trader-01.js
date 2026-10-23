@@ -5,10 +5,11 @@ var equipmentTrader = (function () {
   const placements = [];
   const requirement = (item, kind) => (item.req.find(row => row[0] === kind) || [kind, -1])[1];
   const copy = value => JSON.parse(JSON.stringify(value));
-  function blueCatalog(sex) {
+  function blueCatalog(sex, level = 10) {
     if (sex !== 0 && sex !== 1) throw new Error("Giới tính không hợp lệ.");
+    if (!Number.isInteger(level) || level < 1 || level > 10) throw new Error("Hãy chọn một cấp trang bị từ 1 đến 10.");
     return slots.flatMap(([d]) => (S.items[d]?.list || [])
-      .filter(item => item.lvl === 10 && (requirement(item, 38) < 0 || requirement(item, 38) === sex))
+      .filter(item => item.lvl === level && (requirement(item, 38) < 0 || requirement(item, 38) === sex))
       .map(item => ({ ...item, d, key: `${d}:${item.k}` })));
   }
   function goldCatalog(faction) {
@@ -47,8 +48,8 @@ var equipmentTrader = (function () {
   }
   function blueSelection(selection) {
     if (!Number.isInteger(selection.series) || selection.series < 0 || selection.series > 4) throw new Error("Hệ không hợp lệ.");
-    const template = blueCatalog(selection.sex).find(item => item.key === selection.item);
-    if (!template) throw new Error("Hãy chọn trang bị cấp 10 hợp lệ.");
+    const template = blueCatalog(selection.sex, selection.level).find(item => item.key === selection.item);
+    if (!template) throw new Error("Hãy chọn trang bị hợp lệ ở cấp đã chọn.");
     if (!Array.isArray(selection.lines) || !selection.lines.length || selection.lines.length > 6) throw new Error("Hãy chọn từ 1 đến 6 dòng thuộc tính.");
     const used = new Set();
     const lines = selection.lines.map((id, index) => {
@@ -107,9 +108,9 @@ var equipmentTrader = (function () {
     return receiveItems(templatesFor(selection), template => makeItem(template, selection, Math.random));
   }
   function compatibleSelections(selection) {
-    if (selection.kind !== "blue") throw new Error("Hãy chọn vũ khí xanh cấp 10 trước.");
+    if (selection.kind !== "blue") throw new Error("Hãy chọn vũ khí xanh trước.");
     const { template: weapon } = blueSelection(selection);
-    if (weapon.d !== 0 && weapon.d !== 1) throw new Error("Hãy chọn vũ khí xanh cấp 10 trước.");
+    if (weapon.d !== 0 && weapon.d !== 1) throw new Error("Hãy chọn vũ khí xanh trước.");
     // Solve the same supporter → item constraints as Dt(), anchored at the weapon.
     const series = { weapon: selection.series };
     for (let pass = 0; pass < Object.keys(G5).length; pass++) {
@@ -122,7 +123,7 @@ var equipmentTrader = (function () {
     }
     for (const [target, supporters] of Object.entries(G5))
       if (supporters.some(source => series[source] === undefined || V2[series[source]] !== series[target])) throw new Error("Không tìm được bộ ngũ hành tương thích.");
-    const catalog = blueCatalog(selection.sex);
+    const catalog = blueCatalog(selection.sex, selection.level);
     const equipment = [["weapon", weapon.d], ["armor", 2], ["helm", 7], ["amulet", 4], ["belt", 6], ["cuff", 8], ["boot", 5], ["pendant", 9], ["ring1", 3], ["ring2", 3]];
     return equipment.map(([slot, d]) => {
       if (slot === "weapon") return { slot, selection: copy(selection) };
@@ -130,7 +131,7 @@ var equipmentTrader = (function () {
       const burden = item => item.req.reduce((sum, [kind, value]) => sum + (kind >= 32 && kind <= 35 ? Math.max(0, value) : 0), 0);
       candidates.sort((a, b) => burden(a) - burden(b));
       const template = candidates[0];
-      if (!template) throw new Error(`Không tìm được ${Wr[slot]} cấp 10 phù hợp.`);
+      if (!template) throw new Error(`Không tìm được ${Wr[slot]} cấp ${weapon.lvl} phù hợp.`);
       const used = new Set(), lines = [];
       for (let index = 0; index < 6; index++) {
         const pool = affixes(template, series[slot], index).filter(entry => !used.has(entry.a));
@@ -139,7 +140,7 @@ var equipmentTrader = (function () {
         if (!pool.length) break;
         lines.push(pool[0].a); used.add(pool[0].a);
       }
-      const next = { kind: "blue", sex: selection.sex, item: template.key, series: series[slot], lines };
+      const next = { kind: "blue", sex: selection.sex, level: weapon.lvl, item: template.key, series: series[slot], lines };
       blueSelection(next);
       return { slot, selection: next };
     });
@@ -159,11 +160,15 @@ var equipmentTrader = (function () {
   }
   function open() {
     if (!o || !o.fac) return k("Hãy vào game với một nhân vật trước.");
-    const selection = { kind: "blue", sex: o.sex || 0, series: F0(), item: "", lines: [], faction: o.fac, set: "" };
+    const sex = o.sex || 0;
+    // Start on the highest armor tier whose character-level requirement is met.
+    const level = Math.max(1, ...Array.from({ length: 10 }, (_, i) => i + 1)
+      .filter(tier => blueCatalog(sex, tier).some(item => item.d === 2 && requirement(item, 36) <= (o.lvl || 1))));
+    const selection = { kind: "blue", sex, level, series: F0(), item: "", lines: [], faction: o.fac, set: "" };
     let count = 6, slot = 2;
     const option = (value, label, selected) => `<option value="${D(String(value))}"${selected ? " selected" : ""}>${D(label)}</option>`;
     function render(message = "") {
-      const catalog = blueCatalog(selection.sex);
+      const catalog = blueCatalog(selection.sex, selection.level);
       const visibleItems = catalog.filter(item => item.d === slot);
       const template = visibleItems.find(item => item.key === selection.item) || visibleItems[0];
       selection.item = template?.key || "";
@@ -185,27 +190,27 @@ var equipmentTrader = (function () {
       if (isWeapon) {
         try { compatible = compatiblePreview(selection); } catch (reason) { compatibleError = reason.message; }
       }
-      const compatibleBody = isWeapon ? `<section class="trader-compatible"><h4>Bộ ngũ hành tương thích · ${compatible.length} món</h4><p class="dim small">Gồm vũ khí đã chọn và 9 món xanh cấp 10 theo giới tính đã chọn, có 2 nhẫn. Mỗi món có hai trang bị đúng hệ kích hoạt; phần kích hoạt từ nhân vật phụ thuộc hệ môn phái. Nhận vào túi, chưa tự mặc.</p><div class="trader-preview">${compatible.map(({ slot, item }) => `<div class="trader-piece"><img src="${D(item.ic)}" alt=""><span>${D(Wr[slot])} · ${D(g0[item.s])}</span><small>${D(item.n)}</small></div>`).join("")}</div><p class="dim small">Giữ các dòng đã chọn cho vũ khí; những món còn lại tự chọn dòng hợp lệ, roll 90%–100% max.</p>${compatibleError ? `<p>${D(compatibleError)}</p>` : ""}<button class="btn" data-trader-compatible ${compatibleError || o.inv.length + compatible.length > INV_MAX ? "disabled" : ""}>Nhận toàn bộ trang bị tương thích · 10 món</button>${o.inv.length + compatible.length > INV_MAX ? '<p>Cần 10 ô trống trong Hành trang.</p>' : ""}</section>` : "";
+      const compatibleBody = isWeapon ? `<section class="trader-compatible"><h4>Bộ ngũ hành tương thích · ${compatible.length} món</h4><p class="dim small">Gồm vũ khí đã chọn và 9 món xanh cấp ${selection.level} theo giới tính đã chọn, có 2 nhẫn. Mỗi món có hai trang bị đúng hệ kích hoạt; phần kích hoạt từ nhân vật phụ thuộc hệ môn phái. Nhận vào túi, chưa tự mặc.</p><div class="trader-preview">${compatible.map(({ slot, item }) => `<div class="trader-piece"><img src="${D(item.ic)}" alt=""><span>${D(Wr[slot])} · ${D(g0[item.s])}</span><small>${D(item.n)}</small></div>`).join("")}</div><p class="dim small">Giữ các dòng đã chọn cho vũ khí; những món còn lại tự chọn dòng hợp lệ, roll 90%–100% max.</p>${compatibleError ? `<p>${D(compatibleError)}</p>` : ""}<button class="btn" data-trader-compatible ${compatibleError || o.inv.length + compatible.length > INV_MAX ? "disabled" : ""}>Nhận toàn bộ trang bị tương thích · 10 món</button>${o.inv.length + compatible.length > INV_MAX ? '<p>Cần 10 ô trống trong Hành trang.</p>' : ""}</section>` : "";
       const lineFields = selection.lines.map((id, index) => `<label>Dòng ${index + 1} · ${index % 2 ? "Ẩn" : "Hiện"}<select data-trader-line="${index}">${affixes(template, selection.series, index).filter(entry => entry.a === id || !selection.lines.includes(entry.a)).map(entry => option(entry.a, Zi({ a: entry.a, p: highRoll(entry.p, () => 0.999999999), pre: entry.pre }), entry.a === id)).join("")}</select></label>`).join("");
       const badge = (field, value, name, selected, color = "") => `<button type="button" class="trader-badge" data-trader-choice="${field}" data-value="${D(String(value))}" aria-pressed="${selected}"${color ? ` style="--badge-color:${color}"` : ""}>${D(name)}</button>`;
-      const blueBody = `<div class="trader-blue-options">
+      const blueBody = `<label>Cấp trang bị<select data-trader="level">${Array.from({ length: 10 }, (_, i) => i + 1).map(tier => option(tier, `Cấp ${tier}`, selection.level === tier)).join("")}</select></label><div class="trader-blue-options">
         <div><h4>Giới tính</h4><div class="trader-badges" role="group" aria-label="Giới tính">${["Nam", "Nữ"].map((name, i) => badge("sex", i, name, selection.sex === i)).join("")}</div></div>
         <div><h4>Hệ</h4><div class="trader-badges" role="group" aria-label="Hệ">${g0.slice(0, 5).map((name, i) => badge("series", i, name, selection.series === i, ["#ecd275", "#89d49b", "#82c7f2", "#ff9a81", "#d9b185"][i])).join("")}</div></div>
       </div><div class="trader-layout trader-blue-layout"><div class="trader-catalog">
         <h4>Loại trang bị</h4><div class="trader-badges trader-slots" role="group" aria-label="Loại trang bị">${slots.map(([d, name]) => badge("slot", d, name, slot === d)).join("")}</div>
-        <div class="trader-catalog-heading"><h4>Trang bị</h4><span class="dim small">${visibleItems.length} món · cấp 10</span></div>
+        <div class="trader-catalog-heading"><h4>Trang bị</h4><span class="dim small">${visibleItems.length} món · cấp ${selection.level}</span></div>
         <div class="trader-item-list" role="group" aria-label="Trang bị">${visibleItems.map(item => `<button type="button" class="trader-piece trader-item" data-trader-choice="item" data-value="${D(item.key)}" aria-pressed="${selection.item === item.key}" title="${D(item.n)}"><img src="${D(item.ic)}" alt=""><span>${D(item.n)}</span></button>`).join("")}</div>
         <div class="trader-details">${items[0] ? details(items[0]) : ""}</div><p class="dim small">Chỉ số xem trước ở mức tối đa; khi nhận roll 90%–100%.</p>
       </div><div class="trader-fields"><h4>Dòng thuộc tính</h4><label>Số dòng<select data-trader="count">${Array.from({ length: maxLines }, (_, i) => i + 1).map(i => option(i, String(i), count === i)).join("")}</select></label>${lineFields}</div></div>`;
       const goldBody = `<div class="trader-layout"><div class="trader-fields"><label>Môn phái<select data-trader="faction">${Object.entries(I).filter(([, faction]) => !faction.novice && faction.skills?.length).map(([key, faction]) => option(key, faction.n, key === selection.faction)).join("")}</select></label><label>Bộ Hoàng Kim<select data-trader="set">${sets.map(set => option(set.key, `${set.n} · ${set.items.length} món`, set.key === selection.set)).join("")}</select></label><p>Nhận toàn bộ ${items.length} món của bộ đã chọn, gồm cả các dòng ẩn của bộ.</p></div><div><h4>Xem trước trọn bộ</h4><p class="dim small">Ảnh và chỉ số tối đa để tham khảo; khi nhận mỗi dòng sẽ roll 90%–100%.</p><div class="trader-preview">${items.map((item, index) => `<button class="trader-piece" data-trader-inspect="${index}" title="Xem thuộc tính ${D(item.n)}"><img src="${D(item.ic)}" alt="${D(item.n)}"><span>${D(item.n)}</span></button>`).join("")}</div><div class="trader-details">${items[0] ? details(items[0]) : ""}</div></div></div>`;
-      J(`<section class="equipment-trader"><h3>Thần Trang Sứ Giả</h3><p class="desc">Chọn trang bị · thuộc tính ngẫu nhiên 90%–100% tối đa. Nhận miễn phí, đồ được khóa để giữ trong túi.</p><div class="btnrow"><button class="btn ${selection.kind === "blue" ? "on" : ""}" data-trader-kind="blue">Đồ xanh cấp 10</button><button class="btn ${selection.kind === "gold" ? "on" : ""}" data-trader-kind="gold">Hoàng Kim môn phái</button></div>${selection.kind === "blue" ? blueBody : goldBody}<p role="status">${D(message || error || `Hành trang: ${o.inv.length}/${INV_MAX} ô · Cần ${items.length} ô trống.`)}</p><button class="btn" data-trader-receive ${error || !items.length || o.inv.length + items.length > INV_MAX ? "disabled" : ""}>${selection.kind === "gold" ? `Nhận trọn bộ · ${items.length} món` : "Nhận trang bị"}</button>${compatibleBody}<section class="trader-rings"><h4>Càn Khôn Giới Chỉ</h4><p class="dim small">Nhận 2 nhẫn Hoàng Kim gốc, mỗi nhẫn +2 tất cả kỹ năng. Cần 2 ô trống.</p><button class="btn" data-trader-rings ${o.inv.length + 2 > INV_MAX ? "disabled" : ""}><img src="img/i/g44.png" alt="" width="24" height="24">Nhận 2 nhẫn Càn Khôn Giới Chỉ</button></section></section>`, () => {
+      J(`<section class="equipment-trader"><h3>Thần Trang Sứ Giả</h3><p class="desc">Chọn trang bị · thuộc tính ngẫu nhiên 90%–100% tối đa. Nhận miễn phí, đồ được khóa để giữ trong túi.</p><div class="btnrow"><button class="btn ${selection.kind === "blue" ? "on" : ""}" data-trader-kind="blue">Đồ xanh cấp 1–10</button><button class="btn ${selection.kind === "gold" ? "on" : ""}" data-trader-kind="gold">Hoàng Kim môn phái</button></div>${selection.kind === "blue" ? blueBody : goldBody}<p role="status">${D(message || error || `Hành trang: ${o.inv.length}/${INV_MAX} ô · Cần ${items.length} ô trống.`)}</p><button class="btn" data-trader-receive ${error || !items.length || o.inv.length + items.length > INV_MAX ? "disabled" : ""}>${selection.kind === "gold" ? `Nhận trọn bộ · ${items.length} món` : "Nhận trang bị"}</button>${compatibleBody}<section class="trader-rings"><h4>Càn Khôn Giới Chỉ</h4><p class="dim small">Nhận 2 nhẫn Hoàng Kim gốc, mỗi nhẫn +2 tất cả kỹ năng. Cần 2 ô trống.</p><button class="btn" data-trader-rings ${o.inv.length + 2 > INV_MAX ? "disabled" : ""}><img src="img/i/g44.png" alt="" width="24" height="24">Nhận 2 nhẫn Càn Khôn Giới Chỉ</button></section></section>`, () => {
         const root = m("#mBody .equipment-trader");
         root.onchange = event => {
           const field = event.target.dataset.trader;
           const index = event.target.dataset.traderLine;
           if (index !== undefined) selection.lines[+index] = +event.target.value;
           else if (field === "count") count = +event.target.value;
-          else if (field) selection[field] = ["sex", "series"].includes(field) ? +event.target.value : event.target.value;
+          else if (field) selection[field] = ["sex", "series", "level"].includes(field) ? +event.target.value : event.target.value;
           render();
         };
         root.onclick = event => {
