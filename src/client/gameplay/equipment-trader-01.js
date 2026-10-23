@@ -28,6 +28,20 @@ var equipmentTrader = (function () {
       return { key: String(key), n: words[0].slice(0, Math.max(2, count)).join(" "), items };
     });
   }
+  function thientuCatalog(faction) {
+    if (!I[faction] || I[faction].novice) return [];
+    const groups = new Map(), names = new Map(goldCatalog(faction).map(set => [set.key, set.n]));
+    for (const template of S.sets.platina) {
+      if (!/^\[Thiên Tứ\]/iu.test(template.n) || template.fixed || template.d > 9 ||
+          !template.mag.length || requirement(template, 39) !== I[faction].id) continue;
+      const key = String(template.grp);
+      if (!groups.has(key)) groups.set(key, new Map());
+      const items = groups.get(key);
+      // Native upgrade templates supersede older copies of the same set piece.
+      if (!items.has(template.sid) || template.vng === 2) items.set(template.sid, template);
+    }
+    return Array.from(groups, ([key, items]) => ({ key, n: names.get(key) || `Bộ Thiên Tứ ${key}`, items: [...items.values()] }));
+  }
   // Follow the blue drop table, including its alternating visible/hidden lines.
   // One highest-tier entry per attribute; never offer purple-only attributes.
   function affixes(item, series, index) {
@@ -62,9 +76,10 @@ var equipmentTrader = (function () {
   }
   function templatesFor(selection) {
     if (selection.kind === "blue") return [blueSelection(selection).template];
-    if (selection.kind !== "gold") throw new Error("Loại giao dịch không hợp lệ.");
-    const set = goldCatalog(selection.faction).find(set => set.key === selection.set);
-    if (!set) throw new Error("Hãy chọn bộ Hoàng Kim môn phái hợp lệ.");
+    if (!["gold", "thientu"].includes(selection.kind)) throw new Error("Loại giao dịch không hợp lệ.");
+    const catalog = selection.kind === "thientu" ? thientuCatalog : goldCatalog;
+    const set = catalog(selection.faction).find(set => set.key === selection.set);
+    if (!set) throw new Error("Hãy chọn bộ trang bị môn phái hợp lệ.");
     return set.items;
   }
   function makeItem(template, selection, random) {
@@ -77,8 +92,9 @@ var equipmentTrader = (function () {
       item.r = 1;
       item.mag = blueSelection(selection).lines.map(entry => ({ a: entry.a, pre: entry.pre, n: entry.n, p: highRoll(entry.p, random) }));
     } else {
-      item.r = 4;
-      item.set = { kind: "gold", grp: template.grp, sid: template.sid, n1: template.n1 || 99, n2: template.n2 || 99 };
+      const thientu = selection.kind === "thientu";
+      item.r = thientu ? 5 : 4;
+      item.set = { kind: thientu ? "platina" : "gold", grp: template.grp, sid: template.sid, n1: template.n1 || 99, n2: template.n2 || 99 };
       const roll = id => {
         const entry = S.ge[id];
         if (!entry) throw new Error("Thiếu dữ liệu thuộc tính Hoàng Kim.");
@@ -86,6 +102,10 @@ var equipmentTrader = (function () {
       };
       item.mag = template.mag.map(roll);
       item.ext = (template.ext || []).map(roll);
+      if (thientu && template.vng === 2) {
+        Object.assign(item, { plv: 0, pv2: 1, pv3: 1, ps: [], mf: template.mag.map(() => 0.9 + random() * 0.1) });
+        item.mag = template.mag.map((id, index) => p9(id, template.mag10[index], 0, item.mf[index]));
+      }
     }
     return item;
   }
@@ -181,10 +201,10 @@ var equipmentTrader = (function () {
         if (entry) used.add(entry.a);
         return entry?.a;
       });
-      const sets = goldCatalog(selection.faction);
+      const sets = (selection.kind === "thientu" ? thientuCatalog : goldCatalog)(selection.faction);
       if (!sets.some(set => set.key === selection.set)) selection.set = sets[0]?.key || "";
       let items = [], error = "";
-      try { items = preview(selection); } catch (reason) { error = reason.message; }
+      try { if (selection.kind !== "rings") items = preview(selection); } catch (reason) { error = reason.message; }
       let compatible = [], compatibleError = "";
       const isWeapon = selection.kind === "blue" && (template.d === 0 || template.d === 1);
       if (isWeapon) {
@@ -202,8 +222,10 @@ var equipmentTrader = (function () {
         <div class="trader-item-list" role="group" aria-label="Trang bị">${visibleItems.map(item => `<button type="button" class="trader-piece trader-item" data-trader-choice="item" data-value="${D(item.key)}" aria-pressed="${selection.item === item.key}" title="${D(item.n)}"><img src="${D(item.ic)}" alt=""><span>${D(item.n)}</span></button>`).join("")}</div>
         <div class="trader-details">${items[0] ? details(items[0]) : ""}</div><p class="dim small">Chỉ số xem trước ở mức tối đa; khi nhận roll 90%–100%.</p>
       </div><div class="trader-fields"><h4>Dòng thuộc tính</h4><label>Số dòng<select data-trader="count">${Array.from({ length: maxLines }, (_, i) => i + 1).map(i => option(i, String(i), count === i)).join("")}</select></label>${lineFields}</div></div>`;
-      const goldBody = `<div class="trader-layout"><div class="trader-fields"><label>Môn phái<select data-trader="faction">${Object.entries(I).filter(([, faction]) => !faction.novice && faction.skills?.length).map(([key, faction]) => option(key, faction.n, key === selection.faction)).join("")}</select></label><label>Bộ Hoàng Kim<select data-trader="set">${sets.map(set => option(set.key, `${set.n} · ${set.items.length} món`, set.key === selection.set)).join("")}</select></label><p>Nhận toàn bộ ${items.length} món của bộ đã chọn, gồm cả các dòng ẩn của bộ.</p></div><div><h4>Xem trước trọn bộ</h4><p class="dim small">Ảnh và chỉ số tối đa để tham khảo; khi nhận mỗi dòng sẽ roll 90%–100%.</p><div class="trader-preview">${items.map((item, index) => `<button class="trader-piece" data-trader-inspect="${index}" title="Xem thuộc tính ${D(item.n)}"><img src="${D(item.ic)}" alt="${D(item.n)}"><span>${D(item.n)}</span></button>`).join("")}</div><div class="trader-details">${items[0] ? details(items[0]) : ""}</div></div></div>`;
-      J(`<section class="equipment-trader"><h3>Thần Trang Sứ Giả</h3><p class="desc">Chọn trang bị · thuộc tính ngẫu nhiên 90%–100% tối đa. Nhận miễn phí, đồ được khóa để giữ trong túi.</p><div class="btnrow"><button class="btn ${selection.kind === "blue" ? "on" : ""}" data-trader-kind="blue">Đồ xanh cấp 1–10</button><button class="btn ${selection.kind === "gold" ? "on" : ""}" data-trader-kind="gold">Hoàng Kim môn phái</button></div>${selection.kind === "blue" ? blueBody : goldBody}<p role="status">${D(message || error || `Hành trang: ${o.inv.length}/${INV_MAX} ô · Cần ${items.length} ô trống.`)}</p><button class="btn" data-trader-receive ${error || !items.length || o.inv.length + items.length > INV_MAX ? "disabled" : ""}>${selection.kind === "gold" ? `Nhận trọn bộ · ${items.length} món` : "Nhận trang bị"}</button>${compatibleBody}<section class="trader-rings"><h4>Càn Khôn Giới Chỉ</h4><p class="dim small">Nhận 2 nhẫn Hoàng Kim gốc, mỗi nhẫn +2 tất cả kỹ năng. Cần 2 ô trống.</p><button class="btn" data-trader-rings ${o.inv.length + 2 > INV_MAX ? "disabled" : ""}><img src="img/i/g44.png" alt="" width="24" height="24">Nhận 2 nhẫn Càn Khôn Giới Chỉ</button></section></section>`, () => {
+      const setLabel = selection.kind === "thientu" ? "Thiên Tứ" : "Hoàng Kim";
+      const goldBody = `<div class="trader-layout"><div class="trader-fields"><label>Môn phái<select data-trader="faction">${Object.entries(I).filter(([, faction]) => !faction.novice && faction.skills?.length).map(([key, faction]) => option(key, faction.n, key === selection.faction)).join("")}</select></label><label>Bộ ${setLabel}<select data-trader="set">${sets.map(set => option(set.key, `${set.n} · ${set.items.length} món`, set.key === selection.set)).join("")}</select></label><p>Nhận toàn bộ ${items.length} món của bộ đã chọn, gồm cả các dòng ẩn của bộ.</p></div><div><h4>Xem trước trọn bộ</h4><p class="dim small">Ảnh và chỉ số tối đa để tham khảo; khi nhận mỗi dòng sẽ roll 90%–100%.</p><div class="trader-preview">${items.map((item, index) => `<button class="trader-piece" data-trader-inspect="${index}" title="Xem thuộc tính ${D(item.n)}"><img src="${D(item.ic)}" alt="${D(item.n)}"><span>${D(item.n)}</span></button>`).join("")}</div><div class="trader-details">${items[0] ? details(items[0]) : ""}</div></div></div>`;
+      const ringsBody = `<section class="trader-rings"><h4>Càn Khôn Giới Chỉ</h4><p class="dim small">Nhận 2 nhẫn Hoàng Kim gốc, mỗi nhẫn +2 tất cả kỹ năng. Cần 2 ô trống.</p><button class="btn" data-trader-rings ${o.inv.length + 2 > INV_MAX ? "disabled" : ""}><img src="img/i/g44.png" alt="" width="24" height="24">Nhận 2 nhẫn Càn Khôn Giới Chỉ</button></section>`;
+      J(`<section class="equipment-trader"><h3>Thần Trang Sứ Giả</h3><p class="desc">Chọn trang bị · thuộc tính ngẫu nhiên 90%–100% tối đa. Nhận miễn phí, đồ được khóa để giữ trong túi.</p><div class="btnrow"><button class="btn ${selection.kind === "blue" ? "on" : ""}" data-trader-kind="blue">Đồ xanh cấp 1–10</button><button class="btn ${selection.kind === "gold" ? "on" : ""}" data-trader-kind="gold">Hoàng Kim môn phái</button><button class="btn ${selection.kind === "thientu" ? "on" : ""}" data-trader-kind="thientu">Thiên Tứ môn phái</button><button class="btn ${selection.kind === "rings" ? "on" : ""}" data-trader-kind="rings">Càn Khôn Giới Chỉ</button></div>${selection.kind === "rings" ? ringsBody : selection.kind === "blue" ? blueBody : goldBody}${selection.kind !== "rings" ? `<p role="status">${D(message || error || `Hành trang: ${o.inv.length}/${INV_MAX} ô · Cần ${items.length} ô trống.`)}</p><button class="btn" data-trader-receive ${error || !items.length || o.inv.length + items.length > INV_MAX ? "disabled" : ""}>${selection.kind !== "blue" ? `Nhận trọn bộ · ${items.length} món` : "Nhận trang bị"}</button>${compatibleBody}` : `<p role="status">${D(message)}</p>`}</section>`, () => {
         const root = m("#mBody .equipment-trader");
         root.onchange = event => {
           const field = event.target.dataset.trader;
@@ -347,5 +369,5 @@ var equipmentTrader = (function () {
     button.onclick = open;
     m("#combat-sandbox")?.appendChild(button);
   }
-  return { open, trade, preview, compatiblePreview, tradeCompatible, grantRings, blueCatalog, goldCatalog, affixes, highRoll, place, entities, draw };
+  return { open, trade, preview, compatiblePreview, tradeCompatible, grantRings, blueCatalog, goldCatalog, thientuCatalog, affixes, highRoll, place, entities, draw };
 })();
