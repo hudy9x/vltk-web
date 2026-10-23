@@ -36,6 +36,7 @@ function game(arena = false, development = arena) {
     ['src/client/core/attributes-01.js', ['Y2', 'Dt']],
     ['src/client/gameplay/equipment-02.js', ['Mp', 'Hp', '$a']],
     ['src/client/gameplay/crafting-01.js', ['K1', 'V6', 'F6', 'cA']],
+    ['src/client/gameplay/crafting-02.js', ['g3', 'p9']],
   ]) {
     const source = fs.readFileSync(file, 'utf8');
     const ast = acorn.parse(source, { ecmaVersion: 'latest' });
@@ -45,6 +46,8 @@ function game(arena = false, development = arena) {
     }
   }
   for (const template of s.S.sets.gold) s.cA(template); // Warm the existing family cache.
+  const crafting = fs.readFileSync('src/client/gameplay/crafting-04.js', 'utf8');
+  vm.runInContext(crafting.slice(crafting.indexOf('var z9 =')), s);
   vm.runInContext(fs.readFileSync('src/client/gameplay/equipment-trader-01.js', 'utf8'), s);
   return s;
 }
@@ -235,15 +238,18 @@ test('NPC grants two independent original Can Khon rings with +2 all skills and 
   assert.throws(() => t.grantRings(), /2 ô trống/);
   assert.equal(s.o.uid, uid); assert.equal(s.o.inv.length, 2);
 });
-test('compatible action is visible only for blue weapons and rings are always offered by the NPC', () => {
+test('compatible action is visible only for blue weapons and rings have a separate tab', () => {
   const s = game(), t = s.equipmentTrader;
   t.open();
-  assert.doesNotMatch(s.html, /data-trader-compatible/); assert.match(s.html, /data-trader-rings/);
+  assert.doesNotMatch(s.html, /data-trader-compatible/); assert.doesNotMatch(s.html, /data-trader-rings/);
   const click = dataset => s.m('#mBody .equipment-trader').onclick({ target: { closest: () => ({ dataset }) } });
   click({ traderChoice: 'slot', value: '0' });
   assert.match(s.html, /data-trader-compatible/); assert.match(s.html, /Bộ ngũ hành tương thích/);
   click({ traderKind: 'gold' });
-  assert.doesNotMatch(s.html, /data-trader-compatible/); assert.match(s.html, /data-trader-rings/);
+  assert.doesNotMatch(s.html, /data-trader-compatible/); assert.doesNotMatch(s.html, /data-trader-rings/);
+  click({ traderKind: 'rings' });
+  assert.match(s.html, /data-trader-rings/);
+  assert.doesNotMatch(s.html, /data-trader-receive|data-trader-compatible|data-trader-inspect/);
 });
 
 
@@ -351,4 +357,81 @@ test('tier filter defaults from character level, has ten single choices and keep
     assert.equal(s.o.inv.length, 10);
     assert.ok(s.o.inv.every(item => item.lvl === tier));
   }
+});
+
+test('Thien Tu catalog covers every faction, prefers native upgrades, and trades independent original set pieces', () => {
+  const s = game(), trader = s.equipmentTrader;
+  const original = JSON.stringify(s.S.sets.platina);
+  assert.equal(trader.thientuCatalog('missing').length, 0);
+  for (const faction of Object.keys(s.I)) {
+    const sets = trader.thientuCatalog(faction);
+    assert.ok(sets.length, faction);
+    const expected = s.S.sets.platina.filter(item => /^\[Thiên Tứ\]/iu.test(item.n) && !item.fixed && item.d <= 9 && item.mag.length && item.req.some(([id, value]) => id === 39 && value === s.I[faction].id));
+    assert.equal(sets.reduce((sum, set) => sum + set.items.length, 0), new Set(expected.map(item => `${item.grp}:${item.sid}`)).size);
+    for (const set of sets) {
+      const pick = { kind: 'thientu', faction, set: set.key }, uid = s.o.uid;
+      const preview = trader.preview(pick);
+      assert.equal(s.o.uid, uid);
+      assert.equal(preview.length, set.items.length);
+      for (const random of [0, .999999999]) {
+        s.o.inv = []; s.Math.random = () => random;
+        const received = trader.trade(pick);
+        assert.equal(received.length, set.items.length);
+        assert.equal(new Set(received.map(item => item.uid)).size, received.length);
+        assert.equal(s.saved.inv.length, received.length);
+        received.forEach((item, index) => {
+          const template = set.items[index];
+          assert.equal(item.n, template.n); assert.equal(item.r, 5); assert.equal(item.lock, true);
+          assert.equal(item.set.kind, 'platina'); assert.equal(item.set.grp, template.grp); assert.equal(item.set.sid, template.sid);
+          assert.deepEqual(JSON.parse(JSON.stringify(item.req)), JSON.parse(JSON.stringify(template.req)));
+          assert.deepEqual(JSON.parse(JSON.stringify(item.base)), JSON.parse(JSON.stringify(template.base)));
+          assert.notEqual(item.req, template.req);
+          if (template.vng === 2) {
+            assert.equal(item.plv, 0); assert.equal(item.pv3, 1); assert.equal(item.pv2, 1);
+            item.mag.forEach((line, i) => assert.deepEqual(JSON.parse(JSON.stringify(line)), JSON.parse(JSON.stringify(s.p9(template.mag[i], template.mag10[i], 0, item.mf[i])))));
+          } else {
+            assert.ok(!expected.some(other => other.grp === template.grp && other.sid === template.sid && other.vng === 2));
+            item.mag.forEach((line, i) => inRange(line.p, s.S.ge[template.mag[i]].p));
+            item.ext.forEach((line, i) => inRange(line.p, s.S.ge[template.ext[i]].p));
+          }
+          assert.equal(preview[index].n, item.n);
+        });
+      }
+      s.o.inv = []; s.INV_MAX = set.items.length - 1;
+      const before = s.o.uid;
+      assert.throws(() => trader.trade(pick), /ô trống/);
+      assert.equal(s.o.uid, before); assert.equal(s.o.inv.length, 0);
+      s.INV_MAX = 100;
+    }
+  }
+  assert.throws(() => trader.trade({ kind: 'thientu', faction: 'missing', set: '1' }), /hợp lệ/);
+  assert.equal(JSON.stringify(s.S.sets.platina), original);
+});
+
+test('Thien Tu tab defaults to the current faction and the rings tab isolates its two-ring action', () => {
+  const s = game(), trader = s.equipmentTrader;
+  const click = dataset => s.m('#mBody .equipment-trader').onclick({ target: { closest: () => ({ dataset,
+    hasAttribute: name => name === 'data-trader-rings' && 'traderRings' in dataset || name === 'data-trader-receive' && 'traderReceive' in dataset }) } });
+  for (const faction of Object.keys(s.I)) {
+    s.o.fac = faction; s.o.inv = []; trader.open();
+    click({ traderKind: 'thientu' });
+    assert.match(s.html, new RegExp(`<option value="${faction}" selected`));
+    assert.match(s.html, /Bộ Thiên Tứ<select/);
+    assert.match(s.html, /\[Thiên Tứ\]/);
+    assert.doesNotMatch(s.html, /data-trader-rings/);
+    click({ traderReceive: '' });
+    assert.ok(s.o.inv.length);
+    assert.ok(s.o.inv.every(item => item.set.kind === 'platina' && item.req.some(([id, value]) => id === 39 && value === s.I[faction].id)));
+  }
+  click({ traderKind: 'rings' });
+  assert.match(s.html, /data-trader-rings/);
+  assert.doesNotMatch(s.html, /data-trader-receive|data-trader-inspect|data-trader-compatible|data-trader="faction"/);
+  s.o.inv = []; click({ traderRings: '' });
+  assert.equal(s.o.inv.length, 2);
+  assert.ok(s.o.inv.every(item => item.n === 'Càn Khôn Giới Chỉ'));
+  s.o.inv = []; s.o.fac = 'wudang'; trader.open(); click({ traderKind: 'thientu' });
+  s.m('#mBody .equipment-trader').onchange({ target: { dataset: { trader: 'faction' }, value: 'emei' } });
+  assert.match(s.html, /<option value="emei" selected/);
+  click({ traderReceive: '' });
+  assert.ok(s.o.inv.every(item => item.req.some(([id, value]) => id === 39 && value === s.I.emei.id)));
 });
