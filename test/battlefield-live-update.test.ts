@@ -16,7 +16,7 @@
       strength: "normal",
       count: 1,
     });
-    match.tick(3);
+    simulator.tick(600);
     const bosses = simulator.actors.filter(
       (actor: any) => actor.battlefieldBoss,
     );

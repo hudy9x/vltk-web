@@ -61,6 +61,7 @@
     assert.equal(configuration.commander.hp, 87654);
     assert.deepEqual(Array.from(configuration.commander.skills), [11, 19]);
     second.arenaSimulator.battlefield.start('song');
+    second.arenaSimulator.battlefield.tick(600);
     const bosses = second.arenaSimulator.actors.filter((actor: any) => actor.battlefieldBoss);
     assert.equal(bosses.length, 2);
     assert.ok(bosses.every((actor: any) => actor.max === 234567 && actor.hp === 234567));
@@ -79,8 +80,9 @@
   test('default ranks spawn 70 total patrol units and exactly one 200k marshal per side', () => {
     const game = createHeadlessGame(process.cwd());
     const simulator = game.arenaSimulator;
-    simulator.battlefield.start('song');
-    const expected = [ ['Binh sĩ', 50, 50000], ['Hiệu úy', 10, 60000], ['Thống lĩnh', 6, 80000], ['Đại thống lĩnh', 4, 100000] ];
+    simulator.battlefield.start('song');simulator.tick(5);
+    simulator.battlefield.tick(600);
+    const expected = [ ['Binh sĩ', 50, 50000], ['Hiệu úy', 10, 60000], ['Thống lĩnh', 6, 80000], ['Phó tướng', 4, 100000] ];
     for (const team of ['song', 'jin']) {
       for (const [title, count, hp] of expected) {
         const units = simulator.roadMonsters.actors.filter((actor: any) => actor.battlefieldTeam === team && actor.battlefieldRank === title);

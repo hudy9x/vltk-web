@@ -34,18 +34,18 @@
       fixture.kill();match.playerDied();assert.equal(match.state.playerRespawn,seconds);
     }
   });
-  test('all soldiers appear together once at the configured match time and pending soldiers can be cancelled',()=>{
+  test('all soldiers appear together after five seconds and pending soldiers can be cancelled',()=>{
     const game=createHeadlessGame(process.cwd()),sim=game.arenaSimulator,match=sim.battlefield;
     match.configureDeployment({respawnSeconds:50,soldierAppearanceSeconds:40});match.start('song');
     assert.equal(sim.roadMonsters.actors.length,0);assert.equal(match.state.monsters.count,70);assert.equal(match.state.monsters.alive,0);
-    sim.roadMonsters.start();sim.tick(39.99);assert.equal(sim.roadMonsters.actors.length,0);
+    sim.roadMonsters.start();sim.tick(4.99);assert.equal(sim.roadMonsters.actors.length,0);
     match.configureDeployment({respawnSeconds:60,soldierAppearanceSeconds:0});
     sim.tick(.01);assert.equal(sim.roadMonsters.actors.length,70);assert.equal(match.state.deployment.respawnSeconds,50);
     const original=[...sim.roadMonsters.actors];sim.roadMonsters.start();assert.equal(sim.roadMonsters.actors.length,original.length);assert.ok(sim.roadMonsters.actors.every((unit:any,index:number)=>unit===original[index]));
     match.configureDeployment({respawnSeconds:30,soldierAppearanceSeconds:60});match.start('jin');
-    sim.tick(20.5);sim.roadMonsters.restart();sim.tick(39.49);assert.equal(sim.roadMonsters.actors.length,0);
+    sim.tick(2);sim.roadMonsters.restart();sim.tick(2.99);assert.equal(sim.roadMonsters.actors.length,0);
     sim.tick(.01);assert.equal(sim.roadMonsters.actors.length,70);
-    match.start('song');sim.tick(20);match.reset();sim.tick(100);assert.equal(sim.roadMonsters.actors.length,0);
+    match.start('song');sim.tick(2);match.reset();sim.tick(100);assert.equal(sim.roadMonsters.actors.length,0);
   });
   test('native game loop cannot revive a waiting human after the old six-second timer',()=>{
     const game=createHeadlessGame(process.cwd()),sim=game.arenaSimulator;
@@ -66,7 +66,7 @@
     const second=createHeadlessGame(process.cwd());second.entries.set('jxidle_slot','0');
     second.entries.set('jxidle_battlefield_settings_0',first.entries.get('jxidle_battlefield_settings_0'));
     second.arenaSimulator.openSettings();const match=second.arenaSimulator.battlefield;match.start('song');
-    assert.equal(match.state.deployment.respawnSeconds,60);assert.equal(match.state.deployment.soldierAppearanceSeconds,45);
+    assert.equal(match.state.deployment.respawnSeconds,60);assert.equal(match.state.deployment.soldierAppearanceSeconds,5);
     assert.equal(second.arenaSimulator.roadMonsters.actors.length,0);
     for(const settings of [{respawnSeconds:5,soldierAppearanceSeconds:0},{respawnSeconds:30,soldierAppearanceSeconds:-1},{respawnSeconds:30,soldierAppearanceSeconds:NaN}])assert.throws(()=>match.configureDeployment(settings));
     assert.equal(match.state.deployment.respawnSeconds,60);

@@ -61,13 +61,13 @@
       assert.equal(odd.filter((unit:any)=>unit.team==='song').length,2);
     }
     const game=createHeadlessGame(process.cwd());
-    game.arenaSimulator.battlefield.start('song',{song:3,jin:2},9002);
+    game.arenaSimulator.battlefield.start('song',{song:3,jin:2},9002);game.arenaSimulator.tick(5);
     for(const unit of game.arenaSimulator.roadMonsters.actors)
       assert.equal(unit.battlefieldTeam,soldierTeamAt(unit.x,unit.y,9002));
   });
   test('SIMs preempt old targets only by attackable priority: player, SIM, then monster; distant SIMs do not block farming', () => {
     const game=createHeadlessGame(process.cwd()), sim=game.arenaSimulator, match=sim.battlefield;
-    match.start('song');
+    match.start('song');sim.tick(5);
     const [attacker]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
     const [opponent]=match.add({team:'song',faction:'shaolin',level:150,strength:'normal',count:1});
     const monster=sim.roadMonsters.actors.find((unit:any)=>unit.battlefieldTeam==='song');

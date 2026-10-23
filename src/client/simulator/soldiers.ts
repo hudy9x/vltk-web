@@ -7,6 +7,7 @@ export const SOLDIER_RANK_SKINS: Record<SoldierRank, readonly number[]> = {
   captain: [600, 598],
   commander: [595],
   general: [589],
+  grandGeneral: [589],
   marshal: [144, 566],
 };
 export const SOLDIER_SKIN_NAMES: Record<number, string> = {

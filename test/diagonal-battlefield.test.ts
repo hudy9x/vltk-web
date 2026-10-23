@@ -62,6 +62,7 @@
     const game = createHeadlessGame(process.cwd()),
       sim = game.arenaSimulator;
     sim.battlefield.start("jin", { song: 3, jin: 2 }, 9002);
+    sim.tick(5);
     assert.equal(sim.battlefield.state.mapId, 9002);
     assert.equal(game.v.x, 2734);
     assert.equal(game.v.y, 2634);

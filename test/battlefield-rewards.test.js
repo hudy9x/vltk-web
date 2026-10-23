@@ -4,11 +4,11 @@ const scope={};vm.runInNewContext(compileTypeScriptEntry('simulator/war-rewards.
 const {createWarRewards,warRank}=scope.Rewards;
 function fixture(random=()=>0){const player={x:0,y:0,hp:100},enemy={x:30,y:0,hp:100,battlefieldMonster:true,battlefieldTeam:'jin'};let running=true,alive=true,changed=0;const reward=createWarRewards({player:()=>player,team:()=> 'song',running:()=>running,alive:()=>alive,changed(){changed++}},random);return{player,enemy,reward,stop(){running=false},die(){alive=false},get changed(){return changed}};}
 test('military merit is credited once to the last hostile attacker including poison, with all five rank thresholds',()=>{
- const {player,enemy,reward}=fixture();reward.record(player,enemy);enemy.hp=0;reward.killed(enemy);reward.killed(enemy);assert.equal(reward.state.points,10);
+ const {player,enemy,reward}=fixture();reward.record(player,enemy);enemy.hp=0;reward.killed(enemy);reward.killed(enemy);assert.equal(reward.state.points,50);
  for(const [points,name]of [[0,'Binh sĩ'],[2999,'Binh sĩ'],[3000,'Hiệu úy'],[8999,'Hiệu úy'],[9000,'Thống lĩnh'],[17999,'Thống lĩnh'],[18000,'Phó tướng'],[29999,'Phó tướng'],[30000,'Đại tướng'],[1000000,'Đại tướng']])assert.equal(warRank(points).name,name);
- const ally={...enemy,hp:100,battlefieldTeam:'song'};reward.record(player,ally);reward.killed(ally);assert.equal(reward.state.points,10);
- const sim={x:0,y:0,hp:100,battlefieldTeam:'song'};const victim={...enemy,hp:100};reward.record(player,victim);reward.record(sim,victim);reward.killed(victim);assert.equal(reward.state.points,10);assert.equal(reward.rank(sim).points,10);
- for(let i=0;i<299;i++){const target={...enemy,hp:100};reward.record(player,target);reward.killed(target)}assert.equal(reward.state.title,'Hiệu úy');
+ const ally={...enemy,hp:100,battlefieldTeam:'song'};reward.record(player,ally);reward.killed(ally);assert.equal(reward.state.points,50);
+ const sim={x:0,y:0,hp:100,battlefieldTeam:'song'};const victim={...enemy,hp:100};reward.record(player,victim);reward.record(sim,victim);reward.killed(victim);assert.equal(reward.state.points,50);assert.equal(reward.rank(sim).points,50);
+ for(let i=0;i<59;i++){const target={...enemy,hp:100};reward.record(player,target);reward.killed(target)}assert.equal(reward.state.title,'Hiệu úy');
  reward.reset();assert.equal(reward.state.points,0);assert.equal(reward.drops.length,0);
 });
 test('drops stay on the ground until approached, inventory is consumed, buffs last 180 seconds and refresh without stacking',()=>{
@@ -24,7 +24,7 @@ test('drops stay on the ground until approached, inventory is consumed, buffs la
 });
 test('stale attribution and failed drop rolls never grant free merit or consumables',()=>{
  const {player,enemy,reward}=fixture(()=>.99);reward.record(player,enemy);reward.tick(16);reward.killed(enemy);assert.equal(reward.state.points,0);
- const target={...enemy,hp:100};reward.record(player,target);reward.killed(target);assert.equal(reward.state.points,10);assert.equal(reward.drops.length,0);assert.throws(()=>reward.use('attack'));
+ const target={...enemy,hp:100};reward.record(player,target);reward.killed(target);assert.equal(reward.state.points,50);assert.equal(reward.drops.length,0);assert.throws(()=>reward.use('attack'));
 });
 
 test('using another pill refreshes 180 seconds without doubling stats',()=>{

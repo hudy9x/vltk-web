@@ -164,11 +164,12 @@ test('maximum patrol configuration uses safe, reachable mirrored points belongin
 test('live battlefield integration enters and respawns on 9003, then restores both existing layouts', () => {
   const game = createHeadlessGame(process.cwd()), sim = game.arenaSimulator;
   for (const team of ['song', 'jin']) {
-    sim.battlefield.start(team, { song: 3, jin: 2 }, 9003);
+    sim.battlefield.start(team, { song: 3, jin: 2 }, 9003);sim.tick(5);
     assert.equal(sim.battlefield.state.mapId, 9003);
     assert.equal(game.v.x, layout.camps[team].x);
     assert.equal(game.v.y, layout.camps[team].y);
     assert.equal(sim.roadMonsters.actors.length, 70);
+    sim.battlefield.tick(600);
     const nav = navigation();
     for (const actor of sim.roadMonsters.actors) assert.ok(nav.canStand(actor.x, actor.y));
     for (const side of ['song', 'jin']) {

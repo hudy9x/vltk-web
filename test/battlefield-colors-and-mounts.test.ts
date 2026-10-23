@@ -211,6 +211,7 @@
     );
     for (const playerTeam of ["song", "jin"]) {
       simulator.battlefield.start(playerTeam);
+      simulator.battlefield.tick(600);
       const own = simulator.battlefield.add({
         team: playerTeam,
         faction: "wudang",

@@ -41,11 +41,11 @@ export function mountWarLeaderboard(
   panel.setAttribute("aria-label", "Bảng xếp hạng Tống Kim");
   panel.innerHTML =
     '<header><h2>Bảng xếp hạng · Tống Kim</h2><button class="war-close" aria-label="Đóng bảng xếp hạng">×</button></header><div class="war-content"><p id="war-match-status"></p><p id="war-team-totals"></p><p id="war-personal-rank"></p><p id="war-personal-bonus"></p><table><thead><tr><th>Hạng</th><th>Nhân vật</th><th>Phe</th><th>Danh hiệu</th><th>Binh sĩ hạ</th><th>Điểm</th></tr></thead><tbody></tbody></table><p>Top 10 quân trạng · Esc để đóng</p><details><summary>Mốc quân hàm và chỉ số thưởng (tối đa 20%)</summary><div id="war-rank-guide"></div><p>Thưởng theo quân hàm hiện tại, không cộng dồn. Kháng tăng theo tỷ lệ trên giá trị dương hiện có; 50% kháng → 60% ở Đại tướng. Giữ thưởng qua hồi sinh, hết hiệu lực khi rời trận. Boss doanh trại mang danh hiệu Nguyên soái.</p></details></div>';
-  panel.querySelector("#war-rank-guide")!.innerHTML = '<table><thead><tr><th>Danh hiệu</th><th>Quân trạng</th><th>ST vật lý ngoại/nội công</th><th>Tốc độ đánh/thi triển</th><th>Kháng</th></tr></thead><tbody>' + WAR_RANKS.map((rank,index) => {
+  panel.querySelector("#war-rank-guide")!.innerHTML = '<table><thead><tr><th>Danh hiệu</th><th>Quân trạng</th><th>ST vật lý ngoại/nội công</th><th>Tốc độ đánh/thi triển</th><th>Kháng</th><th>Hạ NPC</th><th>Hạ SIM/người chơi</th></tr></thead><tbody>' + WAR_RANKS.map((rank,index) => {
     const next = WAR_RANKS[index+1];
     const range = next ? `${rank.points.toLocaleString("vi-VN")}–${(next.points-1).toLocaleString("vi-VN")}` : `Từ ${rank.points.toLocaleString("vi-VN")}`;
     const bonus = Math.round(rank.bonus*100);
-    return `<tr><td style="color:${battlefieldTitleColor(rank.name)}">${rank.name}</td><td>${range}</td><td>+${bonus}%</td><td>+${bonus}%</td><td>+${bonus}%</td></tr>`;
+    return `<tr><td style="color:${battlefieldTitleColor(rank.name)}">${rank.name}</td><td>${range}</td><td>+${bonus}%</td><td>+${bonus}%</td><td>+${bonus}%</td><td>+${50*(index+1)}</td><td>+${150*(index+1)}</td></tr>`;
   }).join('') + '</tbody></table>';
   const close = () => {
     panel.hidden = true;
