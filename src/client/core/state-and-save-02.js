@@ -14,6 +14,7 @@ var Td = function (A) {
     l.dirty && D0());
   const n = l.P;
   if (typeof combatSandbox !== "undefined" && combatSandbox) combatSandbox.tick(A);
+  else if (typeof arenaSimulator !== "undefined" && arenaSimulator?.battlefield.active) arenaSimulator.tick(A);
   advanceSkillContacts(A);
   if (typeof arenaSimulator !== "undefined" && arenaSimulator && arenaSimulator.battlefield.active) {
     if (!arenaSimulator.battlefield.running) return;
