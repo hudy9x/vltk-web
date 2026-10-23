@@ -14,8 +14,8 @@ Vị trí đặt nằm trong `maps/content/<id>/map.json`, trường `npcs`:
 }
 ```
 
-`id` phân biệt từng lần đặt; `npcId` tham chiếu mẫu. Có thể đặt nhiều bản của cùng một mẫu. `team` có thể bỏ qua để cả hai phe cùng nhìn thấy. Bỏ trường `npcs` dùng bố trí mặc định trong `index.ts` cho Biện Kinh (37), Song Doanh (9001) và Chéo Doanh (9002); `npcs: []` giữ map không có NPC. Editor chỉ ghi danh sách riêng khi thêm, di chuyển, sửa hoặc xóa NPC.
+`id` phân biệt từng lần đặt; `npcId` tham chiếu mẫu. Có thể đặt nhiều bản của cùng một mẫu. `team` có thể bỏ qua để cả hai phe cùng nhìn thấy. Bỏ trường `npcs` dùng bố trí mặc định trong `index.ts` cho Biện Kinh (37); Hoang Nguyên (9003) lưu vị trí NPC trực tiếp trong `map.json`; `npcs: []` giữ map không có NPC. Editor chỉ ghi danh sách riêng khi thêm, di chuyển, sửa hoặc xóa NPC.
 
-Game dùng cùng sprite, hướng và vị trí với editor. Tại Biện Kinh, Dược Điếm mở shop thuốc thường. Tại chiến trường, Dược Điếm mở shop tiếp tế và kiểm tra khoảng cách theo vị trí đã đặt cho phe người chơi. Xóa hết Dược Điếm đồng nghĩa không có điểm mua thuốc trong trận. Trong phòng Tống Kim (`npm run dev:arena`), Chiêu Mộ Sứ mở mục **Tham gia chiến trường** để chọn Song Doanh, Chéo Doanh hoặc Hoang Nguyên, chọn phe Tống/Kim rồi bấm **Tham gia chiến trường**. Các tab còn lại giữ cài đặt trận, quân và binh sĩ. Bản game thường hiển thị hướng dẫn vào phòng Tống Kim.
+Game dùng cùng sprite, hướng và vị trí với editor. Tại Biện Kinh, Dược Điếm mở shop thuốc thường. Tại chiến trường, Dược Điếm mở shop tiếp tế và kiểm tra khoảng cách theo vị trí đã đặt cho phe người chơi. Xóa hết Dược Điếm đồng nghĩa không có điểm mua thuốc trong trận. Trong phòng Tống Kim (`npm run dev:arena`), Chiêu Mộ Sứ mở mục **Tham gia chiến trường** với chiến trường mặc định Hoang Nguyên, chọn phe Tống/Kim rồi bấm **Tham gia chiến trường**. Các tab còn lại giữ cài đặt trận, quân và binh sĩ. Bản game thường cũng tham gia trực tiếp qua Chiêu Mộ Sứ.
 
 Thêm mẫu mới vào catalog cần nối hành vi tương tác tương ứng trong `equipment-trader-01.js`. Danh sách ảnh được native editor và server giới hạn theo catalog.

@@ -92,7 +92,8 @@
     >("simulator/supplies.ts");
     let gold = 1000,
       recoverable = true;
-    const position = { x: 450, y: 1792 };
+    const camp = require('../src/client/maps/content/9003/layout.json').camps.song;
+    const position = { ...camp };
     const supplies = createWarSupplies({
       running: () => true,
       alive: () => true,
@@ -141,7 +142,7 @@
     assert.equal(gold, paid);
     position.x = 1000;
     assert.throws(() => supplies.buy("hp", 1), /điểm tập trung/);
-    position.x = 450;
+    position.x = camp.x;
     supplies.reset();
     assert.throws(() => supplies.buy("both", 60), /ngân lượng/);
     assert.equal(supplies.state.total, 0);
@@ -219,7 +220,7 @@
 
   test("recruitment offers battlefield selection and joins the selected map/team only after pressing Join", () => {
     const { createHeadlessGame } = require("../tools/sim-balance/legacy-runtime.ts");
-    for (const mapId of [9001, 9002, 9003]) for (const team of ["song", "jin"]) {
+    for (const mapId of [9003]) for (const team of ["song", "jin"]) {
       const game = createHeadlessGame(process.cwd()), simulator = game.arenaSimulator;
       simulator.tick(.01);
       const recruiter = game.equipmentTrader.entities().find((npc: any) => npc.name === "Chiêu Mộ Sứ");
@@ -231,7 +232,7 @@
       assert.equal(field("section-join").hidden, false);
       assert.equal(field("section-match").hidden, true);
       assert.match(panel.innerHTML, /Tham gia chiến trường Tống Kim/);
-      for (const id of [9001, 9002, 9003]) assert.ok(panel.innerHTML.includes(`value="${id}"`));
+      for (const id of [9003]) assert.ok(panel.innerHTML.includes(`value="${id}"`));
       field("map").value = String(mapId);
       field("player").value = team;
       field("tab-match").onclick();

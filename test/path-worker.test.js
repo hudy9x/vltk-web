@@ -85,7 +85,7 @@ test('worker detours are used only when the actor, generation, target and origin
 
 test('built worker executes on another thread and detours around bodies on actual map terrain', async t => {
   const Maps = moduleAt('maps/index.ts', 'Maps'), nav = Maps.createNavigationRuntime();
-  nav.load(9001, Maps.createLegacyCatalog().navigation[9001]);
+  nav.load(9003, Maps.createLegacyCatalog().navigation[9003]);
   const actor = { x: 1300, y: 1792 }, goal = { x: 1560, y: 1792 };
   const bodies = [actor, ...Array.from({ length: 7 }, (_, i) => ({ x: 1396, y: 1792 + (i - 3) * 23 }))];
   const source = compileTypeScriptEntry('workers/crowd-path.ts', 'PathWorker').code;

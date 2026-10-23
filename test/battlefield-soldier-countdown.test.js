@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const {createHeadlessGame}=require('../tools/sim-balance/legacy-runtime.ts');
 
 test('entering either team on every battlefield counts down 5 to 1 and spawns all NPCs at exactly five seconds',()=>{
- for(const team of ['song','jin']) for(const mapId of [9001,9002,9003]) {
+ for(const team of ['song','jin']) for(const mapId of [9003]) {
   const game=createHeadlessGame(process.cwd()),sim=game.arenaSimulator,match=sim.battlefield;
   match.start(team,{song:3,jin:2},mapId);
   const notice=game.simNodes.find(node=>node.id==='battlefield-soldier-countdown');

@@ -47,10 +47,10 @@
     }
     road.clear(); road.start(); assert.equal(bodies.size,6);
   });
-  test('total counts and explicit teams agree with camp territory and walkable positions on both maps', () => {
+  test('total counts and explicit teams agree with camp territory and walkable positions on Hoang Nguyên', () => {
     const {DEFAULT_SOLDIERS,soldierSpawnPlan,soldierTeamAt} = loadPopulationModule('simulator/soldier-config.ts');
     const maps=loadPopulationModule('maps/index.ts');
-    for(const mapId of [9001,9002]) {
+    for(const mapId of [9003]) {
       const plan=soldierSpawnPlan(DEFAULT_SOLDIERS,mapId);
       assert.equal(plan.length,70);
       for(const team of ['song','jin']) assert.equal(plan.filter((unit:any)=>unit.team===team).length,35);
@@ -61,9 +61,9 @@
       assert.equal(odd.filter((unit:any)=>unit.team==='song').length,2);
     }
     const game=createHeadlessGame(process.cwd());
-    game.arenaSimulator.battlefield.start('song',{song:3,jin:2},9002);game.arenaSimulator.tick(5);
+    game.arenaSimulator.battlefield.start('song',{song:3,jin:2},9003);game.arenaSimulator.tick(5);
     for(const unit of game.arenaSimulator.roadMonsters.actors)
-      assert.equal(unit.battlefieldTeam,soldierTeamAt(unit.x,unit.y,9002));
+      assert.equal(unit.battlefieldTeam,soldierTeamAt(unit.x,unit.y,9003));
   });
   test('SIMs preempt old targets only by attackable priority: player, SIM, then monster; distant SIMs do not block farming', () => {
     const game=createHeadlessGame(process.cwd()), sim=game.arenaSimulator, match=sim.battlefield;

@@ -7,7 +7,6 @@ const { compileTypeScriptEntry } = require('./build-app');
 function load(file, name) { const s = { atob, btoa, setTimeout, clearTimeout }; vm.runInNewContext(compileTypeScriptEntry(file, name).code, s); return s[name]; }
 const { createCrowdSteering } = load('simulator/crowd.ts', 'Crowd');
 const { createPathWorkerClient } = load('simulator/path-worker-client.ts', 'Client');
-const { createBattlefieldApproach } = load('simulator/approach.ts', 'Approach');
 const Maps = load('maps/index.ts', 'Maps');
 const source = compileTypeScriptEntry('workers/crowd-path.ts', 'RouteWorker').code;
 function background() {
@@ -25,10 +24,10 @@ function background() {
 const count = Number(process.argv[2] || 40);
 if (!Number.isInteger(count) || count < 2 || count > 200 || count % 2) throw Error('Use an even SIM count between 2 and 200');
 async function run(useWorker) {
-  const nav = Maps.createNavigationRuntime(); nav.load(9001, Maps.createLegacyCatalog().navigation[9001]);
+  const nav = Maps.createNavigationRuntime(); nav.load(9003, Maps.createLegacyCatalog().navigation[9003]);
   const bridge = useWorker ? background() : null;
   const client = bridge ? createPathWorkerClient(() => bridge) : undefined;
-  const crowd = createCrowdSteering(client), approach = createBattlefieldApproach(), actors = [];
+  const crowd = createCrowdSteering(client), actors = [];
   for (const [team, x, goal] of [['song', 1300, 2350], ['jin', 2284, 1234]]) for (let i = 0; i < count / 2; i++)
     actors.push({ x: x + (team === 'song' ? -1 : 1) * Math.floor(i / 5) * 60, y: 1736 + i % 5 * 28,
       simId: `sim-${actors.length+1}`, battlefieldTeam: team, hp: 100, goal, lane: (i % 5 - 2) * 16 });
@@ -38,7 +37,7 @@ async function run(useWorker) {
     for (let frame = 0; frame < 360; frame++) {
       const start = performance.now(); nav.beginTick(); crowd.begin(actors, 1/60);
       for (const actor of actors) {
-        const goal = approach(actor, { x: actor.goal, y: 1792 }) || { x: actor.goal, y: 1792 };
+        const goal = { x: actor.goal, y: 1792 };
         const before = { x: actor.x, y: actor.y };
         const waypoint = crowd.route(actor, { x: goal.x, y: goal.y + actor.lane }, clear);
         nav.moveWithFlow(actor, waypoint.x, waypoint.y, 4);

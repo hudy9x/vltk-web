@@ -828,7 +828,9 @@ var bm = function () {
   const A = m("#u20zn");
   if (!A || !o.fac) return;
   const n =
-    l.tower && typeof Hn < "u"
+    l.battlefield
+      ? MapsEngine.getMap(Z0.key)?.name || "Tống Kim"
+      : l.tower && typeof Hn < "u"
       ? `${Hn.n} · tầng ${l.tower.floor}`
       : l.dg
         ? l.dg.kind === "boat"

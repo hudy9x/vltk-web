@@ -12,7 +12,8 @@ function loadModule<Module>(entry: string, globalName: string): Module {
 test('war supplies enforce a combined capacity of 60 potions, successful uses only, and explicit living camp refill', () => {
   const { createWarSupplies } = loadModule<typeof import('../src/client/simulator/supplies.ts')>('simulator/supplies.ts', 'Supplies');
   let running = true, alive = true, canRecover = true;
-  const position = { x: 450, y: 1792 };
+  const camp = require('../src/client/maps/content/9003/layout.json').camps.song;
+    const position = { ...camp };
   const supplies = createWarSupplies({ running: () => running, alive: () => alive, team: () => 'song', position: () => position,
     recover: () => canRecover, changed() {} });
   supplies.reset(true);
@@ -22,7 +23,7 @@ test('war supplies enforce a combined capacity of 60 potions, successful uses on
   for (let index = 0; index < 30; index++) { assert.equal(supplies.use('life'), true); assert.equal(supplies.use('mana'), true); }
   assert.equal(supplies.use('life'), false); assert.equal(supplies.use('mana'), false);
   position.x = 3134; assert.throws(() => supplies.refill(), /điểm tập trung/);
-  position.x = 450; alive = false; assert.throws(() => supplies.refill(), /điểm tập trung/);
+  position.x = camp.x; alive = false; assert.throws(() => supplies.refill(), /điểm tập trung/);
   alive = true; assert.equal(supplies.state.life, 0, 'reviving alone does not restock');
   supplies.refill(); assert.equal(supplies.state.life, 30); assert.equal(supplies.state.mana, 30);
   running = false; assert.equal(supplies.use('life'), false);

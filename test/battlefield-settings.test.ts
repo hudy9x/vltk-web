@@ -40,7 +40,7 @@
     second.arenaSimulator.openSettings();
     const restoredPanel = second.simNodes.find((node: any) => node.id === 'battlefield-panel');
     const restored = (id: string) => restoredPanel.querySelector('#battlefield-' + id);
-    assert.equal(restored('map').value, '9002');
+    assert.equal(restored('map').value, '9003', 'retired map setting falls back to Hoang Nguyên');
     assert.equal(restored('soldier-soldier-count').value, '0');
     assert.equal(restored('soldier-commander-hp').value, '87654');
     assert.equal(restored('soldier-commander-patrol').value, '250');
@@ -92,7 +92,7 @@
       const bosses = simulator.actors.filter((actor: any) => actor.battlefieldTeam === team && actor.battlefieldBoss);
       assert.equal(bosses.length, 1);
       assert.equal(bosses[0].max, 200000);
-      const camp = simulator.battlefield.state.camps[team];
+      const camp = require('../src/client/maps/content/9003/layout.json').marshals[team];
       assert.equal(bosses[0].x, camp.x);
       assert.equal(bosses[0].y, camp.y);
     }

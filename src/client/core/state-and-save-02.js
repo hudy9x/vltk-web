@@ -23,7 +23,7 @@ var Td = function (A) {
   }
   if (l.deadT > 0) {
     ((l.deadT -= A),
-      l.deadT <= 0 && ((l.life = n.life), (l.mana = n.mana), (o.wave = 1), Ga() || o8()));
+      l.deadT <= 0 && ((l.life = n.life), (l.mana = n.mana), (o.wave = 1), Ga() || l.battlefield || o8()));
     return;
   }
   if (l.mana <= 0 && l.life > 0 && typeof manaNotice === "function") manaNotice({cost:1});
@@ -64,7 +64,7 @@ var Td = function (A) {
     !l.enemies.length)
   ) {
     if ($1()) Ah(A);
-    if (Ga()) return;
+    if (Ga() || l.battlefield) return;
     if (t && l.lootWait < 8) {
       l.lootWait += A;
       return;
@@ -107,6 +107,7 @@ var Td = function (A) {
 };
 
 var rD = function () {
+  if (l.battlefield) return;
   if (((l.stall = 0), l.dg)) return;
   if (l.tower) {
     const n = _1().reduce((e, a) => e + Math.max(0, a.hp), 0),
@@ -141,7 +142,7 @@ var Cd = function () {
       cD(A),
       W3(r0[A.tid].anim, "die", 0.5),
       l.quiet || ((A.act = "die"), (A.actT = 0), l.corpses.push(A)));
-  !Ga() && l.enemies.length && l.enemies.every((A) => A.dead) && ((l.enemies = []), lD());
+  !l.battlefield && !Ga() && l.enemies.length && l.enemies.every((A) => A.dead) && ((l.enemies = []), lD());
 };
 
 var cD = function (A) {
@@ -672,7 +673,7 @@ var VD = MapsEngine.FIELD_POLICY.initialBossDelay;
 
 var ZD = MapsEngine.FIELD_POLICY.killsPerRound;
 
-var Ga = () => !l.dg && !l.tower && !l.town && !window.NO_FIELD;
+var Ga = () => !l.dg && !l.tower && !l.town && !l.battlefield && !window.NO_FIELD;
 
 var Rd = () => `${Z0.key}|${AA(Math.min(o.stage, d0)).id}|${o.diff}|${v0()}`;
 

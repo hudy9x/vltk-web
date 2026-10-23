@@ -69,20 +69,6 @@ test('result is decided at 20 minutes; both bosses dead is a draw regardless of 
   }
 });
 
-test('Song Doanh camps are connected through the bridge and river collision matches the authored map', () => {
-  const scope = { atob, btoa };
-  vm.runInNewContext(compileTypeScriptEntry('maps/index.ts', 'Maps').code, scope);
-  const engine = scope.Maps, map = engine.getMap(9001);
-  assert.equal(map.spawnMode, 'fixed'); assert.equal(map.spawns.length, 0);
-  const navigation = engine.createNavigationRuntime();
-  const definition = engine.createLegacyCatalog().navigation[9001];
-  navigation.load(9001, definition);
-  assert.equal(navigation.walkable(450,1792), true); assert.equal(navigation.walkable(3134,1792), true);
-  assert.equal(navigation.walkable(1792,700), false); assert.equal(navigation.walkable(1792,1792), true);
-  const path = navigation.path(450,1792,3134,1792);
-  assert.ok(path && path.length > 0, 'camps connect through the central bridge');
-});
-
 test('async reinforcements report progress and leaving cancels creation without leaving actors behind', async () => {
   const { match, actors } = fixture(); match.start('song');
   const progress = [];
@@ -121,15 +107,15 @@ test('team soldiers reject friendly fire and fight only opposing soldiers, SIMs 
   match.tick(1200);assert.equal(match.canHit(player,monsters[1]),false);
 });
 
-test('each camp assigns balanced upper/middle/lower routes and preserves a soldier lane on respawn',async()=>{
+test('Hoang Nguyên gives each camp distinct muster slots and restores the same slot on respawn',async()=>{
   const {match}=fixture();match.start('song');
   const army=await match.addBothAsync({faction:'shaolin',level:150,strength:'normal',count:40},()=>{},async()=>{});
   for(const side of ['song','jin']) {
     const soldiers=army.filter(actor=>actor.battlefieldTeam===side);
-    assert.deepEqual([0,1,2].map(lane=>soldiers.filter(actor=>actor.battlefieldLane===lane).length),[7,7,6]);
+    assert.equal(new Set(soldiers.map(actor=>`${actor.x},${actor.y}`)).size,20);
   }
-  const actor=army[0],lane=actor.battlefieldLane;actor.hp=0;match.tick(.1);match.tick(30);
-  assert.equal(actor.battlefieldLane,lane);
+  const actor=army[0],home={x:actor.x,y:actor.y};actor.hp=0;match.tick(.1);match.tick(30);
+  assert.equal(actor.x,home.x);assert.equal(actor.y,home.y);
 });
 
 test('reinforcements reserve two marshal slots and enforce 500 SIMs before and after halftime', () => {

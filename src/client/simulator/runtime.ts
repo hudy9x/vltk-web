@@ -27,7 +27,6 @@ import { createRoadMonsters } from './road-monsters';
 import { createArmyEquipment } from './equipment';
 import { createCrowdSteering } from './crowd';
 import { createPathWorkerClient } from './path-worker-client';
-import { createBattlefieldApproach } from './approach';
 import { createBattlefield, BATTLE_MAP, CAMPS, ELEMENT_FACTIONS, estimateDPS } from './battlefield';
 import type { ArmyBuild } from './battlefield';
 import { mountBattlefieldPanel } from './battlefield-panel';
@@ -145,7 +144,6 @@ export function createSimulator() {
       l.skCd = {}; l.clickHold = false; Y.target = null; Y.active = false; Y.keys = {};
     },
   };
-  const battlefieldApproach = createBattlefieldApproach();
   const crowd = createCrowdSteering(createPathWorkerClient());
   let sim: SimulatorActor | null = null, nextSimId = 0, refreshTime = 0;
   const actors: SimulatorActor[] = [];
@@ -606,14 +604,11 @@ export function createSimulator() {
     actor.seeT = (actor.seeT || 0) - dt;
     if (actor.seeT <= 0) { actor.seeT = .25; actor.see = skillIgnoresTerrain(skill) || mt(actor.x, actor.y, target.x, target.y); }
     // Same approach/line-of-sight/cooldown cadence as the monster $d loop.
-    const approach = actor.battlefieldTeam && !actor.battlefieldBoss ? battlefieldApproach(actor, target) : null;
-    actor.moving = !!approach || distance() > reach || !actor.see;
+    actor.moving = distance() > reach || !actor.see;
     if (actor.battlefieldBoss && actor.moving) { actor.moving = false; return; }
     if (actor.moving) {
       const before = { x: actor.x, y: actor.y }, step = actor.spd * speed * dt;
-      // Different bridge lanes keep both armies from converging on one waypoint.
-      const lane = actor.battlefieldTeam ? ((Number(actor.simId.replace('sim-', '')) % 5) - 2) * 16 : 0;
-      const goal = { x: approach?.x ?? target.x, y: approach ? approach.y + lane : target.y };
+      const goal = { x: target.x, y: target.y };
       const clear = (x: number,y: number,tx: number,ty: number) => typeof mapNavigation !== 'undefined' ? mapNavigation.clear(x,y,tx,ty) : mt(x,y,tx,ty);
       const waypoint = actor.battlefieldTeam ? crowd.route(actor,goal,clear) : goal;
       Mw(actor, waypoint.x, waypoint.y, step);
@@ -624,7 +619,6 @@ export function createSimulator() {
         Object.assign(actor, next);
       }
     }
-    if (approach) { actor.waiting = "Hành quân qua cầu"; return; }
     if (distance() > reach + 4 || !actor.see || actor.cooldown > 0) return;
     const cost = skill.cost || 0;
     if (skill.costLife && actor.hp <= cost) { actor.waiting = "Chưa đủ sinh lực để ra chiêu"; return; }
@@ -1131,6 +1125,7 @@ export function createSimulator() {
       sandbox.clearCombat?.(false);
       ma(BATTLE_MAP); l.bgImg = bA(MapsEngine.getMapBackground(BATTLE_MAP)); l.zoneShown = BATTLE_MAP;
       l.town = false; l.battlefield = true; o.ctrl = 'manual'; o.autoMap = false;
+      document.getElementById('townBar')?.classList.add('hidden');
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = true;
       Object.assign(v, CAMPS[team]); l.life = l.P.life; l.mana = l.P.mana;
       simNames.reset(); warEvents.length=0; warRewards.reset(); supplies.reset(true); roadMonsters.start(); updateWarNpcs();
@@ -1145,6 +1140,7 @@ export function createSimulator() {
       sandbox.clearCombat?.(false);
       ma(previousField.key); Object.assign(v, { x: previousField.x, y: previousField.y });
       Object.assign(l, { bgImg: previousField.bgImg, zoneShown: previousField.zoneShown, town: previousField.town, life: previousField.life, mana: previousField.mana, battlefield: false, deadT: 0 });
+      document.getElementById('townBar')?.classList.toggle('hidden', !l.town);
       o.ctrl = previousField.ctrl; o.autoMap = previousField.autoMap; previousField = null;
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = false;
     },

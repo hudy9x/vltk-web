@@ -46,7 +46,7 @@ const config = { level: 150, potential: 745, regularSkills: 149,
   distance: openingDistance, dt: timeStep, maxSeconds: maximumSeconds, repeats: repetitions,
   mana: 'finite MP, passive recovery and skill-defense fixes',
   pvpDamage: game.arenaSimulator.pvpDamageScale({ arenaSim: true }, { arenaSim: true }),
-  movement: 'central bridge with real navigation',
+  movement: 'Hoang Nguyên with real navigation',
   note: 'Native attributes, skills, G3/Be missiles, secondary contacts and navigation. One configured primary skill per faction, basic attacks while MP recovers. Support attributes assumed; no active support/curse/aura AI, player/soldier/boss targets, respawn or consumables. Canvas/UI stubs only.',
 };
 fs.writeFileSync(path.join(outputDirectory, `duels-${openingDistance}.json`), JSON.stringify({ config, builds: dataset.builds, results }, null, 2));

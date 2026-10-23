@@ -19,15 +19,15 @@ const readMap = id => JSON.parse(fs.readFileSync(path.join(root, `src/client/map
 const document = id => model.createDocument({ projects: {}, encounters: JSON.parse(fs.readFileSync(path.join(root, 'src/client/gameplay/encounters/catalog.json'))),
   progression: JSON.parse(fs.readFileSync(path.join(root, 'src/client/maps/progression.json'))) }, readMap(id));
 
-test('NPC catalog has four reusable idle sheets and inherited layouts cover town and both battlefields', () => {
+test('NPC catalog has four reusable idle sheets and placements cover town and Hoang Nguyên', () => {
   assert.deepEqual(plain(npcs.npcCatalog.map(npc => npc.id)), ['equipment', 'pharmacy', 'tongkim', 'horse']);
   for (const npc of npcs.npcCatalog) {
     assert.ok(fs.statSync(path.join(root, 'src/client', npc.image.slice(4))).size > 0);
     assert.equal(npc.directions, 8);
   }
-  for (const id of [37, 9001, 9002]) {
+  for (const id of [37, 9003]) {
     const map = readMap(id);
-    delete map.npcs; // Test inherited defaults independently of editor-saved placements.
+    if (id === 37) delete map.npcs; // Only town inherits a legacy layout.
     const before = JSON.stringify(map), layout = npcs.mapNpcs(map);
     assert.ok(layout.length >= 4);
     assert.equal(JSON.stringify(map), before, 'opening or rendering does not materialize defaults');
@@ -42,8 +42,8 @@ test('NPC catalog has four reusable idle sheets and inherited layouts cover town
   }
 });
 
-test('editing NPC positions is undoable and survives compile, serialization and reload on all three maps', () => {
-  for (const id of [37, 9001, 9002]) {
+test('editing NPC positions is undoable and survives compile, serialization and reload in town and Hoang Nguyên', () => {
+  for (const id of [37, 9003]) {
     const original = document(id), initial = model.documentKey(original), draft = model.cloneDocument(original);
     const first = npcs.editableNpcs(draft.map)[0];
     first.position = { x: 400, y: 400 }; first.animated = true; first.direction = 7;
@@ -94,7 +94,7 @@ function legacyGame(maps) {
 }
 
 test('game consumes authored positions, hides removed NPCs, switches maps/teams and keeps original shop interactions', () => {
-  const town = readMap(37), war = readMap(9001), diagonal = readMap(9002), scope = legacyGame([town, war, diagonal]);
+  const town = readMap(37), war = readMap(9003), scope = legacyGame([town, war]);
   scope.equipmentTrader.place({ x: 99, y: 99, name: 'Mã Phu' });
   town.npcs = [{ id: 'new-horse', npcId: 'horse', position: { x: 300, y: 400 } },
     { id: 'new-pharmacy', npcId: 'pharmacy', position: { x: 500, y: 600 } }];
@@ -104,14 +104,14 @@ test('game consumes authored positions, hides removed NPCs, switches maps/teams 
   entities[1].onInteract(); assert.equal(scope.pharmacyOpened, 'med');
   town.npcs = []; assert.equal(scope.equipmentTrader.entities().length, 0);
   scope.l.town = false;
-  const state = { mapId: 9001, team: 'song' };
+  const state = { mapId: 9003, team: 'song' };
   scope.arenaSimulator = { battlefield: { active: true, state }, openPharmacy() { scope.warShop = true; }, openSettings() { scope.settingsOpened = true; } };
-  for (const mapId of [9001, 9002]) for (const team of ['song', 'jin']) {
+  for (const mapId of [9003]) for (const team of ['song', 'jin']) {
     Object.assign(state, { mapId, team });
     entities = scope.equipmentTrader.entities();
     assert.equal(entities.length, 3);
     assert.ok(entities.every(npc => npc.mapNpc.team === team));
-    const expected = npcs.mapNpcs(mapId === 9001 ? war : diagonal).filter(npc => npc.team === team);
+    const expected = npcs.mapNpcs(war).filter(npc => npc.team === team);
     assert.deepEqual(plain(entities.map(npc => [npc.x, npc.y])), plain(expected.map(npc => [npc.position.x, npc.position.y])));
     entities.find(npc => npc.mapNpc.npcId === 'pharmacy').onInteract(); assert.equal(scope.warShop, true);
     entities.find(npc => npc.mapNpc.npcId === 'tongkim').onInteract(); assert.equal(scope.settingsOpened, true);
@@ -187,7 +187,7 @@ async function canvasFixture(doc, tool) {
 }
 
 test('canvas places reusable NPCs, drags with a foot offset, clamps to map and cancels without committing', async () => {
-  for (const mapId of [37, 9001, 9002]) {
+  for (const mapId of [37, 9003]) {
     const doc = document(mapId); doc.map.npcs = [{ id: 'existing', npcId: 'horse', position: { x: 800, y: 800 } }];
     const add = await canvasFixture(doc, 'npc');
     add.emit('pointerdown', 1000, 1000); add.emit('pointerup', 1000, 1000);
@@ -212,7 +212,7 @@ test('canvas places reusable NPCs, drags with a foot offset, clamps to map and c
 });
 
 test('removing one NPC preserves the opposite camp, allows re-adding and survives save/reload and undo', () => {
-  for (const mapId of [37, 9001, 9002]) {
+  for (const mapId of [37, 9003]) {
     const original = document(mapId), before = plain(npcs.mapNpcs(original.map));
     const next = model.cloneDocument(original), selected = before[0];
     assert.equal(npcs.removeNpc(next.map, selected.id), true);

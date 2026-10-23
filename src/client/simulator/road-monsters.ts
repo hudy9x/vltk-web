@@ -47,7 +47,7 @@ export function createRoadMonsters(host: Host) {
     const delay = host.appearanceDelay?.() ?? 0;
     if (!Number.isFinite(delay) || delay < 0 || delay > 1200) throw new Error("Thời gian xuất hiện binh sĩ: 0–1.200 giây.");
     started = true;
-    soldierSpawnPlan(configuration, host.mapId?.() || 9001).forEach((spawn, index) =>
+    soldierSpawnPlan(configuration, host.mapId?.() || 9003).forEach((spawn, index) =>
       slots.push({
         actor: delay === 0 ? host.create(index, spawn.x, spawn.y, spawn) : null,
         due: delay === 0 ? null : delay,

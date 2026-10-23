@@ -282,7 +282,7 @@ var equipmentTrader = (function () {
     const battle = typeof arenaSimulator !== 'undefined' && arenaSimulator?.battlefield.active ? arenaSimulator.battlefield.state : null;
     const mapId = battle ? battle.mapId : l.dg || l.tower ? 0 : l.town ? 37 : typeof Z0 !== 'undefined' ? Number(Z0.key) : 0;
     const map = MapsEngine.getMap(mapId);
-    if (!map || (map.npcs === undefined && ![37, 9001, 9002].includes(map.id))) return legacy;
+    if (!map || (map.npcs === undefined && map.id !== 37)) return legacy;
     const names = new Set(MapsEngine.npcCatalog.map(npc => npc.name));
     const actions = {
       equipment: open,

@@ -524,7 +524,9 @@ var SP = function (A) {
           : l.dg.d.n
         : l.tower
           ? `Tháp · tầng ${l.tower.floor}`
-          : AA(Math.min(o.stage, d0)).n,
+          : l.battlefield
+            ? MapsEngine.getMap(Z0.key)?.name || "Tống Kim"
+            : AA(Math.min(o.stage, d0)).n,
       t + n / 2,
       e + n + 11,
     ),

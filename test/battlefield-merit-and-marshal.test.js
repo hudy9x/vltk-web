@@ -30,7 +30,7 @@ test('NPC and SIM merit follow all five victim tiers on both teams, with live SI
 });
 
 test('marshals spawn once at 50%, retain match-start HP, and notify only the opposing player until timeout/reset',()=>{
- for(const team of ['song','jin']) for(const map of [9001,9002,9003]) {
+ for(const team of ['song','jin']) for(const map of [9003]) {
   const game=createHeadlessGame(process.cwd()),sim=game.arenaSimulator,match=sim.battlefield;
   match.start(team,{song:3,jin:2},map);
   const notice=game.simNodes.find(node=>node.id==='battlefield-marshal-notice');

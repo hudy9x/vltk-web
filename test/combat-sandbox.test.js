@@ -157,7 +157,7 @@ test('one damage can be disabled for living monsters and future respawns, and su
   restored.combatSandbox.setOneDamage(true);assert.ok(restored.l.enemies.every(e=>e.dmg===1));
 });
 
-function simulatorGame(entries, arena=true) {
+function simulatorGame(entries, arena=true, nativeMonsters=false) {
   const s=game(arena,entries), fields=s.fields;
   s.Math=Object.create(Math);s.Math.random=()=>.5;
   const element=()=>({value:'',checked:false,hidden:false,style:{},attributes:{},listeners:{},
@@ -184,6 +184,7 @@ function simulatorGame(entries, arena=true) {
   s.l.enemies ||= [];
   s.l.P=s.j0();for(const enemy of s.l.enemies)Object.assign(enemy,{n:"Quái",res:s.l.P.res,def:0,series:0,act:"at"});s.l.life=1000;s.l.mana=100;s.l.zoneShown=1;s.l.quiet=false;
   vm.runInContext(fs.readFileSync(path.join(ROOT,'src/client/ui/combat-log-01.js'),'utf8'),s);
+  if (nativeMonsters) loadDeclaration(s,'src/client/core/state-and-save-01.js','$d');
   loadSimulator(s);
   return s;
 }
@@ -873,8 +874,8 @@ test('SIM cold PK leaves player free to move and retains its movement destinatio
  assert.equal(s.Y.target,destination);assert.equal(s.l.moveTo,destination);
 });
 
-function battlefieldGame(arena=true) {
-  const s=simulatorGame(undefined,arena);
+function battlefieldGame(arena=true, nativeMonsters=false) {
+  const s=simulatorGame(undefined,arena,nativeMonsters);
   if (!arena) s.o=Object.assign(s.I3(),{name:'Production hero',fac:'wudang',lvl:90,main:'basic',ctrl:'manual'});
   const catalog={};catalog.window=catalog;
   vm.runInNewContext(fs.readFileSync(path.join(ROOT,'public/data.js'),'utf8'),catalog);
@@ -895,7 +896,7 @@ test('Tống Kim runtime enters a new map, generates equipped armies and restore
   const s=battlefieldGame(), match=s.arenaSimulator.battlefield, player=s.o, hero=s.v;
   const old={x:hero.x,y:hero.y,life:s.l.life};
   match.start('song');s.arenaSimulator.tick(5);
-  assert.equal(s.Z0.key,9001);assert.equal(s.l.battlefield,true);assert.equal(s.l.zoneShown,9001);
+  assert.equal(s.Z0.key,9003);assert.equal(s.l.battlefield,true);assert.equal(s.l.zoneShown,9003);
   const [sim]=match.add({team:'song',faction:'wudang',level:90,strength:'strong',count:1});
   assert.equal(sim.profile.lvl,90);assert.ok(sim.profile.eq.armor);assert.ok(sim.profile.eq.weapon);
   assert.equal(sim.profile.eq.armor.enh,8);assert.equal(sim.profile.eq.armor.r,1);assert.equal(sim.profile.eq.armor.mag.length,5);
@@ -923,10 +924,10 @@ test('production recruitment NPC works on arbitrary maps and the game loop advan
     assert.equal(recruiter.name,'Chiêu Mộ Sứ');assert.equal(recruiter.x,345);
     recruiter.onInteract();assert.equal(panel.hidden,false);
     s.fields.get('#battlefield-player').value='song';
-    s.fields.get('#battlefield-map').value='9002';
+    s.fields.get('#battlefield-map').value='9003';
     s.fields.get('#battlefield-start').onclick();
     assert.equal(match.running,true,s.fields.get('#battlefield-status')?.textContent);
-    assert.equal(s.Z0.key,9002);
+    assert.equal(s.Z0.key,9003);
     Object.assign(s,{$w(){},Sb(){},advanceSkillContacts(){throw new Error('after-runtime-tick');}});
     s.l.sweepT=0;s.l.dirty=false;
     loadDeclaration(s,'src/client/core/state-and-save-02.js','Td');
@@ -987,7 +988,7 @@ test('Tống Kim SIMs fight the opposing side, cancel old contacts on death and 
   song.hp=0;s.arenaSimulator.tick(.1);assert.equal(song.dead,true);assert.ok(s.arenaSimulator.actors.includes(song));
   const after=jin.hp;pending.combat.onHit(jin);assert.equal(jin.hp,after);
   s.arenaSimulator.tick(30);assert.equal(song.dead,false);assert.equal(song.hp,song.max);
-  assert.equal(s.l.deadT,0);assert.equal(s.v.x,450);
+  assert.equal(s.l.deadT,0);assert.equal(s.v.x,match.state.camps.song.x);assert.equal(s.v.y,match.state.camps.song.y);
 });
 
 test('Tống Kim bosses actually rotate both factions 90/150 casts with boss HP in each captured loadout',()=>{
@@ -1315,4 +1316,56 @@ test('hidden SIM animations advance and temporary visual effects expire without 
   actor.stFx = 'temporary'; actor.stT = .02;
   s.arenaSimulator.advanceAnimation(actor, .03, true);
   assert.equal(advances, .03); assert.equal(actor.stFx, null); assert.equal(actor.stT, 0);
+});
+
+
+test('production battlefield owns its map across field ticks, empty waves and town return',()=>{
+  for (const mapId of [9003]) {
+    const s=battlefieldGame(false),match=s.arenaSimulator.battlefield;
+    assert.ok(!s.window.NO_FIELD,'production keeps the training field enabled');
+    const hidden=new Set(),townBar={id:'townBar',classList:{add:k=>hidden.add(k),toggle:(k,on)=>on?hidden.add(k):hidden.delete(k)}};
+    s.simNodes.push(townBar);
+    s.Z0.key=37;Object.assign(s.l,{town:true,zoneShown:37,bgImg:{path:'bien-kinh'}});
+    const origin={x:s.v.x,y:s.v.y,bgImg:s.l.bgImg,life:s.l.life,mana:s.l.mana};
+    match.start('song',undefined,mapId);
+    let fieldTicks=0,waves=0;
+    Object.assign(s,{$w(){},Sb(){},advanceSkillContacts(){},X9(){},nP(){},Ab(){},cb(){},Oy(){},fy(){},hp:()=>false,
+      $1:()=>false,Qd(){},GD(){fieldTicks++;s.ma(2);},Lm(){},sD:()=>true,_1:()=>[],
+      o8(){waves++;s.ma(2);},mh:()=>false,lD(){waves++;},cD(){},W3(){}});
+    Object.assign(s.l,{sweepT:0,dirty:false,deadT:0,hpDotT:0,slowT:0,stunT:0,spawnT:0,enemies:[],corpses:[]});
+    for(const name of ['Ga','Td','Cd','rD'])loadDeclaration(s,'src/client/core/state-and-save-02.js',name);
+    // Keep the real battlefield tick and player loop; omit only expensive combat rendering.
+    s.Td(.01);
+    assert.equal(s.Z0.key,mapId,'field tick must not reload the selected training map');
+    assert.equal(s.l.zoneShown,mapId);assert.equal(s.l.bgImg.path,'battle-ground');
+    assert.equal(fieldTicks,0);assert.equal(waves,0);
+    assert.equal(hidden.has('hidden'),true,'town toolbar is hidden inside the battlefield');
+    s.l.enemies=[{dead:true}];s.Cd();s.rD();
+    assert.equal(waves,0,'battlefield deaths and stall detection must not advance training waves');
+    match.reset();
+    assert.equal(s.Z0.key,37);assert.equal(s.l.town,true);assert.equal(s.l.zoneShown,37);
+    assert.equal(s.l.bgImg,origin.bgImg);assert.equal(s.v.x,origin.x);assert.equal(s.v.y,origin.y);
+    assert.equal(s.l.life,origin.life);assert.equal(s.l.mana,origin.mana);
+    assert.equal(hidden.has('hidden'),false,'returning to town restores its toolbar');
+    // The production training field still runs normally after leaving town.
+    s.l.town=false;s.Td(.01);assert.equal(fieldTicks,1);
+  }
+});
+
+test('battlefield labels use the active map instead of the saved training zone',()=>{
+  const nodes=new Map(),texts=[];
+  const m=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',innerHTML:'',style:{setProperty(){}}});return nodes.get(id);};
+  const s=vm.createContext({l:{battlefield:true,P:{life:100,mana:100,main:{n:'skill'}},life:100,mana:100,enemies:[],ground:[]},
+    o:{fac:'wudang',lvl:1,gold:0,xp:0},Z0:{key:9003},MapsEngine:{getMap:id=>({name:`Tống Kim ${id}`})},
+    AA(){throw Error('must not read training map');},m,Jt:()=>null,I:{},q:String,F:String,S:{exp:[100]},
+    dA:{s:100,m:5,top:4},M0:{w:1000,h:600},O0:{w:3500},B0:{x:0,y:0},v:{x:50,y:50}});
+  for(const [file,name] of [['ui/world-panels-01.js','bm'],['ui/legacy-panels-and-audio-02.js','Mv'],['render/arena-01.js','SP']])
+    loadDeclaration(s,`src/client/${file}`,name);
+  const canvas=new Proxy({fillText:text=>texts.push(text)},{get:(target,key)=>target[key]||(()=>{})});
+  for(const id of [9003]) {
+    s.Z0.key=id;s.bm();s.Mv();s.SP(canvas);
+    assert.equal(m('#u20zn').textContent,`Tống Kim ${id}`);
+    assert.equal(m('#stageLbl').textContent,`Tống Kim ${id}`);
+    assert.equal(texts.at(-1),`Tống Kim ${id}`);
+  }
 });

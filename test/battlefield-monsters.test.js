@@ -14,7 +14,7 @@ test('70 roadside encounters respawn at their original road positions after 20 s
   road.clear();assert.equal(actors.length,0);assert.equal(road.actors.length,0);
 });
 
-test('road monsters spread symmetrically across both banks without placing encounters in water',()=>{
+test('road monsters spread symmetrically across Hoang Nguyên on walkable ground',()=>{
   const spawns=scope.Road.ROAD_MONSTER_SPAWNS;
   assert.equal(spawns.length,70);
   assert.equal(spawns.filter(point=>point.x<1792).length,35);
@@ -22,6 +22,6 @@ test('road monsters spread symmetrically across both banks without placing encou
   assert.ok(Math.max(...spawns.map(point=>point.y))-Math.min(...spawns.map(point=>point.y))>1500);
   assert.ok(new Set(spawns.map(point=>point.x)).size>6);
   const maps={atob,btoa};vm.runInNewContext(compileTypeScriptEntry('maps/index.ts','Maps').code,maps);
-  const nav=maps.Maps.createNavigationRuntime();nav.load(9001,maps.Maps.createLegacyCatalog().navigation[9001]);
+  const nav=maps.Maps.createNavigationRuntime();nav.load(9003,maps.Maps.createLegacyCatalog().navigation[9003]);
   for(const point of spawns)assert.equal(nav.canStand(point.x,point.y),true);
 });

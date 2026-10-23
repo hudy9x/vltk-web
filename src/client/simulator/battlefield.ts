@@ -1,10 +1,8 @@
 import { DEFAULT_DEPLOYMENT, PLAYER_DEATH_PENALTY_THRESHOLD, validateDeploymentSettings } from './deployment-settings';
 import type { DeploymentSettings } from './deployment-settings';
 import { DEFAULT_SOLDIERS } from './soldier-config';
-import diagonalLayout from '../maps/content/9002/layout.json';
 import wildernessLayout from '../maps/content/9003/layout.json';
 import type { ArmyEquipmentKind } from './set-equipment';
-import { BATTLEFIELD_ROUTES } from './routes';
 import { distributeArmy } from './composition';
 import type { LegacyEntity, SimulatorActor } from './types';
 
@@ -19,11 +17,10 @@ export function splitArmyTotal(count: number) {
 export const BATTLE_DURATION = 20 * 60;
 export const MARSHAL_APPEARANCE_SECONDS = BATTLE_DURATION / 2;
 export const RESPAWN_SECONDS = DEFAULT_DEPLOYMENT.respawnSeconds;
-export let BATTLE_MAP: number = 9001;
-export const BATTLEFIELD_MAPS = [{id:9001,name:"Song Doanh · ba cầu"},{id:9002,name:"Chéo Doanh · doanh trại chéo"},{id:9003,name:"Hoang Nguyên · ba đường đất"}];
+export const BATTLE_MAP = 9003;
+export const BATTLEFIELD_MAPS = [{id:BATTLE_MAP,name:"Hoang Nguyên · ba đường đất"}];
 export const TEAM_NAMES = { song: 'Tống', jin: 'Kim' } as const;
-export const CAMPS: Record<Team,{x:number;y:number}> = { song: { x: 450, y: 1792 }, jin: { x: 3134, y: 1792 } };
-const ORIGINAL_CAMPS = JSON.parse(JSON.stringify(CAMPS)) as typeof CAMPS;
+export const CAMPS: Record<Team,{x:number;y:number}> = { song: { ...wildernessLayout.camps.song }, jin: { ...wildernessLayout.camps.jin } };
 export const ELEMENT_FACTIONS = [ ['shaolin', 'tianwang'], ['tangmen', 'wudu'], ['emei', 'cuiyan'], ['gaibang', 'tianren'], ['wudang', 'kunlun'] ] as const;
 export const otherTeam = (team: Team): Team => team === 'song' ? 'jin' : 'song';
 export const isTeam = (value: unknown): value is Team => value === 'song' || value === 'jin';
@@ -95,16 +92,10 @@ export function createBattlefield(host: BattlefieldHost) {
 
   function place(actor: SimulatorActor, index = 0) {
     const side = actor.battlefieldTeam as Team;
-    const camp = CAMPS[side];
     if (!actor.battlefieldSpawn) {
-      if (!actor.battlefieldBoss) actor.battlefieldLane = index % BATTLEFIELD_ROUTES.length;
-      const direction = actor.battlefieldTeam === 'song' ? 1 : -1;
       // Distinct camp slots, also retained for this actor's subsequent respawns.
-      actor.battlefieldSpawn = BATTLE_MAP === 9003 ? {
+      actor.battlefieldSpawn = {
         ...(actor.battlefieldBoss ? wildernessLayout.marshals[side] : wildernessLayout.armySpawns[side][index % wildernessLayout.armySpawns[side].length]),
-      } : actor.battlefieldBoss ? { ...camp } : {
-        x: camp.x + direction * (130 + Math.floor(index / 25) * 40),
-        y: camp.y + ((index % 25) - 12) * 28,
       };
     }
     host.position(actor, actor.battlefieldSpawn.x, actor.battlefieldSpawn.y);
@@ -171,14 +162,12 @@ export function createBattlefield(host: BattlefieldHost) {
     score.song = score.jin = 0; finalScore = null;
     host.leave();
   }
-  function start(playerTeam: Team, bossElements = { song: 3, jin: 2 }, mapId = 9001) {
+  function start(playerTeam: Team, bossElements = { song: 3, jin: 2 }, mapId: number = BATTLE_MAP) {
     if (!BATTLEFIELD_MAPS.some(map=>map.id===mapId)) throw new Error('Chiến trường không hợp lệ.');
     if (!isTeam(playerTeam) || ![bossElements.song, bossElements.jin].every(value => Number.isInteger(value) && value >= 0 && value <= 4)) throw new Error('Phe hoặc hệ boss không hợp lệ.');
     const configuredMarshalHP = host.marshalHP?.() ?? DEFAULT_SOLDIERS.marshal.hp;
     if (!Number.isSafeInteger(configuredMarshalHP) || configuredMarshalHP < 1 || configuredMarshalHP > 1_000_000_000_000) throw new Error("HP Nguyên soái không hợp lệ.");
-    reset(); deployment = { ...nextDeployment }; BATTLE_MAP = mapId;
-    const camps = mapId === 9003 ? wildernessLayout.camps : mapId === 9002 ? diagonalLayout.camps : ORIGINAL_CAMPS;
-    for (const side of ['song','jin'] as const) Object.assign(CAMPS[side], camps[side]);
+    reset(); deployment = { ...nextDeployment };
     team = playerTeam; elements = { ...bossElements }; marshalHP = configuredMarshalHP;
     try {
       host.enter(team); phase = 'running';

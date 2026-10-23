@@ -32,11 +32,11 @@ test('Hoang Nguyen is selectable, owns its assets and separates ground, shadows 
   assert.ok(objects.length >= 100);
   for (const image of [...map.layers.filter(layer => layer.image).map(layer => layer.image), ...objects.map(object => object.image)]) {
     assert.match(image, /^\.\/assets\//);
-    assert.ok(fs.existsSync(`${directory}/${image}`));
+    assert.ok(fs.existsSync(`public/${maps.resolveMapAsset(map.id, image)}`));
   }
   const battle = {};
   vm.runInNewContext(compileTypeScriptEntry('simulator/battlefield.ts', 'Battle').code, battle);
-  assert.deepEqual(Array.from(battle.Battle.BATTLEFIELD_MAPS, map => map.id), [9001, 9002, 9003]);
+  assert.deepEqual(Array.from(battle.Battle.BATTLEFIELD_MAPS, map => map.id), [9003]);
 });
 
 test('all three painted roads retain a clear corridor in the actual navigation grid', () => {
@@ -161,7 +161,7 @@ test('maximum patrol configuration uses safe, reachable mirrored points belongin
   }
 });
 
-test('live battlefield integration enters and respawns on 9003, then restores both existing layouts', () => {
+test('live battlefield integration enters and respawns on 9003, uses Hoang Nguyên by default', () => {
   const game = createHeadlessGame(process.cwd()), sim = game.arenaSimulator;
   for (const team of ['song', 'jin']) {
     sim.battlefield.start(team, { song: 3, jin: 2 }, 9003);sim.tick(5);
@@ -194,27 +194,16 @@ test('live battlefield integration enters and respawns on 9003, then restores bo
       assert.equal(marshal.y, layout.marshals[side].y);
     }
   }
-  sim.battlefield.start('song', { song: 3, jin: 2 }, 9002);
-  assert.equal(game.v.x, 850);
-  assert.equal(game.v.y, 950);
   sim.battlefield.start('song');
-  assert.equal(game.v.x, 450);
-  assert.equal(game.v.y, 1792);
-});
-
-test('open terrain on 9003 does not inherit the three-bridge waypoint detour of 9001', () => {
-  // Bundle the two exports together to share the live BATTLE_MAP binding.
-  const esbuild = require('esbuild');
-  const code = esbuild.buildSync({ stdin: { contents: `export { createBattlefield } from './src/client/simulator/battlefield'; export { createBattlefieldApproach } from './src/client/simulator/approach';`, resolveDir: process.cwd() }, bundle: true, format: 'iife', globalName: 'World', write: false }).outputFiles[0].text;
-  const scope = {};
-  vm.runInNewContext(code, scope);
-  const actors = [];
-  const match = scope.World.createBattlefield({ actors: () => actors, player: () => ({}), playerAlive: () => true,
-    playerDPS: () => 0, enter() {}, leave() {}, remove() {}, cancel() {}, position() {}, restore() {},
-    respawnPlayer() {}, setPlayerDead() {}, create() { const actor = { hp: 1, stats: {}, res: {} }; actors.push(actor); return actor; } });
-  const approach = scope.World.createBattlefieldApproach();
-  match.start('song', { song: 3, jin: 2 }, 9003);
-  assert.equal(approach({ x: 1400, y: 1000 }, { x: 2200, y: 1000 }), null);
-  match.start('song');
-  assert.ok(approach({ x: 1400, y: 1000 }, { x: 2200, y: 1000 }));
+  assert.equal(sim.battlefield.state.mapId, 9003);
+  assert.equal(game.v.x, layout.camps.song.x);
+  assert.equal(game.v.y, layout.camps.song.y);
+  for (const removed of [9001,9002]) {
+    assert.equal(maps.getMap(removed), undefined);
+    assert.equal(maps.createLegacyCatalog().navigation[removed], undefined);
+    assert.ok(!fs.existsSync(`src/client/maps/content/${removed}`));
+    assert.ok(!fs.existsSync(`public/app/maps/content/${removed}`));
+    assert.throws(()=>sim.battlefield.start('song', {song:3,jin:2}, removed), /không hợp lệ/);
+    assert.equal(sim.battlefield.state.mapId,9003,'invalid map cannot change the running battle');
+  }
 });

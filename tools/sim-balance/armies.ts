@@ -11,7 +11,7 @@ const scenarioSeconds = 30;
 for (const totalFighters of [20, 40, 100]) {
   resetCombat();
   game.Math.random = () => 0.5;
-  // Five columns keep initial spawn positions separate on the central bridge.
+  // Five columns keep initial spawn positions separate on Hoang Nguyên.
   for (let fighterIndex = 0; fighterIndex < totalFighters / 2; fighterIndex++) for (const team of ['song', 'jin'] as const) {
     const positionX = team === 'song' ? 1640 - Math.floor(fighterIndex / 5) * 30 : 1860 + Math.floor(fighterIndex / 5) * 30;
     const actor = spawnFighter(dataset.builds[fighterIndex % dataset.builds.length], team, positionX);

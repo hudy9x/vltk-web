@@ -23,7 +23,7 @@ export function createSimulation(outputDirectory: string) {
   game.l.corpses = [];
   const mapsEngine = require(path.join(repositoryRoot, 'test/helpers/maps-engine')).loadMapsEngine(game);
   const navigation = mapsEngine.createNavigationRuntime((actor: BattleActor) => game.actorActionLocked(actor));
-  navigation.load(9001, mapsEngine.createLegacyCatalog().navigation[9001]);
+  navigation.load(9003, mapsEngine.createLegacyCatalog().navigation[9003]);
   game.mapNavigation = navigation;
   game.Mw = navigation.moveWithFlow;
   const battlefield = game.arenaSimulator.battlefield;

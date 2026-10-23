@@ -4,7 +4,6 @@ const vm = require('node:vm');
 const { compileTypeScriptEntry } = require('../tools/build-app');
 function moduleAt(path, name) { const scope = { atob, btoa }; vm.runInNewContext(compileTypeScriptEntry(path, name).code, scope); return scope[name]; }
 const { createCrowdSteering } = moduleAt('simulator/crowd.ts', 'Crowd');
-const { createBattlefieldApproach } = moduleAt('simulator/approach.ts', 'Approach');
 const { distributeArmy, ARMY_FACTIONS } = moduleAt('simulator/composition.ts', 'Army');
 
 test('percentages allocate exactly the requested count, omit zero weights and reject invalid totals before creation', () => {
@@ -31,32 +30,6 @@ test('local steering passes a stopped ally, respects obstacles and never steps i
     assert.ok(Math.hypot(actor.x - stopped.x, (actor.y - stopped.y) * 2) >= 33, 'no body overlap');
   }
   assert.ok(movedAside); assert.ok(actor.x > 120, 'passes the obstruction instead of remaining in a queue');
-});
-
-test('two moving armies use several bridge lanes while staying on walkable terrain and maintaining spacing', () => {
-  const maps = moduleAt('maps/index.ts', 'Maps'), nav = maps.createNavigationRuntime();
-  nav.load(9001, maps.createLegacyCatalog().navigation[9001]);
-  const approach = createBattlefieldApproach(), crowd = createCrowdSteering();
-  const actors = [];
-  for (const [side, x, goal] of [['song', 1300, 2350], ['jin', 2284, 1234]]) for (let i = 0; i < 15; i++) actors.push({ x: x + (side === 'song' ? -1 : 1) * Math.floor(i / 5) * 60, y: 1736 + (i % 5) * 28, simId: `sim-${actors.length + 1}`, battlefieldTeam: side, hp: 100, goal, lane: ((i % 5) - 2) * 16 });
-  let bridgeCount = 0;
-  for (let frame = 0; frame < 600; frame++) {
-    nav.beginTick(); crowd.begin(actors);
-    for (const actor of actors) {
-      const goal = approach(actor, { x: actor.goal, y: 1792 }) || { x: actor.goal, y: 1792 };
-      const before = { x: actor.x, y: actor.y };
-      const waypoint = crowd.route(actor, {x:goal.x,y:goal.y+actor.lane},nav.clear);
-      nav.moveWithFlow(actor, waypoint.x, waypoint.y, 4);
-      const proposed = { x: actor.x, y: actor.y }; Object.assign(actor, before);
-      Object.assign(actor, crowd.steer(actor, proposed, 4, nav.clear));
-      assert.ok(nav.canStand(actor.x, actor.y));
-      if (actor.x > 1632 && actor.x < 1952) bridgeCount++;
-    }
-  }
-  assert.ok(bridgeCount > 100, 'both sides reach and traverse bridge lanes');
-  for (let i = 0; i < actors.length; i++) for (let j = i + 1; j < actors.length; j++) assert.ok(Math.hypot(actors[i].x - actors[j].x, (actors[i].y - actors[j].y) * 2) >= 32.9);
-  assert.ok(actors.some(actor => actor.battlefieldTeam === 'song' && actor.x > 1952));
-  assert.ok(actors.some(actor => actor.battlefieldTeam === 'jin' && actor.x < 1632));
 });
 
 test('a SIM plans around a wall of people including the real player rather than oscillating at its center', () => {

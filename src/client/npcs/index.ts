@@ -1,5 +1,4 @@
 import catalog from './catalog.json';
-import diagonalLayout from '../maps/content/9002/layout.json';
 import type { MapDefinition, MapNpc, Point } from '../maps/types';
 export type { MapNpc } from '../maps/types';
 export const npcCatalog = catalog;
@@ -15,13 +14,7 @@ export function mapNpcs(map: MapDefinition): MapNpc[] {
     { id: 'town-pharmacy', npcId: 'pharmacy', position: { x: 1520, y: 2139 } },
     { id: 'town-tongkim', npcId: 'tongkim', position: { x: 1660, y: 2139 } },
   ];
-  if (map.id !== 9001 && map.id !== 9002) return [];
-  const camps = map.id === 9002 ? diagonalLayout.camps : { song: { x: 450, y: 1792 }, jin: { x: 3134, y: 1792 } };
-  return (['song', 'jin'] as const).flatMap(team => [
-    { id: `${team}-tongkim`, npcId: 'tongkim', team, position: { x: camps[team].x + 105, y: camps[team].y + 50 } },
-    { id: `${team}-pharmacy`, npcId: 'pharmacy', team, position: { x: camps[team].x + 145, y: camps[team].y - 45 } },
-    { id: `${team}-horse`, npcId: 'horse', team, position: { x: camps[team].x - 120, y: camps[team].y - 65 } },
-  ]);
+  return [];
 }
 /** Materialize inherited placements only when editing, so history and old files stay intact. */
 export function editableNpcs(map: MapDefinition): MapNpc[] {

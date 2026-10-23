@@ -1,4 +1,3 @@
-import diagonalLayout from '../maps/content/9002/layout.json';
 import wildernessLayout from '../maps/content/9003/layout.json';
 export const SOLDIER_RANKS = [
   "soldier",
@@ -100,46 +99,29 @@ export function validateSoldierConfiguration(
 }
 export function soldierSpawnPlan(
   configuration: SoldierConfiguration,
-  mapId = 9001,
+  mapId = 9003,
 ): SoldierSpawn[] {
+  if (mapId !== 9003) throw new Error("Chiến trường không hợp lệ.");
   const settings = validateSoldierConfiguration(configuration);
   const result: SoldierSpawn[] = [];
-  const songPoints = diagonalLayout.patrolPoints.filter(point => soldierTeamAt(point.x, point.y, 9002) === "song");
   let sideIndex = { song: 0, jin: 0 };
   for (const rank of SOLDIER_RANKS.filter(rank => rank !== "marshal")) {
     const entry = settings[rank];
     for (let index = 0; index < entry.count; index++) {
       const team = index % 2 ? "jin" : "song";
       const ordinal = sideIndex[team]++;
-      let x: number, y: number;
-      if (mapId === 9003) {
-        const point = wildernessLayout.patrolPoints[ordinal % wildernessLayout.patrolPoints.length];
-        x = team === "song" ? point.x : 3584 - point.x;
-        y = team === "song" ? point.y : 3584 - point.y;
-      } else if (mapId === 9002) {
-        const point = songPoints[ordinal % songPoints.length];
-        x = team === "song" ? point.x : 3584 - point.x;
-        y = team === "song" ? point.y : 3584 - point.y;
-      } else {
-        x = 800 + fraction(ordinal + 1, 2) * 704;
-        y = 256 + fraction(ordinal + 1, 3) * 3072;
-        if (team === "jin") x = 3584 - x;
-      }
+      const point = wildernessLayout.patrolPoints[ordinal % wildernessLayout.patrolPoints.length];
+      const x = team === "song" ? point.x : 3584 - point.x;
+      const y = team === "song" ? point.y : 3584 - point.y;
       result.push({ x, y, team, rank, hp: entry.hp, skills: [...entry.skills!], patrolRadius: entry.patrolRadius!, leashRadius: entry.leashRadius!, respawnSeconds: entry.respawnSeconds! });
     }
   }
   return result;
 }
 
-/** The diagonal battlefield is divided by the two camps, not by the x axis. */
-export function soldierTeamAt(x: number, y: number, mapId: number): "song" | "jin" {
-  if (mapId !== 9002 && mapId !== 9003) return x < 1792 ? "song" : "jin";
-  const {song, jin} = mapId === 9003 ? wildernessLayout.camps : diagonalLayout.camps;
+/** Assign each point to its nearest camp on Hoang Nguyên. */
+export function soldierTeamAt(x: number, y: number, mapId = 9003): "song" | "jin" {
+  if (mapId !== 9003) throw new Error("Chiến trường không hợp lệ.");
+  const {song, jin} = wildernessLayout.camps;
   return (x-song.x)**2 + (y-song.y)**2 <= (x-jin.x)**2 + (y-jin.y)**2 ? "song" : "jin";
-}
-
-function fraction(index: number, base: number) {
-  let result = 0, divisor = 1;
-  while (index > 0) { divisor *= base; result += (index % base) / divisor; index = Math.floor(index / base); }
-  return result;
 }

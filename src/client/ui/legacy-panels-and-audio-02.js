@@ -811,7 +811,9 @@ var Mv = function () {
       .join("");
     a.innerHTML !== r && (a.innerHTML = r);
   }
-  m("#stageLbl").textContent = l.dg
+  m("#stageLbl").textContent = l.battlefield
+    ? MapsEngine.getMap(Z0.key)?.name || "Tống Kim"
+    : l.dg
     ? l.dg.kind === "boat"
       ? "⛵ Phong Lăng Độ"
       : l.dg.kind === "wb"
