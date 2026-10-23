@@ -58,7 +58,27 @@ jobs:
             -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$hosts_file" \
             root@103.121.91.177 "deploy $GITHUB_SHA"
       - name: Verify public HTTPS endpoint
+        shell: bash
         run: |
-          curl --fail --silent --show-error --retry 5 --retry-all-errors \
-            --retry-delay 2 --max-time 20 https://gamelab.hudy9x.com/api/health \
-            | python3 -c 'import json,sys; assert json.load(sys.stdin)["ok"] is True'
+          set -euo pipefail
+          response_file=$(mktemp)
+          trap 'rm -f "$response_file"' EXIT
+          if curl --fail --silent --show-error --retry 5 --retry-all-errors \
+            --retry-delay 2 --connect-timeout 10 --max-time 30 \
+            --output "$response_file" https://gamelab.hudy9x.com/api/health; then
+            python3 - "$response_file" <<'PY'
+          import json, sys
+          try:
+              with open(sys.argv[1]) as response:
+                  payload = json.load(response)
+          except (ValueError, OSError) as error:
+              sys.exit(f"Public health endpoint returned invalid JSON: {error}")
+          if not isinstance(payload, dict) or payload.get("ok") is not True:
+              sys.exit('Public health endpoint did not return {"ok": true}')
+          print("Public HTTPS health check passed.")
+          PY
+          else
+            status=$?
+            echo "::error::Public HTTPS health check failed (curl exit $status). VPS deployment completed, but public reachability could not be verified. For HTTP 522, check Cloudflare-to-origin connectivity, DNS, nginx, and firewall rules."
+            exit "$status"
+          fi
