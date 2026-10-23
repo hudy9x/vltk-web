@@ -21,21 +21,21 @@
     }
     assert.equal(sim.warRewards.rank(enemy).name,'Hiệu úy');
     sim.warRewards.record(hero,enemy);enemy.hp=0;sim.warRewards.killed(enemy);
-    assert.equal(sim.warRewards.totals.song,3150);assert.equal(sim.warRewards.totals.jin,3100);
-    sim.remove(enemy);assert.equal(sim.warRewards.totals.jin,3100,'removing a SIM preserves earned team points');
+    assert.equal(sim.warRewards.totals.song,4300);assert.equal(sim.warRewards.totals.jin,3500);
+    sim.remove(enemy);assert.equal(sim.warRewards.totals.jin,3500,'removing a SIM preserves earned team points');
     sim.leaderboard.open();const ranking=game.simNodes.find((node:any)=>node.id==='war-leaderboard');
     assert.match(ranking.querySelector('tbody').innerHTML,/aria-current="true"/);
     assert.match(ranking.querySelector('tbody').innerHTML,/\(Bạn\)/);
-    assert.match(ranking.querySelector('tbody').innerHTML,/<td>10<\/td><td>3150<\/td>/);
-    assert.match(ranking.querySelector('#war-team-totals').innerHTML,/Tống: 3.150/);
-    assert.match(ranking.querySelector('#war-team-totals').innerHTML,/Kim: 3.100/);
+    assert.match(ranking.querySelector('tbody').innerHTML,/<td>10<\/td><td>4300<\/td>/);
+    assert.match(ranking.querySelector('#war-team-totals').innerHTML,/Tống: 4.300/);
+    assert.match(ranking.querySelector('#war-team-totals').innerHTML,/Kim: 3.500/);
     assert.equal(game.simNodes.some((node:any)=>node.id==='battlefield-hud'),false);
     assert.match(ranking.querySelector('#war-match-status').textContent,/Còn 20:00.*Phe của bạn: Tống/);
     sim.tick(1200);
     assert.equal(match.state.phase,'finished');assert.match(match.state.result,/^Tống thắng/);
     assert.equal(sim.resultDialog.isOpen,true);
     const result=game.simNodes.find((node:any)=>node.id==='battlefield-result');
-    assert.match(result.querySelector('#battlefield-result-points').textContent,/Tống: 3.150.*Kim: 3.100/);
+    assert.match(result.querySelector('#battlefield-result-points').textContent,/Tống: 4.300.*Kim: 3.500/);
     assert.throws(()=>match.reset(),/Đồng ý/);assert.throws(()=>match.start('jin'),/Đồng ý/);
     let prevented=false;game.simListeners.keydown({key:'Escape',preventDefault(){prevented=true;},stopImmediatePropagation(){}});
     assert.equal(prevented,true);assert.equal(sim.resultDialog.isOpen,true);

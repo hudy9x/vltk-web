@@ -5,6 +5,7 @@ export const SOLDIER_RANKS = [
   "captain",
   "commander",
   "general",
+  "grandGeneral",
   "marshal",
 ] as const;
 export type SoldierRank = (typeof SOLDIER_RANKS)[number];
@@ -12,7 +13,8 @@ export const SOLDIER_TITLES: Record<SoldierRank, string> = {
   soldier: "Binh sĩ",
   captain: "Hiệu úy",
   commander: "Thống lĩnh",
-  general: "Đại thống lĩnh",
+  general: "Phó tướng",
+  grandGeneral: "Đại tướng",
   marshal: "Nguyên soái",
 };
 export interface SoldierSettings {
@@ -30,6 +32,7 @@ export const DEFAULT_SOLDIERS: SoldierConfiguration = {
   captain: { count: 10, hp: 60_000 },
   commander: { count: 6, hp: 80_000 },
   general: { count: 4, hp: 100_000 },
+  grandGeneral: { count: 0, hp: 120_000 },
   marshal: { count: 1, hp: 200_000 },
 };
 export interface SoldierSpawn {

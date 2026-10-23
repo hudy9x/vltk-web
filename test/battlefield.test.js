@@ -20,7 +20,7 @@ function fixture() {
 test('20 minute match uses two camps and only opposing teams are eligible, including the player', () => {
   const { match, actors, player } = fixture(); match.start('song');
   assert.equal(BATTLE_DURATION, 1200);
-  assert.equal(actors.length, 2); assert.equal(match.state.remaining, 1200);
+  assert.equal(actors.length, 0); assert.equal(match.state.remaining, 1200);
   const song = match.add({ team: 'song', faction: 'shaolin', level: 90, strength: 'weak', count: 3 });
   const jin = match.add({ team: 'jin', faction: 'gaibang', level: 150, strength: 'strong', count: 2 });
   assert.equal(song[0].profile.lvl, 90); assert.equal(match.state.armies.song.count, 3);
@@ -34,6 +34,7 @@ test('SIM death is counted once and respawns after 30 seconds; boss death never 
   const home = { x: sim.x, y: sim.y }; sim.x = 1800; sim.y = 1792;
   sim.hp = 0; match.tick(.01); assert.equal(sim.x, home.x); assert.equal(sim.y, home.y); match.tick(29.99); assert.equal(sim.hp, 0); assert.equal(match.state.score.song, 1);
   match.tick(.01); assert.equal(sim.hp, sim.max); assert.equal(sim.dead, false);
+  match.tick(600 - match.state.elapsed);
   const boss = actors.find(a => a.battlefieldTeam === 'jin' && a.battlefieldBoss); boss.hp = 0;
   match.tick(1); match.tick(10); assert.equal(boss.hp, 0); assert.equal(match.running, true); assert.equal(match.state.score.song, 1001);
 });
@@ -44,7 +45,7 @@ test('player respawns at own camp without stopping the match or replacing SIM id
   match.tick(.01); assert.deepEqual(actors, originals); assert.ok(events.some(e => e[0] === 'respawn' && e[1] === 'jin'));
 });
 test('reinforcements preserve configured boss HP and damage dealt and invalid input cannot mutate armies', () => {
-  const { match, actors } = fixture(); match.start('song'); const boss = actors.find(a => a.battlefieldTeam === 'jin');
+  const { match, actors } = fixture(); match.start('song'); match.tick(600); const boss = actors.find(a => a.battlefieldTeam === 'jin');
   boss.hp -= 1234; const max = boss.max;
   match.add({ team: 'song', faction: 'shaolin', level: 150, strength: 'strong', count: 100 });
   assert.equal(max, 200000); assert.equal(boss.max, max); assert.equal(boss.max - boss.hp, 1234);
@@ -57,6 +58,7 @@ test('reinforcements preserve configured boss HP and damage dealt and invalid in
 test('result is decided at 20 minutes; both bosses dead is a draw regardless of kill order', () => {
   for (const both of [false, true]) {
     const { match, actors } = fixture(); match.start('song');
+    match.tick(600);
     actors.find(a => a.battlefieldTeam === 'jin').hp = 0;
     if (both) actors.find(a => a.battlefieldTeam === 'song').hp = 0;
     match.tick(1200); assert.equal(match.running, false); assert.equal(match.state.remaining, 0);
@@ -110,7 +112,7 @@ test('team soldiers reject friendly fire and fight only opposing soldiers, SIMs 
   const match=createBattlefield({actors:()=>actors,monsters:()=>monsters,player:()=>player,playerAlive:()=>true,playerDPS:()=>0,
     create(build){const actor={x:0,y:0,n:build.faction,hp:100,max:100,stats:{life:100,main:{parts:{phys:1}}}};actors.push(actor);return actor;},
     cancel(){},remove(actor){actors.splice(actors.indexOf(actor),1)},enter(){},leave(){},respawnPlayer(){},setPlayerDead(){},position(actor,x,y){Object.assign(actor,{x,y})},restore(){}});
-  match.start('song');const song=actors[0],jin=actors[1];
+  match.start('song');match.tick(600);const song=actors[0],jin=actors[1];
   for(const actor of [song,player]) {assert.equal(match.canHit(actor,monsters[0]),true);assert.equal(match.canHit(monsters[0],actor),true);}
   assert.equal(match.canHit(jin,monsters[0]),false);assert.equal(match.canHit(monsters[0],jin),false);
   assert.equal(match.canHit(player,monsters[1]),false);assert.equal(match.canHit(monsters[0],monsters[1]),true);
@@ -128,4 +130,41 @@ test('each camp assigns balanced upper/middle/lower routes and preserves a soldi
   }
   const actor=army[0],lane=actor.battlefieldLane;actor.hp=0;match.tick(.1);match.tick(30);
   assert.equal(actor.battlefieldLane,lane);
+});
+
+test('reinforcements reserve two marshal slots and enforce 500 SIMs before and after halftime', () => {
+  for (const afterHalftime of [false, true]) {
+    const { match, actors } = fixture(); match.start('song');
+    if (afterHalftime) match.tick(600);
+    for (let batch = 0; batch < 5; batch++) match.add({ team: batch % 2 ? 'jin' : 'song', faction: 'shaolin', level: 150, strength: 'normal', count: 100 });
+    assert.equal(actors.filter(actor => !actor.battlefieldBoss).length, 500);
+    const before = [...actors];
+    assert.throws(() => match.add({ team: 'song', faction: 'shaolin', level: 150, strength: 'normal', count: 1 }), /500 SIM/);
+    assert.throws(() => match.addAsync({ team: 'jin', faction: 'shaolin', level: 150, strength: 'normal', count: 1 }), /500 SIM/);
+    assert.deepEqual(actors, before);
+    if (!afterHalftime) match.tick(600);
+    assert.equal(actors.length, 502);
+    assert.equal(actors.filter(actor => actor.battlefieldBoss).length, 2);
+    assert.equal(actors.filter(actor => !actor.battlefieldBoss).length, 500);
+  }
+});
+
+test('paired async reinforcements reject an overflowing batch before creating either side', async () => {
+  for (const afterHalftime of [false, true]) {
+    const { match, actors } = fixture(); match.start('song');
+    if (afterHalftime) match.tick(600);
+    for (const count of [100, 100, 100, 100, 98]) match.add({ team: 'song', faction: 'shaolin', level: 150, strength: 'normal', count });
+    const before = [...actors]; let scheduled = 0;
+    await assert.rejects(match.addBothAsync({ faction: 'shaolin', level: 150, strength: 'normal', count: 4 }, () => {}, async () => { scheduled++; }), /500 SIM/);
+    assert.equal(scheduled, 0);
+    assert.deepEqual(actors, before);
+    const added = await match.addBothAsync({ faction: 'shaolin', level: 150, strength: 'normal', count: 2 }, () => {}, async () => {
+      if (!afterHalftime && ++scheduled === 2) match.tick(600);
+    });
+    assert.equal(added.length, 2);
+    assert.equal(added[0].battlefieldTeam, 'song'); assert.equal(added[1].battlefieldTeam, 'jin');
+    assert.equal(actors.filter(actor => !actor.battlefieldBoss).length, 500);
+    assert.equal(actors.filter(actor => actor.battlefieldBoss).length, 2);
+    assert.equal(actors.length, 502);
+  }
 });

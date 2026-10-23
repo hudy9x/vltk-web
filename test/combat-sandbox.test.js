@@ -877,7 +877,7 @@ function battlefieldGame() {
 test('Tống Kim runtime enters a new map, generates equipped armies and restores player field on exit',()=>{
   const s=battlefieldGame(), match=s.arenaSimulator.battlefield, player=s.o, hero=s.v;
   const old={x:hero.x,y:hero.y,life:s.l.life};
-  match.start('song');
+  match.start('song');s.arenaSimulator.tick(5);
   assert.equal(s.Z0.key,9001);assert.equal(s.l.battlefield,true);assert.equal(s.l.zoneShown,9001);
   const [sim]=match.add({team:'song',faction:'wudang',level:90,strength:'strong',count:1});
   assert.equal(sim.profile.lvl,90);assert.ok(sim.profile.eq.armor);assert.ok(sim.profile.eq.weapon);
@@ -893,7 +893,7 @@ test('Tống Kim runtime enters a new map, generates equipped armies and restore
 test('Hoàng Kim boss decks include active 90 and 150 skills from both same-element factions',()=>{
   const s=battlefieldGame(),match=s.arenaSimulator.battlefield;
   for(let element=0;element<5;element++) {
-    match.start('song',{song:element,jin:element});
+    match.start('song',{song:element,jin:element});match.tick(600);
     const bosses=s.arenaSimulator.actors.filter(actor=>actor.battlefieldBoss);
     assert.equal(bosses.length,2);
     for(const boss of bosses) {
@@ -909,7 +909,7 @@ test('Hoàng Kim boss decks include active 90 and 150 skills from both same-elem
   }
 });
 test('Tống Kim player attacks reject allies and boss effective resistance survives penetration and elemental break',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);match.tick(600);
   const [ally]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
   const skill={...s.l.P.main,parts:{phys:100},series:0,series5:0};
   const before=ally.hp;s.hs(skill,ally);assert.equal(ally.hp,before);
@@ -925,7 +925,7 @@ test('Tống Kim player attacks reject allies and boss effective resistance surv
   assert.ok(!s._1().includes(ally));assert.ok(s._1().includes(boss));
 });
 test('Tống Kim SIMs fight the opposing side, cancel old contacts on death and continue while player respawns',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
   const [song]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
   const [jin]=match.add({team:'jin',faction:'gaibang',level:150,strength:'normal',count:1});
   song.x=jin.x=s.v.x=1700;song.y=jin.y=s.v.y=1700;
@@ -940,7 +940,7 @@ test('Tống Kim SIMs fight the opposing side, cancel old contacts on death and 
 });
 
 test('Tống Kim bosses actually rotate both factions 90/150 casts with boss HP in each captured loadout',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);match.tick(600);
   const boss=s.arenaSimulator.actors.find(actor=>actor.battlefieldBoss&&actor.battlefieldTeam==='song');
   const [target]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
   target.hp=target.max=1_000_000_000;target.x=boss.x+10;target.y=boss.y;
@@ -955,16 +955,16 @@ test('Tống Kim bosses actually rotate both factions 90/150 casts with boss HP 
 });
 
 test('lethal Tống Kim PK immediately enters the player respawn state before normal regeneration can revive them',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
   const [enemy]=match.add({team:'jin',faction:'gaibang',level:150,strength:'normal',count:1});
   s.v.x += 100; enemy.x=s.v.x;enemy.y=s.v.y;s.l.life=1;
   s.arenaSimulator.tick(.1);advanceSimulator(s);
-  assert.equal(s.l.life,0);assert.ok(s.l.deadT>0);assert.equal(match.state.score.jin,50);
+  assert.equal(s.l.life,0);assert.ok(s.l.deadT>0);assert.equal(match.state.score.jin,150);
   assert.equal(match.canHit(enemy,s.v),false);
 });
 
 test('Tống Kim synchronous secondary skills resolve against the real player even inside a SIM visual context',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
   const [enemy]=match.add({team:'jin',faction:'gaibang',level:150,strength:'normal',count:1});
   const player=s.v,world=s.l;player.x+=100;enemy.x=player.x;enemy.y=player.y;
   for(const actor of s.arenaSimulator.actors)if(actor.battlefieldBoss)actor.cooldown=99999;
@@ -979,7 +979,7 @@ test('Tống Kim synchronous secondary skills resolve against the real player ev
 });
 
 test('Tống Kim percentage roster creates exact factions and every equipped item has five valid lines with active support elements',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
   const player=s.o,oldEq=JSON.stringify(player.eq), oldAttr=JSON.stringify(player.attr);
   const composition=Object.fromEntries(Object.keys(s.I).map(key=>[key,10]));
   const army=match.add({team:'song',faction:'shaolin',composition,level:150,strength:'normal',count:20,equipped:true});
@@ -1005,7 +1005,7 @@ test('Tống Kim percentage roster creates exact factions and every equipped ite
 });
 
 test('SIM renderer uses each own profile and equipment instead of the current player outfit',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
   const [actor]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
   const player=s.o,world=s.l;world.look={owner:'player'};world.jx={owner:'player'};
   actor.look={anim:'own-actor'};
@@ -1017,7 +1017,7 @@ test('SIM renderer uses each own profile and equipment instead of the current pl
 });
 
 test('Tống Kim road monsters join real combat targets, can damage SIMs, respawn and disappear on exit',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
   const monsters=s.l.enemies.filter(actor=>actor.battlefieldMonster);
   assert.equal(monsters.length,70);assert.equal(match.state.monsters.alive,70);
   assert.ok(s.combatSandbox.nearestTarget(monsters[0])?.battlefieldTeam!==monsters[0].battlefieldTeam,'soldiers acquire hostile soldiers across the wider lane');
@@ -1036,7 +1036,7 @@ test('Tống Kim road monsters join real combat targets, can damage SIMs, respaw
 
 test('Vô Hình Độc only poisons opposing SIMs and enemy soldiers, preserving allies and allied bosses for either player team',()=>{
   for(const side of ['song','jin']) {
-    const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start(side);
+    const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start(side);s.arenaSimulator.tick(5);match.tick(600);
     const other=side==='song'?'jin':'song';
     const [ally]=match.add({team:side,faction:'wudu',level:150,strength:'normal',count:1});
     const [enemy]=match.add({team:other,faction:'gaibang',level:150,strength:'normal',count:1});
@@ -1067,7 +1067,7 @@ test('Vô Hình Độc only poisons opposing SIMs and enemy soldiers, preserving
 });
 
 test('Tống Kim soldiers have curated team skins, reject allied hits, and hostile SIMs switch to the player first',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
  const soldiers=s.l.enemies.filter(actor=>actor.battlefieldMonster),song=soldiers.filter(actor=>actor.battlefieldTeam==='song'),jin=soldiers.filter(actor=>actor.battlefieldTeam==='jin');
  assert.equal(song.length,35);assert.equal(jin.length,35);
  for(const units of [song,jin])assert.ok(units.every(actor=>[599,588,597,600,598,595,589].includes(actor.tid)));
@@ -1080,17 +1080,17 @@ test('Tống Kim soldiers have curated team skins, reject allied hits, and hosti
 });
 
 test('Tống Kim player soldier kills grant merit and collectible pills; allied poison never grants credit',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.Math.random=()=>.01;
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);s.Math.random=()=>.01;
  const enemy=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam==='jin');Object.assign(enemy,{x:s.v.x+20,y:s.v.y,res:{...s.l.P.res},def:0,series:0,hp:50});
  s.hs({parts:{phys:100},crit:0,series:0,series5:0},enemy);s.arenaSimulator.tick(.1);
- assert.equal(s.arenaSimulator.warRewards.state.points,10);assert.equal(s.arenaSimulator.warRewards.drops.length,1);
+ assert.equal(s.arenaSimulator.warRewards.state.points,50);assert.equal(s.arenaSimulator.warRewards.drops.length,1);
  s.arenaSimulator.tick(.1);assert.equal(s.arenaSimulator.warRewards.state.inventory.resistance,1);
  s.arenaSimulator.warRewards.use('resistance');const p={res:{phys:0,cold:0,fire:0,poison:0,light:0}};s.arenaSimulator.applyBattlefieldBonuses(p);assert.equal(p.res.phys,20);
  match.reset();assert.equal(s.arenaSimulator.warRewards.state.points,0);assert.equal(s.arenaSimulator.warRewards.state.inventory.resistance,0);
 });
 
 test('native soldier contacts damage only opposing soldiers through the shared contact engine',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
  const soldiers=s.l.enemies.filter(actor=>actor.battlefieldMonster),attacker=soldiers.find(actor=>actor.battlefieldTeam==='song'),target=soldiers.find(actor=>actor.battlefieldTeam==='jin'),friendly=soldiers.filter(actor=>actor.battlefieldTeam==='song')[1];
  for(const actor of [attacker,target,friendly])Object.assign(actor,{x:1200,y:1792,res:{...s.l.P.res},def:0,series:0,stun:0,slowT:0,poison:0,poisonDmg:0,r:17,atkCd:0,cd:1,ar:99999,dmg:100});
  for(const name of ['b5','lw'])loadDeclaration(s,'src/client/core/helpers-and-config-01.js',name);attacker.battlefieldHome={x:1200,y:1792};friendly.x=1190;s.q0=(a,b)=>Math.hypot(a.x-b.x,(a.y-b.y)*2)/s.QA;
@@ -1101,9 +1101,9 @@ test('native soldier contacts damage only opposing soldiers through the shared c
 });
 
 test('Tống Kim soldiers use rank-specific HP and respect each configured home leash',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
  const soldier=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam==='jin');
- for(const actor of s.l.enemies.filter(actor=>actor.battlefieldMonster)) { const expected={'Binh sĩ':50000,'Hiệu úy':60000,'Thống lĩnh':80000,'Đại thống lĩnh':100000}[actor.battlefieldRank]; assert.equal(actor.hp,expected);assert.equal(actor.max,expected); }
+ for(const actor of s.l.enemies.filter(actor=>actor.battlefieldMonster)) { const expected={'Binh sĩ':50000,'Hiệu úy':60000,'Thống lĩnh':80000,'Phó tướng':100000,'Đại tướng':120000}[actor.battlefieldRank]; assert.equal(actor.hp,expected);assert.equal(actor.max,expected); }
  for(const other of s.l.enemies.filter(actor=>actor.battlefieldMonster&&actor!==soldier)) other.dead=true;
  const [enemy]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
  soldier.x-=100;enemy.x=soldier.x-200;enemy.y=soldier.y;
@@ -1116,7 +1116,7 @@ test('Tống Kim soldiers use rank-specific HP and respect each configured home 
 
 test('soldier hits use the SIM recipient team rather than the real player team',()=>{
  for(const playerTeam of ['song','jin']) {
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start(playerTeam);
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start(playerTeam);s.arenaSimulator.tick(5);
   const enemyTeam=playerTeam==='song'?'jin':'song';
   const [enemy]=match.add({team:enemyTeam,faction:'wudang',level:150,strength:'normal',count:1});
   const soldier=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam===playerTeam);
@@ -1128,7 +1128,7 @@ test('soldier hits use the SIM recipient team rather than the real player team',
 });
 
 test('Tống Kim skill defense refunds MP before mana shield, for both SIM and player recipients',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
  const [defender]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
  Object.assign(defender.stats,{mana:5491,manaShield:84,dmg2mana:22});
  defender.hp=defender.max=3227;defender.mana=200;
@@ -1143,7 +1143,7 @@ test('Tống Kim skill defense refunds MP before mana shield, for both SIM and p
 });
 
 test('Tống Kim finite MP pays each cast once and passively recovers without refilling on context swaps',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
  const [actor]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
  actor.x=s.v.x;actor.y=s.v.y;actor.mana=25;actor.hp=500;
  Object.assign(actor.stats,{regen:19,manaRegen:10});actor.stats.main.cost=40;
@@ -1155,7 +1155,7 @@ test('Tống Kim finite MP pays each cast once and passively recovers without re
 });
 
 test('Tống Kim poison/cold/stun reductions preserve older effects; poison, regen and break timers continue while stunned',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
  const [actor]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
  Object.assign(actor.stats,{poisonRed:80,freezeRed:80,stunRed:80,regen:19});
  actor.hp=500;actor.stun=0;actor.poison=0;actor.slowT=0;
@@ -1184,7 +1184,7 @@ test('battlefield suggestion values a usable mana shield without crediting an un
 });
 
 test('Tống Kim PvP scales direct and poison damage once, preserving soldier and golden boss PvE damage',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);match.tick(600);
  const [enemy]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
  const ratio=s.arenaSimulator.pvpDamageScale(s.v,enemy);assert.equal(ratio,.05);
  const before=enemy.hp;s.hs({...s.l.P.main,parts:{phys:200,poison:200},poisonT:4,series:0,series5:0},enemy);
@@ -1196,7 +1196,7 @@ test('Tống Kim PvP scales direct and poison damage once, preserving soldier an
 });
 
 test('Vô Hình Độc uses the PvP coefficient and poison duration reduction without changing soldier poison',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
  const [enemy]=match.add({team:'jin',faction:'wudu',level:150,strength:'normal',count:1});
  const soldier=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam==='jin');
  Object.assign(enemy.stats,{poisonRed:80});enemy.poison=0;
@@ -1214,7 +1214,7 @@ test('Vô Hình Độc uses the PvP coefficient and poison duration reduction wi
 });
 
 test('Tống Kim SIMs drink their own potions, respect cooldown and never consume player bottles',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
   const [actor]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
   s.S.potions=[{kind:'life',tier:1,total:200},{kind:'mana',tier:1,total:60}];s.be={1:1};s.ao=.3;
   actor.hp=100;actor.mana=0;actor.stats.main.cost=20;actor.cooldown=9999;
@@ -1229,7 +1229,7 @@ test('Tống Kim SIMs drink their own potions, respect cooldown and never consum
 });
 
 test('Tống Kim direct hits trigger SIM reflection once after defenses and never recurse',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
   const [defender]=match.add({team:'jin',faction:'shaolin',level:150,strength:'normal',count:1});
   Object.assign(defender.stats,{sorb:20,retMelee:10,retMeleeP:50,retRangeP:25});
   const before=s.l.life,base={...s.l.P.main,parts:{phys:100},useAR:false,crit:0,series5:0,series:0};

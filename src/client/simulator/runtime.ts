@@ -1,3 +1,5 @@
+import { mountSoldierCountdown } from './soldier-countdown';
+import { mountMarshalNotice } from './marshal-notice';
 import { mountBattlefieldResult } from './battlefield-result';
 import { chooseWarMount, warMountOptions } from './war-mounts';
 import { mapNpcs } from '../npcs';
@@ -492,12 +494,17 @@ export function createSimulator() {
   sandbox.tick = function (dt) { arenaTick(dt); tick(dt); };
   function tick(dt: number) {
     if (battlefield?.running && battlefield.state.remaining <= dt) for (const unit of roadMonsters.actors) if (unit.dead || unit.hp <= 0) warRewards.killed(unit);
+    marshalNotice.tick(dt, !!battlefield?.running);
     battlefield?.tick(dt);
     updateWarNpcs();
     refreshTime += dt;
     if (refreshTime >= .25) { refreshTime = 0; updateInfo(); battlePanel.render(); pharmacy.refresh(); leaderboard.render(); }
     warRewards.tick(dt);
     roadMonsters.tick(dt, !!battlefield?.running);
+    if (battlefield) {
+      const state = battlefield.state;
+      soldierCountdown.render(battlefield.running, state.deployment.soldierAppearanceSeconds - state.elapsed, state.monsters.count);
+    }
     const bodies = battlefield?.active ? [...actors, ...roadMonsters.actors, { ...battlefieldHero, hp: battlefieldWorld.life, dead: !battlefieldWorld.life || battlefieldWorld.deadT > 0 }] : actors;
     crowd.begin(bodies, dt);
     for (const actor of [...actors]) {
@@ -1061,10 +1068,19 @@ export function createSimulator() {
     const damage=Math.max(0,ja((source.dmg||0)*Z(.8,1.2),'phys',source.series,target.series,target.res,75,0));
     target.hp=Math.max(0,target.hp-damage);if(target.arenaSim)reflectHit(target,source,{parts:{phys:damage},rad:source.reach||0,melee:!source.ranged},damage);if(damage>0)recordBattlefieldHit(source,target);applyActorHurt(target,damage,target.max);showDamageNumber(target,damage);
   }
+  const marshalNotice = mountMarshalNotice();
+  const soldierCountdown = mountSoldierCountdown();
   battlefield = createBattlefield({
+    marshalAppeared(side) {
+      marshalNotice.show(side, battlefield!.state.team);
+      warEvents.push(`Nguyên soái phe ${side === "song" ? "Tống" : "Kim"} xuất hiện`);
+      if (warEvents.length > 300) warEvents.shift();
+    },
     actors: () => [...actors], monsters: () => roadMonsters.actors, monsterCount: () => roadMonsters.totalCount, player: () => battlefieldHero, playerAlive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
     teamPoints: () => warRewards.totals,
     finished(result, points) {
+      marshalNotice.reset();
+      soldierCountdown.reset();
       battlePanel.close(); pharmacy.close(); leaderboard.close();
       if(typeof horseTrader !== "undefined") horseTrader?.close();
       resultDialog.open(result,points);
@@ -1087,8 +1103,11 @@ export function createSimulator() {
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = true;
       Object.assign(v, CAMPS[team]); l.life = l.P.life; l.mana = l.P.mana;
       simNames.reset(); warEvents.length=0; warRewards.reset(); supplies.reset(true); roadMonsters.start(); updateWarNpcs();
+      soldierCountdown.render(true, battlefield!.state.deployment.soldierAppearanceSeconds, roadMonsters.totalCount);
     },
     leave() {
+      marshalNotice.reset();
+      soldierCountdown.reset();
       roadMonsters.clear(); warRewards.reset(); supplies.reset();
       if (!previousField) return;
       sandbox.clearCombat?.(false);

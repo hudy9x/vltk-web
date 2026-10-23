@@ -196,25 +196,25 @@
     rewards.record(player, enemy);
     rewards.killed(enemy);
     rewards.killed(enemy);
-    assert.equal(rewards.state.points, 50);
+    assert.equal(rewards.state.points, 150);
     rewards.revived(enemy);
     rewards.killed(enemy);
     assert.equal(
       rewards.state.points,
-      50,
+      150,
       "a new life needs a fresh hostile hit",
     );
     rewards.revived(enemy);
     rewards.record(player, enemy);
     rewards.killed(enemy);
-    assert.equal(rewards.state.points, 100);
+    assert.equal(rewards.state.points, 300);
     rewards.record(enemy, player);
     rewards.killed(player);
-    assert.equal(rewards.rank(enemy).points, 50);
+    assert.equal(rewards.rank(enemy).points, 150);
     const ally = { ...enemy, battlefieldTeam: "song" };
     rewards.record(player, ally);
     rewards.killed(ally);
-    assert.equal(rewards.state.points, 100);
+    assert.equal(rewards.state.points, 300);
   });
 
   test("recruitment offers battlefield selection and joins the selected map/team only after pressing Join", () => {
@@ -261,7 +261,7 @@
     const simulator = game.arenaSimulator,
       match = simulator.battlefield;
     match.start("song");
-    simulator.tick(0.01);
+    simulator.tick(5);
     const npcs = game.equipmentTrader.entities();
     const recruitment = npcs.find(
       (npc: { name: string }) => npc.name === "Chiêu Mộ Sứ",

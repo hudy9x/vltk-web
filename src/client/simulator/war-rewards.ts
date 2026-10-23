@@ -40,8 +40,9 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     defeated.add(target);
     const credit=credits.get(target);
     if(!credit || elapsed-credit.at>15 || credit.team===(target===host.player()?host.team():target.battlefieldTeam)) return;
-    const before = merits.get(credit.source)||0, points = target.battlefieldBoss?1000:target.battlefieldMonster?10:50;
-    const victimTitle = target.battlefieldBoss ? 'Nguyên soái' : target.battlefieldRank || warRank(merits.get(target)||0).name;
+    const victimTitle = target.battlefieldBoss ? 'Nguyên soái' : target.battlefieldMonster ? target.battlefieldRank || 'Binh sĩ' : warRank(merits.get(target)||0).name;
+    const tier = Math.max(0, WAR_RANKS.findIndex(rank => rank.name === victimTitle)) + 1;
+    const before = merits.get(credit.source)||0, points = target.battlefieldBoss ? 1000 : (target.battlefieldMonster ? 50 : 150) * tier;
     merits.set(credit.source,before+points); totals[credit.team]+=points;
     if(target.battlefieldMonster) soldierKills.set(credit.source,(soldierKills.get(credit.source)||0)+1);
     const name = (actor:LegacyEntity) => host.name?.(actor) || actor.n || (actor===host.player()?'Người chơi':'SIM');

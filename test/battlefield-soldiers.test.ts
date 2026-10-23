@@ -30,6 +30,7 @@
       captain: [600, 598],
       commander: [595],
       general: [589],
+      grandGeneral: [589],
       marshal: [144, 566],
     };
     for (const team of ["song", "jin"] as const)
@@ -43,6 +44,8 @@
       }
     const game = createHeadlessGame(process.cwd());
     game.arenaSimulator.battlefield.start("song");
+    game.arenaSimulator.tick(5);
+    game.arenaSimulator.battlefield.tick(600);
     assert.ok(
       game.arenaSimulator.actors
         .filter((actor: any) => actor.battlefieldBoss)
@@ -68,6 +71,7 @@
       game,
     );
     game.arenaSimulator.battlefield.start("song");
+    game.arenaSimulator.tick(5);
     const enemy = game.arenaSimulator.roadMonsters.actors.find(
       (actor: any) => actor.battlefieldTeam === "jin",
     );
@@ -193,6 +197,7 @@
     };
     road.configure(configuration);
     game.arenaSimulator.battlefield.start("song");
+    game.arenaSimulator.tick(5);
     const caster = road.actors.find(
       (actor: any) => actor.battlefieldTeam === "jin",
     );

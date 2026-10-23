@@ -17,6 +17,7 @@ export function splitArmyTotal(count: number) {
   return { song: count / 2, jin: count / 2 };
 }
 export const BATTLE_DURATION = 20 * 60;
+export const MARSHAL_APPEARANCE_SECONDS = BATTLE_DURATION / 2;
 export const RESPAWN_SECONDS = DEFAULT_DEPLOYMENT.respawnSeconds;
 export let BATTLE_MAP: number = 9001;
 export const BATTLEFIELD_MAPS = [{id:9001,name:"Song Doanh · ba cầu"},{id:9002,name:"Chéo Doanh · doanh trại chéo"},{id:9003,name:"Hoang Nguyên · ba đường đất"}];
@@ -37,6 +38,7 @@ export interface BattlefieldHost {
   teamPoints?(): Record<Team,number>;
   finished?(result: string, points: Record<Team,number>): void;
   marshalHP?(): number;
+  marshalAppeared?(side: Team): void;
   inAttackRange?(actor: SimulatorActor, target: LegacyEntity): boolean;
   create(build: ArmyBuild, bossElement?: number): SimulatorActor;
   cancel(actor: SimulatorActor): void;
@@ -55,6 +57,7 @@ export function createBattlefield(host: BattlefieldHost) {
   let elapsed = 0, team: Team = 'song', playerDue: number | null = null;
   let generation = 0, adding = false;
   let nextDeployment = validateDeploymentSettings(DEFAULT_DEPLOYMENT), deployment = { ...nextDeployment }, playerDeaths = 0;
+  let marshalHP = DEFAULT_SOLDIERS.marshal.hp;
   let result = '', elements = { song: 3, jin: 2 };
   const score = { song: 0, jin: 0 };
   let finalScore: Record<Team,number> | null = null;
@@ -111,7 +114,7 @@ export function createBattlefield(host: BattlefieldHost) {
       !Number.isSafeInteger(build.count) || build.count < 1 || build.count > 100) throw new Error('Cấu hình quân: cấp 1–200, số lượng 1–100, phe và sức mạnh hợp lệ.');
     if (build.skillTier !== undefined && ![90,150].includes(build.skillTier)) throw new Error('Chọn chiêu cấp 90 hoặc 150.');
     if (build.equipmentKind && !['blue','gold','thientu'].includes(build.equipmentKind)) throw new Error('Loại trang bị SIM không hợp lệ.');
-    if (host.actors().filter(owns).length + build.count > 502) throw new Error('Tối đa 500 SIM và hai boss trên chiến trường.');
+    if (host.actors().filter(actor => owns(actor) && !actor.battlefieldBoss).length + build.count > 500) throw new Error('Tối đa 500 SIM và hai boss trên chiến trường.');
   }
   function add(build: ArmyBuild) {
     if (phase !== 'running') throw new Error('Hãy bắt đầu trận trước khi bổ sung quân.');
@@ -138,7 +141,7 @@ export function createBattlefield(host: BattlefieldHost) {
   async function createPlan(plan: ArmyBuild[], progress: (added: number, total: number) => void, yieldFrame: () => Promise<void>) {
     if (adding) throw new Error('Đang tạo quân, vui lòng chờ.');
     if (phase !== 'running') throw new Error('Hãy bắt đầu trận trước khi bổ sung quân.');
-    if (host.actors().filter(owns).length + plan.length > 502) throw new Error('Tối đa 500 SIM và hai boss trên chiến trường.');
+    if (host.actors().filter(actor => owns(actor) && !actor.battlefieldBoss).length + plan.length > 500) throw new Error('Tối đa 500 SIM và hai boss trên chiến trường.');
     const token = generation, created: SimulatorActor[] = []; adding = true;
     try {
       for (const build of plan) {
@@ -171,22 +174,25 @@ export function createBattlefield(host: BattlefieldHost) {
   function start(playerTeam: Team, bossElements = { song: 3, jin: 2 }, mapId = 9001) {
     if (!BATTLEFIELD_MAPS.some(map=>map.id===mapId)) throw new Error('Chiến trường không hợp lệ.');
     if (!isTeam(playerTeam) || ![bossElements.song, bossElements.jin].every(value => Number.isInteger(value) && value >= 0 && value <= 4)) throw new Error('Phe hoặc hệ boss không hợp lệ.');
-    const marshalHP = host.marshalHP?.() ?? DEFAULT_SOLDIERS.marshal.hp;
-    if (!Number.isSafeInteger(marshalHP) || marshalHP < 1 || marshalHP > 1_000_000_000_000) throw new Error("HP Nguyên soái không hợp lệ.");
+    const configuredMarshalHP = host.marshalHP?.() ?? DEFAULT_SOLDIERS.marshal.hp;
+    if (!Number.isSafeInteger(configuredMarshalHP) || configuredMarshalHP < 1 || configuredMarshalHP > 1_000_000_000_000) throw new Error("HP Nguyên soái không hợp lệ.");
     reset(); deployment = { ...nextDeployment }; BATTLE_MAP = mapId;
     const camps = mapId === 9003 ? wildernessLayout.camps : mapId === 9002 ? diagonalLayout.camps : ORIGINAL_CAMPS;
     for (const side of ['song','jin'] as const) Object.assign(CAMPS[side], camps[side]);
-    team = playerTeam; elements = { ...bossElements };
+    team = playerTeam; elements = { ...bossElements }; marshalHP = configuredMarshalHP;
     try {
       host.enter(team); phase = 'running';
-      for (const side of ['song', 'jin'] as const) {
-        const actor = host.create({ team: side, faction: ELEMENT_FACTIONS[elements[side]][0], level: 150, strength: 'strong', count: 1 }, elements[side]);
-        actor.battlefieldTeam = side; actor.battlefieldBoss = true;
-        actor.n = `Hoàng Kim · ${actor.n}`;
-        actor.max = actor.hp = actor.stats.life = marshalHP;
-        bosses.set(side, actor); place(actor);
-      }
     } catch (error) { reset(); throw error; }
+  }
+  function spawnMarshals() {
+    for (const side of ['song', 'jin'] as const) {
+      const actor = host.create({ team: side, faction: ELEMENT_FACTIONS[elements[side]][0], level: 150, strength: 'strong', count: 1 }, elements[side]);
+      actor.battlefieldTeam = side; actor.battlefieldBoss = true;
+      actor.n = `Hoàng Kim · ${actor.n}`;
+      actor.max = actor.hp = actor.stats.life = marshalHP;
+      bosses.set(side, actor); place(actor);
+      host.marshalAppeared?.(side);
+    }
   }
   function died(actor: SimulatorActor) {
     if (!owns(actor) || respawns.has(actor) || actor.battlefieldDeathCounted) return;
@@ -219,6 +225,7 @@ export function createBattlefield(host: BattlefieldHost) {
       host.finished?.(result, {...finalScore});
       return;
     }
+    if (elapsed >= MARSHAL_APPEARANCE_SECONDS && bosses.size === 0) spawnMarshals();
     for (const [actor, due] of respawns) if (elapsed + 1e-9 >= due) {
       if (host.actors().includes(actor)) { host.restore(actor); actor.battlefieldDeathCounted = false; place(actor); }
       respawns.delete(actor);
