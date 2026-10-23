@@ -1466,3 +1466,15 @@ test('a SIM keeps stolen HP and MP in its own state after a delayed battlefield 
     assert.equal(s.l.life,heroHP);assert.equal(s.l.mana,heroMP);
   }
 });
+
+test('respawn countdown updates through the real player loop in production and arena',()=>{
+ for(const arena of [false,true]) {
+  const s=battlefieldGame(arena),match=s.arenaSimulator.battlefield;match.start('song');
+  const notice=s.simNodes.find(node=>node.id==='battlefield-respawn-countdown');
+  Object.assign(s,{$w(){},Sb(){},advanceSkillContacts(){}});s.l.sweepT=0;s.l.dirty=false;
+  loadDeclaration(s,'src/client/core/state-and-save-02.js','Td');
+  s.l.life=0;match.playerDied();assert.equal(notice.textContent,'Rời doanh trại sau 30 giây');
+  s.Td(1);assert.equal(notice.textContent,'Rời doanh trại sau 29 giây');assert.equal(s.l.life,0);
+  match.reset();assert.equal(notice.hidden,true);
+ }
+});

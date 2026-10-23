@@ -1,4 +1,5 @@
 import { mountSoldierCountdown } from './soldier-countdown';
+import { mountRespawnCountdown } from './respawn-countdown';
 import { mountMarshalNotice } from './marshal-notice';
 import { mountBattlefieldResult } from './battlefield-result';
 import { chooseWarMount, warMountOptions } from './war-mounts';
@@ -522,6 +523,7 @@ export function createSimulator() {
     if (battlefield) {
       const state = battlefield.state;
       soldierCountdown.render(battlefield.running, state.deployment.soldierAppearanceSeconds - state.elapsed, state.monsters.count);
+      respawnCountdown.render(battlefield.running, state.playerRespawn);
     }
     const bodies = battlefield?.active ? [...actors, ...roadMonsters.actors, { ...battlefieldHero, hp: battlefieldWorld.life, dead: !battlefieldWorld.life || battlefieldWorld.deadT > 0 }] : actors;
     crowd.begin(bodies, dt);
@@ -1093,6 +1095,7 @@ export function createSimulator() {
   }
   const marshalNotice = mountMarshalNotice();
   const soldierCountdown = mountSoldierCountdown();
+  const respawnCountdown = mountRespawnCountdown();
   battlefield = createBattlefield({
     marshalAppeared(side) {
       marshalNotice.show(side, battlefield!.state.team);
@@ -1105,6 +1108,7 @@ export function createSimulator() {
       crowd.reset();
       marshalNotice.reset();
       soldierCountdown.reset();
+      respawnCountdown.reset();
       battlePanel.close(); pharmacy.close(); leaderboard.close();
       if(typeof horseTrader !== "undefined") horseTrader?.close();
       resultDialog.open(result,points);
@@ -1136,6 +1140,7 @@ export function createSimulator() {
       marshalNotice.reset();
       soldierCountdown.reset();
       roadMonsters.clear(); warRewards.reset(); supplies.reset();
+      respawnCountdown.reset();
       if (!previousField) return;
       sandbox.clearCombat?.(false);
       ma(previousField.key); Object.assign(v, { x: previousField.x, y: previousField.y });
@@ -1145,6 +1150,7 @@ export function createSimulator() {
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = false;
     },
     respawnPlayer(team) {
+      respawnCountdown.reset();
       warRewards.revived(battlefieldHero);
       l.life = l.P.life; l.mana = l.P.mana; l.deadT = 0;
       l.slowT = l.slowPower = l.stunT = l.hpDotT = l.hpDot = 0;
@@ -1152,6 +1158,7 @@ export function createSimulator() {
       v.actionRevision = (v.actionRevision || 0) + 1;
     },
     setPlayerDead(team, waitSeconds) {
+      respawnCountdown.render(true, waitSeconds);
       warRewards.killed(battlefieldHero);
       Object.assign(battlefieldHero, CAMPS[team]);
       battlefieldWorld.life = 0; battlefieldWorld.deadT = waitSeconds; battlefieldWorld.manTgt = battlefieldWorld.tgt = battlefieldWorld.moveTo = null;
