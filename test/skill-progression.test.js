@@ -140,10 +140,14 @@ test('changing faction does not refund trained 150 levels as points and keeps th
   assert.equal(s.o.skPts,500-starterCost);assert.equal(s.o.fac,'tianwang');
   assert.equal(s.o.skL[1055].lv,7);assert.equal(s.o.skL[1055].xp,12);assert.equal(s.o.bkOk[1055],1);
 });
-test('rebirth keeps trained 150 skill levels and XP instead of converting them into skill points',async()=>{
+test('disabled rebirth and its dialog leave the character unchanged',async()=>{
   const s=game();s.o.sk={1055:7,10:3};s.o.skL={1055:{lv:7,xp:12}};
-  Object.assign(s,{Ee:150,n2:10,Do:10,po:50,Lh:.1,qh:.1,X1:async()=>true,e4:()=>({total:0}),Mn(){}});
-  decl(s,'src/client/systems/rewards-01.js','ob');await s.ob();
-  assert.equal(s.o.lvl,1);assert.equal(s.o.sk[1055],7);assert.equal(s.o.skL[1055].xp,12);
-  assert.equal(s.o.skPts,10);assert.equal(s.o.bkOk[1055],1);
+  const before=JSON.stringify(s.o), messages=[];
+  Object.assign(s,{k:message=>messages.push(message),X1:()=>assert.fail('must not prompt'),J:()=>assert.fail('must not open dialog')});
+  decl(s,'src/client/systems/rewards-01.js','ob');
+  decl(s,'src/client/systems/rewards-02.js','_h');
+  s._h();await s.ob();
+  assert.equal(JSON.stringify(s.o),before);
+  assert.equal(messages.length,2);
+  assert.ok(messages.every(message=>message.includes('đã tắt')));
 });

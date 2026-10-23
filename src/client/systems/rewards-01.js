@@ -591,57 +591,7 @@ var mo = function () {
 };
 
 var ob = async function () {
-  const A = Q();
-  if (o.lvl < Ee || A.stat.reborn >= n2) return;
-  (await X1(
-    "Chuyển sinh: về cấp 1, giữ trang bị. Toàn bộ điểm tiềm năng và kỹ năng cũ bị tẩy (giữ nguyên võ công 90 và 150 đã luyện), nhận điểm thưởng chuyển sinh. Quái mạnh hơn. Tiếp tục?",
-  ),
-    A.stat.reborn++,
-    delete o.tanthuXp);
-  const n = A.stat.reborn,
-    t = I[o.fac].starter,
-    e = o.bkOk || (o.bkOk = {});
-  for (const i in o.sk) T[i] && T[i].book && (e[i] = 1);
-  ((o.lvl = 1),
-    (o.xp = 0),
-    (o.attr = { str: 0, dex: 0, vit: 0, eng: 0 }),
-    (o.attrPts = po + (o.bonusAtp || 0)));
-  const a = {};
-  for (const i in o.sk)
-    T[i] &&
-      [90, 150].includes(T[i].tier) &&
-      o.sk[i] > 0 &&
-      !(typeof SA == "function" && SA(i)) &&
-      (a[i] = o.sk[i]);
-  ((o.sk = Object.assign({}, a)),
-    (o.skPts = Do + (o.bonusSkp || 0)),
-    t && ((o.sk[t] = 1), (o.main = t)),
-    (o.mainLock = !1),
-    (o.slots = [0, 0, 0, 0]),
-    (o.stage = 1),
-    (o.wave = 1),
-    (l.tower = null),
-    (l.enemies = []),
-    (l.dirty = !0),
-    (l.zoneShown = null),
-    C(
-      `<b class="up">Chuyển sinh lần ${n}!</b> Tẩy toàn bộ điểm cũ (giữ võ công 90/150${
-        Object.keys(a).length
-          ? ": " +
-            Object.keys(a)
-              .map((i) => T[i].n + " " + a[i])
-              .join(", ")
-          : ""
-      }), nhận ${po} tiềm năng + ${Do} điểm kỹ năng · −${n * 10}% kinh nghiệm, +${n * 10}% sát thương · quái +${Math.round(Lh * n * 100)}% máu, +${Math.round(qh * n * 100)}% sát thương`,
-    ),
-    o.autoPts === !0
-      ? (yt(), Pt())
-      : e4().total && k("Bấm Gợi ý ở thẻ Nhân vật: cộng đủ điểm cho bộ đồ đang mặc"),
-    typeof tn == "function" && (tn(), qA()),
-    Mn(),
-    n0(!0),
-    V(),
-    $());
+  k("Tính năng chuyển sinh hiện đã tắt.");
 };
 
 var rb = function () {

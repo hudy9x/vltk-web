@@ -97,7 +97,7 @@ var HB = function () {
     p.push(`<i>${T[y] ? D(T[y].n) : y} +${M}</i>`);
   ((m("#t-char").innerHTML = `<div class="u2char c2">
     <div class="u2dollw"><div class="u2nm">${D(OA() ? o.name : n.n)}${tx() ? `<button class="u2pen" id="bName" title="${OA() ? `Đổi Tên (còn ${rr()}/${or} lượt)` : "Đặt tên nhân vật"}">✎</button>` : ""}</div><div class="u2doll"><canvas id="u2doll" width="252" height="300"></canvas>${i}</div>
-      <div class="u2btns"><button class="btn sm" id="bTitle">Danh hiệu</button><button class="btn sm${o.lvl >= Ee && Q().stat.reborn < n2 ? " on" : ""}" id="bReb">Chuyển sinh</button>${N("misc", "ldp") > 0 ? `<button class="btn sm on" id="bDoiPhai">Đổi phái (${N("misc", "ldp")})</button>` : ""}</div>
+      <div class="u2btns"><button class="btn sm" id="bTitle">Danh hiệu</button><button class="btn sm" id="bReb" disabled title="Tính năng chuyển sinh hiện đã tắt">Chuyển sinh (đã tắt)</button>${N("misc", "ldp") > 0 ? `<button class="btn sm on" id="bDoiPhai">Đổi phái (${N("misc", "ldp")})</button>` : ""}</div>
       ${p.length ? `<div class="c2sk"><div class="c2t">Kỹ năng từ trang bị</div>${p.join("")}</div>` : ""}</div>
     <div class="u2info">
       <div class="c2hd"><div class="c2id"><b style="color:${w0[n.series]}">${D(n.n)}</b><span class="c2tag" style="--ec:${w0[n.series]}">${g0[n.series]}</span><span class="c2lv">Cấp <b>${o.lvl}</b></span>${v0() ? `<span class="c2cs">CS ${v0()}</span>` : ""}</div>

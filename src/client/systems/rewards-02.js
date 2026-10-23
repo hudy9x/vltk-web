@@ -231,11 +231,7 @@ var Ce = function s(A) {
 };
 
 var _h = function () {
-  o.fac &&
-    J(`<h3>Chuyển sinh <small>${Q().stat.reborn}/${n2} lần</small></h3>${wb()}`, () => {
-      const A = m("#gReborn");
-      A && (A.onclick = ob);
-    });
+  k("Tính năng chuyển sinh hiện đã tắt.");
 };
 
 var Os = (s) => `${s.getFullYear()}-${s.getMonth() + 1}-${s.getDate()}`;
