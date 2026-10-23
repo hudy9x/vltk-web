@@ -84,6 +84,11 @@
   try {
     const config = await request('/api/config');
     Object.defineProperty(window, 'localGameConfig', { value:Object.freeze({ development:config.development === true, combatSandbox:config.development === true && config.combatSandbox === true }), writable:false, configurable:false });
+    // Start installation while loading account/storage/scripts, before the sprite burst.
+    // A blocked/unsupported worker must never prevent the game from opening.
+    if (window.navigator && 'serviceWorker' in window.navigator && location.protocol.startsWith('http')) {
+      window.navigator.serviceWorker.register('/sw.js', { updateViaCache:'none' }).catch(() => {});
+    }
     const account = await waitForAccount();
     window.localGameAuth = { user:account.user, logout:() => request('/api/auth/logout', post({})) };
     let state = await request('/api/storage'); generation = state.generation;

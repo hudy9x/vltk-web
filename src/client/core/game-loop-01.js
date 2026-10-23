@@ -669,10 +669,6 @@ y_();
 
 typeof ef == "function" && ef();
 
-"serviceWorker" in navigator &&
-  location.protocol.startsWith("http") &&
-  navigator.serviceWorker.register("sw.js").catch(() => {});
-
 var d5 = 622;
 
 setInterval(k_, 300 * 1e3);
