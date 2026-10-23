@@ -1,4 +1,4 @@
-// Local development tools. Appended after the original game initialization.
+// GameMaster tools. Appended after the original game initialization.
 var gameMaster = (function () {
   const prefix = "gm_hk_";
   const saveAndRefresh = () => {
@@ -58,7 +58,7 @@ var gameMaster = (function () {
     saveAndRefresh();
     return true;
   };
-  if (!window.localGameConfig || !window.localGameConfig.development) return null;
+  const development = !!window.localGameConfig?.development;
 
   let showSkillRange = false;
   let showDamageAreas = false;
@@ -87,6 +87,8 @@ var gameMaster = (function () {
   function grant(action) {
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
     if (!(action in amounts)) throw new Error("Lệnh GM không hợp lệ.");
+    if (!development && (action === "potential" || action === "chest"))
+      throw new Error("Lệnh GM này chỉ dùng trong môi trường development.");
     if (action === "level150") {
       if (o.lvl >= 150) return "Nhân vật đã đạt cấp 150 trở lên.";
       if (G2() < 150) throw new Error("Giới hạn cấp hiện tại chưa cho phép lên cấp 150.");
@@ -208,11 +210,11 @@ var gameMaster = (function () {
     <button type="button" data-gm="level150">Tăng nhân vật lên cấp 150</button>
     <button type="button" data-gm="learn90">Học tất cả chiêu cấp 90 của môn phái</button>
     <button type="button" data-gm="max90">Nâng tối đa các chiêu cấp 90 đã học</button>
-    <button type="button" data-gm="potential">+3.000 điểm tiềm năng</button>
+    ${development ? '<button type="button" data-gm="potential">+3.000 điểm tiềm năng</button>' : ""}
     <button type="button" data-gm="gold">+100 triệu vạn lượng (1.000 tỷ lượng)</button>
     <button type="button" data-gm="knb"><img src="img/ep/knb.png" alt="">+10 vạn Kim Nguyên Bảo</button>
     <button type="button" data-gm="xp">+100 triệu điểm kinh nghiệm</button>
-    <button type="button" data-gm="chest"><img src="img/ep/box2.png" alt="">+100 rương Hoàng Kim môn phái hiện tại</button>
+    ${development ? '<button type="button" data-gm="chest"><img src="img/ep/box2.png" alt="">+100 rương Hoàng Kim môn phái hiện tại</button>' : ""}
     <p id="gm-status" role="status" aria-live="polite">Phần thưởng được lưu vào save hiện tại.</p></div>`;
   toggle.onclick = () => {
     panel.hidden = !panel.hidden;

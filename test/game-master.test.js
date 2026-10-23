@@ -231,13 +231,35 @@ test("Can Khon ring grant moved out of GM into the equipment NPC", () => {
   assert.throws(() => s.gameMaster.grant("rings"), /không hợp lệ/);
   assert.equal(s.o.inv.length, 0);
 });
-test("production has no GM controls or grants, while previously earned chests remain usable", () => {
+test("production exposes GM controls but hides and rejects potential and chest grants", () => {
   const s = game(false);
-  assert.equal(s.gameMaster, null);
-  assert.equal(s.nodes.length, 0);
+  const panel = s.nodes.find(node => node.id === "gm-panel");
+  assert.ok(s.nodes.some(node => node.id === "gm-toggle"));
+  assert.ok(s.nodes.some(node => node.id === "quick-sale-toggle"));
+  for (const action of ["level150", "learn90", "max90", "gold", "knb", "xp"])
+    assert.ok(panel.innerHTML.includes(`data-gm="${action}"`), action);
+  for (const action of ["potential", "chest"]) {
+    assert.ok(!panel.innerHTML.includes(`data-gm="${action}"`), action);
+    assert.throws(() => s.gameMaster.grant(action), /chỉ dùng.*development/);
+  }
+  assert.equal(s.o.attrPts, 0);
+  assert.equal(s.o.inv.length, 0);
+  assert.equal(s.saved.length, 0);
+  s.gameMaster.grant("gold");
+  s.gameMaster.grant("knb");
+  s.gameMaster.grant("xp");
+  assert.equal(s.o.gold, 1_000_000_000_007);
+  assert.equal(s.o.knb, 100_003);
+  assert.equal(s.o.lvl, 5);
   s.B4("gm_hk_shaolin", 1);
   assert.equal(s.c6(s.o.inv[0]), true);
   assert.equal(s.o.inv[0].n, "Đồ Thiếu Lâm");
+});
+test("development retains potential and chest controls", () => {
+  const s = game();
+  const panel = s.nodes.find(node => node.id === "gm-panel");
+  assert.match(panel.innerHTML, /data-gm="potential"/);
+  assert.match(panel.innerHTML, /data-gm="chest"/);
 });
 test("GM range checkbox draws only the current skill at the moving hero, updates on skill change, and restores canvas state", () => {
   const s = game();
