@@ -66,3 +66,39 @@ test('account and saved character survive a server/database restart', async () =
     assert.equal((await auth(app,'login','persistent')).statusCode,200);
   } finally { await app.close(); db.close(); rmSync(dir,{ recursive:true,force:true }); }
 });
+
+test('storage API blocks rebirth in production and dev, including backups, imports and atomic batches', async () => {
+  for (const development of [false, true]) {
+    const db = openDatabase(':memory:');
+    const pack = (reborn, wrapped = false) => {
+      const state = { name:'Existing', fac:'shaolin', lvl:200, rw:{stat:{reborn}} };
+      return wrapped ? JSON.stringify({ d:JSON.stringify(state), h:'checksum' }) : JSON.stringify(state);
+    };
+    initialize(db, { jxidle:pack(2), jxidle_2:pack(0) });
+    const { app } = createServer({ db, downloadAssets:false, development });
+    try {
+      const cookie = cookieOf(await auth(app,'register','rebirth_test'));
+      const state = (await storage(app,cookie)).json();
+      const post = (id, operations) => app.inject({ method:'POST', url:'/api/storage', headers:{cookie},
+        payload:{id, generation:state.generation, operations} });
+      assert.equal((await post('normal', [{key:'jxidle',value:pack(2,true)}, {key:'jxidle_bak',value:pack(2)}])).statusCode,200);
+      for (const [index,key] of ['jxidle','jxidle_bak','jxidle_2','jxidle_2_bak','jxidle_3'].entries()) {
+        const response = await post('blocked-'+index,[{key:'jxidle_slot',value:'menu'}, {key,value:pack(key.startsWith('jxidle_') && /_[23]/.test(key) ? 1 : 3,index%2===0)}]);
+        assert.equal(response.statusCode,403,response.body);
+        assert.match(response.json().error,/chuyển sinh.*đã tắt/);
+      }
+      const after = (await storage(app,cookie)).json();
+      assert.equal(after.entries.jxidle,pack(2,true));
+      assert.equal(after.entries.jxidle_slot,undefined,'rejected batches write nothing');
+      assert.equal(after.entries.jxidle_3,undefined);
+      // Invalid counter types cannot be used as a baseline for a later bypass.
+      assert.equal((await post('invalid',[{key:'jxidle',value:pack('3')}])).statusCode,400);
+      // A first browser import also goes through the guarded writer.
+      const other = cookieOf(await auth(app,'register','new_rebirth'));
+      db.prepare('UPDATE accounts SET initialized=0 WHERE username=?').run('new_rebirth');
+      const imported = await app.inject({method:'POST',url:'/api/storage/init',headers:{cookie:other},payload:{entries:{jxidle:pack(1,true)}}});
+      assert.equal(imported.statusCode,403,imported.body);
+      assert.deepEqual((await storage(app,other)).json().entries,{});
+    } finally { await app.close(); db.close(); }
+  }
+});
