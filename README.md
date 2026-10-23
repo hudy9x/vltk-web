@@ -31,6 +31,57 @@ bao gồm Côn Lôn và Võ Đang. Người dùng yêu cầu ghi nhận, tạm t
   `s7`: thay đổi ảnh hưởng mọi chiêu nội công, không chỉ Côn Lôn hay tooltip.
   Không tự bật cờ này khi sửa animation hoặc tầng phụ của kỹ năng.
 
+## Cân bằng sát thương Tống Kim
+
+Hệ số `BATTLEFIELD_PVP_DAMAGE` trong
+[`src/client/simulator/balance.ts`](src/client/simulator/balance.ts) dùng để cân bằng
+sát thương giữa **người chơi và SIM, hoặc SIM với SIM trong Tống Kim**.
+**Giá trị hiện tại là `0.2` (20%)**, dùng chung cho game thường và `dev:arena`.
+Đây là tham số cân bằng của dự án, không phải công thức VLTK/VNG gốc đã được xác minh.
+Boss và binh sĩ NPC không chịu hệ số giảm PvP này.
+
+**Công thức này cố ý triệt tiêu phần lớn sát thương gốc để đảm bảo sự cân bằng
+trong chiến trường. Với `0.2`, chỉ giữ lại 20% và loại bỏ 80% sát thương ngay
+trước bước tính kháng; các lớp phòng thủ sau đó còn tiếp tục giảm HP thực mất.**
+Vì vậy, lực tay vài nghìn trên giao diện không đồng nghĩa mỗi hit làm mất vài
+nghìn HP của đối phương. Mức cân bằng cụ thể vẫn cần được kiểm nghiệm khi chơi.
+
+Công thức và thứ tự xử lý:
+
+```text
+k = BATTLEFIELD_PVP_DAMAGE = 0.2
+Sát thương từng thành phần trước kháng = sát thương gốc thành phần đó × k
+
+Các thành phần vật lý / băng / hỏa / lôi / độc × k
+    → công thức trúng đòn, kháng, khắc hệ và chí mạng của kỹ năng
+    → khiên sát thương → hấp thụ chung / theo hệ
+    → chuyển hóa sát thương thành MP → nội lực hộ thân
+    → HP thực mất
+```
+
+Hệ số được nhân **một lần cho mỗi hit**, trước hàm `hs`, lên từng thành phần
+sát thương và phần cộng sát thương khắc hệ `series5`. Độc từ aura cũng dùng
+hệ số PvP; sát thương độc duy trì được trừ theo các tick sau, không cộng ngay
+toàn bộ vào HP mất của hit đầu. Chuyển hóa sát thương thành MP không trực tiếp
+giảm HP mất, nhưng MP hồi có thể được nội lực hộ thân dùng để hấp thụ hit đó.
+Chi tiết triển khai nằm trong [`runtime.ts`](src/client/simulator/runtime.ts),
+[`state-and-save-01.js`](src/client/core/state-and-save-01.js) và
+[`defense.ts`](src/client/simulator/defense.ts).
+
+Ví dụ giản lược, chỉ xét hệ số PvP và kháng hiệu dụng 75%, bỏ qua các yếu tố khác:
+
+```text
+HP mất ≈ sát thương gốc × k × (1 − kháng / 100)
+       ≈ 10.000 × 0.2 × (1 − 75 / 100)
+       ≈ 500 HP
+```
+
+Giá trị cũ `0.05` chỉ giữ 5% (loại bỏ 95% trước kháng); trong ví dụ trên chỉ
+còn 125 HP. Khi thử nghiệm với `1`, lớp cân bằng PvP giữ nguyên 100% sát thương
+gốc, nhưng kháng và các lớp phòng thủ vẫn có hiệu lực. Khi chỉnh hệ số này,
+cần đối chiếu cùng build, chiêu, mục tiêu và trạng thái phòng thủ; không kết luận
+hai môi trường khác công thức chỉ từ số damage hiển thị.
+
 ## Cấu trúc thư mục
 
 ```text

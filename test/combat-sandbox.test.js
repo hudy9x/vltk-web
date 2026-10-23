@@ -1184,12 +1184,13 @@ test('Tống Kim skill defense refunds MP before mana shield, for both SIM and p
  const [defender]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
  Object.assign(defender.stats,{mana:5491,manaShield:84,dmg2mana:22});
  defender.hp=defender.max=3227;defender.mana=200;
- s.hs({...s.l.P.main,parts:{phys:23200},series:0,series5:0},defender);
+ // 5800 × 20% = 1160 damage before MP conversion and mana shield.
+ s.hs({...s.l.P.main,parts:{phys:5800},series:0,series5:0},defender);
  assert.ok(Math.abs(defender.hp-2522.2)<1e-8);assert.equal(defender.mana,0);
  // Deliver the same resolved damage via the actor-to-player contact path.
  Object.assign(s.l.P,{mana:5491,manaShield:84,dmg2mana:22});s.l.life=3227;s.l.mana=200;
  defender.x=s.v.x;defender.y=s.v.y;defender.cooldown=0;defender.hurtT=0;
- Object.assign(defender.stats.main,{parts:{phys:23200},series:0,series5:0});
+ Object.assign(defender.stats.main,{parts:{phys:5800},series:0,series5:0});
  s.arenaSimulator.tick(.001);advanceSimulator(s,.25);
  assert.ok(Math.abs(s.l.life-2522.2)<1e-8);assert.equal(s.l.mana,0);
 });
@@ -1211,7 +1212,7 @@ test('Tống Kim poison/cold/stun reductions preserve older effects; poison, reg
  const [actor]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
  Object.assign(actor.stats,{poisonRed:80,freezeRed:80,stunRed:80,regen:19});
  actor.hp=500;actor.stun=0;actor.poison=0;actor.slowT=0;
- s.hs({...s.l.P.main,parts:{poison:2000,cold:2000},poisonT:10,coldT:10,stun:100,series:0,series5:0},actor);
+ s.hs({...s.l.P.main,parts:{poison:500,cold:500},poisonT:10,coldT:10,stun:100,series:0,series5:0},actor);
  assert.ok(Math.abs(actor.poison-2)<1e-8);assert.ok(Math.abs(actor.poison*actor.poisonDmg-20)<1e-8);
  assert.ok(actor.slowT<=2.01);assert.ok(actor.stun<=.161);
  actor.stun=5;actor.resBrkT=3;actor.hp=500;
@@ -1219,7 +1220,7 @@ test('Tống Kim poison/cold/stun reductions preserve older effects; poison, reg
  assert.equal(actor.stun,4);assert.equal(actor.resBrkT,2);assert.ok(Math.abs(actor.hp-509)<1e-8);assert.ok(Math.abs(actor.poison-1)<1e-8);
  // A shorter reduced application must not shorten an existing long effect.
  actor.resBrkT=0;actor.poison=4;actor.poisonDmg=10;actor.slowT=4;actor.stun=4;
- s.hs({...s.l.P.main,parts:{poison:2000,cold:2000},poisonT:10,coldT:10,stun:100,series:0,series5:0},actor);
+ s.hs({...s.l.P.main,parts:{poison:500,cold:500},poisonT:10,coldT:10,stun:100,series:0,series5:0},actor);
  assert.equal(actor.poison,4);assert.ok(Math.abs(actor.poison*actor.poisonDmg-60)<1e-8);
  assert.equal(actor.slowT,4);assert.equal(actor.stun,4);
 });
@@ -1238,9 +1239,9 @@ test('battlefield suggestion values a usable mana shield without crediting an un
 test('Tống Kim PvP scales direct and poison damage once, preserving soldier and golden boss PvE damage',()=>{
  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);match.tick(600);
  const [enemy]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
- const ratio=s.arenaSimulator.pvpDamageScale(s.v,enemy);assert.equal(ratio,.05);
+ const ratio=s.arenaSimulator.pvpDamageScale(s.v,enemy);assert.equal(ratio,.2);
  const before=enemy.hp;s.hs({...s.l.P.main,parts:{phys:200,poison:200},poisonT:4,series:0,series5:0},enemy);
- assert.ok(Math.abs(before-enemy.hp-10)<1e-8);assert.ok(Math.abs(enemy.poison*enemy.poisonDmg-10)<1e-8);
+ assert.ok(Math.abs(before-enemy.hp-40)<1e-8);assert.ok(Math.abs(enemy.poison*enemy.poisonDmg-40)<1e-8);
  const boss=s.arenaSimulator.actors.find(x=>x.battlefieldBoss);
  assert.equal(s.arenaSimulator.pvpDamageScale(s.v,boss),1);assert.equal(s.arenaSimulator.pvpDamageScale(boss,enemy),1);
  assert.equal(s.arenaSimulator.pvpDamageScale(s.v,{battlefieldMonster:true}),1);
@@ -1259,10 +1260,10 @@ test('Vô Hình Độc uses the PvP coefficient and poison duration reduction wi
  loadDeclaration(s,'src/client/core/state-and-save-02.js','_1');
  loadDeclaration(s,'src/client/gameplay/shop-and-books-01.js','b7');
  s.b7(69,.6);
- assert.ok(Math.abs(enemy.poison-.6)<1e-8);assert.ok(Math.abs(enemy.poison*enemy.poisonDmg-1)<1e-8);
+ assert.ok(Math.abs(enemy.poison-.6)<1e-8);assert.ok(Math.abs(enemy.poison*enemy.poisonDmg-4)<1e-8);
  assert.equal(soldier.poison,3);assert.equal(soldier.poison*soldier.poisonDmg,100);
  // Existing poison is not reduced again when the aura pulses.
- s.b7(69,.6);assert.ok(Math.abs(enemy.poison*enemy.poisonDmg-2)<1e-8);
+ s.b7(69,.6);assert.ok(Math.abs(enemy.poison*enemy.poisonDmg-8)<1e-8);
 });
 
 test('Tống Kim SIMs drink their own potions, respect cooldown and never consume player bottles',()=>{
