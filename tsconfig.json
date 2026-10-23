@@ -19,6 +19,7 @@
     "src/client/combat/**/*.ts",
     "src/client/render/**/*.ts",
     "src/client/simulator/**/*.ts",
+    "src/client/workers/**/*.ts",
     "src/client/status/**/*.ts",
     "src/client/maps/**/*.ts",
     "src/client/gameplay/horse-trader/**/*.ts"

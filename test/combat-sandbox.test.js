@@ -940,7 +940,7 @@ test('Tống Kim SIMs fight the opposing side, cancel old contacts on death and 
 });
 
 test('Tống Kim bosses actually rotate both factions 90/150 casts with boss HP in each captured loadout',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);match.tick(600);
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.combatLog.simulatorLog.enabled=true;s.arenaSimulator.tick(5);match.tick(600);
   const boss=s.arenaSimulator.actors.find(actor=>actor.battlefieldBoss&&actor.battlefieldTeam==='song');
   const [target]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
   target.hp=target.max=1_000_000_000;target.x=boss.x+10;target.y=boss.y;
@@ -1241,4 +1241,27 @@ test('Tống Kim direct hits trigger SIM reflection once after defenses and neve
   const ally=match.add({team:'song',faction:'shaolin',level:150,strength:'normal',count:1})[0];
   ally.stats.retMeleeP=100;
   const protectedHP=s.l.life;s.hs({...base,melee:true},ally);assert.equal(s.l.life,protectedHP);
+});
+
+test('Tống Kim disables formula capture by default, permits debugging and restores training logging on exit', () => {
+  const s = battlefieldGame(), provider = s.combatLog.simulatorLog, match = s.arenaSimulator.battlefield;
+  assert.equal(provider.enabled, true);
+  match.start('song'); assert.equal(provider.enabled, false);
+  let damage = 0;
+  s.arenaSimulator.capture('test', { n: 'target' }, { n: 'skill', bad: 1n }, () => { damage++; });
+  assert.equal(damage, 1, 'disabled logs still execute gameplay without JSON cloning');
+  assert.equal(s.arenaSimulator.events.length, 0);
+  provider.enabled = true;
+  s.arenaSimulator.capture('test', { n: 'target' }, { n: 'skill' }, () => { damage++; });
+  assert.equal(damage, 2); assert.equal(s.arenaSimulator.events.length, 1);
+  match.reset(); assert.equal(provider.enabled, true);
+  provider.enabled = false; match.start('jin'); match.reset(); assert.equal(provider.enabled, false);
+});
+
+test('hidden SIM animations advance and temporary visual effects expire without sprite rendering', () => {
+  const s = simulatorGame(), actor = s.arenaSimulator.create('wudang'); let advances = 0;
+  s.H8 = (_actor, dt) => { advances += dt; }; s.ps = () => {};
+  actor.stFx = 'temporary'; actor.stT = .02;
+  s.arenaSimulator.advanceAnimation(actor, .03, true);
+  assert.equal(advances, .03); assert.equal(actor.stFx, null); assert.equal(actor.stT, 0);
 });

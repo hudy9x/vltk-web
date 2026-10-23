@@ -64,3 +64,26 @@ người chơi đã hoán đổi tạm thời.
   bắt sự kiện, nên vẫn lọc được sau khi actor bị xóa. Copy log xuất JSON đầy đủ
   các bước, giữ tối đa 200 sự kiện; Xóa log chỉ xóa nhóm đang chọn. Các bộ lọc
   sát thương thường vẫn dùng log riêng. Có thể tắt ghi công thức trong kênh Log.
+
+## Hiệu suất Tống Kim
+
+- `../workers/crowd-path.ts` chạy tìm đường vòng tránh đám đông trong một Web Worker dùng
+  chung. `path-worker-client.ts` gửi tối đa ba yêu cầu mỗi batch, chỉ giữ một batch
+  đang chạy; địa hình gửi một lần cho mỗi worker, tọa độ người gửi theo batch.
+  Build nhúng worker đã bundle vào `game.js`, nên không cần URL asset hoặc route mới.
+- Di chuyển, né nhau, va chạm và sát thương vẫn chạy trên main thread. SIM tiếp tục
+  di chuyển trong lúc chờ; đường trả về bị bỏ nếu actor chết, đổi generation/mục
+  tiêu, di chuyển quá xa hoặc yêu cầu quá hạn. Reset/rời/kết thúc trận hủy worker.
+  Worker không hỗ trợ, lỗi hoặc không phản hồi trong hai giây sẽ dùng đường đồng bộ.
+- Tống Kim mặc định tắt log công thức. Có thể bật lại trong kênh Log để debug;
+  rời trận khôi phục lựa chọn ghi log trước đó. Log quân trạng vẫn giữ nguyên.
+- SIM ngoài viewport (có lề 160 px) bỏ qua ghép sprite và vẽ nameplate nhưng vẫn
+  cập nhật animation/hiệu ứng tạm; logic chiến đấu không phụ thuộc camera.
+
+Đo CPU bằng `node tools/benchmark-tongkim.js 40`: so sánh cùng kịch bản quân qua
+cầu bằng thuật toán đồng bộ và worker thật. Báo thời gian main thread, gồm gửi
+snapshot và nhận kết quả, không gồm thời gian chờ worker; đây không phải FPS
+trình duyệt. Benchmark cũng kiểm tra địa hình và khoảng cách tránh chồng người.
+`test/path-worker.test.js` kiểm tra batching, lỗi/timeout, hủy và kết quả lỗi thời;
+`test/nameplates.test.js` kiểm tra culling; `test/combat-sandbox.test.js` kiểm tra
+log và vòng đời trận.

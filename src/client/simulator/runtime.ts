@@ -26,6 +26,7 @@ import { createWarRewards, WAR_ITEMS } from './war-rewards';
 import { createRoadMonsters } from './road-monsters';
 import { createArmyEquipment } from './equipment';
 import { createCrowdSteering } from './crowd';
+import { createPathWorkerClient } from './path-worker-client';
 import { createBattlefieldApproach } from './approach';
 import { createBattlefield, BATTLE_MAP, CAMPS, ELEMENT_FACTIONS, estimateDPS } from './battlefield';
 import type { ArmyBuild } from './battlefield';
@@ -58,7 +59,7 @@ declare var P0: LegacyRecord;
 declare function ea(): number;
 declare var k0: LegacyRecord[];
 declare var z2: number;
-declare var mapNavigation: { clear(x: number, y: number, tx: number, ty: number): boolean };
+declare var mapNavigation: { state?: { g: import('../maps/types').NavigationGrid | null }; clear(x: number, y: number, tx: number, ty: number): boolean };
 declare var equipmentTrader: { blueCatalog(sex: number): LegacyRecord[]; goldCatalog(faction: string): {key: string; items: LegacyRecord[]}[]; affixes(item: LegacyRecord, series: number, index: number): LegacyRecord[]; place?(options:LegacyRecord):LegacyRecord };
 declare var G5: Record<string, string[]>, V2: Record<number, number>;
 declare function yf(): LegacyRecord;
@@ -128,7 +129,7 @@ export function createSimulator() {
   if (typeof combatSandbox === "undefined" || !combatSandbox) return null;
   const sandbox = combatSandbox;
   const battlefieldApproach = createBattlefieldApproach();
-  const crowd = createCrowdSteering();
+  const crowd = createCrowdSteering(createPathWorkerClient());
   let sim: SimulatorActor | null = null, nextSimId = 0, refreshTime = 0;
   const actors: SimulatorActor[] = [];
   const templateStore = createTemplateStore(localStorage);
@@ -136,6 +137,7 @@ export function createSimulator() {
   const diagnostics = createDiagnostics(() => o.name, (source, target) =>
     l.sim && v.arenaSim ? v.simId : actors.find(actor => actor.n === source || actor.n === target.n)?.simId);
   const { step, capture } = diagnostics;
+  let previousLogging = diagnostics.enabled;
   function statsSnapshot(stats: SimulatorStats) {
     return Object.fromEntries(Object.entries(stats).filter(([key]) => !["A", "actives", "basic", "main", "bestAuto"].includes(key)));
   }
@@ -178,7 +180,7 @@ export function createSimulator() {
     return capture(o.name, target, skill, () => {
       const before = target.hp, poisonBefore = (target.poison || 0) * (target.poisonDmg || 0);
       const statusBefore = { poison: target.poison || 0, slow: target.slowT || 0, stun: target.stun || 0 };
-      step("Đầu vào nhân vật gây sát thương", { faction: o.fac, level: o.lvl, attr: o.attr, stats: statsSnapshot(l.P), target: { defense: target.def, resistance: target.res, series: target.series, hp: before } });
+      if (diagnostics.enabled) step("Đầu vào nhân vật gây sát thương", { faction: o.fac, level: o.lvl, attr: o.attr, stats: statsSnapshot(l.P), target: { defense: target.def, resistance: target.res, series: target.series, hp: before } });
       // Boss resistance is an effective floor AFTER penetration and elemental adjustment.
       const boss = battlefield?.active && target.battlefieldBoss;
       const resistance = target.res, anti = l.P.anti, antiMax = l.P.antiMax, breakTime = target.resBrkT;
@@ -279,7 +281,7 @@ export function createSimulator() {
   }
   function remove(actor: SimulatorActor | null = sim) {
     if (!actor) return;
-    cancelCasts(actor);
+    cancelCasts(actor); crowd.cancel(actor);
     const index = actors.indexOf(actor);
     if (index >= 0) actors.splice(index, 1);
     l.enemies = l.enemies.filter(enemy => enemy !== actor);
@@ -516,6 +518,7 @@ export function createSimulator() {
       if (!l.enemies.includes(actor) || actor.dead || actor.hp <= 0) { remove(actor); continue; }
       if (!l.town && !(l.deadT > 0)) tickActor(actor, dt);
     }
+    crowd.flush(typeof mapNavigation !== 'undefined' ? mapNavigation.state?.g || null : null);
     if (typeof combatLog !== "undefined" && combatLog?.war) for (const message of warEvents.splice(0)) combatLog.war(message);
   }
   function availableTargets(actor: SimulatorActor): LegacyEntity[] {
@@ -623,11 +626,19 @@ export function createSimulator() {
     actor.casts++; actor.lastCast = { id: skill.id || 0, name: skill.n || "Đánh thường", level: skill.L || 1 };
     actor.act = "at"; actor.actT = 0;
   }
-  function draw(context: CanvasRenderingContext2D, actor: SimulatorActor, dt: number) {
+  function advanceAnimation(actor: SimulatorActor, dt: number, hidden = false) {
     const look = actor.battlefieldBoss ? r0[actor.tid] : actor.look;
     actor.animKey = look && look.anim;
     H8(actor, dt * coldSpeedFactor(actor), actor.moving ? "run" : "st");
     if (actor.act !== "at" && actor.act !== "hurt") ps(actor, actor.moving ? "run" : "st");
+    if (hidden && actor.stFx) {
+      actor.stT = Math.max(0, (actor.stT || 0) - dt);
+      if (actor.stT <= 0) actor.stFx = null;
+    }
+  }
+  function draw(context: CanvasRenderingContext2D, actor: SimulatorActor, dt: number) {
+    advanceAnimation(actor, dt);
+    const look = actor.battlefieldBoss ? r0[actor.tid] : actor.look;
     const height = look && look.anim ? asSim(actor, () => {
       // Composite sprites read the current profile/world. Give each SIM its own equipment.
       l.look = actor.battlefieldBoss || typeof yf !== 'function' ? null : yf();
@@ -1079,6 +1090,7 @@ export function createSimulator() {
     actors: () => [...actors], monsters: () => roadMonsters.actors, monsterCount: () => roadMonsters.totalCount, player: () => battlefieldHero, playerAlive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
     teamPoints: () => warRewards.totals,
     finished(result, points) {
+      crowd.reset();
       marshalNotice.reset();
       soldierCountdown.reset();
       battlePanel.close(); pharmacy.close(); leaderboard.close();
@@ -1093,8 +1105,9 @@ export function createSimulator() {
       return skillCastDistance(actor,target) <= reach + (target.r || 12)/QA + 4 &&
         (skillIgnoresTerrain(skill) || mt(actor.x,actor.y,target.x,target.y));
     },
-    playerDPS: () => estimateDPS({ stats: battlefieldWorld.P } as SimulatorActor), create: spawnBattleActor, cancel: actor => {if(actor.hp<=0)warRewards.killed(actor);cancelCasts(actor);}, remove,
+    playerDPS: () => estimateDPS({ stats: battlefieldWorld.P } as SimulatorActor), create: spawnBattleActor, cancel: actor => {if(actor.hp<=0)warRewards.killed(actor);cancelCasts(actor);crowd.cancel(actor);}, remove,
     enter(team) {
+      crowd.reset(); previousLogging = diagnostics.enabled; diagnostics.enabled = false;
       previousField = { key: Z0.key, bgImg: l.bgImg, zoneShown: l.zoneShown, town: l.town, name: o.name, x: v.x, y: v.y, life: l.life, mana: l.mana, ctrl: o.ctrl, autoMap: o.autoMap };
       for (const actor of [...actors]) remove(actor);
       sandbox.clearCombat?.(false);
@@ -1106,6 +1119,7 @@ export function createSimulator() {
       soldierCountdown.render(true, battlefield!.state.deployment.soldierAppearanceSeconds, roadMonsters.totalCount);
     },
     leave() {
+      crowd.reset(); if (previousField) diagnostics.enabled = previousLogging;
       marshalNotice.reset();
       soldierCountdown.reset();
       roadMonsters.clear(); warRewards.reset(); supplies.reset();
@@ -1182,6 +1196,6 @@ export function createSimulator() {
   updateWarNpcs();
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  return { battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, advanceAnimation, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }

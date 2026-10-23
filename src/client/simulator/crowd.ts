@@ -1,13 +1,15 @@
 import { findCrowdDetour } from './dynamic-route';
-import type { Point } from '../maps/types';
+import { createPathWorkerClient } from './path-worker-client';
+import type { NavigationGrid, Point } from '../maps/types';
 
-interface Member extends Point { simId?: string; dead?: boolean; hp: number; battlefieldTeam?: string; battlefieldBoss?: boolean }
+interface Member extends Point { simId?: string; dead?: boolean; hp: number; battlefieldTeam?: string; battlefieldBoss?: boolean; generation?: number; target?: unknown }
 const CELL = 96, SPACE = 46;
 /** Local steering uses a spatial grid; no all-pairs scan for 500 soldiers. */
-export function createCrowdSteering() {
+export function createCrowdSteering(worker?: ReturnType<typeof createPathWorkerClient>) {
   const grid = new Map<string, Member[]>();
   let members: Member[] = [], time = 0, searches = 0;
-  const routes = new WeakMap<Member, { goal: Point; points: Point[]; expires: number }>();
+  let routes = new WeakMap<Member, { goal: Point; points: Point[]; expires: number }>();
+  let pending = new WeakMap<Member, object>();
   const key = (x: number, y: number) => `${Math.floor(x / CELL)},${Math.floor(y * 2 / CELL)}`;
   function begin(actors: Member[], dt = .016) {
     members = actors; time += Math.max(0, dt); searches = 0;
@@ -37,6 +39,23 @@ export function createCrowdSteering() {
     });
     if (!blocked) return goal;
     searches++;
+    if (worker?.available) {
+      if (!pending.has(actor)) {
+        const token = {}, generation = actor.generation, target = actor.target;
+        const start = { x: actor.x, y: actor.y }, requested = { ...goal }, requestedAt = time;
+        pending.set(actor, token);
+        worker.request(actor, requested, points => {
+          if (pending.get(actor) !== token) return;
+          pending.delete(actor);
+          if (!members.includes(actor) || actor.dead || actor.hp <= 0 || actor.generation !== generation ||
+              actor.target !== target || time - requestedAt > .75 || distance(actor, start) > 80) return;
+          // Terrain and nearby bodies may have changed while the worker ran.
+          if (points?.length && !clear(actor.x, actor.y, points[0].x, points[0].y)) return;
+          routes.set(actor, { goal: requested, points: points || [], expires: time + (points ? 1.5 : .4) });
+        });
+      }
+      return goal;
+    }
     const points = findCrowdDetour(actor, goal, members, clear);
     if (!points) { routes.set(actor, { goal: { ...goal }, points: [], expires: time + .4 }); return goal; }
     routes.set(actor, { goal: { ...goal }, points, expires: time + 1.5 });
@@ -65,5 +84,9 @@ export function createCrowdSteering() {
     }
     return result;
   }
-  return { begin, route, steer };
+  return { begin, route, steer,
+    flush(grid: NavigationGrid | null) { worker?.flush(members.filter(actor => !actor.dead && actor.hp > 0), grid); },
+    cancel(actor: Member) { routes.delete(actor); pending.delete(actor); worker?.cancel(actor); },
+    reset() { worker?.reset(); routes = new WeakMap(); pending = new WeakMap(); members = []; grid.clear(); },
+  };
 }

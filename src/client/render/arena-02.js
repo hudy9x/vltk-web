@@ -93,6 +93,12 @@ var NP = function (A) {
   }
   ((n.globalAlpha = 1), (l.fx = l.fx.filter((a) => a.life > 0)), (n.textAlign = "center"));
   const living = l.enemies.filter((a) => !a.dead);
+  const simVisible = (a) => a.x >= B0.x - 160 && a.x <= B0.x + M0.w + 160 &&
+    a.y >= B0.y - 160 && a.y <= B0.y + M0.h + 160;
+  // Hidden SIMs keep their animation clocks without preparing sprites/nameplates.
+  for (const a of living) if (a.arenaSim && !simVisible(a) &&
+      typeof arenaSimulator !== "undefined" && arenaSimulator?.advanceAnimation)
+    arenaSimulator.advanceAnimation(a, A, true);
   const crowd = crowdRenderer.update(living, A,
     { x: B0.x, y: B0.y, width: M0.w, height: M0.h },
     new Set([l.tgt, l.manTgt, l.clickedTarget].filter(Boolean)),
@@ -109,7 +115,7 @@ var NP = function (A) {
     if (!crowd.bodies.has(a) && a.hitT > 0) a.hitT -= A;
   }
   const e = living
-    .filter((a) => a.arenaSim || crowd.bodies.has(a))
+    .filter((a) => a.arenaSim ? simVisible(a) : crowd.bodies.has(a))
     .concat(
       [{ hero: !0, y: v.y }],
       mapScene.worldObjects({ x: B0.x, y: B0.y, width: M0.w, height: M0.h }),
