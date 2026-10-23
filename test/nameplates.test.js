@@ -188,3 +188,15 @@ test('death-burst labels remain grouped after all recipients have left the enemy
  assert.equal(s.events.filter(event=>event.startsWith('label:final-')).length,5);
  assert.equal(s.events.filter(event=>event.startsWith('body:monster-')).length,0);
 });
+
+test('offscreen SIMs skip body/nameplate rendering but keep animation time and reappear with the camera', () => {
+  const s = scene(), hidden = { x: 3000, y: 2000, n: 'hidden-sim', arenaSim: true }, visible = { x: 100, y: 80, n: 'visible-sim', arenaSim: true };
+  const advanced = [];
+  s.arenaSimulator.advanceAnimation = (actor, dt) => { actor.actT = (actor.actT || 0) + dt; advanced.push(actor); };
+  s.l.enemies = [hidden, visible];
+  s.NP(1/60);
+  assert.ok(s.events.includes('body:visible-sim')); assert.ok(!s.events.includes('body:hidden-sim'));
+  assert.ok(!s.events.includes('label:hidden-sim')); assert.deepEqual(advanced, [hidden]); assert.equal(hidden.actT, 1/60);
+  s.B0 = { x: 2700, y: 1800 }; s.events.length = 0;
+  s.NP(1/60); assert.ok(s.events.includes('body:hidden-sim')); assert.ok(!s.events.includes('body:visible-sim'));
+});
