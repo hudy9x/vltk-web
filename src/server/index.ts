@@ -38,7 +38,11 @@ export function createServer({
     reply.header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
     const headers = request.headers;
     if (headers.origin && headers.origin !== `${request.protocol}://${headers.host}`) return sendJson(reply, 403, { error: 'Origin rejected' });
-    if (headers['sec-fetch-site'] === 'cross-site') return sendJson(reply, 403, { error: 'Cross-site request rejected' });
+    // Shared links may be cross-site navigations; only allow the public game document.
+    const gameNavigation = ['GET', 'HEAD'].includes(request.method) &&
+      headers['sec-fetch-mode'] === 'navigate' && headers['sec-fetch-dest'] === 'document' &&
+      ['/', '/index.html'].includes(request.raw.url!.split('?')[0]);
+    if (headers['sec-fetch-site'] === 'cross-site' && !gameNavigation) return sendJson(reply, 403, { error: 'Cross-site request rejected' });
     // Từ chối route/method lạ trước khi đọc body, giống HTTP server cũ.
     if (request.is404) {
       const pathname = new URL(request.raw.url!, 'http://localhost').pathname;
