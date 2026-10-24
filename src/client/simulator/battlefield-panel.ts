@@ -259,7 +259,9 @@ export function mountBattlefieldPanel(
                 `${TEAM_NAMES[side]}: ${state.armies[side].alive}/${state.armies[side].count} SIM · Boss ${Math.ceil(state.armies[side].bossHP).toLocaleString("vi-VN")} HP`,
             )
             .join("\n") +
-          `\nQuái: ${state.monsters.alive}/${state.monsters.count}`;
+          `\nQuái: ${state.monsters.alive}/${state.monsters.count}` +
+          (state.marshalPreparing ? '\nĐang chuẩn bị cấu hình Nguyên soái…' : '') +
+          (state.preparationError ? `\nKhông thể chuẩn bị Nguyên soái: ${state.preparationError}. Rời và tham gia lại trận để thử lại.` : '');
   }
   const settingsStore = createBattlefieldSettingsStore(localStorage);
   const fieldIds = ["redeployment", "soldier-appearance", "map", "player", "boss-song", "boss-jin", "prefer-pk", "team", "count", "level", "strength", "skill-tier", "mount", "equipment-kind", "equipped", "soldier-setup-rank",

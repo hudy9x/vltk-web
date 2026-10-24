@@ -66,6 +66,10 @@ vm.runInContext(compileTypeScriptEntry('simulator/equipment.ts', 'ArmyGear').cod
 nativeGlobals.createArmyEquipment = nativeGlobals.ArmyGear.createArmyEquipment;
 vm.runInContext(compileTypeScriptEntry('simulator/set-equipment.ts', 'ArmySetGear').code, vmContext);
 nativeGlobals.applyArmySetEquipment = nativeGlobals.ArmySetGear.applyArmySetEquipment;
+vm.runInContext(compileTypeScriptEntry('simulator/war-mounts.ts', 'WarMounts').code, vmContext);
+nativeGlobals.chooseWarMount = nativeGlobals.WarMounts.chooseWarMount;
+vm.runInContext(compileTypeScriptEntry('simulator/support-skills.ts', 'SupportSkills').code, vmContext);
+nativeGlobals.prioritizeLevel60Support = nativeGlobals.SupportSkills.prioritizeLevel60Support;
 // Evaluate the native builder without mounting simulator UI. Fail explicitly if
 // these function boundaries move so a future refactor cannot silently use a stub.
 const runtimeSource = fs.readFileSync(path.join(repositoryRoot, 'src/client/simulator/runtime.ts'), 'utf8');
@@ -84,6 +88,9 @@ const builds: FactionBuild[] = [];
 for (const factionKey of Object.keys(nativeGlobals.I).filter(factionKey => !nativeGlobals.I[factionKey].novice)) {
   const profile = nativeScope.battleProfile({ team: 'song', faction: factionKey, level: 150, strength: 'normal', count: 1, equipped: true, equipmentKind, skillTier });
   nativeGlobals.o = profile;
+  // Offline generation deliberately runs the native optimizers synchronously.
+  // Browser recruitment executes these same functions in its Worker.
+  nativeScope.Pt(); nativeScope.yt();
   builds.push({ faction: factionKey, name: nativeGlobals.I[factionKey].n, profile, stats: nativeScope.j0() });
 }
 fs.writeFileSync(path.join(outputDirectory, 'profiles.json'), JSON.stringify({ builds, T: nativeGlobals.T, S: nativeGlobals.S, JFX: nativeGlobals.JFX }));

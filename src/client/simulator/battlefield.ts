@@ -37,7 +37,8 @@ export interface BattlefieldHost {
   marshalHP?(): number;
   marshalAppeared?(side: Team): void;
   inAttackRange?(actor: SimulatorActor, target: LegacyEntity): boolean;
-  create(build: ArmyBuild, bossElement?: number): SimulatorActor;
+  prepare?(build: ArmyBuild, bossElement?: number): unknown | Promise<unknown>;
+  create(build: ArmyBuild, bossElement?: number, prepared?: unknown): SimulatorActor;
   cancel(actor: SimulatorActor): void;
   remove(actor: SimulatorActor): void;
   enter(team: Team): void;
@@ -60,6 +61,26 @@ export function createBattlefield(host: BattlefieldHost) {
   let finalScore: Record<Team,number> | null = null;
   const respawns = new Map<SimulatorActor, number>();
   const bosses = new Map<Team, SimulatorActor>();
+  const marshalRecipes = new Map<Team, unknown>();
+  let marshalPreparing = false, preparationError = '';
+  let preparation: Promise<void> = Promise.resolve();
+  const marshalBuild = (side: Team): ArmyBuild => ({ team:side, faction:ELEMENT_FACTIONS[elements[side]][0], level:150, strength:'strong', count:1 });
+  function prepareMarshals() {
+    if (!host.prepare) return;
+    const token = generation, pending: Promise<void>[] = [];
+    for (const side of ['song','jin'] as const) {
+      try {
+        const recipe = host.prepare(marshalBuild(side),elements[side]);
+        if (recipe && typeof (recipe as Promise<unknown>).then === 'function') {
+          pending.push(Promise.resolve(recipe).then(value => { if (token === generation) marshalRecipes.set(side,value); }));
+        } else marshalRecipes.set(side,recipe);
+      } catch (error) { preparationError = String(error instanceof Error ? error.message : error); }
+    }
+    marshalPreparing = pending.length > 0;
+    preparation = Promise.all(pending).then(() => { if (token === generation) marshalPreparing = false; }, error => {
+      if (token === generation) { marshalPreparing = false; preparationError = String(error instanceof Error ? error.message : error); }
+    });
+  }
   const owns = (actor: LegacyEntity) => isTeam(actor.battlefieldTeam);
   const alive = (actor: LegacyEntity) => !actor.dead && actor.hp > 0;
   function canHit(source: LegacyEntity, target: LegacyEntity): boolean {
@@ -107,7 +128,7 @@ export function createBattlefield(host: BattlefieldHost) {
     if (build.equipmentKind && !['blue','gold','thientu'].includes(build.equipmentKind)) throw new Error('Loại trang bị SIM không hợp lệ.');
     if (host.actors().filter(actor => owns(actor) && !actor.battlefieldBoss).length + build.count > 500) throw new Error('Tối đa 500 SIM và hai boss trên chiến trường.');
   }
-  function add(build: ArmyBuild) {
+  function add(build: ArmyBuild, prepared?: unknown) {
     if (phase !== 'running') throw new Error('Hãy bắt đầu trận trước khi bổ sung quân.');
     validateBuild(build);
     const composition = build.composition ? distributeArmy(build.count, build.composition) : { [build.faction]: build.count };
@@ -115,7 +136,7 @@ export function createBattlefield(host: BattlefieldHost) {
     const created: SimulatorActor[] = [];
     try {
       for (let i = 0; i < build.count; i++) {
-        const actor = host.create({ ...build, faction: plan[i], count: 1 });
+        const actor = host.create({ ...build, faction: plan[i], count: 1 }, undefined, prepared);
         actor.battlefieldTeam = build.team; actor.battlefieldBoss = false;
 
         place(actor, host.actors().filter(a => a.battlefieldTeam === build.team && !a.battlefieldBoss).length - 1);
@@ -138,7 +159,9 @@ export function createBattlefield(host: BattlefieldHost) {
       for (const build of plan) {
         progress(created.length, plan.length); await yieldFrame();
         if (token !== generation || phase !== 'running') throw new Error('Đã hủy bổ sung quân.');
-        created.push(...add(build));
+        const prepared = await host.prepare?.(build);
+        if (token !== generation || phase !== 'running') throw new Error('Đã hủy bổ sung quân.');
+        created.push(...add(build,prepared));
       }
       progress(created.length, plan.length); return created;
     } catch (error) { for (const actor of created) if (host.actors().includes(actor)) host.remove(actor); throw error; }
@@ -158,6 +181,7 @@ export function createBattlefield(host: BattlefieldHost) {
     if (phase === "finished" && !confirmed) throw new Error("Bấm Đồng ý trong kết quả trận để rời chiến trường.");
     generation++;
     for (const actor of host.actors().filter(owns)) host.remove(actor);
+    marshalRecipes.clear(); marshalPreparing = false; preparationError = ''; preparation = Promise.resolve();
     bosses.clear(); respawns.clear(); playerDue = null; elapsed = 0; playerDeaths = 0; phase = 'idle'; result = '';
     score.song = score.jin = 0; finalScore = null;
     host.leave();
@@ -170,12 +194,12 @@ export function createBattlefield(host: BattlefieldHost) {
     reset(); deployment = { ...nextDeployment };
     team = playerTeam; elements = { ...bossElements }; marshalHP = configuredMarshalHP;
     try {
-      host.enter(team); phase = 'running';
+      host.enter(team); phase = 'running'; prepareMarshals();
     } catch (error) { reset(); throw error; }
   }
   function spawnMarshals() {
     for (const side of ['song', 'jin'] as const) {
-      const actor = host.create({ team: side, faction: ELEMENT_FACTIONS[elements[side]][0], level: 150, strength: 'strong', count: 1 }, elements[side]);
+      const actor = host.create(marshalBuild(side), elements[side], marshalRecipes.get(side));
       actor.battlefieldTeam = side; actor.battlefieldBoss = true;
       actor.n = `Hoàng Kim · ${actor.n}`;
       actor.max = actor.hp = actor.stats.life = marshalHP;
@@ -214,7 +238,7 @@ export function createBattlefield(host: BattlefieldHost) {
       host.finished?.(result, {...finalScore});
       return;
     }
-    if (elapsed >= MARSHAL_APPEARANCE_SECONDS && bosses.size === 0) spawnMarshals();
+    if (elapsed >= MARSHAL_APPEARANCE_SECONDS && bosses.size === 0 && !marshalPreparing && !preparationError) spawnMarshals();
     for (const [actor, due] of respawns) if (elapsed + 1e-9 >= due) {
       if (host.actors().includes(actor)) { host.restore(actor); actor.battlefieldDeathCounted = false; place(actor); }
       respawns.delete(actor);
@@ -223,8 +247,9 @@ export function createBattlefield(host: BattlefieldHost) {
   }
   function configureDeployment(settings: DeploymentSettings) { nextDeployment = validateDeploymentSettings(settings); }
   return { acknowledgeResult() { if (phase === "finished") reset(true); }, configureDeployment, start, reset, add, addAsync, addBothAsync, targets, canHit, died, playerDied, tick, owns,
+    get prepared() { return preparation; },
     get active() { return phase !== 'idle'; }, get running() { return phase === 'running'; },
-    get state() { return { mapId: BATTLE_MAP, camps: {song:{...CAMPS.song},jin:{...CAMPS.jin}}, deployment: { ...deployment }, playerDeaths, monsters: { count: host.monsterCount?.() ?? (host.monsters?.().length || 0), alive: (host.monsters?.() || []).filter(alive).length }, phase, elapsed, remaining: BATTLE_DURATION - elapsed, team, result, score: { ...(finalScore || host.teamPoints?.() || score) }, elements: { ...elements }, playerRespawn: playerDue === null ? 0 : Math.max(0, playerDue - elapsed),
+    get state() { return { mapId: BATTLE_MAP, camps: {song:{...CAMPS.song},jin:{...CAMPS.jin}}, deployment: { ...deployment }, playerDeaths, monsters: { count: host.monsterCount?.() ?? (host.monsters?.().length || 0), alive: (host.monsters?.() || []).filter(alive).length }, phase, elapsed, marshalPreparing, preparationError, remaining: BATTLE_DURATION - elapsed, team, result, score: { ...(finalScore || host.teamPoints?.() || score) }, elements: { ...elements }, playerRespawn: playerDue === null ? 0 : Math.max(0, playerDue - elapsed),
       armies: Object.fromEntries((['song', 'jin'] as const).map(side => [side, { count: host.actors().filter(a => a.battlefieldTeam === side && !a.battlefieldBoss).length, alive: host.actors().filter(a => a.battlefieldTeam === side && !a.battlefieldBoss && alive(a)).length, bossHP: Math.max(0, bosses.get(side)?.hp || 0), bossMax: bosses.get(side)?.max || 0 }])) }; },
   };
 }

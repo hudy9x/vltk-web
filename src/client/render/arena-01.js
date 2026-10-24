@@ -1,4 +1,7 @@
 // render/arena — shared IIFE scope; order is defined in modules.json.
+var renderImages = typeof RasterAssets !== 'undefined' ? RasterAssets.createRasterCache() : null;
+var renderMapKey;
+var renderImage = image => renderImages ? renderImages.source(image) : image;
 var xP = (s) => {
   try {
     return (
@@ -358,6 +361,9 @@ var af = function () {
 };
 
 var Fa = function (A, n, t, e, a, i) {
+  const left = e - A.ax * q3, top = a - A.ay * q3, width = A.w * q3, height = A.h * q3;
+  if (typeof B0 !== 'undefined' && typeof M0 !== 'undefined' &&
+      (left + width < B0.x - 2 || top + height < B0.y - 2 || left > B0.x + M0.w + 2 || top > B0.y + M0.h + 2)) return !0;
   const r = bA(A.f);
   if (!r || !r.complete || !r.naturalWidth) return !1;
   const c = i
@@ -365,7 +371,7 @@ var Fa = function (A, n, t, e, a, i) {
       : Math.min(A.n - 1, Math.floor((t * 1e3) / A.ms)),
     d = A.d > 1 ? Math.round((n * A.d) / 16) % A.d : 0;
   return (
-    W.drawImage(r, c * A.w, d * A.h, A.w, A.h, e - A.ax * q3, a - A.ay * q3, A.w * q3, A.h * q3),
+    W.drawImage(typeof renderImage === 'function' ? renderImage(r) : r, c * A.w, d * A.h, A.w, A.h, left, top, width, height),
     !0
   );
 };
@@ -407,7 +413,8 @@ var CP = function (A) {
 var St = function () {
   const A = m("#battle"),
     n = { width: A.offsetWidth, height: A.offsetHeight };
-  ((H1 = Math.min(2, window.devicePixelRatio || 1) * $8()),
+  const requested = Math.min(2, window.devicePixelRatio || 1) * $8();
+  ((H1 = typeof RasterAssets !== 'undefined' ? RasterAssets.backingScale(n.width,n.height,requested) : requested),
     (lA.width = Math.round(n.width * H1)),
     (lA.height = Math.round(n.height * H1)),
     (M0.w = n.width),
@@ -469,7 +476,11 @@ var SP = function (A) {
     (A.fillStyle = "#000c"),
     A.fillRect(t - 2, e - 2, n + 4, n + 4));
   const i = l.bgImg;
-  if (i && i.complete && i.naturalWidth)
+  if (typeof renderImages !== 'undefined' && renderImages) {
+    const thumbnail = i && renderImages.minimap(i, {size:n,worldWidth:O0.w,tileSize:cf,tiled:!Z0.g && !mapScene.hasMap(),resolution:H1});
+    if (thumbnail) A.drawImage(thumbnail,t,e,n,n);
+    else { A.fillStyle = '#26301f'; A.fillRect(t,e,n,n); }
+  } else if (i && i.complete && i.naturalWidth)
     if (Z0.g || mapScene.hasMap()) A.drawImage(i, t, e, n, n);
     else {
       const f = Math.round(O0.w / cf),
@@ -614,6 +625,9 @@ var Va = function (A, n, t, e, a, i, r, c = 1) {
   if (!d) return !1;
   const f = d[n] || d.st;
   if (!f) return !1;
+  const left = a - f.ax * r, top = i - f.ay * r, width = f.w * r, height = f.h * r;
+  if (typeof B0 !== 'undefined' && typeof M0 !== 'undefined' &&
+      (left + width < B0.x - 2 || top + height < B0.y - 2 || left > B0.x + M0.w + 2 || top > B0.y + M0.h + 2)) return height;
   const h = bA("img/a/" + f.f);
   if (!h.complete || !h.naturalWidth) return !1;
   let g = Math.floor((e * 1e3) / f.ms);
@@ -621,7 +635,7 @@ var Va = function (A, n, t, e, a, i, r, c = 1) {
   const u = f.d >= 8 ? t : Math.floor((t * f.d) / 8);
   return (
     (W.globalAlpha = c),
-    W.drawImage(h, g * f.w, u * f.h, f.w, f.h, a - f.ax * r, i - f.ay * r, f.w * r, f.h * r),
+    W.drawImage(typeof renderImage === 'function' ? renderImage(h) : h, g * f.w, u * f.h, f.w, f.h, left, top, width, height),
     (W.globalAlpha = 1),
     f.h * r
   );

@@ -2,6 +2,10 @@
 var crowdRenderer = CrowdVisibility.createCrowdVisibility();
 
 var NP = function (A) {
+  if (typeof renderImages !== 'undefined' && renderImages) {
+    if (renderMapKey !== Z0.key) { renderImages.clear(); renderMapKey = Z0.key; }
+    renderImages.beginFrame();
+  }
   const n = W;
   (n.setTransform(H1, 0, 0, H1, 0, 0),
     n.clearRect(0, 0, M0.w, M0.h),

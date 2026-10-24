@@ -8,7 +8,11 @@ const { createServer } = require('../src/server/index.ts');
 const { openDatabase } = require('../src/server/database.ts');
 const { loadCombatEngine } = require('./helpers/combat-engine');
 const { compileTypeScriptEntry } = require('../tools/build-app');
-function loadSimulator(s) { vm.runInContext(compileTypeScriptEntry('simulator/index.ts','arenaSimulator').code,s); }
+function loadSimulator(s, options) {
+  vm.runInContext(compileTypeScriptEntry('simulator/runtime.ts','SimulatorRuntime').code,s);
+  // The fixture has always used a cheap allocator; exercise the real worker separately.
+  s.arenaSimulator=s.SimulatorRuntime.createSimulator(options || {optimize:(profile,autoSkills,autoPotential)=>({attr:{...profile.attr,str:profile.attr.str+(autoPotential?profile.attrPts:0)},attrPts:autoPotential?0:profile.attrPts,sk:profile.sk,skL:profile.skL,skPts:autoSkills?0:profile.skPts})});
+}
 const ROOT = path.resolve(__dirname, '..');
 function loadDeclaration(s,file,name) {
   const text=fs.readFileSync(path.join(ROOT,file),'utf8');
@@ -157,7 +161,7 @@ test('one damage can be disabled for living monsters and future respawns, and su
   restored.combatSandbox.setOneDamage(true);assert.ok(restored.l.enemies.every(e=>e.dmg===1));
 });
 
-function simulatorGame(entries, arena=true, nativeMonsters=false) {
+function simulatorGame(entries, arena=true, nativeMonsters=false, options) {
   const s=game(arena,entries), fields=s.fields;
   s.Math=Object.create(Math);s.Math.random=()=>.5;
   const element=()=>({value:'',checked:false,hidden:false,style:{},attributes:{},listeners:{},
@@ -185,7 +189,7 @@ function simulatorGame(entries, arena=true, nativeMonsters=false) {
   s.l.P=s.j0();for(const enemy of s.l.enemies)Object.assign(enemy,{n:"Quái",res:s.l.P.res,def:0,series:0,act:"at"});s.l.life=1000;s.l.mana=100;s.l.zoneShown=1;s.l.quiet=false;
   vm.runInContext(fs.readFileSync(path.join(ROOT,'src/client/ui/combat-log-01.js'),'utf8'),s);
   if (nativeMonsters) loadDeclaration(s,'src/client/core/state-and-save-01.js','$d');
-  loadSimulator(s);
+  loadSimulator(s, options);
   return s;
 }
 test('SIM creates each faction and selected skill, auto allocation is isolated from the player',()=>{
@@ -250,8 +254,7 @@ test('formula log is bounded, clearable and disabling logging does not disable a
 });
 
 test('SIM context always restores the player even when automatic allocation fails',()=>{
-  const s=simulatorGame(),player=s.o,world=s.l,hero=s.v;
-  s.Pt=()=>{throw new Error('allocation failed');};
+  const s=simulatorGame(undefined,true,false,{optimize(){throw new Error('allocation failed');}}),player=s.o,world=s.l,hero=s.v;
   assert.throws(()=>s.arenaSimulator.create('wudang','basic',true,false),/allocation failed/);
   assert.equal(s.o,player);assert.equal(s.l,world);assert.equal(s.v,hero);
 });
@@ -874,8 +877,8 @@ test('SIM cold PK leaves player free to move and retains its movement destinatio
  assert.equal(s.Y.target,destination);assert.equal(s.l.moveTo,destination);
 });
 
-function battlefieldGame(arena=true, nativeMonsters=false) {
-  const s=simulatorGame(undefined,arena,nativeMonsters);
+function battlefieldGame(arena=true, nativeMonsters=false, options) {
+  const s=simulatorGame(undefined,arena,nativeMonsters,options);
   if (!arena) s.o=Object.assign(s.I3(),{name:'Production hero',fac:'wudang',lvl:90,main:'basic',ctrl:'manual'});
   const catalog={};catalog.window=catalog;
   vm.runInNewContext(fs.readFileSync(path.join(ROOT,'public/data.js'),'utf8'),catalog);
@@ -1521,4 +1524,61 @@ test('battlefield item traps use native Đường Môn ground and burst FX witho
   s.arenaSimulator.warRewards.use(kind);const ctx={save(){},restore(){},beginPath(){},ellipse(){},fill(){},stroke(){},fillText(){},arc(){}};s.arenaSimulator.drawBattlefieldLoot(ctx);assert.equal(drawn[0].sprite.f,ground);
   s.arenaSimulator.warRewards.tick(.01);assert.equal(s.l.fx.at(-1).s.f,burst);assert.equal(enemy.hp,100);assert.equal(enemy[status],kind==='slowTrap'?5:3);if(kind==='slowTrap')assert.equal(enemy.slowPower,.5);
  }
+});
+
+function deferredAllocator() {
+  const jobs=[];
+  return {jobs,optimize(profile,autoSkills,autoPotential){return new Promise((resolve,reject)=>jobs.push({profile,resolve:()=>resolve({attr:{...profile.attr,str:profile.attr.str+(autoPotential?profile.attrPts:0)},attrPts:autoPotential?0:profile.attrPts,sk:profile.sk,skL:profile.skL,skPts:autoSkills?0:profile.skPts}),reject}));}};
+}
+const settlePreparation=()=>new Promise(resolve=>setImmediate(resolve));
+test('marshal profiles prepare before halftime; appearing never runs the heavy optimizer again',async()=>{
+  const allocator=deferredAllocator(),s=battlefieldGame(true,false,allocator),match=s.arenaSimulator.battlefield;
+  s.yt=()=>assert.fail('main-thread potential optimizer');s.Pt=()=>assert.fail('main-thread skill optimizer');
+  const player=s.o,world=s.l,hero=s.v;
+  match.start('song');assert.equal(match.state.marshalPreparing,true);assert.equal(s.arenaSimulator.actors.length,0);
+  assert.equal(s.o,player);assert.equal(s.l,world);assert.equal(s.v,hero);
+  match.tick(600);assert.equal(s.arenaSimulator.actors.length,0,'unfinished configurations cannot enter combat');
+  let completed=0;
+  while(match.state.marshalPreparing){
+    assert.ok(completed<100,'preparation terminates');
+    for(const job of allocator.jobs.splice(0)){job.resolve();completed++;}
+    await settlePreparation();
+  }
+  await match.prepared;assert.ok(completed>2);
+  match.tick(.016);const bosses=s.arenaSimulator.actors.filter(actor=>actor.battlefieldBoss);
+  assert.equal(bosses.length,2);assert.equal(allocator.jobs.length,0);assert.ok(bosses.every(boss=>boss.profile.attrPts===0));
+  assert.equal(s.o,player);assert.equal(s.l,world);assert.equal(s.v,hero);match.reset();
+});
+
+test('leaving discards pending marshal and reinforcement results without spawning late actors',async()=>{
+  const allocator=deferredAllocator(),s=battlefieldGame(true,false,allocator),match=s.arenaSimulator.battlefield;
+  match.start('song');const prepared=match.prepared;match.reset();
+  for(const job of allocator.jobs.splice(0))job.resolve();await prepared;
+  assert.equal(match.active,false);assert.equal(s.arenaSimulator.actors.length,0);
+  match.start('song');
+  const pending=match.addAsync({team:'song',faction:'wudang',level:90,strength:'normal',count:1},()=>{},()=>Promise.resolve());
+  const rejected=assert.rejects(pending,/hủy/);await settlePreparation();match.reset();
+  for(const job of allocator.jobs.splice(0))job.resolve();await rejected;
+  assert.equal(s.arenaSimulator.actors.length,0);
+});
+
+test('SIM creation waits off-thread, restores live globals immediately and rejects stale results',async()=>{
+  const allocator=deferredAllocator(),s=battlefieldGame(true,false,allocator),player=s.o,world=s.l,hero=s.v;
+  s.yt=()=>assert.fail('main-thread potential optimizer');s.Pt=()=>assert.fail('main-thread skill optimizer');
+  const skill=s.I.wudang.skills.find(id=>s.UA(s.T[id]));
+  const pending=s.arenaSimulator.create('wudang',skill,true,true);
+  assert.equal(s.arenaSimulator.actors.length,0);assert.equal(s.o,player);assert.equal(s.l,world);assert.equal(s.v,hero);
+  allocator.jobs.shift().resolve();const actor=await pending;
+  assert.equal(actor.profile.attrPts,0);assert.equal(actor.profile.skPts,0);assert.equal(actor.autoSkills,true);assert.equal(actor.autoPotential,true);
+  const stale=s.arenaSimulator.create('wudang',skill,false,true),rejected=assert.rejects(stale,/hủy/);
+  s.arenaSimulator.battlefield.start('song');allocator.jobs.shift().resolve();await rejected;
+  assert.equal(s.arenaSimulator.actors.length,0);s.arenaSimulator.battlefield.reset();
+  for(const job of allocator.jobs.splice(0))job.resolve();await settlePreparation();
+});
+
+test('failed marshal preparation reports a recoverable error without synchronous fallback',async()=>{
+  const s=battlefieldGame(true,false,{optimize:()=>Promise.reject(Error('Worker unavailable'))}),match=s.arenaSimulator.battlefield;
+  s.yt=()=>assert.fail('no synchronous fallback');match.start('song');await match.prepared;
+  assert.match(match.state.preparationError,/Worker unavailable/);match.tick(600);
+  assert.equal(match.running,true);assert.equal(s.arenaSimulator.actors.length,0);match.reset();
 });

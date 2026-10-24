@@ -1,3 +1,5 @@
+import { createPotentialClient } from './potential-worker-client';
+import type { PotentialAllocation } from './potential-worker-client';
 import { drawWarTrap, triggerWarTrap, preloadWarTrap } from './war-trap-effects';
 import type { TrapEffectCatalog } from './war-trap-effects';
 import { addAccumulatedMerit } from '../gameplay/quartermaster/model';
@@ -110,8 +112,6 @@ declare function X0(x: number, y: number): [number, number];
 declare function n1(id: SkillId, level: number, rarity: string, x: number, y: number): LegacyEntity;
 declare function p0(item: LegacyRecord): boolean;
 declare function j5(): unknown;
-declare function Pt(): unknown;
-declare function yt(): unknown;
 declare function j0(): SimulatorStats;
 declare function Jt(faction: string, sex: number): LegacyRecord | null;
 declare function UA(skill: LegacyRecord): boolean;
@@ -136,7 +136,29 @@ declare function applyActorHurt(actor: CombatTarget, damage: number, maximumHP: 
 
 const errorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 
-export function createSimulator() {
+export function createSimulator(options: { optimize?: (profile: SimulatorProfile, autoSkills?: boolean, autoPotential?: boolean) => PotentialAllocation | Promise<PotentialAllocation> } = {}) {
+  const potentialClient = options.optimize ? null : createPotentialClient();
+  let creationEpoch = 0;
+  function optimizeProfile(profile: SimulatorProfile, autoSkills = false, autoPotential = true): void | Promise<void> {
+    if (!profile.attrPts && !autoSkills) return;
+    const player = o, world = l;
+    let result: PotentialAllocation | Promise<PotentialAllocation>;
+    try {
+      o = profile;
+      l = Object.assign({}, world, { sim:true, quiet:true, buffAssume:true, look:null, jx:null, ignoreEqt:null });
+      result = options.optimize ? options.optimize(profile,autoSkills,autoPotential) : potentialClient!.optimize({...potentialClient!.capture(profile,l),autoSkills,autoPotential});
+    } finally { o = player; l = world; }
+    const apply = (allocation: PotentialAllocation) => {
+      profile.attr = { ...allocation.attr }; profile.attrPts = allocation.attrPts;
+      if (autoSkills) {
+        profile.sk = { ...allocation.sk! }; profile.skL = clone(allocation.skL || {}); profile.skPts = allocation.skPts!;
+        if (allocation.sk150Training !== undefined) profile.sk150Training = allocation.sk150Training;
+      }
+    };
+    if ('then' in result) return Promise.resolve(result).then(apply);
+    apply(result);
+  }
+
   const arenaEnabled = typeof combatSandbox !== "undefined" && !!combatSandbox;
   // Production needs army profiles and combat cleanup, without enabling Arena Test.
   const sandbox: SandboxAPI = arenaEnabled ? combatSandbox! : {
@@ -348,18 +370,28 @@ export function createSimulator() {
     field("sim-skill").value = String(actor.profile.main);
     updateInfo(); renderBuild();
   }
+  function create(faction: string, skillId?: SkillId, autoSkills?: boolean, autoPotential?: false, template?: SimulatorTemplate): SimulatorActor;
+  function create(faction: string, skillId: SkillId, autoSkills: boolean, autoPotential: boolean, template?: SimulatorTemplate): SimulatorActor | Promise<SimulatorActor>;
   function create(faction: string, skillId: SkillId = "basic", autoSkills = false, autoPotential = false, template?: SimulatorTemplate) {
     if (!I[faction] || I[faction].novice) throw new Error("Môn phái SIM không hợp lệ.");
     if (skillId !== "basic" && (!I[faction].skills.includes(+skillId) || !UA(T[skillId]))) throw new Error("Chiêu SIM không thuộc môn phái.");
     const profile = template ? clone(template.profile) : sandbox.createProfile(I[faction]);
     if (!template && field("sim-health").value) profile.simMaxHP = Number(field("sim-health").value);
     validateProfile(profile);
-    const id = ++nextSimId;
-    profile.name = (template ? template.name : "SIM · " + I[faction].n) + " #" + id;
+    const epoch = creationEpoch;
+    profile.name = (template ? template.name : "SIM · " + I[faction].n);
     profile.main = skillId === "basic" ? "basic" : +skillId;
     profile.slots = skillId === "basic" ? [] : [+skillId];
     if (skillId !== "basic" && !profile.sk[skillId]) profile.sk[skillId] = 1;
     equipSkill(profile, skillId);
+    if (!template && (autoSkills || autoPotential)) {
+      const pending = optimizeProfile(profile,autoSkills,autoPotential);
+      if (pending) return pending.then(() => {
+        if (epoch !== creationEpoch) throw new Error('Đã hủy tạo SIM.');
+        return create(faction, skillId, false, false, {version:1,id:'prepared',name:profile.name,updatedAt:'',profile,autoSkills,autoPotential,pk,farm});
+      });
+    }
+    const id = ++nextSimId; profile.name += ' #' + id;
     const angle = actors.length * 2.399963;
     const [x, y] = X0(v.x + Math.cos(angle) * 120, v.y + Math.sin(angle) * 70);
     const actor: SimulatorActor = Object.assign(n1(Object.keys(r0)[0], profile.lvl, "normal", x, y), {
@@ -370,8 +402,6 @@ export function createSimulator() {
       casts: 0, lastCast: null, waiting: "",
     });
     asSim(actor, () => {
-      if (!template && autoSkills) Pt();
-      if (!template && autoPotential) yt();
       actor.stats = j0();
       actor.stats.life = profile.simMaxHP ?? actor.stats.life;
       actor.stats.main = resolvedSkill(actor.stats, profile.main);
@@ -831,12 +861,25 @@ export function createSimulator() {
       field("sim-status").textContent = "Đã cập nhật máu và hồi đầy HP cho SIM được chọn.";
     } catch (error) { field("sim-status").textContent = errorMessage(error); }
   };
-  field("sim-create").onclick = () => {
-    try { create(field("sim-faction").value, field("sim-skill").value, field("sim-auto-skills").checked, field("sim-auto-potential").checked); }
+  field("sim-create").onclick = async () => {
+    const button = field('sim-create'); button.disabled = true;
+    field('sim-info').textContent = 'Đang chuẩn bị SIM…';
+    try { await create(field("sim-faction").value, field("sim-skill").value, field("sim-auto-skills").checked, field("sim-auto-potential").checked); }
     catch (error) { field("sim-info").textContent = errorMessage(error); }
+    finally { button.disabled = false; }
   };
-  for (const id of ["sim-auto-skills", "sim-auto-potential"] as const) field(id).onchange = () => {
-    if (sim) { try { editProfile(() => { if (field(id).checked) asSim(sim!, () => { if (id === "sim-auto-skills") Pt(); else yt(); }); sim!.autoSkills = field("sim-auto-skills").checked; sim!.autoPotential = field("sim-auto-potential").checked; }); } catch (error) { field("sim-status").textContent = errorMessage(error); } }
+  for (const id of ["sim-auto-skills", "sim-auto-potential"] as const) field(id).onchange = async () => {
+    if (!sim) return;
+    const actor = sim, before = JSON.stringify(actor.profile), epoch = creationEpoch;
+    try {
+      if (field(id).checked) {
+        field('sim-status').textContent = 'Đang tính tiềm năng…';
+        const profile = clone(actor.profile); await optimizeProfile(profile,id === 'sim-auto-skills',id === 'sim-auto-potential');
+        if (epoch !== creationEpoch || sim !== actor || !actors.includes(actor) || JSON.stringify(actor.profile) !== before) return;
+        editProfile(() => { actor.profile.attr = profile.attr; actor.profile.attrPts = profile.attrPts; actor.profile.sk = profile.sk; actor.profile.skL = profile.skL; actor.profile.skPts = profile.skPts; if (profile.sk150Training !== undefined) actor.profile.sk150Training = profile.sk150Training; });
+      }
+      actor.autoSkills = field('sim-auto-skills').checked; actor.autoPotential = field('sim-auto-potential').checked;
+    } catch (error) { field('sim-status').textContent = errorMessage(error); }
   };
   field("sim-roster").onchange = () => { try { selectActor(field("sim-roster").value); } catch (error) { field("sim-status").textContent = errorMessage(error); } };
   field("sim-build").onchange = event => {
@@ -944,27 +987,34 @@ export function createSimulator() {
       }
       // Use the existing suggestion engines, after assigning gear so its requirements are met.
       if (typeof j5 === 'function') j5();
-      if (!boss) Pt();
-      yt();
       if (build.equipmentKind && build.equipmentKind !== 'blue' && typeof p0 === 'function' && Object.values(profile.eq).some(item => !p0(item))) throw new Error('Chưa đủ điều kiện mặc bộ môn phái. Tăng level hoặc chọn đồ xanh.');
     } finally { o = player; l = world; }
     return profile;
   }
   type SoldierLoadout = { profile: SimulatorProfile; stats: SimulatorStats };
   const soldierLoadouts = new Map<number,SoldierLoadout>();
-  function soldierLoadout(id: number): SoldierLoadout {
+  const preparingSoldierLoadouts = new Map<number, Promise<void>>();
+  function soldierLoadout(id: number): SoldierLoadout | undefined {
     const cached = soldierLoadouts.get(id);
-    if (cached) return cached;
+    if (cached || preparingSoldierLoadouts.has(id)) return cached;
     const option = soldierSkillOptions(T,Object.values(I),UA).find(skill => skill.id === id);
     if (!option) throw new Error('Quái chỉ dùng chiêu tấn công cấp 50–70.');
     const profile = battleProfile({team:'song',faction:option.faction,level:120,strength:'weak',count:1},option.faction,true,id);
     profile.sk[id] = T[id].max || 1; profile.skL[id] = {lv:profile.sk[id],xp:0};
-    const player = o, world = l;
-    try {
-      o = profile; l = Object.assign({},world,{sim:true,quiet:true,buffAssume:true,look:null,jx:null,ignoreEqt:null});
-      const stats = j0(); stats.main = resolvedSkill(stats,id);
-      const loadout = {profile,stats}; soldierLoadouts.set(id,loadout); return loadout;
-    } finally { o = player; l = world; }
+    const finish = () => {
+      const player = o, world = l;
+      try {
+        o = profile; l = Object.assign({},world,{sim:true,quiet:true,buffAssume:true,look:null,jx:null,ignoreEqt:null});
+        const stats = j0(); stats.main = resolvedSkill(stats,id);
+        const loadout = {profile,stats}; soldierLoadouts.set(id,loadout); return loadout;
+      } finally { o = player; l = world; }
+    };
+    const pending = optimizeProfile(profile);
+    if (!pending) return finish();
+    const task = pending.then(() => { finish(); }).catch(error => { field('sim-status').textContent = errorMessage(error); });
+    preparingSoldierLoadouts.set(id,task);
+    // Keep a failed entry until the next match instead of retrying every frame.
+    return undefined;
   }
   function castSoldierSkill(monster: LegacyEntity,target: LegacyEntity,loadout: SoldierLoadout) {
     const skill = loadout.stats.main;
@@ -988,10 +1038,38 @@ export function createSimulator() {
     caster.lastCast = {id:skill.id || 0,name:skill.n || '',level:skill.L || 1};
     caster.act = 'at'; caster.actT = 0; caster.casts = (caster.casts || 0)+1;
   }
-  function spawnBattleActor(build: ArmyBuild, bossElement?: number) {
+  interface PreparedBattleActor { profile: SimulatorProfile; deck: SimulatorProfile[] }
+  function prepareBattleActor(build: ArmyBuild, bossElement?: number): PreparedBattleActor | Promise<PreparedBattleActor> {
     const profile = battleProfile(build, build.faction, bossElement !== undefined);
-    const skill = profile.main;
-    const actor = create(profile.fac, skill, false, false, { version: 1, id: 'battle', name: I[profile.fac].n, updatedAt: '', profile, autoSkills: false, autoPotential: true, pk: true, farm: false });
+    const deck: SimulatorProfile[] = [];
+    if (bossElement !== undefined) for (const faction of ELEMENT_FACTIONS[bossElement]) {
+      const source = battleProfile(build, faction, true);
+      for (const id of I[faction].skills.filter(id => source.sk[id] && UA(T[id]) && [90,150].includes(T[id].tier))) {
+        const entry = battleProfile(build,faction,true,id); entry.main = id; entry.slots = [id]; deck.push(entry);
+      }
+    }
+    if (bossElement !== undefined && !deck.length) throw new Error('Boss không có kỹ năng 90/150 phù hợp.');
+    const profiles = [profile,...deck];
+    // Start only one new profile at a time. A cancelled match stops queueing work.
+    const epoch = creationEpoch;
+    function next(index: number): PreparedBattleActor | Promise<PreparedBattleActor> {
+      for (; index < profiles.length; index++) {
+        if (epoch !== creationEpoch) throw new Error('Đã hủy chuẩn bị nhân vật.');
+        const pending = optimizeProfile(profiles[index],bossElement === undefined);
+        if (pending) return pending.then(() => next(index + 1));
+      }
+      return {profile,deck};
+    }
+    return next(0);
+  }
+  function spawnBattleActor(build: ArmyBuild, bossElement?: number, prepared?: unknown) {
+    const recipe = (prepared || prepareBattleActor(build,bossElement)) as PreparedBattleActor | Promise<PreparedBattleActor>;
+    if ('then' in recipe) {
+      void recipe.catch(() => {});
+      throw new Error('Cấu hình chưa sẵn sàng. Hãy tạo quân bằng addAsync.');
+    }
+    const {profile,deck} = recipe;
+    const actor = create(profile.fac, profile.main, false, false, { version: 1, id: 'battle', name: I[profile.fac].n, updatedAt: '', profile, autoSkills: false, autoPotential: true, pk: true, farm: false });
     if(bossElement===undefined){actor.n=simNames.next(actor.profile.sex);actor.profile.name=actor.n;}
     actor.battlefieldTeam = build.team;
     if (bossElement === undefined) syncMount(actor);
@@ -1002,19 +1080,11 @@ export function createSimulator() {
       actor.tid = bossId; actor.n = r0[bossId].n; actor.goldBoss = true; actor.cls = 'boss';
       actor.series = bossElement; actor.stats.series = bossElement;
       actor.res = actor.stats.res = Object.fromEntries(['phys', 'cold', 'fire', 'poison', 'light'].map(key => [key, 25]));
-      const deck: { profile: SimulatorProfile; stats: SimulatorStats }[] = [];
-      for (const faction of ELEMENT_FACTIONS[bossElement]) {
-        const source = battleProfile(build, faction, true);
-        for (const id of I[faction].skills.filter(id => source.sk[id] && UA(T[id]) && [90, 150].includes(T[id].tier))) {
-          const profile = battleProfile(build, faction, true, id); profile.main = id; profile.slots = [id];
-          asSim(actor, () => {
-            const stats = j0(); stats.main = resolvedSkill(stats, id);
-            deck.push({ profile, stats });
-          }, true, { profile, stats: actor.stats });
-        }
-      }
-      if (!deck.length) { remove(actor); throw new Error('Boss không có kỹ năng 90/150 phù hợp.'); }
-      actor.battlefieldDeck = deck;
+      actor.battlefieldDeck = deck.map(profile => {
+        let stats!: SimulatorStats;
+        asSim(actor, () => { stats = j0(); stats.main = resolvedSkill(stats,profile.main); }, true, {profile,stats:actor.stats});
+        return {profile,stats};
+      });
     }
     return actor;
   }
@@ -1164,8 +1234,10 @@ export function createSimulator() {
       return skillCastDistance(actor,target) <= reach + (target.r || 12)/QA + 4 &&
         (skillIgnoresTerrain(skill) || mt(actor.x,actor.y,target.x,target.y));
     },
-    playerDPS: () => estimateDPS({ stats: battlefieldWorld.P } as SimulatorActor), create: spawnBattleActor, cancel: actor => {if(actor.hp<=0)warRewards.killed(actor);cancelCasts(actor);crowd.cancel(actor);}, remove,
+    playerDPS: () => estimateDPS({ stats: battlefieldWorld.P } as SimulatorActor), prepare: prepareBattleActor, create: spawnBattleActor, cancel: actor => {if(actor.hp<=0)warRewards.killed(actor);cancelCasts(actor);crowd.cancel(actor);}, remove,
     enter(team) {
+      creationEpoch++;
+      preparingSoldierLoadouts.clear();
       crowd.reset(); previousLogging = diagnostics.enabled; diagnostics.enabled = false;
       previousField = { key: Z0.key, bgImg: l.bgImg, zoneShown: l.zoneShown, town: l.town, name: o.name, x: v.x, y: v.y, life: l.life, mana: l.mana, ctrl: o.ctrl, autoMap: o.autoMap };
       for (const actor of [...actors]) remove(actor);
@@ -1179,6 +1251,7 @@ export function createSimulator() {
       soldierCountdown.render(true, battlefield!.state.deployment.soldierAppearanceSeconds, roadMonsters.totalCount);
     },
     leave() {
+      creationEpoch++;
       crowd.reset(); if (previousField) diagnostics.enabled = previousLogging;
       marshalNotice.reset();
       soldierCountdown.reset();
