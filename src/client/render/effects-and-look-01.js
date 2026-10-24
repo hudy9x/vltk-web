@@ -467,7 +467,7 @@ var It = function (A, n, t, e, a, i, r, c, d) {
     const [j, X, $0, I0, T0, aA] = G,
       Xt = Math.min(T0 - 1, Math.floor((P * T0) / p)),
       ki = aA >= 8 ? n % 8 : Math.floor(((n % 8) * aA) / 8);
-    (W.drawImage(O, Xt * j, ki * X, j, X, e + ($0 - y) * i, a + (I0 - M) * i, j * i, X * i),
+    (W.drawImage(typeof renderImage === 'function' ? renderImage(O) : O, Xt * j, ki * X, j, X, e + ($0 - y) * i, a + (I0 - M) * i, j * i, X * i),
       (B = Math.max(B, (M - I0) * i)));
   }
   return ((W.globalAlpha = 1), B);

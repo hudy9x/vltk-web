@@ -1364,6 +1364,7 @@
       "global": "nameplateOffset",
       "lines": 1
     },
+    {"file":"render/raster-cache.ts","global":"RasterAssets","symbols":["RasterAssets"]},
     {
       "file": "render/arena-01.js",
       "symbols": [

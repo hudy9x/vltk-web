@@ -5,6 +5,7 @@ const { createHash } = require('node:crypto');
 const esbuild = require('esbuild');
 const { decode, encode } = require('@jridgewell/sourcemap-codec');
 const { syncMapCatalog } = require('./maps/catalog.ts');
+const { potentialBundle } = require('./potential-worker');
 const ROOT = path.resolve(__dirname, '..');
 const APP = path.join(ROOT, 'src/client');
 const compiledEntries = new Map();
@@ -21,7 +22,8 @@ function readTypeScriptSources() {
 }
 
 function compileTypeScriptEntry(file, globalName = 'CombatEngine', dependencies = readTypeScriptSources()) {
-  const hash = createHash('sha256').update(JSON.stringify([file, globalName, dependencies,
+  const potential = file.startsWith('simulator/') ? potentialBundle() : null;
+  const hash = createHash('sha256').update(JSON.stringify([file, globalName, dependencies, potential?.version,
     fs.readFileSync(path.join(ROOT, 'tsconfig.json'), 'utf8')])).digest('hex');
   if (compiledEntries.has(hash)) return compiledEntries.get(hash);
   // Embed a separately bundled classic worker so every hosting path serves the
@@ -38,7 +40,10 @@ function compileTypeScriptEntry(file, globalName = 'CombatEngine', dependencies 
     bundle: true, format: 'iife', globalName, platform: 'browser', target: 'es2020',
     sourcemap: 'external', sourcesContent: true, write: false, metafile: true,
     charset: 'utf8', minify: false,
-    define: { __CROWD_WORKER_SOURCE__: JSON.stringify(workerSource) },
+    banner: { js: potential?.capture || '' },
+    define: { __CROWD_WORKER_SOURCE__: JSON.stringify(workerSource),
+      __POTENTIAL_WORKER_SOURCE__: JSON.stringify(potential?.worker || ''),
+      __POTENTIAL_VERSION__: JSON.stringify(potential?.version || '') },
   });
   const code = result.outputFiles.find(output => output.path === outfile).text;
   const map = JSON.parse(result.outputFiles.find(output => output.path === outfile + '.map').text);

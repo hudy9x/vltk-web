@@ -1,6 +1,9 @@
 import type { MapDefinition, MapObject } from './types';
 import { resolveMapAsset } from './assets';
 
+// Optional shared pixel cache; the map editor/headless consumers keep their own image loader.
+declare function renderImage(image: HTMLImageElement): CanvasImageSource;
+
 export interface Viewport { x: number; y: number; width: number; height: number }
 export interface WorldObjectItem { mapObject: MapObject; y: number }
 
@@ -13,7 +16,7 @@ export function createMapScene(imageFor: (path: string) => HTMLImageElement | nu
     const layer = active.layers.find(layer => layer.type === 'ground');
     context.save();
     context.globalAlpha *= layer && 'opacity' in layer ? layer.opacity ?? 1 : 1;
-    context.drawImage(image, 0, 0, active.size.width, active.size.height);
+    context.drawImage(typeof renderImage === 'function' ? renderImage(image) : image, 0, 0, active.size.width, active.size.height);
     context.restore();
     return true;
   }
@@ -35,7 +38,7 @@ export function createMapScene(imageFor: (path: string) => HTMLImageElement | nu
     if (!active) return;
     const image = imageFor(resolveMapAsset(active.id, object.image));
     if (!image?.complete || !image.naturalWidth) return;
-    context.drawImage(image, object.position.x - object.anchor.x * object.scale,
+    context.drawImage(typeof renderImage === 'function' ? renderImage(image) : image, object.position.x - object.anchor.x * object.scale,
       object.position.y - object.anchor.y * object.scale, image.naturalWidth * object.scale, image.naturalHeight * object.scale);
   }
   function drawImageLayers(context: CanvasRenderingContext2D, type: 'shadow' | 'foreground'): void {
@@ -46,7 +49,7 @@ export function createMapScene(imageFor: (path: string) => HTMLImageElement | nu
       if (!image?.complete || !image.naturalWidth) continue;
       context.save();
       context.globalAlpha *= layer.opacity ?? 1;
-      context.drawImage(image, 0, 0, active.size.width, active.size.height);
+      context.drawImage(typeof renderImage === 'function' ? renderImage(image) : image, 0, 0, active.size.width, active.size.height);
       context.restore();
     }
   }
