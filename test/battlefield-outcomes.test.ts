@@ -40,8 +40,8 @@
     let prevented=false;game.simListeners.keydown({key:'Escape',preventDefault(){prevented=true;},stopImmediatePropagation(){}});
     assert.equal(prevented,true);assert.equal(sim.resultDialog.isOpen,true);
     const log=game.combatLog.text('war');
-    assert.match(log,/danh hiệu mới: <Hiệu úy>/);assert.match(log,/tiêu diệt.*<Hiệu úy>/);
-    assert.equal(game.combatLog.entries('war').length,29,'20 soldiers, six bosses, one SIM and two promotions');
+    assert.doesNotMatch(log,/danh hiệu mới/);assert.match(log,/tiêu diệt.*<Hiệu úy>/);
+    assert.equal(game.combatLog.entries('war').length,14,'only ten personal soldier kills, three bosses and one SIM');
     assert.equal(game.combatLog.entries('in').length,0);
     result.querySelector('#battlefield-result-accept').onclick();
     assert.equal(sim.resultDialog.isOpen,false);assert.equal(match.active,false);assert.equal(game.l.battlefield,false);

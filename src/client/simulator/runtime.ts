@@ -19,6 +19,7 @@ import { createSimNames } from './sim-names';
 import { SOLDIER_TITLES, SOLDIER_RANKS } from './soldier-config';
 import { mountWarPharmacy } from './pharmacy';
 import { buildWarStandings, mountWarLeaderboard } from './leaderboard';
+import { createSimInspectionCache } from './inspection';
 import { createWarSupplies, SUPPLY_RADIUS } from './supplies';
 import { createWarInventory } from './war-inventory';
 import { applyArmySetEquipment } from './set-equipment';
@@ -57,6 +58,8 @@ import type { SimulatorTemplate } from './types';
 declare var developerTools: { closeOpen(): boolean } | undefined;
 declare var combatSandbox: SandboxAPI | null;
 declare function I3(): SimulatorProfile;
+declare function Z1(item: LegacyRecord): string;
+declare var Dn: LegacyRecord | null;
 declare var Y: LegacyRecord;
 declare var horseTrader: { close(): void; readonly isOpen: boolean } | null;
 declare var o: SimulatorProfile, l: SimulatorWorld, v: LegacyEntity;
@@ -1101,7 +1104,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       });
       fighter.res=fighter.stats.res;
     },
-    event(message) { warEvents.push(message); if(warEvents.length>300)warEvents.shift(); },
+    event(message,kind) { if(kind!=='kill')return; warEvents.push(message); if(warEvents.length>300)warEvents.shift(); },
     bonusesChanged() {
       battlefieldWorld.dirty=true;
       for(const actor of actors) {
@@ -1212,8 +1215,6 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
   battlefield = createBattlefield({
     marshalAppeared(side) {
       marshalNotice.show(side, battlefield!.state.team);
-      warEvents.push(`Nguyên soái phe ${side === "song" ? "Tống" : "Kim"} xuất hiện`);
-      if (warEvents.length > 300) warEvents.shift();
     },
     actors: () => [...actors], monsters: () => roadMonsters.actors, monsterCount: () => roadMonsters.totalCount, player: () => battlefieldHero, playerAlive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
     teamPoints: () => warRewards.totals,
@@ -1293,10 +1294,18 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     },
   });
   const pharmacy=mountWarPharmacy(supplies,D);
+  const inspection = createSimInspectionCache({factions:I,skills:T},D,typeof Z1==='function' ? (actor,item)=>asSim(actor,()=>{
+    const previousEquipment=Dn;
+    try { Dn=actor.profile.eq;return Z1(item); }
+    finally { Dn=previousEquipment; }
+  }) : undefined);
   const leaderboard=mountWarLeaderboard(()=>buildWarStandings([
     {id:'player',name:previousField?.name||o.name,team:battlefield!.state.team,points:warRewards.rank(battlefieldHero).points,title:warRewards.rank(battlefieldHero).name,soldierKills:warRewards.rank(battlefieldHero).soldierKills,player:true},
     ...actors.filter(actor=>actor.battlefieldTeam&&!actor.battlefieldBoss).map(actor=>({id:actor.simId,name:actor.n,team:actor.battlefieldTeam,points:warRewards.rank(actor).points,title:warRewards.rank(actor).name,soldierKills:warRewards.rank(actor).soldierKills,player:false})),
-  ]),D,()=>warRewards.totals,()=>battlefield!.state);
+  ]),D,()=>warRewards.totals,()=>battlefield!.state,(id,tab)=>{
+    const actor=actors.find(actor=>actor.simId===id && actor.battlefieldTeam && !actor.battlefieldBoss);
+    return actor ? inspection.html(actor,tab) : null;
+  });
   const resultDialog = mountBattlefieldResult(() => battlefield!.acknowledgeResult());
   const battlePanel=mountBattlefieldPanel(battlefield,Object.values(I),D,warRewards,supplies,{configureSoldiers: (configuration,applyNow=false) => {
       const available = soldierSkillOptions(T,Object.values(I),UA);
