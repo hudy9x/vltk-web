@@ -141,7 +141,7 @@
     assert.throws(() => supplies.buy("hp", 1), /60/);
     assert.equal(gold, paid);
     position.x = 1000;
-    assert.throws(() => supplies.buy("hp", 1), /điểm tập trung/);
+    assert.throws(() => supplies.buy("hp", 1), /60/);
     position.x = camp.x;
     supplies.reset();
     assert.throws(() => supplies.buy("both", 60), /ngân lượng/);

@@ -9,7 +9,7 @@ function loadModule<Module>(entry: string, globalName: string): Module {
   return scope[globalName] as Module;
 }
 
-test('war supplies enforce a combined capacity of 60 potions, successful uses only, and explicit living camp refill', () => {
+test('war supplies enforce a combined capacity of 60 potions, successful uses only, and purchases at any time', () => {
   const { createWarSupplies } = loadModule<typeof import('../src/client/simulator/supplies.ts')>('simulator/supplies.ts', 'Supplies');
   let running = true, alive = true, canRecover = true;
   const camp = require('../src/client/maps/content/9003/layout.json').camps.song;
@@ -22,9 +22,10 @@ test('war supplies enforce a combined capacity of 60 potions, successful uses on
   canRecover = true;
   for (let index = 0; index < 30; index++) { assert.equal(supplies.use('life'), true); assert.equal(supplies.use('mana'), true); }
   assert.equal(supplies.use('life'), false); assert.equal(supplies.use('mana'), false);
-  position.x = 3134; assert.throws(() => supplies.refill(), /điểm tập trung/);
-  position.x = camp.x; alive = false; assert.throws(() => supplies.refill(), /điểm tập trung/);
-  alive = true; assert.equal(supplies.state.life, 0, 'reviving alone does not restock');
+  position.x = 3134; alive = false; running = false;
+  supplies.buy('life', 1); assert.equal(supplies.state.life, 1);
+  assert.equal(supplies.use('life'), false);
+  supplies.reset();
   supplies.refill(); assert.equal(supplies.state.life, 30); assert.equal(supplies.state.mana, 30);
   running = false; assert.equal(supplies.use('life'), false);
 });
@@ -67,7 +68,7 @@ test('manual and automatic battlefield potions share finite stock and preserve n
   assert.equal(game.l.life, 1, 'auto potion must not fall back to persistent stock or buying');
   assert.equal(game.arenaSimulator.supplies.state.life, 0);
   assert.equal(JSON.stringify(game.o.potStock), normalStock); assert.equal(game.o.gold, goldBefore);
-  game.v.x = 1700; assert.throws(() => game.arenaSimulator.supplies.refill(), /điểm tập trung/);
+  game.v.x = 1700; assert.equal(game.arenaSimulator.supplies.state.nearCamp, false);
   game.l.life = 0; match.playerDied(); game.arenaSimulator.tick(30);
   assert.equal(game.arenaSimulator.supplies.state.life, 0, 'respawn does not give free potions');
   game.arenaSimulator.supplies.refill(); assert.equal(game.arenaSimulator.supplies.state.life, 30);

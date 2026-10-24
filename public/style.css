@@ -379,3 +379,8 @@ body:has(#dev-tools) #combat-sandbox>button{margin:0 12px 12px}
 #skBuffs .war-effect{width:30px}
 #skBuffs .war-effect img{width:24px;height:24px;border-color:#9b823e}
 #skBuffs .war-effect b{color:#ffe49a;font-size:10px;line-height:12px}
+
+.quartermaster-product{grid-template-columns:36px minmax(0,1fr)}
+.quartermaster-actions{grid-column:1/-1;display:flex;gap:6px}
+.quartermaster-actions .btn:first-child{flex:1}
+.quartermaster-actions .btn:last-child{flex:0 0 56px}

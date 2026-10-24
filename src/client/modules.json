@@ -2862,6 +2862,7 @@
         "horseTrader"
       ]
     },
+    {"file":"gameplay/quartermaster/index.ts","global":"quartermaster","symbols":["quartermaster"]},
     {
       "file": "ui/mouse-cursors-01.js",
       "symbols": []

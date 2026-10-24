@@ -83,12 +83,21 @@ var gameMaster = (function () {
     context.restore();
   }
 
-  const amounts = { gold: 1_000_000_000_000, knb: 100_000, xp: 100_000_000, chest: 100, level150: 150, learn90: 1, max90: 1, potential: 3000 };
+  const amounts = { gold: 1_000_000_000_000, knb: 100_000, xp: 100_000_000, chest: 100, level150: 150, learn90: 1, max90: 1, potential: 3000, warMerit: 10000 };
   function grant(action) {
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
     if (!(action in amounts)) throw new Error("Lệnh GM không hợp lệ.");
     if (!development && (action === "potential" || action === "chest"))
       throw new Error("Lệnh GM này chỉ dùng trong môi trường development.");
+    if (action === "warMerit") {
+      o.mats ||= {};o.mats.misc ||= {};
+      const current=o.mats.misc.tk_merit;
+      const next=(Number.isSafeInteger(current)&&current>0?current:0)+amounts.warMerit;
+      if(!Number.isSafeInteger(next))throw new Error("Điểm quân trạng vượt giới hạn lưu trữ.");
+      o.mats.misc.tk_merit=next;
+      saveAndRefresh();
+      return "Đã cộng 10.000 điểm quân trạng tích lũy. Xem số dư tại Quan Quân Nhu.";
+    }
     if (action === "level150") {
       if (o.lvl >= 150) return "Nhân vật đã đạt cấp 150 trở lên.";
       if (G2() < 150) throw new Error("Giới hạn cấp hiện tại chưa cho phép lên cấp 150.");
@@ -213,6 +222,7 @@ var gameMaster = (function () {
     ${development ? '<button type="button" data-gm="potential">+3.000 điểm tiềm năng</button>' : ""}
     <button type="button" data-gm="gold">+100 triệu vạn lượng (1.000 tỷ lượng)</button>
     <button type="button" data-gm="knb"><img src="img/ep/knb.png" alt="">+10 vạn Kim Nguyên Bảo</button>
+    <button type="button" data-gm="warMerit">+10.000 điểm Quân trạng / tích lũy</button>
     <button type="button" data-gm="xp">+100 triệu điểm kinh nghiệm</button>
     ${development ? '<button type="button" data-gm="chest"><img src="img/ep/box2.png" alt="">+100 rương Hoàng Kim môn phái hiện tại</button>' : ""}
     <p id="gm-status" role="status" aria-live="polite">Phần thưởng được lưu vào save hiện tại.</p></div>`;

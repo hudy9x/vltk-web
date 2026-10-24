@@ -1341,6 +1341,17 @@ test('production battlefield owns its map across field ticks, empty waves and to
     assert.equal(s.l.zoneShown,mapId);assert.equal(s.l.bgImg.path,'battle-ground');
     assert.equal(fieldTicks,0);assert.equal(waves,0);
     assert.equal(hidden.has('hidden'),true,'town toolbar is hidden inside the battlefield');
+    loadDeclaration(s,'src/client/ui/legacy-panels-and-audio-03.js','nc');
+    const battleActors=match.state.soldiers;
+    const battlePosition={x:s.v.x,y:s.v.y};
+    for(const force of [false,true]){
+      s.nc(force);
+      assert.equal(s.l.town,false,'Thổ Địa Phù cannot move an active battlefield to town');
+      assert.equal(s.Z0.key,mapId);assert.equal(match.active,true);
+      assert.equal(match.state.soldiers,battleActors);
+      assert.deepEqual({x:s.v.x,y:s.v.y},battlePosition);
+    }
+
     s.l.enemies=[{dead:true}];s.Cd();s.rD();
     assert.equal(waves,0,'battlefield deaths and stall detection must not advance training waves');
     match.reset();
@@ -1499,4 +1510,15 @@ test('Tống Kim team items refresh real SIM stats and remove buffs at expiry',(
  s.o.mats.misc.tk_drum=1;s.o.mats.misc.tk_command=1;
  rewards.use('drum');rewards.use('command');assert.equal(ally.stats.life,life*1.3);assert.equal(ally.max,ally.stats.life);assert.equal(ally.stats.speed,speed*1.3);
  rewards.tick(180);assert.equal(ally.stats.life,life);assert.equal(ally.max,life);assert.equal(ally.stats.speed,speed);
+});
+
+test('battlefield item traps use native Đường Môn ground and burst FX without adding skill damage',()=>{
+ const fx={window:{}};for(const name of ['projectile-effects-01.js','projectile-effects-02.js','status-effects-01.js'])vm.runInNewContext(fs.readFileSync(path.join(ROOT,'src/client/data',name),'utf8'),fx);
+ for(const [kind,ground,burst,status]of [['freezeTrap','fx/m155_fly.webp','fx/m156_hit.webp','stun'],['stunTrap','fx/m159_fly.webp','fx/m160_hit.webp','stun'],['slowTrap','fx/m153_fly.webp','fx/m154_hit.webp','slowT']]){
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);s.A0=fx.window.JFX;s.l.fx=[];s.l.quiet=false;s.yn=sprite=>Math.min(1.2,sprite.n*sprite.ms/1000);loadDeclaration(s,'src/client/core/game-loop-01.js','d_');
+  const drawn=[];s.Fa=(sprite,...args)=>{drawn.push({sprite,args});return true;};s.o.mats.misc['tk_'+kind]=1;
+  const enemy=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam==='jin');Object.assign(enemy,{x:s.v.x,y:s.v.y,hp:100,stun:0,slowT:0});
+  s.arenaSimulator.warRewards.use(kind);const ctx={save(){},restore(){},beginPath(){},ellipse(){},fill(){},stroke(){},fillText(){},arc(){}};s.arenaSimulator.drawBattlefieldLoot(ctx);assert.equal(drawn[0].sprite.f,ground);
+  s.arenaSimulator.warRewards.tick(.01);assert.equal(s.l.fx.at(-1).s.f,burst);assert.equal(enemy.hp,100);assert.equal(enemy[status],kind==='slowTrap'?5:3);if(kind==='slowTrap')assert.equal(enemy.slowPower,.5);
+ }
 });

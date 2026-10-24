@@ -102,7 +102,7 @@ export function Inspector({
                   onChange={value => onEdit(next => { editableNpcs(next.map).find(item => item.id === npc.id)!.position[axis] = Math.round(value); })} />)}</div>
                 <Choice label="Phe hiển thị" value={npc.team ?? 'all'} options={[{ value: 'all', label: 'Cả hai phe' }, { value: 'song', label: 'Tống' }, { value: 'jin', label: 'Kim' }]}
                   onChange={value => onEdit(next => { const item = editableNpcs(next.map).find(item => item.id === npc.id)!; if (value === 'all') delete item.team; else item.team = value as 'song' | 'jin'; })} />
-                <Choice label="Hướng đứng" value={String(npc.direction ?? 0)} options={['Đông nam', 'Nam', 'Tây nam', 'Tây', 'Tây bắc', 'Bắc', 'Đông bắc', 'Đông'].map((label, value) => ({ value: String(value), label: `${value} · ${label}` }))}
+                <Choice label="Hướng đứng" value={String(npc.direction ?? 0)} options={['Đông nam', 'Nam', 'Tây nam', 'Tây', 'Tây bắc', 'Bắc', 'Đông bắc', 'Đông'].slice(0, npcDefinition.directions).map((label, value) => ({ value: String(value), label: `${value} · ${label}` }))}
                   onChange={value => onEdit(next => { editableNpcs(next.map).find(item => item.id === npc.id)!.direction = Number(value); })} />
                 <NumberField label="Tỉ lệ ảnh" min={0.1} step={0.1} value={npc.scale ?? npcDefinition.scale}
                   onChange={value => onEdit(next => { editableNpcs(next.map).find(item => item.id === npc.id)!.scale = value; })} />

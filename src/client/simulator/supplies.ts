@@ -19,7 +19,7 @@ interface SupplyHost {
   alive(): boolean;
   team(): Team;
   position(): { x: number; y: number };
-  /** Authored pharmacy locations for the player's team; [] disables purchases. */
+  /** Authored pharmacy locations, used only for proximity information. */
   pharmacyPositions?(): { x: number; y: number }[] | undefined;
   recover(resource: PotionResource, potion?: WarPotion): boolean;
   catalog?(): WarPotion[];
@@ -27,7 +27,7 @@ interface SupplyHost {
   changed(): void;
 }
 /** Quantities count physical bottles, including combined HP/MP potions once.
- * Purchases validate capacity/proximity/payment before changing stock.
+ * Purchases validate capacity/payment before changing stock.
  */
 export function createWarSupplies(host: SupplyHost) {
   const stock = new Map<string, number>();
@@ -82,12 +82,7 @@ export function createWarSupplies(host: SupplyHost) {
       }
     host.changed();
   }
-  function assertAtShop() {
-    if (!host.running() || !host.alive() || !nearCamp())
-      throw new Error("Về điểm tập trung của phe mình để gặp Chủ dược điếm.");
-  }
   function buy(key: string, quantity: number) {
-    assertAtShop();
     const potion = catalog().find((entry) => entry.key === key);
     if (
       !potion ||
@@ -98,14 +93,13 @@ export function createWarSupplies(host: SupplyHost) {
     )
       throw new Error("Chọn loại thuốc và số lượng hợp lệ.");
     if (total() + quantity > WAR_POTION_LIMIT)
-      throw new Error("Túi thuốc chỉ chứa tổng cộng 60 bình máu + mana.");
+      throw new Error(`Túi thuốc ${total()}/60 bình máu + mana. Chỉ còn ${WAR_POTION_LIMIT - total()} chỗ trống; hãy giảm số lượng mua.`);
     if (host.pay && !host.pay(potion.price * quantity))
       throw new Error("Không đủ ngân lượng.");
     stock.set(key, (stock.get(key) || 0) + quantity);
     host.changed();
   }
   function refill() {
-    assertAtShop();
     const orders = (["life", "mana"] as const).map((resource) => ({
       potion: eligible(resource)
         .filter((potion) => potion.kind === resource)

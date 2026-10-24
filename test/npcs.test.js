@@ -19,11 +19,11 @@ const readMap = id => JSON.parse(fs.readFileSync(path.join(root, `src/client/map
 const document = id => model.createDocument({ projects: {}, encounters: JSON.parse(fs.readFileSync(path.join(root, 'src/client/gameplay/encounters/catalog.json'))),
   progression: JSON.parse(fs.readFileSync(path.join(root, 'src/client/maps/progression.json'))) }, readMap(id));
 
-test('NPC catalog has four reusable idle sheets and placements cover town and Hoang Nguyên', () => {
-  assert.deepEqual(plain(npcs.npcCatalog.map(npc => npc.id)), ['equipment', 'pharmacy', 'tongkim', 'horse']);
+test('NPC catalog has five reusable sprites and placements cover town and Hoang Nguyên', () => {
+  assert.deepEqual(plain(npcs.npcCatalog.map(npc => npc.id)), ['equipment', 'pharmacy', 'tongkim', 'horse', 'quartermaster']);
   for (const npc of npcs.npcCatalog) {
     assert.ok(fs.statSync(path.join(root, 'src/client', npc.image.slice(4))).size > 0);
-    assert.equal(npc.directions, 8);
+    assert.equal(npc.directions, npc.id === 'quartermaster' ? 1 : 8);
   }
   for (const id of [37, 9003]) {
     const map = readMap(id);
@@ -37,7 +37,8 @@ test('NPC catalog has four reusable idle sheets and placements cover town and Ho
       assert.ok(npc.position.y >= 0 && npc.position.y < map.size.height);
     }
     if (id !== 37) for (const team of ['song', 'jin']) {
-      assert.deepEqual(plain(layout.filter(npc => npc.team === team).map(npc => npc.npcId)), ['tongkim', 'pharmacy', 'horse']);
+      const services = new Set(layout.filter(npc => !npc.team || npc.team === team).map(npc => npc.npcId));
+      assert.deepEqual([...services].sort(), ['horse', 'pharmacy', 'quartermaster', 'tongkim']);
     }
   }
 });
@@ -104,21 +105,26 @@ test('game consumes authored positions, hides removed NPCs, switches maps/teams 
   entities[1].onInteract(); assert.equal(scope.pharmacyOpened, 'med');
   town.npcs = []; assert.equal(scope.equipmentTrader.entities().length, 0);
   scope.l.town = false;
+  scope.quartermaster = { open() { scope.quartermasterOpened = true; } };
   const state = { mapId: 9003, team: 'song' };
   scope.arenaSimulator = { battlefield: { active: true, state }, openPharmacy() { scope.warShop = true; }, openSettings() { scope.settingsOpened = true; } };
   for (const mapId of [9003]) for (const team of ['song', 'jin']) {
     Object.assign(state, { mapId, team });
     entities = scope.equipmentTrader.entities();
-    assert.equal(entities.length, 3);
-    assert.ok(entities.every(npc => npc.mapNpc.team === team));
-    const expected = npcs.mapNpcs(war).filter(npc => npc.team === team);
+    const expected = npcs.mapNpcs(war).filter(npc => !npc.team || npc.team === team);
+    assert.equal(entities.length, expected.length);
+    assert.ok(entities.every(npc => !npc.mapNpc.team || npc.mapNpc.team === team));
+    assert.deepEqual(plain(entities.map(npc => npc.mapNpc.id)), plain(expected.map(npc => npc.id)));
+    assert.ok(entities.some(npc => !npc.mapNpc.team), 'shared services remain visible to both teams');
     assert.deepEqual(plain(entities.map(npc => [npc.x, npc.y])), plain(expected.map(npc => [npc.position.x, npc.position.y])));
     entities.find(npc => npc.mapNpc.npcId === 'pharmacy').onInteract(); assert.equal(scope.warShop, true);
     entities.find(npc => npc.mapNpc.npcId === 'tongkim').onInteract(); assert.equal(scope.settingsOpened, true);
+    scope.horseOpened = false; entities.find(npc => npc.mapNpc.npcId === 'horse').onInteract(); assert.equal(scope.horseOpened, true);
+    scope.quartermasterOpened = false; entities.find(npc => npc.mapNpc.npcId === 'quartermaster').onInteract(); assert.equal(scope.quartermasterOpened, true);
   }
 });
 
-test('war pharmacy purchases follow edited positions and stop when the pharmacy is removed', () => {
+test('war pharmacy proximity follows authored positions without restricting purchases', () => {
   const { createWarSupplies } = load('src/client/simulator/supplies.ts');
   const position = { x: 450, y: 1792 };
   let locations = [{ x: 1000, y: 1000 }];
@@ -129,8 +135,8 @@ test('war pharmacy purchases follow edited positions and stop when the pharmacy 
   assert.equal(supplies.state.nearCamp, true);
   supplies.buy('life', 1); assert.equal(supplies.state.life, 1);
   locations = []; assert.equal(supplies.state.nearCamp, false);
-  assert.throws(() => supplies.buy('life', 1), /Chủ dược điếm/);
-  assert.equal(supplies.state.life, 1);
+  supplies.buy('life', 1);
+  assert.equal(supplies.state.life, 2);
 });
 
 test('server serves shared NPC sheets and keeps unlisted paths private', async () => {
@@ -226,5 +232,18 @@ test('removing one NPC preserves the opposite camp, allows re-adding and survive
     assert.equal(npcs.mapNpcs(next.map).length, before.length, 'removed NPC can be placed again');
     for (const npc of [...npcs.mapNpcs(next.map)]) npcs.removeNpc(next.map, npc.id);
     assert.deepEqual(plain(npcs.mapNpcs(plain(model.validateDocument(next)))), [], 'deleting the last NPC never restores inherited defaults');
+  }
+});
+
+
+test('NPC map labels contain only the name and follow the rendered head at default and custom scales', () => {
+  const scope = legacyGame([]), labels = [];
+  scope.bA = () => ({complete:true,naturalWidth:1024});
+  const context = {save(){},restore(){},beginPath(){},ellipse(){},fill(){},drawImage(){},strokeText(){},fillText(...args){labels.push(args);}};
+  for (const definition of npcs.npcCatalog) for (const scale of [undefined, 2]) {
+    labels.length = 0;
+    const placement = {npcId:definition.id,position:{x:100,y:200},scale};
+    scope.equipmentTrader.draw(context,{x:100,y:200,name:definition.name,subtitle:'Không hiển thị',mapNpc:placement});
+    assert.deepEqual(labels,[[definition.name,100,200-definition.anchor.y*(scale??definition.scale)-6]]);
   }
 });

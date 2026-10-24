@@ -1,3 +1,6 @@
+import { drawWarTrap, triggerWarTrap, preloadWarTrap } from './war-trap-effects';
+import type { TrapEffectCatalog } from './war-trap-effects';
+import { addAccumulatedMerit } from '../gameplay/quartermaster/model';
 import { mountSoldierCountdown } from './soldier-countdown';
 import { mountRespawnCountdown } from './respawn-countdown';
 import { mountMarshalNotice } from './marshal-notice';
@@ -82,6 +85,10 @@ declare function J(html: string, ready?: () => void): void;
 declare function m(selector: string): HTMLElement;
 declare function n0(close?: boolean): void;
 declare function An(): void;
+declare var A0:TrapEffectCatalog;
+declare function Fa(sprite:LegacyRecord,direction:number,age:number,x:number,y:number,loop:boolean):boolean;
+declare function d_(trap:{c:number;x:number;y:number}):void;
+declare function $(): void;
 declare const INV_MAX: number;
 declare function k(message: string): void;
 declare function ma(id: number | string): unknown;
@@ -1014,6 +1021,7 @@ export function createSimulator() {
   // asSim swaps v/l synchronously; team identity must always refer to the real player.
   const battlefieldHero = v, battlefieldWorld = l;
   const warRewards = createWarRewards({
+    earned(points) { o.mats ||= {};o.mats.misc ||= {};addAccumulatedMerit(o.mats.misc,points);$(); },
     promoted(actor) {
       if(actor===battlefieldHero)return;
       if(!actor.arenaSim || actor.battlefieldBoss || actor.battlefieldMonster)return;
@@ -1040,6 +1048,8 @@ export function createSimulator() {
       return inventory[kind]%WAR_STACK_SIZE!==0 || o.inv.length + ['vlmt','ttk','rngua','ldt'].filter(key=>(o.mats?.misc?.[key]||0)>0).length + warItemStacks(inventory).length < INV_MAX;
     },
     actors: () => [...actors,...roadMonsters.actors],
+    trapPlaced(kind) { if(typeof A0!=='undefined')preloadWarTrap(kind,A0,bA); },
+    trapTriggered(trap) { if(typeof A0!=='undefined' && typeof d_==='function')triggerWarTrap(trap,A0,d_); },
     trap(actor,kind) {
       if(kind==='stunTrap')actor.stun=Math.max(actor.stun||0,3);
       else { actor.slowT=Math.max(actor.slowT||0,kind==='freezeTrap'?3:5);actor.slowPower=kind==='freezeTrap'?.75:.5; }
@@ -1073,7 +1083,14 @@ export function createSimulator() {
   const nativeManualPotion = typeof Ms === 'function' ? Ms : null;
   Ms = function(resource) {
     if (!battlefield?.active) { nativeManualPotion?.(resource); return; }
-    if (!supplies.use(resource)) k('Không dùng được bình. Hết bình hãy về điểm tập trung nhận tiếp tế.');
+    if (supplies.use(resource)) return;
+    const state = supplies.state, label = resource === 'life' ? 'máu' : 'nội lực';
+    if (!battlefield.running) k('Chưa thể dùng thuốc khi trận chưa bắt đầu hoặc đã kết thúc.');
+    else if (battlefieldWorld.life <= 0 || battlefieldWorld.deadT > 0) k('Chờ hồi sinh để dùng thuốc.');
+    else if ((battlefieldWorld.potCd?.[resource] || 0) > 0) k('Thuốc đang hồi chiêu.');
+    else if (!state[resource]) k(`Đã hết thuốc ${label}. Mở Dược Điếm để mua thêm; túi đang có ${state.total}/${state.capacity} bình.`);
+    else if (state.selected[resource] !== 'auto' && !state.inventory[state.selected[resource]]) k(`Đã hết loại thuốc đang chọn. Vẫn còn ${state[resource]} bình hồi ${label}; hãy chọn loại khác hoặc Tự động.`);
+    else k('Chưa cần dùng thuốc: chỉ số đã đầy hoặc đang được hồi phục.');
   };
   const nativeAutoPotion = typeof X9 === 'function' ? X9 : null;
   X9 = function(dt) {
@@ -1106,7 +1123,11 @@ export function createSimulator() {
       else { context.fillStyle=WAR_ITEMS[drop.kind].color;context.beginPath();context.arc(drop.x,drop.y-8,7,0,Math.PI*2);context.fill(); }
       context.fillStyle=WAR_ITEMS[drop.kind].color;context.fillText(WAR_ITEMS[drop.kind].name,drop.x,drop.y-28);
     }
-    for(const trap of warRewards.traps) { context.strokeStyle=WAR_ITEMS[trap.kind].color;context.beginPath();context.ellipse(trap.x,trap.y,24,12,0,0,Math.PI*2);context.stroke();context.fillStyle=WAR_ITEMS[trap.kind].color;context.fillText(WAR_ITEMS[trap.kind].name,trap.x,trap.y-18); }
+    for(const trap of warRewards.traps) {
+      const drawn=typeof A0!=='undefined' && typeof Fa==='function' && drawWarTrap(context,trap,A0,Fa);
+      if(!drawn) { context.strokeStyle=WAR_ITEMS[trap.kind].color;context.beginPath();context.ellipse(trap.x,trap.y,24,12,0,0,Math.PI*2);context.stroke(); }
+      context.fillStyle=WAR_ITEMS[trap.kind].color;context.fillText(WAR_ITEMS[trap.kind].name,trap.x,trap.y-18);
+    }
     context.restore();
   }
   function receiveSoldierHit(target: LegacyEntity,source: LegacyEntity) {

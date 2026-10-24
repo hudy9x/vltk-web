@@ -46,7 +46,8 @@ export function drawNpc(context: CanvasRenderingContext2D, image: HTMLImageEleme
   const definition = getNpc(npc.npcId)!;
   const frame = npc.animated ? Math.floor(time / definition.frameMs) % definition.frames : 0;
   const box = npcBounds(npc);
-  context.drawImage(image, frame * definition.width, (npc.direction ?? 0) * definition.height,
+  const direction = Math.max(0, Math.min(definition.directions - 1, Math.floor(npc.direction ?? 0)));
+  context.drawImage(image, frame * definition.width, direction * definition.height,
     definition.width, definition.height, box.x, box.y, box.width, box.height);
   return true;
 }
