@@ -370,3 +370,12 @@ body:has(#dev-tools) :is(#sim-panel,#combat-sandbox) .dev-tool-content button{ba
 body:has(#dev-tools) #combat-sandbox .dev-tool-content button.on{background:linear-gradient(#8a7434,#4a3c14);border-color:#e8c860}
 body:has(#dev-tools) #combat-sandbox>label{margin:7px 12px}
 body:has(#dev-tools) #combat-sandbox>button{margin:0 12px 12px}
+
+/* Consumable timers stay directly below the existing support skill icons. */
+#skBuffs{flex-direction:column;flex-wrap:nowrap}
+#skBuffs .buffrow{display:flex;flex-wrap:wrap;gap:2px}
+#skBuffs .buffrow:empty{display:none}
+#skBuffs .war-effects{margin-top:3px}
+#skBuffs .war-effect{width:30px}
+#skBuffs .war-effect img{width:24px;height:24px;border-color:#9b823e}
+#skBuffs .war-effect b{color:#ffe49a;font-size:10px;line-height:12px}

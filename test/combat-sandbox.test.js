@@ -1132,7 +1132,7 @@ test('Tống Kim soldiers have curated team skins, reject allied hits, and hosti
 });
 
 test('Tống Kim player soldier kills grant merit and collectible pills; allied poison never grants credit',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);s.Math.random=()=>.01;
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;s.INV_MAX=60;match.start('song');s.arenaSimulator.tick(5);s.Math.random=()=>.01;
  const enemy=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam==='jin');Object.assign(enemy,{x:s.v.x+20,y:s.v.y,res:{...s.l.P.res},def:0,series:0,hp:50});
  s.hs({parts:{phys:100},crit:0,series:0,series5:0},enemy);s.arenaSimulator.tick(.1);
  assert.equal(s.arenaSimulator.warRewards.state.points,50);assert.equal(s.arenaSimulator.warRewards.drops.length,1);
@@ -1477,4 +1477,26 @@ test('respawn countdown updates through the real player loop in production and a
   s.Td(1);assert.equal(notice.textContent,'Rời doanh trại sau 29 giây');assert.equal(s.l.life,0);
   match.reset();assert.equal(notice.hidden,true);
  }
+});
+
+test('Tống Kim fills an existing stack in a full bag, keeps overflow on the ground and preserves unused stock on exit',()=>{
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;s.INV_MAX=60;match.start('song');
+ const rewards=s.arenaSimulator.warRewards;s.o.mats.misc.tk_resistance=49;s.o.inv=Array.from({length:59},()=>({}));s.Math.random=()=>0;
+ function drop(){const victim={x:s.v.x,y:s.v.y,hp:0,battlefieldMonster:true,battlefieldTeam:'jin'};rewards.record(s.v,victim);rewards.killed(victim);rewards.tick(.01);}
+ drop();assert.equal(rewards.state.inventory.resistance,50);assert.equal(rewards.drops.length,0);
+ drop();assert.equal(rewards.state.inventory.resistance,50);assert.equal(rewards.drops.length,1);
+ s.o.inv.pop();rewards.tick(.01);assert.equal(rewards.state.inventory.resistance,51);assert.equal(rewards.drops.length,0);
+ match.reset();assert.equal(rewards.state.inventory.resistance,51);assert.equal(s.o.mats.misc.tk_resistance,51);
+ assert.throws(()=>rewards.use('resistance'),/trong trận/);
+});
+
+test('Tống Kim team items refresh real SIM stats and remove buffs at expiry',()=>{
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
+ const rewards=s.arenaSimulator.warRewards;
+ const compute=s.j0;s.j0=()=>{const stats={...compute(),speed:1,speedFoot:1,aspdP:1,aspdC:1};s.arenaSimulator.applyBattlefieldBonuses(stats);return stats;};
+ const [ally]=match.add({team:'song',faction:'wudang',level:90,strength:'normal',count:1});
+ Object.assign(ally,{x:s.v.x,y:s.v.y});const life=ally.stats.life,speed=ally.stats.speed;
+ s.o.mats.misc.tk_drum=1;s.o.mats.misc.tk_command=1;
+ rewards.use('drum');rewards.use('command');assert.equal(ally.stats.life,life*1.3);assert.equal(ally.max,ally.stats.life);assert.equal(ally.stats.speed,speed*1.3);
+ rewards.tick(180);assert.equal(ally.stats.life,life);assert.equal(ally.max,life);assert.equal(ally.stats.speed,speed);
 });

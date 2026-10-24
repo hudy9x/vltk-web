@@ -13,7 +13,7 @@ test('military merit is credited once to the last hostile attacker including poi
 });
 test('drops stay on the ground until approached, inventory is consumed, buffs last 180 seconds and refresh without stacking',()=>{
  for(const [kind,index]of [['resistance',0],['attack',1],['movement',2]]){
-  let roll=0;const {player,enemy,reward,stop}=fixture(()=>roll++%2===0?0:(index+.1)/3);
+  let roll=0;const {player,enemy,reward,stop}=fixture(()=>roll++%2===0?0:(index+.1)/Object.keys(scope.Rewards.WAR_ITEMS).length);
   enemy.x=200;reward.record(player,enemy);reward.killed(enemy);assert.equal(reward.drops.length,1);reward.tick(.01);assert.equal(reward.state.inventory[kind],0);
   player.x=200;reward.tick(.01);assert.equal(reward.drops.length,0);assert.equal(reward.state.inventory[kind],1);reward.use(kind);assert.equal(reward.state.inventory[kind],0);
   const stats=()=>({res:{phys:0,cold:0,fire:0,poison:0,light:0},speed:1,speedFoot:1,aspdP:1,aspdC:1,aspd:1});let p=stats();reward.apply(p);
@@ -74,4 +74,11 @@ test('native external, internal and basic physical damage receive one multiplier
  }
  const normal=s.Ow(base),boosted=s.Ow({...base,warPhysicalMultiplier:1.2}),capped=s.Ow({...base,warPhysicalMultiplier:9});
  assert.equal(boosted.parts.phys,normal.parts.phys*1.2);assert.equal(capped.parts.phys,boosted.parts.phys);assert.equal(boosted.parts.fire,normal.parts.fire);
+ const external={id:1,phys:true,attr:{physicsenhance_p:[100],physical:[80],fire:[50]}},internal={id:2,phys:false,attr:{physical:[80],fire:[50]}};
+ const externalBase=s.F2(base,external,20),internalBase=s.F2(base,internal,20);
+ const buffed={...base,warExternalMultiplier:1.5,warExternalCold:100,warInternalAdd:{phys:100,cold:100,fire:100,light:100,poison:50}};
+ const ext=s.F2(buffed,external,20),int=s.F2(buffed,internal,20),basic=s.Ow(buffed);
+ assert.equal(ext.parts.phys,externalBase.parts.phys*1.5);assert.equal(ext.parts.cold,100);assert.equal(ext.parts.fire,externalBase.parts.fire);
+ assert.equal(int.parts.phys,internalBase.parts.phys+100);assert.equal(int.parts.fire,internalBase.parts.fire+100);assert.equal(int.parts.poison,50);assert.equal(int.parts.cold,100);assert.equal(int.parts.light,100);
+ assert.equal(basic.parts.phys,normal.parts.phys*1.5);assert.equal(basic.parts.cold,100);
 });

@@ -23,7 +23,8 @@ import { BATTLEFIELD_PVP_DAMAGE } from './balance';
 import { patrolSoldier } from './soldier-patrol';
 import { soldierSkillOptions } from './soldier-skills';
 import { SOLDIER_RANK_SKINS, soldierSkin } from './soldiers';
-import { createWarRewards, WAR_ITEMS } from './war-rewards';
+import { warBuffHud } from './war-buff-hud';
+import { createWarRewards, WAR_ITEMS, WAR_STACK_SIZE, warItemStacks } from './war-rewards';
 import { createRoadMonsters } from './road-monsters';
 import { createArmyEquipment } from './equipment';
 import { createCrowdSteering } from './crowd';
@@ -81,6 +82,7 @@ declare function J(html: string, ready?: () => void): void;
 declare function m(selector: string): HTMLElement;
 declare function n0(close?: boolean): void;
 declare function An(): void;
+declare const INV_MAX: number;
 declare function k(message: string): void;
 declare function ma(id: number | string): unknown;
 declare function j2(id: number): number;
@@ -1022,6 +1024,29 @@ export function createSimulator() {
       fighter.res=fighter.stats.res;
     },
     event(message) { warEvents.push(message); if(warEvents.length>300)warEvents.shift(); },
+    bonusesChanged() {
+      battlefieldWorld.dirty=true;
+      for(const actor of actors) {
+        if(!actor.battlefieldTeam||actor.battlefieldBoss)continue;
+        asSim(actor,()=>{const stats=j0();stats.main=resolvedSkill(stats,actor.profile.main);actor.stats=stats;});
+        actor.max=actor.stats.life;actor.hp=Math.min(actor.hp,actor.max);
+        actor.res=actor.stats.res;actor.def=actor.stats.def;actor.ar=actor.stats.ar;
+        actor.spd=100*(actor.mounted?actor.stats.speed:actor.stats.speedFoot||actor.stats.speed||1);
+      }
+    },
+    storage: () => { o.mats ||= {}; o.mats.misc ||= {}; return o.mats.misc; },
+    canCollect(kind) {
+      const inventory=warRewards.state.inventory;
+      return inventory[kind]%WAR_STACK_SIZE!==0 || o.inv.length + ['vlmt','ttk','rngua','ldt'].filter(key=>(o.mats?.misc?.[key]||0)>0).length + warItemStacks(inventory).length < INV_MAX;
+    },
+    actors: () => [...actors,...roadMonsters.actors],
+    trap(actor,kind) {
+      if(kind==='stunTrap')actor.stun=Math.max(actor.stun||0,3);
+      else { actor.slowT=Math.max(actor.slowT||0,kind==='freezeTrap'?3:5);actor.slowPower=kind==='freezeTrap'?.75:.5; }
+      if(kind==='freezeTrap')actor.stun=Math.max(actor.stun||0,3);
+      if(actor.battlefieldMonster)cancelRoadMonster(actor);else cancelCasts(actor as SimulatorActor);
+      crowd.cancel(actor);
+    },
     name: actor => actor === battlefieldHero ? previousField?.name || battlefieldHero.n || "Người chơi" : actor.n,
     player: () => battlefieldHero, team: () => battlefield!.state.team,
     running: () => !!battlefield?.running, alive: () => battlefieldWorld.life>0 && !(battlefieldWorld.deadT>0), changed: () => { battlefieldWorld.dirty=true; if(typeof R !== 'undefined')R=true; } });
@@ -1062,13 +1087,7 @@ export function createSimulator() {
     }
   };
   const warInventory = createWarInventory({ active: () => !!battlefield?.active, rewards: warRewards,
-    refresh: () => { R=true; An(); },
-    details(title, description, use) {
-      J(`<h3>${D(title)}</h3><p>${D(description)}</p><button class="btn" id="war-item-use">Sử dụng</button><button class="btn" id="war-item-close">Đóng</button>`, () => {
-        m('#war-item-use').onclick = () => { try { use(); n0(true); } catch(error) { k(errorMessage(error)); } };
-        m('#war-item-close').onclick = () => n0(true);
-      });
-    },
+    refresh: () => { R=true; An(); }, error: message => k(message),
   });
   function recordBattlefieldHit(source: LegacyEntity,target: LegacyEntity) { warRewards.record(source,target); }
   function applyBattlefieldBonuses(stats: LegacyRecord) {
@@ -1082,9 +1101,12 @@ export function createSimulator() {
     context.fillText('Điểm tập trung · Tiếp tế',supplyCamp.x,supplyCamp.y-55);
     for(const drop of warRewards.drops) {
       context.fillStyle='#0008';context.beginPath();context.ellipse(drop.x,drop.y+3,12,5,0,0,Math.PI*2);context.fill();
-      context.fillStyle=WAR_ITEMS[drop.kind].color;context.beginPath();context.arc(drop.x,drop.y-8,7,0,Math.PI*2);context.fill();
-      context.strokeStyle='#fff8';context.stroke();context.fillText(WAR_ITEMS[drop.kind].name,drop.x,drop.y-23);
+      const icon=bA(WAR_ITEMS[drop.kind].icon) as HTMLImageElement | null;
+      if(icon?.complete && icon.naturalWidth)context.drawImage(icon,drop.x-12,drop.y-24,24,24);
+      else { context.fillStyle=WAR_ITEMS[drop.kind].color;context.beginPath();context.arc(drop.x,drop.y-8,7,0,Math.PI*2);context.fill(); }
+      context.fillStyle=WAR_ITEMS[drop.kind].color;context.fillText(WAR_ITEMS[drop.kind].name,drop.x,drop.y-28);
     }
+    for(const trap of warRewards.traps) { context.strokeStyle=WAR_ITEMS[trap.kind].color;context.beginPath();context.ellipse(trap.x,trap.y,24,12,0,0,Math.PI*2);context.stroke();context.fillStyle=WAR_ITEMS[trap.kind].color;context.fillText(WAR_ITEMS[trap.kind].name,trap.x,trap.y-18); }
     context.restore();
   }
   function receiveSoldierHit(target: LegacyEntity,source: LegacyEntity) {
@@ -1217,6 +1239,6 @@ export function createSimulator() {
   updateWarNpcs();
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (arenaEnabled && typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { nearestMonsterTarget: arenaTargets.nearestTarget, battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, advanceAnimation, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  return { nearestMonsterTarget: arenaTargets.nearestTarget, battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, warBuffs: () => battlefield?.running ? warBuffHud(warRewards.state.buffs) : '', pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, advanceAnimation, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }

@@ -74,17 +74,21 @@ test('manual and automatic battlefield potions share finite stock and preserve n
   match.reset(); assert.equal(game.arenaSimulator.supplies.state.life, 0);
 });
 
-test('war inventory requires selecting an item and then explicitly pressing Use', () => {
+test('war inventory stacks at 50, remains visible outside the match and uses one item per click', () => {
   type WarRewards = import('../src/client/simulator/war-rewards.ts').WarRewards;
-  let clickListener: EventListener = () => {}, pendingUse = () => {}, used = 0, refreshed = 0;
+  let clickListener: EventListener = () => {}, used = 0, refreshed = 0, error = '';
   const scope: Record<string, unknown> = { document: { addEventListener(_type: string, listener: EventListener) { clickListener = listener; } } };
   vm.runInNewContext(compileTypeScriptEntry('simulator/war-inventory.ts', 'WarInventory').code, scope);
   const { createWarInventory } = scope.WarInventory as typeof import('../src/client/simulator/war-inventory.ts');
-  const rewards = { state: { inventory: { resistance: 1, attack: 0, movement: 0 } }, use() { used++; } } as unknown as WarRewards;
-  const inventory = createWarInventory({ active: () => true, rewards, refresh() { refreshed++; }, details(_title, _description, use) { pendingUse = use; } });
-  assert.match(inventory.html(), /data-war-item="resistance"/);
-  assert.equal(used, 0);
+  const rewards = { state: { inventory: { resistance: 51 } }, use() { used++; } } as unknown as WarRewards;
+  const inventory = createWarInventory({ active: () => false, rewards, refresh() { refreshed++; }, error(message) { error = message; } });
+  assert.equal(inventory.slots, 2);
+  assert.equal((inventory.html().match(/data-war-item="resistance"/g) || []).length, 2);
+  assert.match(inventory.html(), /<i>50<\/i>/);
+  assert.match(inventory.html(), /<i>1<\/i>/);
   clickListener({ target: { closest: () => ({ dataset: { warItem: 'resistance' } }) }, stopPropagation() {} } as unknown as Event);
-  assert.equal(used, 0, 'opening details must not apply the buff');
-  pendingUse(); assert.equal(used, 1); assert.equal(refreshed, 1);
+  assert.equal(used, 1); assert.equal(refreshed, 1); assert.equal(error, '');
+  rewards.use = () => { throw new Error('Chỉ dùng trong trận'); };
+  clickListener({ target: { closest: () => ({ dataset: { warItem: 'resistance' } }) }, stopPropagation() {} } as unknown as Event);
+  assert.equal(refreshed, 1); assert.match(error, /trong trận/);
 });

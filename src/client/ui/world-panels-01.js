@@ -248,7 +248,7 @@ var wm = function s() {
   const A = m("#t-inv"),
     n = A.querySelector(".invgrid"),
     t = m("#iSort"),
-    e = Mm().length;
+    e = Mm().length + (typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.warInventory.slots : 0);
   n.insertAdjacentHTML("afterbegin", FB());
   for (let w = o.inv.length + e; w < INV_MAX; w++)
     n.insertAdjacentHTML("beforeend", '<span class="it empty"></span>');
@@ -256,7 +256,7 @@ var wm = function s() {
   for (const w of ["bBest", "bDonKho", "bStash", "bSellAll", "bKtcI"]) a[w] = m("#" + w);
   const i = document.createElement("div");
   ((i.className = "u2bag"),
-    (i.innerHTML = `<div class="u2bh"><span>${o.inv.length}/${INV_MAX}</span><button class="u2buy x${dt ? " on" : ""}" id="bInvX" title="Mở rộng rương (như JX1)">Mở rộng</button><span class="sp"></span></div>`),
+    (i.innerHTML = `<div class="u2bh"><span>${o.inv.length + e}/${INV_MAX}</span><button class="u2buy x${dt ? " on" : ""}" id="bInvX" title="Mở rộng rương (như JX1)">Mở rộng</button><span class="sp"></span></div>`),
     i.firstChild.appendChild(t),
     i.appendChild(n));
   const r = [...n.children],

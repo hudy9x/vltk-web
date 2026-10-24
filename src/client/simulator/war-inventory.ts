@@ -1,29 +1,25 @@
-import { WAR_ITEMS } from './war-rewards';
+import { WAR_ITEMS, warItemStacks } from './war-rewards';
 import type { WarItem, WarRewards } from './war-rewards';
 interface InventoryHost {
   active(): boolean;
   rewards: WarRewards;
-  details(title: string, description: string, use: () => void): void;
   refresh(): void;
+  error(message: string): void;
 }
-/** War consumables are a match-only compartment of the actual inventory grid.
- * Selecting an item opens details; only the explicit Use action grants its buff.
- */
+/** One click consumes one item; each visible stack holds at most 50. */
 export function createWarInventory(host: InventoryHost) {
   function html() {
-    if (!host.active()) return '';
-    return (Object.keys(WAR_ITEMS) as WarItem[]).filter(kind => host.rewards.state.inventory[kind] > 0).map(kind =>
-      `<button class="it r1 mi" data-war-item="${kind}" title="${WAR_ITEMS[kind].name}"><img src="img/i/g44.png" alt="${WAR_ITEMS[kind].name}"><i>${host.rewards.state.inventory[kind]}</i></button>`).join('');
+    return warItemStacks(host.rewards.state.inventory).map(({kind,count}) =>
+      `<button class="it r1 mi" data-war-item="${kind}" title="${WAR_ITEMS[kind].name}: ${WAR_ITEMS[kind].description}. Bấm để dùng · Chỉ dùng trong Tống Kim"><img src="${WAR_ITEMS[kind].icon}" alt="${WAR_ITEMS[kind].name}" width="24" height="24"><i>${count}</i></button>`).join('');
   }
   document.addEventListener('click', event => {
     const itemButton = (event.target as Element | null)?.closest?.<HTMLElement>('[data-war-item]');
-    if (!itemButton || !host.active()) return;
+    if (!itemButton) return;
     const kind = itemButton.dataset.warItem as WarItem;
-    if (!(kind in WAR_ITEMS)) return;
+    if (!Object.prototype.hasOwnProperty.call(WAR_ITEMS,kind)) return;
     event.stopPropagation();
-    host.details(WAR_ITEMS[kind].name, `${WAR_ITEMS[kind].description} trong 180 giây. Đang có ${host.rewards.state.inventory[kind]}.`, () => {
-      host.rewards.use(kind); host.refresh();
-    });
+    try { host.rewards.use(kind); host.refresh(); }
+    catch(error) { host.error(error instanceof Error ? error.message : String(error)); }
   }, true);
-  return { html };
+  return { html, get slots() { return warItemStacks(host.rewards.state.inventory).length; } };
 }
