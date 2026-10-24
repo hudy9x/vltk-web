@@ -94,7 +94,7 @@ var xe = () => !!(o && o.eq && o.eq.horse && p0(o.eq.horse));
 
 var S3 = () => o.autoRide !== !1 && !(typeof $1 == "function" && $1());
 
-var Ra = () => (l.P ? (l.mounted ? l.P.speed : l.P.speedFoot || l.P.speed) : 1);
+var Ra = () => actorMovementSpeed(v);
 
 var I3 = function () {
   return {

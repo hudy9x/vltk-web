@@ -78,17 +78,15 @@ var jm = function (A, n) {
       : ((l.moveTo = null),
         (l.tgtHitT = l.clock || 0),
         (l.tgtD = 0),
-        o4(A), beginActorCast(v),
+        o4(A), beginActorCast(v, actorAttackTiming(v, A).cycleSeconds, () => { l_(A, n); G8(A.id); }),
         typeof Y !== "undefined" && Y.stopAfterCast(),
         A.cd && ((l.skCd = l.skCd || {})[A.id] = (l.clock || 0) + A.cd),
         l.rotNext != null && ((l.rotI = l.rotNext), (l.rotNext = null)),
-        l_(A, n),
         (v.face = n.x >= v.x ? 1 : -1),
         (v.dir = kn(n.x - v.x, n.y - v.y)),
         (v.act = "at"),
         (v.actT = 0),
-        G8(A.id),
-        1 / A.rate)
+        Math.max(actorAttackTiming(v, A).cycleSeconds, A.cd || 0))
     : 0;
 };
 
@@ -231,8 +229,9 @@ var ra = function (A, n) {
   }
 };
 
+var speedDrawElapsed = 0;
 var P_ = function s(A) {
-  if (window.localGameLoading?.active) { o5 = A; Wm = Date.now(); requestAnimationFrame(s); return; }
+  if (window.localGameLoading?.active) { speedDrawElapsed = 0; o5 = A; Wm = Date.now(); requestAnimationFrame(s); return; }
   Wm = Date.now();
   const n = Math.min(0.25, (A - o5) / 1e3);
   ((o5 = A),
@@ -241,7 +240,9 @@ var P_ = function s(A) {
       !document.hidden &&
       !window.NET_GATE &&
       !i0.blocked &&
-      (ra("mo phong", () => { if (mapAccess.tick()) p_(n); }), (!Pi().saver || (Vm = !Vm)) && ra("ve", () => D_(n))),
+      (ra("mo phong", () => { if (mapAccess.tick()) p_(n); }),
+        (speedDrawElapsed += n),
+        (!Pi().saver || (Vm = !Vm)) && ra("ve", () => { const elapsed = speedDrawElapsed; speedDrawElapsed = 0; D_(elapsed); })),
     (c5 += n),
     c5 > 0.1 &&
       o.fac &&

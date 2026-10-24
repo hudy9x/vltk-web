@@ -86,19 +86,19 @@ var Td = function (A) {
     Cd();
     return;
   }
-  l.atkT = Math.max(0, (l.atkT || 0) - A * coldSpeedFactor(l));
+  l.atkT = Math.max(0, (l.atkT || 0) - A);
   ($1() && Ah(A),
     (t && l.pickTarget) ||
       (hA() && !(l.manTgt && !l.manTgt.dead && l.manTgt.hp > 0)
         ? (l.manTgt = null)
         : (hA() && l.clickHold) || ($1() && !(hA() && l.manTgt)) ||
           (hA() && l.manTgt && l.moveTo === l.manTgt && !Y.target && !Y.active
-            ? l.stunT > 0 || wa(v, l.manTgt.x, l.manTgt.y, 150 * Ra() * coldSpeedFactor(l) * A)
+            ? l.stunT > 0 || wa(v, l.manTgt.x, l.manTgt.y, 150 * Ra() * A)
             : l.moveTo &&
               l.moveTo.hp > 0 &&
               !t &&
               (l.stunT > 0 ||
-                wa(v, l.moveTo.x, l.moveTo.y, 150 * Ra() * coldSpeedFactor(l) * A))),
+                wa(v, l.moveTo.x, l.moveTo.y, 150 * Ra() * A))),
       !(l.stunT > 0) && !actorActionLocked(v) &&
         !(hA() && !l.manTgt) &&
         (l.atkT <= 0 && (l.atkT = oD()))));

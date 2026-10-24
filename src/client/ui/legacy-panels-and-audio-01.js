@@ -717,7 +717,7 @@ var Bs = function () {
       <span>Sát thương vũ khí</span><span>${Math.round(A.wmin)}–${Math.round(A.wmax)}</span>
       <span>Chiêu chính</span><span>${D(A.main.n)} (${F(A.main.tot)})</span>
       <span>Chính xác</span><span>${Math.round(A.ar)}</span><span>Né tránh</span><span>${Math.round(A.def)}</span>
-      <span>Chí mạng</span><span>${Math.round(A.main.crit)}%</span><span>Tốc độ đánh</span><span>${A.aspd.toFixed(2)}</span>${c}</div>`),
+      <span>Chí mạng</span><span>${Math.round(A.main.crit)}%</span><span>Tốc độ đánh</span><span>${(A.main.rawRate ?? A.main.rate ?? A.aspd).toFixed(2)}</span>${c}</div>`),
     (m("#bTTa").onclick = Ri),
     document.querySelectorAll("#t-char .plus").forEach((h) => (h.onclick = () => jf(h.dataset.a))),
     (m("#bTitle").onclick = () => Qh()),

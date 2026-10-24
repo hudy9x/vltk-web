@@ -95,7 +95,7 @@
       QA: 1,
       o4: () => spent++,
       l_: () => casts++,
-      beginActorCast: () => {},
+      beginActorCast: (_actor: unknown, _seconds: number, release: () => void) => { release(); return true; },
       hA: () => false,
       $1: () => false,
       kn: () => 0,

@@ -56,7 +56,7 @@ test('rank bonuses use the current tier for both teams, persist through revival,
  for(const actor of [{...sim,battlefieldBoss:true},{...sim,battlefieldMonster:true},{...sim,battlefieldTeam:undefined}]){
   const p=stats();reward.apply(p,actor);assert.equal(p.warPhysicalMultiplier,undefined);assert.equal(p.res.phys,50);
  }
- const capped={...stats(),aspdP:2.9,aspdC:2.6};reward.apply(capped);assert.equal(capped.aspdP,3);assert.equal(capped.aspdC,2.7);
+ const capped={...stats(),aspdP:2.9,aspdC:2.6};reward.apply(capped);assert.equal(capped.aspdP,2.9*1.2);assert.equal(capped.aspdC,2.6*1.2); // Final phase/cap is applied after debuffs by speed/runtime.
  stop();let p=stats();reward.apply(p);assert.equal(p.res.phys,50);assert.equal(p.aspdP,1);
  reward.reset();assert.equal(reward.rank(player).bonus,0);assert.equal(reward.rank(sim).points,0);
 });

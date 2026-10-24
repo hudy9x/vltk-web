@@ -205,7 +205,7 @@ test('SIM creates each faction and selected skill, auto allocation is isolated f
   }
   assert.throws(()=>s.arenaSimulator.create('no-such-faction'),/không hợp lệ/);
 });
-function advanceSimulator(s, duration=.4) {for(let t=0;t<duration;t+=.02)s.advanceSkillContacts(.02);}
+function advanceSimulator(s, duration=.6) {for(let t=0;t<duration;t+=.02)s.advanceSkillContacts(.02);}
 test('SIM farms via real contact, never hurts the player with PK off, and produces formula inputs/results',()=>{
   const s=simulatorGame(),sim=s.arenaSimulator.create('wudang'),monster=s.l.enemies[0];
   sim.x=monster.x;sim.y=monster.y;
@@ -224,7 +224,7 @@ test('PK checkbox cancellation invalidates existing contacts; enabled PK applies
   const s=simulatorGame(),sim=s.arenaSimulator.create('wudang');
   sim.x=s.v.x;sim.y=s.v.y;
   s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);
-  const pending=s.l.combatProjectiles[0];assert.ok(pending);
+  advanceSimulator(s,.5);const pending=s.l.combatProjectiles[0];assert.ok(pending);
   s.arenaSimulator.setPK(false);pending.combat.onHit(s.v);advanceSimulator(s);
   assert.equal(s.l.life,1000);assert.equal(s.l.combatProjectiles.length,0);
   Object.assign(s.l.P,{sorb:20,manaShield:50});
@@ -238,7 +238,7 @@ test('PK checkbox cancellation invalidates existing contacts; enabled PK applies
 test('explicit SIM removal cancels its damage while clearing monsters keeps other SIM alive',()=>{
   const s=simulatorGame(),sim=s.arenaSimulator.create('wudang');
   s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);
-  const pending=s.l.combatProjectiles[0];s.arenaSimulator.remove();
+  advanceSimulator(s,.5);const pending=s.l.combatProjectiles[0];s.arenaSimulator.remove();
   pending.combat.onHit(s.v);assert.equal(s.l.life,1000);
   const kept=s.arenaSimulator.create('wudang');s.combatSandbox.clearCombat();s.combatSandbox.tick(.1);
   assert.equal(s.arenaSimulator.actor,kept);assert.ok(s.l.enemies.includes(kept));
@@ -305,7 +305,7 @@ test('every active 9x skill is mastered, cast with its own id and records contac
     assert.equal(sim.profile.sk[id],s.T[id].max);
     s.arenaSimulator.setFarm(true);s.arenaSimulator.tick(.01);
     assert.equal(sim.casts,1);assert.equal(sim.lastCast.id,id);assert.equal(sim.mana,100);
-    assert.equal(s.l.combatProjectiles[0].combat.skill.id,id);
+    advanceSimulator(s,.5);assert.equal(s.l.combatProjectiles[0].combat.skill.id,id);
     advanceSimulator(s);
     assert.ok(s.arenaSimulator.events.some(event=>event.source===sim.n&&event.skillInput.id===id&&event.steps.some(row=>row.values.actualLoss>0)),`${faction} ${id} must cause damage through skill contact`);
     checked++;
@@ -318,7 +318,7 @@ test('changing the SIM skill dropdown updates the existing actor and invalidates
   const sim=s.arenaSimulator.create('wudang',ids[0]),monster=s.l.enemies[0];
   sim.x=monster.x;sim.y=monster.y;sim.profile.attr.str=123;sim.hp=500;sim.mana=40;
   s.arenaSimulator.setFarm(true);s.arenaSimulator.tick(.01);
-  const pending=s.l.combatProjectiles[0],hp=monster.hp;
+  advanceSimulator(s,.5);const pending=s.l.combatProjectiles[0],hp=monster.hp;
   s.fields.get('#sim-faction').value='wudang';s.fields.get('#sim-skill').value=String(ids[1]);
   s.fields.get('#sim-skill').onchange();
   assert.equal(s.arenaSimulator.actor,sim);assert.equal(sim.profile.main,ids[1]);
@@ -357,7 +357,7 @@ test('creating SIM repeatedly adds independent actors and farms never target ano
   s.arenaSimulator.tick(.1);
   assert.ok(one.casts>0);assert.ok(two.casts>0);
   assert.ok(!one.target.arenaSim);assert.equal(two.target,s.v);
-  const twoCast=s.l.combatProjectiles.find(effect=>effect.combat.actor===two);
+  advanceSimulator(s,.5);const twoCast=s.l.combatProjectiles.find(effect=>effect.combat.actor===two);
   s.arenaSimulator.remove(one);
   assert.equal(s.arenaSimulator.actors.length,1);assert.equal(s.arenaSimulator.actor,two);
   assert.ok(s.l.combatProjectiles.includes(twoCast));
@@ -366,7 +366,7 @@ test('creating SIM repeatedly adds independent actors and farms never target ano
 test('toggling PK on one SIM invalidates only its own cast and does not alter another SIM',()=>{
   const s=simulatorGame(),one=s.arenaSimulator.create('wudang');s.arenaSimulator.setPK(true);
   const two=s.arenaSimulator.create('wudang');s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);
-  const a=s.l.combatProjectiles.find(effect=>effect.combat.actor===one),b=s.l.combatProjectiles.find(effect=>effect.combat.actor===two);
+  advanceSimulator(s,.5);const a=s.l.combatProjectiles.find(effect=>effect.combat.actor===one),b=s.l.combatProjectiles.find(effect=>effect.combat.actor===two);
   s.arenaSimulator.selectActor(one.simId);s.arenaSimulator.setPK(false);
   a.combat.onHit(s.v);assert.equal(s.l.life,1000);
   b.combat.onHit(s.v);assert.equal(s.l.life,900);assert.equal(two.pk,true);
@@ -518,9 +518,9 @@ test('real skill damage preserves monster actions above the old five percent thr
 
 test('SIM PK damage respects absorption without freezing player actions',()=>{
  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');actor.x=s.v.x;actor.y=s.v.y;
- s.l.P.sorb=80;s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);advanceSimulator(s,.2);
+ s.l.P.sorb=80;s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);advanceSimulator(s,.6);
  assert.equal(s.l.life,980);assert.ok(!(s.v.hurtT>0),'100 raw but 20 actual damage is below 5%');
- advanceSimulator(s,.4);s.l.P.sorb=0;actor.cooldown=0;s.arenaSimulator.tick(.6);advanceSimulator(s,.2);
+ advanceSimulator(s,.4);s.l.P.sorb=0;actor.cooldown=0;s.arenaSimulator.tick(.6);advanceSimulator(s,.6);
  assert.equal(s.l.life,880);assert.notEqual(s.v.act,'hurt');assert.ok(!(s.v.hurtT>0));
  assert.equal(s.actorActionLocked(s.v),false);
 });
@@ -623,24 +623,40 @@ test('native monster cold applies the same strength curve while freeze reduction
 test('SIM PK transfers resolved cold strength and defender duration reduction, keeping stronger active cold',()=>{
  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');actor.x=s.v.x;actor.y=s.v.y;
  actor.stats.main.parts={cold:500};s.l.P.freezeRed=50;s.arenaSimulator.setPK(true);
- s.arenaSimulator.tick(.1);advanceSimulator(s,.2);
+ s.arenaSimulator.tick(.1);advanceSimulator(s,.6);
  assert.ok(s.l.slowT>0);assert.equal(s.l.slowPower,s.CombatEngine.coldSlowPower(500));
  assert.equal(s.l.slowT,s.f8*.5);
  advanceSimulator(s,.4);s.l.slowT=.2;actor.stats.main.parts={cold:100};actor.cooldown=0;
- s.arenaSimulator.tick(.6);advanceSimulator(s,.2);
+ s.arenaSimulator.tick(.6);advanceSimulator(s,.6);
  assert.equal(s.l.slowT,.2);assert.equal(s.l.slowPower,s.CombatEngine.coldSlowPower(500));
 });
 
-test('monster and SIM movement and attack cooldowns use the same cold speed factor',()=>{
+test('monster and SIM movement uses final speed phases while cooldowns count real seconds',()=>{
  const s=simulatorGame();loadDeclaration(s,'src/client/core/state-and-save-01.js','$d');
  s.q0=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);s.r0[0].anim='monster';
  let moved=0;s.Mw=(_actor,_x,_y,distance)=>moved=distance;
  const monster={x:0,y:0,hp:1000,max:1000,r:17,tid:0,spd:100,reach:40,atkCd:2,cd:1,ar:1};
- s.applyColdSlow(monster,100,2);s.$d(monster,.2);assert.equal(moved,15);assert.equal(monster.atkCd,1.85);
+ s.applyColdSlow(monster,100,2);s.$d(monster,.2);assert.equal(moved,15);assert.equal(monster.atkCd,1.8);
  const actor=s.arenaSimulator.create('wudang');actor.cooldown=2;actor.spd=100;
  s.applyColdSlow(actor,500,2);s.arenaSimulator.setFarm(true);actor.stats.main.rad=10;actor.x=0;actor.y=0;
  s.arenaSimulator.tick(.2);const speed=s.coldSpeedFactor(actor);
- assert.ok(Math.abs(actor.cooldown-(2-.2*speed))<1e-12);assert.ok(Math.abs(moved-20*speed)<1e-12);
+ assert.ok(Math.abs(actor.cooldown-1.8)<1e-12);assert.ok(Math.abs(moved-20*s.actorRunSpeed(actor))<1e-12);
+});
+
+test('distance scale reaches native monster pursuit and SIM movement without accelerating cooldowns',()=>{
+ for(const scale of [1,1.3]) {
+  const s=simulatorGame();loadDeclaration(s,'src/client/core/state-and-save-01.js','$d');
+  s.CombatEngine.SPEED_CONFIG.run.distanceScale=scale;
+  s.q0=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);s.r0[0].anim='monster';
+  let moved=0;s.Mw=(_actor,_x,_y,distance)=>moved=distance;
+  const monster={x:0,y:0,hp:1000,max:1000,r:17,tid:0,spd:100,reach:40,atkCd:2,cd:1,ar:1};
+  s.$d(monster,.2);assert.ok(Math.abs(moved-20*scale)<1e-12);assert.equal(monster.atkCd,1.8);
+  const actor=s.arenaSimulator.create('wudang');actor.cooldown=2;
+  s.arenaSimulator.setFarm(true);actor.stats.main.rad=10;actor.x=0;actor.y=0;
+  s.arenaSimulator.tick(.2);
+  assert.ok(Math.abs(moved-20*s.actorRunSpeed(actor)*scale)<1e-12);
+  assert.ok(Math.abs(actor.cooldown-1.8)<1e-12);
+ }
 });
 
 test('allied cold attacks use resisted cold damage for slow intensity',()=>{
@@ -653,11 +669,13 @@ test('allied cold attacks use resisted cold damage for slow intensity',()=>{
 });
 
 test('SIM animation follows its cold speed and returns to normal after expiry',()=>{
- const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');let elapsed;
- Object.assign(s,{H8:(_actor,dt)=>elapsed=dt,ps(){},M8:()=>true,L3(){},nameplateOffset:()=>55,Jn:1});
+ const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');
+ Object.assign(s,{ws:()=>.4,M8:()=>true,L3(){},nameplateOffset:()=>55,Jn:1});
+ for(const name of ['H8','ps'])loadDeclaration(s,'src/client/render/arena-01.js',name);
+ Object.assign(actor,{moving:true,act:'run',actT:0});
  const context={fillStyle:'',beginPath(){},arc(){},fill(){}};
- s.applyColdSlow(actor,100,1);s.arenaSimulator.draw(context,actor,.2);assert.ok(Math.abs(elapsed-.15)<1e-12);
- actor.slowT=0;s.arenaSimulator.draw(context,actor,.2);assert.equal(elapsed,.2);
+ s.applyColdSlow(actor,100,1);s.arenaSimulator.draw(context,actor,.2);assert.ok(Math.abs(actor.actT-.15)<1e-12);
+ actor.slowT=0;s.arenaSimulator.draw(context,actor,.2);assert.ok(Math.abs(actor.actT-.35)<1e-12);
 });
 
 test('native hits hurt at fifteen percent after shields and further damage still lands during hurt',()=>{
@@ -682,9 +700,9 @@ test('real outgoing damage hurts monsters at fifteen percent but poison ticks re
 
 test('SIM PK uses final HP damage for hurt and SIM cannot bypass hurt by switching modes',()=>{
  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');actor.x=s.v.x;actor.y=s.v.y;
- actor.stats.main.parts={phys:200};s.l.P.sorb=50;s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);advanceSimulator(s,.2);
+ actor.stats.main.parts={phys:200};s.l.P.sorb=50;s.arenaSimulator.setPK(true);s.arenaSimulator.tick(.1);advanceSimulator(s,.6);
  assert.equal(s.l.life,900);assert.ok(!(s.v.hurtT>0));
- advanceSimulator(s,.4);s.l.P.sorb=0;actor.cooldown=0;s.arenaSimulator.tick(.6);advanceSimulator(s,.2);
+ advanceSimulator(s,.4);s.l.P.sorb=0;actor.cooldown=0;s.arenaSimulator.tick(.6);advanceSimulator(s,.6);
  assert.equal(s.l.life,700);assert.ok(s.v.hurtT>0);assert.equal(s.v.act,'hurt');
  const casts=actor.casts;s.applyActorHurt(actor,150,1000);
  s.arenaSimulator.setPK(false);s.arenaSimulator.setFarm(true);s.arenaSimulator.tick(.1);
@@ -757,7 +775,7 @@ test('native monster AI pursues its nearest SIM and damages it only at physical 
  Object.assign(s.v,{x:400,y:0});Object.assign(actor,{x:40,y:0,r:17});
  Object.assign(monster,{x:0,y:0,r:17,atkCd:0,reach:60,ranged:false,ar:100,cd:1});
  let hits=0;s.arenaSimulator.receiveMonsterHit=(target,attacker)=>{assert.equal(target,actor);assert.equal(attacker,monster);target.hp-=10;hits++;};
- s.$d(monster,.01);assert.equal(hits,0);advanceSimulator(s,.2);assert.equal(hits,1);assert.equal(actor.hp,990);assert.equal(s.l.life,1000);
+ s.$d(monster,.01);assert.equal(hits,0);advanceSimulator(s,1.1);assert.equal(hits,1);assert.equal(actor.hp,990);assert.equal(s.l.life,1000);
  actor.x=500;s.v.x=100;monster.castT=0;monster.atkCd=0;s.$d(monster,.01);
  assert.equal(monster.face,1);assert.equal(monster.moving,true);assert.equal(monster.x,100,'native movement now follows the closer player');
 });
@@ -861,9 +879,9 @@ test('native cold hits preserve player movement and destination even above the h
  assert.equal(s.actorActionLocked(s.v),false);assert.equal(s.v.moving,true);
  assert.equal(s.Y.target,destination);assert.equal(s.l.moveTo,destination);
  const navigation=require('./helpers/maps-engine').loadMapsEngine(s).createNavigationRuntime(a=>s.actorActionLocked(a));
- Object.assign(s,{Ra:()=>1,H5:(x,y)=>[x,y],Qv:()=>[1,0],hA:()=>false,gt:navigation.tryMove});
+ Object.assign(s,{Ra:()=>s.actorRunSpeed(s.v),H5:(x,y)=>[x,y],Qv:()=>[1,0],hA:()=>false,gt:navigation.tryMove});
  loadDeclaration(s,'src/client/ui/legacy-panels-and-audio-03.js','Ah');
- const start=s.v.x,speed=s.coldSpeedFactor(s.l);
+ const start=s.v.x,speed=s.actorRunSpeed(s.v);
  for(let frame=0;frame<144;frame++)assert.equal(s.Ah(1/144),true);
  assert.ok(Math.abs(s.v.x-start-150*speed)<1e-8,'cold movement stays continuous even at 144 FPS');
 });
@@ -872,7 +890,7 @@ test('SIM cold PK leaves player free to move and retains its movement destinatio
  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');
  actor.x=s.v.x;actor.y=s.v.y;actor.stats.main.parts={cold:200};s.arenaSimulator.setPK(true);
  const destination={x:900,y:500};s.Y={target:destination,mouse:true};s.l.moveTo=destination;s.v.moving=true;
- s.arenaSimulator.tick(.01);advanceSimulator(s,.2);
+ s.arenaSimulator.tick(.01);advanceSimulator(s,.6);
  assert.ok(s.l.life<=800);assert.ok(s.l.slowT>0);assert.equal(s.actorActionLocked(s.v),false);
  assert.equal(s.Y.target,destination);assert.equal(s.l.moveTo,destination);
 });
@@ -984,7 +1002,7 @@ test('Tống Kim SIMs fight the opposing side, cancel old contacts on death and 
   const [song]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
   const [jin]=match.add({team:'jin',faction:'gaibang',level:150,strength:'normal',count:1});
   song.x=jin.x=s.v.x=1700;song.y=jin.y=s.v.y=1700;
-  s.arenaSimulator.tick(.1);const pending=s.l.combatProjectiles.find(e=>e.combat.actor===song);assert.ok(pending);
+  s.arenaSimulator.tick(.1);advanceSimulator(s,.5);const pending=s.l.combatProjectiles.find(e=>e.combat.actor===song);assert.ok(pending);
   const hp=jin.hp;advanceSimulator(s);assert.ok(jin.hp<hp);
   s.l.life=0;match.playerDied();assert.equal(s.l.deadT,30);
   song.cooldown=0;const before=jin.hp;s.arenaSimulator.tick(.1);advanceSimulator(s);assert.ok(jin.hp<before);
@@ -1150,7 +1168,7 @@ test('native soldier contacts damage only opposing soldiers through the shared c
  for(const actor of [attacker,target,friendly])Object.assign(actor,{x:1200,y:1792,res:{...s.l.P.res},def:0,series:0,stun:0,slowT:0,poison:0,poisonDmg:0,r:17,atkCd:0,cd:1,ar:99999,dmg:100});
  for(const name of ['b5','lw'])loadDeclaration(s,'src/client/core/helpers-and-config-01.js',name);attacker.battlefieldHome={x:1200,y:1792};friendly.x=1190;s.q0=(a,b)=>Math.hypot(a.x-b.x,(a.y-b.y)*2)/s.QA;
  loadDeclaration(s,'src/client/core/state-and-save-01.js','$d');
- const before=target.hp,allyHP=friendly.hp;s.$d(attacker,.1);advanceSimulator(s,.5);
+ const before=target.hp,allyHP=friendly.hp;s.$d(attacker,.1);advanceSimulator(s,1.1);
  assert.ok(target.hp<before);assert.equal(friendly.hp,allyHP);
  s.arenaSimulator.receiveSoldierHit(friendly,attacker);assert.equal(friendly.hp,allyHP);
 });
@@ -1194,7 +1212,7 @@ test('Tống Kim skill defense refunds MP before mana shield, for both SIM and p
  Object.assign(s.l.P,{mana:5491,manaShield:84,dmg2mana:22});s.l.life=3227;s.l.mana=200;
  defender.x=s.v.x;defender.y=s.v.y;defender.cooldown=0;defender.hurtT=0;
  Object.assign(defender.stats.main,{parts:{phys:5800},series:0,series5:0});
- s.arenaSimulator.tick(.001);advanceSimulator(s,.25);
+ s.arenaSimulator.tick(.001);advanceSimulator(s,.6);
  assert.ok(Math.abs(s.l.life-2522.2)<1e-8);assert.equal(s.l.mana,0);
 });
 

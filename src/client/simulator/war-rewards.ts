@@ -157,13 +157,13 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
       // Negative resistance must not become a larger penalty when promoted.
       stats.res[key]=resistance>0?resistance*multiplier:resistance;
     }
-    stats.aspdP=Math.min(3,stats.aspdP*multiplier);stats.aspdC=Math.min(2.7,stats.aspdC*multiplier);stats.aspd=stats.aspdP;
+    stats.aspdP*=multiplier;stats.aspdC*=multiplier;stats.aspd=stats.aspdP;
     const active=(kind:WarItem) => (actor===host.player()?until[kind]:0)>elapsed || (shared.get(actor)?.[kind]||0)>elapsed;
     if(active('drum')) { stats.life*=1.3; for(const key of ['phys','cold','fire','poison','light'])stats.res[key]=(stats.res[key]||0)+30; }
     if(active('resistance'))for(const key of ['phys','cold','fire','poison','light'])stats.res[key]=(stats.res[key]||0)+20;
     for(const [kind,key] of [['poisonRes','poison'],['coldRes','cold'],['lightRes','light'],['physicalRes','phys'],['fireRes','fire']] as const)if(active(kind))stats.res[key]=(stats.res[key]||0)+50;
     const attackBonus=Math.max(active('attack') ? .25 : 0,(active('haste')||active('command')) ? .5 : 0);
-    stats.aspdP=Math.min(3,stats.aspdP*(1+attackBonus));stats.aspdC=Math.min(2.7,stats.aspdC*(1+attackBonus));stats.aspd=stats.aspdP;
+    stats.aspdP*=1+attackBonus;stats.aspdC*=1+attackBonus;stats.aspd=stats.aspdP;
     const movementBonus=Math.max(active('movement') ? .25 : 0,active('sprint') ? .2 : 0,active('command') ? .3 : 0);
     stats.speed*=1+movementBonus;stats.speedFoot=(stats.speedFoot||stats.speed/(1+movementBonus))*(1+movementBonus);
     if(active('life'))stats.life+=500;

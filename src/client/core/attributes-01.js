@@ -286,8 +286,8 @@ var j0 = function (A, trace) {
     u.enh.poison = K ? 1e4 / (100 - K) - 100 : 0;
   }
   ((u.crit = E(z(n, "deadlystrikeenhance_p") + z(n, "deadlystrike_p"), 0, 75)),
-    (u.aspdP = E(1 + z(n, "attackspeed_v") / 100, 0.5, 3)),
-    (u.aspdC = E(0.9 * (1 + z(n, "castspeed_v") / 100), 0.45, 2.7)),
+    (u.aspdP = Math.max(0, 1 + z(n, "attackspeed_v") / 100)),
+    (u.aspdC = Math.max(0, 0.9 * (1 + z(n, "castspeed_v") / 100))),
     (u.aspd = u.aspdP),
     (u.leech = z(n, "steallife_p") + z(n, "steallifeenhance_p")),
     (u.manaLeech = z(n, "stealmana_p") + z(n, "stealmanaenhance_p")),

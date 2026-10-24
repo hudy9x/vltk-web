@@ -50,7 +50,7 @@ import { mountSimulatorPanel, renderSimulatorControls, SIM_HEALTH_PRESETS } from
 import { createTemplateStore } from './templates';
 import { POTENTIALS, setPotential, setSkillLevel, skillLimit } from './build';
 import { castSimulatorSkill } from './skill-cast';
-import { applyColdPower, coldSpeedFactor } from '../combat/cold-status';
+import { applyColdPower } from '../combat/cold-status';
 import type { Potential } from './build';
 import type { SimulatorTemplate } from './types';
 
@@ -137,6 +137,8 @@ declare function WP(context: CanvasRenderingContext2D, actor: LegacyEntity, scal
 declare function ZP(context: CanvasRenderingContext2D, actor: LegacyEntity, height: number, scale: number, dt: number): void;
 declare function nameplateOffset(animation: string | undefined, scale: number, ratio: number, padding: number, fallback: number): number;
 declare function actorActionLocked(actor: CombatTarget): boolean;
+declare function actorMovementSpeed(actor: CombatTarget): number;
+declare function actorAttackTiming(actor: CombatTarget, skill: SimulatorSkill): import('../speed/types').ResolvedSpeed;
 declare function applyActorHurt(actor: CombatTarget, damage: number, maximumHP: number): boolean;
 
 const errorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
@@ -538,7 +540,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       if (Math.hypot(actor.x-home.x,(actor.y-home.y)*2) > actor.battlefieldLeashRadius) actor.battlefieldReturning = true;
       const target = arenaTargets.nearestTarget(actor);
       const loadouts = (actor.battlefieldSkills as number[]).map(id => soldierLoadout(id));
-      actor.battlefieldSkillCooldown = Math.max(0,(actor.battlefieldSkillCooldown || 0)-dt*coldSpeedFactor(actor));
+      actor.battlefieldSkillCooldown = Math.max(0,(actor.battlefieldSkillCooldown || 0)-dt);
       const loadout = loadouts.length ? loadouts[(actor.battlefieldSkillIndex || 0) % loadouts.length] : null;
       if (loadout) {
         // Native AI still handles statuses/movement; suppress its basic contact
@@ -548,7 +550,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       monsterTick(actor,dt);
       if (actor.hp <= 0 || actorActionLocked(actor) || actor.stun > 0) return;
       if (!target || actor.battlefieldReturning) {
-        patrolSoldier(actor,dt*coldSpeedFactor(actor),{move:Mw,direction:kn,clear:(x,y,tx,ty)=>typeof mapNavigation!=='undefined'?mapNavigation.clear(x,y,tx,ty):mt(x,y,tx,ty)});
+        patrolSoldier(actor,dt,{move:(unit,x,y,distance)=>Mw(unit,x,y,distance*actorMovementSpeed(unit)),direction:kn,clear:(x,y,tx,ty)=>typeof mapNavigation!=='undefined'?mapNavigation.clear(x,y,tx,ty):mt(x,y,tx,ty)});
       } else if (loadout && actor.battlefieldSkillCooldown <= 0) {
         castSoldierSkill(actor, target, loadout);
       }
@@ -607,7 +609,6 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     } else actor.mana = actor.stats.mana;
     const stunned = actor.stun > 0;
     actor.stun = Math.max(0, (actor.stun || 0) - dt);
-    const speed = coldSpeedFactor(actor);
     actor.slowT = Math.max(0, (actor.slowT || 0) - dt);
     if (actor.poison > 0) {
       const duration = Math.min(dt, actor.poison), before = actor.hp;
@@ -617,7 +618,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       if (actor.hp <= 0) return;
     }
     if (stunned) { actor.moving = false; return; }
-    actor.cooldown = Math.max(0, actor.cooldown - dt * speed);
+    actor.cooldown = Math.max(0, actor.cooldown - dt);
     if (actorActionLocked(actor)) { actor.moving = false; return; }
     const targets = availableTargets(actor);
     const hostilePlayer = battlefield?.running && targets.includes(battlefieldHero) && battlefield.canHit(actor,battlefieldHero) ? battlefieldHero : null;
@@ -654,7 +655,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     actor.moving = distance() > reach || !actor.see;
     if (actor.battlefieldBoss && actor.moving) { actor.moving = false; return; }
     if (actor.moving) {
-      const before = { x: actor.x, y: actor.y }, step = actor.spd * speed * dt;
+      const before = { x: actor.x, y: actor.y }, step = 100 * actorMovementSpeed(actor) * dt;
       const goal = { x: target.x, y: target.y };
       const clear = (x: number,y: number,tx: number,ty: number) => typeof mapNavigation !== 'undefined' ? mapNavigation.clear(x,y,tx,ty) : mt(x,y,tx,ty);
       const waypoint = actor.battlefieldTeam ? crowd.route(actor,goal,clear) : goal;
@@ -673,7 +674,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     actor.waiting = recovering ? "Đánh thường trong lúc hồi nội lực" : "";
     if (skill.costLife) actor.hp -= cost;
     else if (actor.battlefieldTeam && !actor.battlefieldBoss) actor.mana -= cost;
-    actor.cooldown = Math.max(1 / Math.max(.1, skill.rate || 1), skill.cd || 0);
+    actor.cooldown = Math.max(actorAttackTiming(actor, skill).cycleSeconds, skill.cd || 0);
     const token = actor.generation;
     castSimulatorSkill(actor, target, skill,
       () => token === actor.generation && actors.includes(actor) && actor.hp > 0,
@@ -688,7 +689,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
   function advanceAnimation(actor: SimulatorActor, dt: number, hidden = false) {
     const look = actor.battlefieldBoss ? r0[actor.tid] : actor.look;
     actor.animKey = look && look.anim;
-    H8(actor, dt * coldSpeedFactor(actor), actor.moving ? "run" : "st");
+    H8(actor, actor.stun > 0 ? 0 : dt, actor.moving ? "run" : "st");
     if (actor.act !== "at" && actor.act !== "hurt") ps(actor, actor.moving ? "run" : "st");
     if (hidden && actor.stFx) {
       actor.stT = Math.max(0, (actor.stT || 0) - dt);
@@ -1039,7 +1040,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
         const previous = caster.battlefieldLoadout; caster.battlefieldLoadout = loadout;
         try { return hit(caster,ability,contact); } finally { caster.battlefieldLoadout = previous; }
       },action=>asSim(caster,action,false,loadout));
-    caster.battlefieldSkillCooldown = Math.max(caster.cd || 1,1/Math.max(.1,skill.rate || 1),skill.cd || 0);
+    caster.battlefieldSkillCooldown = Math.max(actorAttackTiming(caster,skill).cycleSeconds,skill.cd || 0);
     caster.battlefieldSkillIndex = (caster.battlefieldSkillIndex || 0)+1;
     caster.lastCast = {id:skill.id || 0,name:skill.n || '',level:skill.L || 1};
     caster.act = 'at'; caster.actT = 0; caster.casts = (caster.casts || 0)+1;

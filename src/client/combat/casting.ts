@@ -2,10 +2,20 @@ import type { CombatTarget, CombatSkill, ContactHitHandler, CastOptions, CombatC
 import { skillIgnoresTerrain, SKILL_RANGE_Y_RATIO } from './config';
 import { beginActorCast } from './action-state';
 import { defaultCombatTargets } from './spatial/contact-query';
+import { resolveSpeed } from '../speed/runtime';
+import type { ResolvedSpeed } from '../speed/types';
+declare function actorAttackTiming(actor: CombatTarget, skill: CombatSkill): ResolvedSpeed;
+// Secondary fields created synchronously at release inherit the same tick remainder.
+let releaseStep: number | undefined;
 
 // Một cast giữ chung bộ đếm hit/pulse cho mọi đạn của cùng lần xuất chiêu.
 export function queueSkillContact(actor: CombatTarget, target: CombatTarget, skill: CombatSkill, onHit: ContactHitHandler, options: CastOptions = {}): CombatCast {
-  const blocked = !skill.ev2 && !beginActorCast(actor);
+  // Secondary impacts do not start another attack pose. Primary resolved skills
+  // provide rate; effect-only callers without one keep their explicit windup.
+  const timed = !skill.ev2 && skill.rate != null;
+  const timing = timed ? (typeof actorAttackTiming === 'function' ? actorAttackTiming(actor, skill)
+    : resolveSpeed('attack', (skill.rawRate ?? skill.rate!) * 100)) : null;
+  const blocked = !timed && !skill.ev2 && !beginActorCast(actor);
   const narrow = [361, 368].includes(+skill.id!);
   if (narrow) skill = Object.assign({}, skill, {
     geo: Object.assign({}, skill.geo, {
@@ -16,7 +26,6 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
   if (impactScale !== 1 && skill.geo && skill.geo.area) {
     skill = Object.assign({}, skill, { geo: Object.assign({}, skill.geo, { area: skill.geo.area * impactScale }) });
   }
-  const previous = activeCombatCast;
   const cast: CombatCast = {
     actionRevision: skill.ev2 ? undefined : actor.actionRevision || 0,
     actor,
@@ -30,11 +39,12 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     maxHits: options.maxHits || (() => +skill.id! === 368 && !skill.ev2 ? 3 : 1),
     hits: new Map(),
     zone: l.zoneShown,
-    windup: options.windup == null ? 0.12 : options.windup,
+    windup: timed ? 0 : options.windup == null ? 0.12 : options.windup,
     emitted: 0,
     origin: { x: actor.x, y: actor.y - 14 },
     direction: Math.atan2((target.y - actor.y) * 2, target.x - actor.x),
     elapsed: 0, pulse: -1, nextPulse: 0, pulseFrame: -1, targetPulses: new Map(),
+    firstStep: releaseStep,
     interval: [362, 375].includes(+skill.id!) ? 0.3 : 0,
   };
   if (blocked) return cast;
@@ -70,44 +80,58 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     const sprite = A0.m[spriteId!] && A0.m[spriteId!].fly;
     if (!cast.pulseCount) cast.duration = +skill.id! === 375 ? 3 : Math.max(cast.interval, sprite && sprite.n * sprite.ms / 1000 || 1);
   }
-  const start = l.fx.length;
-  activeCombatCast = cast;
-  try {
-    if (options.visual) options.visual();
-    else G3(actor, target, skill);
-    // Older secondary effects use interpolated missiles / stationary sprites.
-    for (const effect of l.fx.slice(start)) {
-      if (!effect.combat && !effect.cosmetic && (effect.k === "mis" || effect.k === "boom") && !effect.follow && !effect.add) {
-        effect.combat = cast;
-        effect.contactHits = new Set();
-        effect.t -= cast.windup;
-        if (cast.interval) effect.life = Math.max(effect.life, cast.duration!);
-        (l.combatProjectiles || (l.combatProjectiles = [])).push(effect as ContactEffect);
-        cast.emitted++;
+  const emit = (remainingDt?: number) => {
+    if (remainingDt != null) cast.firstStep = remainingDt;
+    const previous = activeCombatCast;
+    const previousStep = releaseStep;
+    releaseStep = remainingDt ?? releaseStep;
+    const start = l.fx.length;
+    // SIM visuals temporarily swap l for a shallow world copy. Initialize the
+    // shared array BEFORE that swap so native missiles stay in the real world.
+    l.combatProjectiles ||= [];
+    activeCombatCast = cast;
+    try {
+      if (options.visual) options.visual();
+      else G3(actor, target, skill);
+      // Older secondary effects use interpolated missiles / stationary sprites.
+      for (const effect of l.fx.slice(start)) {
+        if (!effect.combat && !effect.cosmetic && (effect.k === "mis" || effect.k === "boom") && !effect.follow && !effect.add) {
+          effect.combat = cast;
+          effect.contactHits = new Set();
+          effect.t -= cast.windup;
+          if (cast.interval) effect.life = Math.max(effect.life, cast.duration!);
+          (l.combatProjectiles || (l.combatProjectiles = [])).push(effect as ContactEffect);
+          cast.emitted++;
+        }
       }
+      if (!cast.emitted) {
+        // Missing sprite metadata and hidden FX still need a physical attack.
+        l.fx.splice(start);
+        const melee = skill.melee !== false;
+        const giangHai = +skill.id! === 1075 && !skill.ev2;
+        const area = giangHai || skill.geo && (skill.geo.k === "self" || skill.geo.k === "spot");
+        const effect: FallbackContact & ContactEffect = {
+          k: "contact", combat: cast, contactHits: new Set(),
+          x: melee || area ? target.x : actor.x,
+          y: (melee || area ? target.y : actor.y) - 14,
+          x2: target.x, y2: target.y - 14,
+          age: area && !giangHai ? 0 : -cast.windup, life: area ? cast.duration || 0.3 : melee ? 0.1 : 2,
+          melee, speed: 360, color: Hi[Object.keys(skill.parts || {})[0]] || "#ffd24a",
+          ang: Y3(target.x - actor.x, target.y - actor.y),
+          staticArea: !!area,
+        };
+        (l.combatProjectiles || (l.combatProjectiles = [])).push(effect);
+        if (!l.quiet && !options.hideFallbackVisual) l.fx.push(effect);
+      }
+      options.afterRelease?.();
+    } finally {
+      activeCombatCast = previous;
+      releaseStep = previousStep;
     }
-    if (!cast.emitted) {
-      // Missing sprite metadata and hidden FX still need a physical attack.
-      l.fx.splice(start);
-      const melee = skill.melee !== false;
-      const giangHai = +skill.id! === 1075 && !skill.ev2;
-      const area = giangHai || skill.geo && (skill.geo.k === "self" || skill.geo.k === "spot");
-      const effect: FallbackContact & ContactEffect = {
-        k: "contact", combat: cast, contactHits: new Set(),
-        x: melee || area ? target.x : actor.x,
-        y: (melee || area ? target.y : actor.y) - 14,
-        x2: target.x, y2: target.y - 14,
-        age: area && !giangHai ? 0 : -cast.windup, life: area ? cast.duration || 0.3 : melee ? 0.1 : 2,
-        melee, speed: 360, color: Hi[Object.keys(skill.parts || {})[0]] || "#ffd24a",
-        ang: Y3(target.x - actor.x, target.y - actor.y),
-        staticArea: !!area,
-      };
-      (l.combatProjectiles || (l.combatProjectiles = [])).push(effect);
-      if (!l.quiet && !options.hideFallbackVisual) l.fx.push(effect);
-    }
-  } finally {
-    activeCombatCast = previous;
-  }
+  };
+  const seconds = options.windup ?? timing?.cycleSeconds;
+  if (timing && seconds! > 0) beginActorCast(actor, seconds, emit);
+  else { if (timing) beginActorCast(actor, 0); emit(); }
   return cast;
 }
 

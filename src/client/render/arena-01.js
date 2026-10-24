@@ -630,7 +630,7 @@ var Va = function (A, n, t, e, a, i, r, c = 1) {
       (left + width < B0.x - 2 || top + height < B0.y - 2 || left > B0.x + M0.w + 2 || top > B0.y + M0.h + 2)) return height;
   const h = bA("img/a/" + f.f);
   if (!h.complete || !h.naturalWidth) return !1;
-  let g = Math.floor((e * 1e3) / f.ms);
+  let g = typeof speedSpriteFrame === 'function' ? speedSpriteFrame(n, e, f.n, f.ms) : Math.floor((e * 1e3) / f.ms);
   g = ff[n] ? Math.min(g, f.n - 1) : g % f.n;
   const u = f.d >= 8 ? t : Math.floor((t * f.d) / 8);
   return (
@@ -647,7 +647,10 @@ var ps = function (A, n) {
 
 var H8 = function (A, n, t) {
   if (A.hurtT > 0) { A.act = "hurt"; A.actT = Math.max(0, 0.5 - A.hurtT); return; }
-  ((A.actT = (A.actT || 0) + n),
+  if (A.speedCastDuration > 0 && A.castT > 0) {
+    A.act = 'at'; A.actT = (A.speedCastProgress || 0) * (ws(A.animKey, 'at') || .4); return;
+  }
+  ((A.actT = (A.actT || 0) + n * (A.act === 'run' && typeof actorRunSpeed === 'function' ? actorRunSpeed(A) : 1)),
     (A.act === "at" || A.act === "hurt") &&
       A.actT >= Math.max(0.25, ws(A.animKey, A.act)) &&
       ps(A, t));

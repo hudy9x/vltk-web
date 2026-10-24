@@ -59,6 +59,11 @@ function advancedCombat() {
   return {s, skill:(id,level=25)=>s.F2(stats,s.T[id],level)};
 }
 
+// FX/contact checks start at release; attack pose cadence is tested separately.
+function finishAttackPose(s, actor=s.v) {
+  if(actor.speedCastDuration>0)s.advanceSkillContacts(actor.castT);
+}
+
 test('Tạo Hóa Thái Thanh deals seven timed hits with native, hidden and missing FX at different frame rates',()=>{
   for(const mode of ['native','quiet','missing'])for(const dt of [1/60,1/30,.05,.4,2]) {
     const {s,skill}=advancedCombat();
@@ -120,7 +125,7 @@ test('Thái Thanh and Thiên Lôi play complete animations without rewinding on 
     const render=()=>vm.runInContext(source.slice(renderLoop.start,renderLoop.end),s);
     const draws=[],hits=[];s.Fa=(sprite,dir,time)=>draws.push({sprite,time});
     const cast=s.queueSkillContact(s.v,target,skill(id,level),()=>hits.push(cast.elapsed),{targets:()=>[target]});
-    const field=s.l.combatProjectiles[0];
+    finishAttackPose(s);const field=s.l.combatProjectiles[0];
     assert.equal(field.loop,false);
     assert.ok(field.visualLifetime>0);
     assert.equal(cast.emitted,1);
@@ -152,7 +157,7 @@ test('SIM Thái Thanh uses the same seven-hit field and stops hitting removed op
     let valid=true;
     s.SkillCastTest.castSimulatorSkill(actor,target,skill(1078),()=>valid,()=>[target],
       (_ability,hit)=>{hit.hp-=10;return 10;},fn=>fn());
-    for(let i=0;i<10;i++)s.advanceSkillContacts(1/60);
+    finishAttackPose(s,actor);for(let i=0;i<10;i++)s.advanceSkillContacts(1/60);
     assert.equal(target.hp,990);
     if(remove)valid=false;
     for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
@@ -479,7 +484,7 @@ test('Giang Hải rushes a short distance in 167ms, plays its full sprite once a
     const unchanged=JSON.stringify(ability);let received;
     const generator=s.G3;s.G3=(actor,selected,input)=>{received=input;return generator(actor,selected,input);};
     const cast=s.queueSkillContact(s.v,target,ability,hit=>hit.hp-=10,{targets:()=>targets});
-    const missile=s.l.combatProjectiles[0];
+    finishAttackPose(s);const missile=s.l.combatProjectiles[0];
     assert.equal(received,ability,'pass the exact original skill to the renderer');
     assert.equal(JSON.stringify(ability),unchanged);
     assert.deepEqual(snapshot(missile),expected,'keep the original sprite origin and direction');
@@ -526,7 +531,7 @@ test('Giang Hải visual travel ends at its damage range in every direction and 
     const {s,skill}=advancedCombat(),angle=direction*Math.PI/4;
     const selected={x:Math.cos(angle)*100,y:Math.sin(angle)*50,hp:100,r:12};
     const cast=s.queueSkillContact(s.v,selected,skill(1075,level),()=>{},{targets:()=>[selected]});
-    const missile=s.l.combatProjectiles[0],origin={x:missile.x,y:missile.y};
+    finishAttackPose(s);const missile=s.l.combatProjectiles[0],origin={x:missile.x,y:missile.y};
     const length=cast.skill.geo.len*s.QA;
     for(let tick=0;tick<Math.ceil(2/dt);tick++) {
       s.advanceSkillContacts(dt);
@@ -698,7 +703,7 @@ test('dragon fire respects quiet, FX budget, windup and cast cancellation',()=>{
     if(mode==='zone')s.l.zoneShown=99;
     for(let i=0;i<12;i++)s.advanceSkillContacts(1/60);
     assert.equal(s.l.fx.filter(fx=>fx.s?.f==='fx/advanced/m344_fly.webp').length,0,mode);
-    assert.equal(cast.emitted,1);
+    assert.equal(cast.emitted,mode==='windup'?0:1);
   }
 });
 
@@ -1016,6 +1021,7 @@ function kunlunThunderCombat(level=27, options={}) {
       for(const event of s.F5(ability))s.eD(ability,target,targets,targets,event,context);
     }
   },{targets:()=>targets,windup:0});
+  if(options.world||options.sim)finishAttackPose(s,context?.actor||s.v);
   return {s,ability,hits,targets,selected,advance(seconds){for(let t=0;t<seconds-1e-9;t+=1/60)s.advanceSkillContacts(1/60);}};
 }
 

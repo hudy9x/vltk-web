@@ -79,12 +79,16 @@ export function advanceSkillContacts(dt: number): void {
   try {
     advanceActorActions(dt);
     const pending = l.combatProjectiles || [];
-    for (const cast of new Set(pending.map(effect => effect.combat))) cast.elapsed += dt;
+    const steps = new Map([...new Set(pending.map(effect => effect.combat))]
+      .map(cast => [cast, cast.firstStep ?? dt] as const));
+    for (const [cast, step] of steps) { cast.elapsed += step; delete cast.firstStep; }
     l.combatProjectiles = [];
     for (const effect of pending) {
       const cast = effect.combat;
-      const interrupted = cast.actionRevision != null && cast.actionRevision !== (cast.actor.actionRevision || 0) && cast.elapsed - dt < cast.windup;
-      effect.contactAlive = !interrupted && !l.town && (!(l.deadT > 0) || !!l.battlefield) && cast.zone === l.zoneShown && advanceContactEffect(effect, dt);
+      const step = steps.get(cast)!;
+      const interrupted = cast.actionRevision != null && cast.actionRevision !== (cast.actor.actionRevision || 0) && cast.elapsed - step < cast.windup;
+      effect.contactAlive = !interrupted && !l.town && (!(l.deadT > 0) || !!l.battlefield) && cast.zone === l.zoneShown &&
+        (step <= 1e-9 || advanceContactEffect(effect, step));
       if (effect.contactAlive) l.combatProjectiles.push(effect);
     }
     l.fx = l.fx.filter(effect => {
