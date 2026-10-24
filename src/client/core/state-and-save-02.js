@@ -146,6 +146,7 @@ var Cd = function () {
 };
 
 var cD = function (A) {
+  if (l.battlefield || A.battlefieldMonster) return;
   (l.kills++, (o.totalKills = (o.totalKills || 0) + 1), (l.stall = 0), YD());
   const n = A.L - o.lvl,
     t = n < -10 ? 0.2 : n < -5 ? 0.6 : 1,

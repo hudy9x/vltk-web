@@ -800,6 +800,7 @@ var _6 = function (A) {
 };
 
 var q4 = function (A, n) {
+  if (l.battlefield || n.battlefieldMonster) return;
   const t = Z(0, Math.PI * 2),
     e = Z(10, 26),
     [a, i] = X0(n.x + Math.cos(t) * e, n.y + Math.sin(t) * e);

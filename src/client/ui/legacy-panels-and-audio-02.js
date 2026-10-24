@@ -366,9 +366,9 @@ var An = function () {
     g = o.inv.filter((p) => p.lock).length,
     u = L4();
   m("#t-inv").innerHTML =
-    `<div class="invbar"><span>${o.inv.length}/${INV_MAX}</span><select id="iSort" title="Sắp xếp hiển thị">${Nv.map(([p, P]) => `<option value="${p}" ${(o.invSort || "new") === p ? "selected" : ""}>${P}</option>`).join("")}</select><span class="sp"></span>
+    `<div class="invbar"><span>${o.inv.length + (typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.warInventory.slots : 0)}/${INV_MAX}</span><select id="iSort" title="Sắp xếp hiển thị">${Nv.map(([p, P]) => `<option value="${p}" ${(o.invSort || "new") === p ? "selected" : ""}>${P}</option>`).join("")}</select><span class="sp"></span>
     <button class="btn sm" id="bStash">Kho chung</button><button class="btn sm" id="bDonKho">🧹 Dọn kho</button><button class="btn sm" id="bBest">Mặc đồ tốt</button><button class="btn sm red" id="bSellAll" ${h.length ? "" : "disabled"}>${h.length ? `Bán ${h.length} món không khớp lọc` : "Không có đồ để bán"}</button></div>
-    <div class="invgrid">${_v().map(W1).join("")}</div>
+    <div class="invgrid">${typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.warInventory.html() : ""}${_v().map(W1).join("")}</div>
     <p class="dim small">${g ? `${g} món đã khóa 🔒 (không tự bán, không bán hàng loạt, không hợp Huyền Tinh). ` : ""}Mở chi tiết món đồ để khóa / mở khóa.</p>
     <div class="btnrow"><button class="btn sm" id="bKtcI">🏮 Kỳ Trân Các</button></div>
     ${
@@ -809,7 +809,9 @@ var Mv = function () {
           `<div class="sti" title="${D(c.n)}"><img src="${D(c.ic || "")}" alt=""><b>${$7(c.t)}</b></div>`,
       )
       .join("");
-    a.innerHTML !== r && (a.innerHTML = r);
+    const consumables = typeof arenaSimulator !== "undefined" && arenaSimulator?.warBuffs ? arenaSimulator.warBuffs() : "";
+    const html = `<div class="buffrow support-effects">${r}</div>${consumables ? `<div class="buffrow war-effects" aria-label="Hiệu ứng vật phẩm Tống Kim">${consumables}</div>` : ""}`;
+    a.innerHTML !== html && (a.innerHTML = html);
   }
   m("#stageLbl").textContent = l.battlefield
     ? MapsEngine.getMap(Z0.key)?.name || "Tống Kim"
