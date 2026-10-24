@@ -7,6 +7,7 @@ import { mountSoldierCountdown } from './soldier-countdown';
 import { mountRespawnCountdown } from './respawn-countdown';
 import { mountMarshalNotice } from './marshal-notice';
 import { mountBattlefieldResult } from './battlefield-result';
+import { createBattlefieldPause } from './battlefield-pause';
 import { chooseWarMount, warMountOptions } from './war-mounts';
 import { mapNpcs } from '../npcs';
 import type { MapDefinition } from '../maps/types';
@@ -61,6 +62,7 @@ declare function I3(): SimulatorProfile;
 declare function Z1(item: LegacyRecord): string;
 declare var Dn: LegacyRecord | null;
 declare var Y: LegacyRecord;
+declare var T1: {v:number[]};
 declare var horseTrader: { close(): void; readonly isOpen: boolean } | null;
 declare var o: SimulatorProfile, l: SimulatorWorld, v: LegacyEntity;
 declare var I: Record<string, Faction>, T: Record<string, LegacyRecord>, r0: Record<string, LegacyRecord>;
@@ -106,7 +108,7 @@ declare var Pe: (attack: number, defense: number, ignore?: number) => number;
 declare var hs: (skill: SimulatorSkill, target: LegacyEntity) => number;
 declare var U9: (attacker: LegacyEntity) => unknown;
 declare var $d: (monster: LegacyEntity, dt: number) => unknown;
-declare var combatLog: { war?(message:string):void; registerSimulatorLog?(provider: SimulatorLogProvider): void; record(type: string, target: LegacyEntity | string, amount: number, detail?: string, outcome?: string): void } | null;
+declare var combatLog: { war?(message:string,sim?:boolean):void; registerSimulatorLog?(provider: SimulatorLogProvider): void; record(type: string, target: LegacyEntity | string, amount: number, detail?: string, outcome?: string): void } | null;
 declare function Rn(target: LegacyEntity): LegacyRecord | null;
 declare function y1(from: number, to: number): boolean;
 declare function j1(skill: LegacyRecord): number | null;
@@ -217,7 +219,8 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     return result;
   };
   let battlefield: ReturnType<typeof createBattlefield> | undefined;
-  const warEvents: string[] = [];
+  const warEvents: {message:string;sim:boolean}[] = [];
+  const battlePause=createBattlefieldPause();
   const simNames=createSimNames();
   // Local Tống Kim balance parameter, not an asserted original-VLTK formula.
   function pvpDamageScale(source: LegacyEntity, target: LegacyEntity): number {
@@ -579,7 +582,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       if (!l.town && !(l.deadT > 0)) tickActor(actor, dt);
     }
     crowd.flush(typeof mapNavigation !== 'undefined' ? mapNavigation.state?.g || null : null);
-    if (typeof combatLog !== "undefined" && combatLog?.war) for (const message of warEvents.splice(0)) combatLog.war(message);
+    if (typeof combatLog !== "undefined" && combatLog?.war) for (const event of warEvents.splice(0)) combatLog.war(event.message,event.sim);
   }
   function availableTargets(actor: SimulatorActor): LegacyEntity[] {
     if (battlefield?.active && actor.battlefieldTeam) return battlefield.targets(actor);
@@ -1104,7 +1107,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       });
       fighter.res=fighter.stats.res;
     },
-    event(message,kind) { if(kind!=='kill')return; warEvents.push(message); if(warEvents.length>300)warEvents.shift(); },
+    event(message,kind) { if(kind!=='kill'&&kind!=='sim-kill')return; warEvents.push({message,sim:kind==='sim-kill'}); if(warEvents.length>300)warEvents.shift(); },
     bonusesChanged() {
       battlefieldWorld.dirty=true;
       for(const actor of actors) {
@@ -1220,12 +1223,16 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     teamPoints: () => warRewards.totals,
     finished(result, points) {
       crowd.reset();
+      battlePause.freeze([battlefieldHero,...actors,...roadMonsters.actors]);
+      Object.assign(Y,{keys:{},target:null,active:false,moved:false,mouse:false});
+      if(typeof T1!=='undefined')T1.v=[0,0];
+      Object.assign(battlefieldWorld,{moveTo:null,pickTarget:null,manTgt:null,tgt:null,clickHold:false,dash:null,dashTrail:null,combatProjectiles:[]});
       marshalNotice.reset();
       soldierCountdown.reset();
       respawnCountdown.reset();
       battlePanel.close(); pharmacy.close(); leaderboard.close();
       if(typeof horseTrader !== "undefined") horseTrader?.close();
-      resultDialog.open(result,points);
+      resultDialog.open(result,points,battlefield!.state.team);
     },
     marshalHP: () => roadMonsters.configuration.marshal.hp,
     inAttackRange(actor, target) {
@@ -1253,6 +1260,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     },
     leave() {
       creationEpoch++;
+      battlePause.reset();
       crowd.reset(); if (previousField) diagnostics.enabled = previousLogging;
       marshalNotice.reset();
       soldierCountdown.reset();

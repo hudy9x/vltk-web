@@ -48,9 +48,12 @@ test('personal war log includes kills and deaths against SIMs and NPCs but exclu
  sim.warRewards.record(enemy,hero);sim.warRewards.killed(hero);sim.warRewards.revived(hero);
  const soldier=npc();sim.warRewards.record(soldier,hero);sim.warRewards.killed(hero);sim.warRewards.revived(hero);
  sim.warRewards.record(hero,ally);sim.warRewards.killed(ally);
+ const boss={...enemy,n:'Nguyên soái',battlefieldBoss:true};sim.warRewards.record(hero,boss);sim.warRewards.killed(boss);
+ sim.warRewards.record(boss,hero);sim.warRewards.killed(hero);
  sim.warRewards.tick(.01); // Nearby loot pickup must not enter the kill feed.
  sim.tick(.01);
- const entries=game.combatLog.entries('war');assert.equal(entries.length,4);
+ const entries=game.combatLog.entries('war');assert.equal(entries.length,6);
+ const simEntries=game.combatLog.entries('war-sim');assert.equal(simEntries.length,2);assert.ok(simEntries.every(entry=>entry.target.includes(enemy.n)));
  const log=game.combatLog.text('war');assert.match(log,/Lính địch/);assert.match(log,new RegExp(enemy.n));assert.doesNotMatch(log,/Nhặt|Dùng|danh hiệu mới|xuất hiện/);
  assert.equal(sim.warRewards.rank(ally).points,50,'hidden ally kills still grant merit');
 });

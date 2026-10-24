@@ -2,6 +2,7 @@
 export interface WorldPoint { x: number; y: number }
 
 export interface CombatTarget extends WorldPoint {
+  battlefieldFrozen?: boolean;
   slowT?: number;
   slowPower?: number;
   act?: string;
