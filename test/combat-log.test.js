@@ -130,3 +130,31 @@ test('ordinary game log does not expose unavailable SIM filters',()=>{
  const s=game(),container=logContainer();s.o.combatLogFilter='sim';s.combatLog.render(container);
  assert.doesNotMatch(container.toolbar,/Log của SIM|Log công thức/);assert.equal(container.querySelector('#combat-log-filter').value,'both');
 });
+
+test('war kill history survives sustained damage and elapsed time; only older war rows expire at its own length limit',()=>{
+ const s=game();let now=1000;s.Date=class extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}};
+ s.combatLog.war('Bạn hạ SIM đầu tiên',true);
+ for(let i=0;i<5000;i++){now+=100;s.combatLog.record('out','Binh sĩ',1);}
+ assert.equal(s.combatLog.entries('war').length,1);assert.match(s.combatLog.text('war'),/SIM đầu tiên/);
+ now+=24*60*60*1000;assert.equal(s.combatLog.entries('war').length,1);
+ for(let i=1;i<=300;i++)s.combatLog.war(`Hạ ${i}`,false);
+ assert.equal(s.combatLog.entries('war').length,300);assert.equal(s.combatLog.entries('war')[0].target,'Hạ 1');
+ assert.equal(s.combatLog.entries('out').length,300,'each buffer is bounded independently');
+});
+test('SIM-only war filter renders/copies structured personal SIM kills and deaths without matching NPC names',async()=>{
+ const s=game(),container=logContainer();let copied='';s.navigator={clipboard:{writeText:async text=>{copied=text;}}};
+ s.combatLog.war('Bạn hạ Lâm Phong',true);s.combatLog.war('Lâm Phong hạ bạn',true);
+ s.combatLog.war('Bạn hạ Binh sĩ tên SIM',false);s.combatLog.war('Bạn hạ Nguyên soái',false);
+ s.combatLog.render(container);assert.match(container.toolbar,/Tống Kim · Chỉ SIM/);
+ container.querySelector('#combat-log-filter').onchange({target:{value:'war-sim'}});s.combatLog.render(container);
+ assert.equal(s.o.combatLogFilter,'war-sim');assert.equal(s.combatLog.entries('war-sim').length,2);
+ const html=container.querySelector('.combat-log-rows').innerHTML;assert.match(html,/Lâm Phong/);assert.doesNotMatch(html,/Binh sĩ|Nguyên soái/);
+ await container.querySelector('#combat-log-copy').onclick();assert.equal(copied.split('\n').length,2);assert.doesNotMatch(copied,/Binh sĩ|Nguyên soái/);
+ s.combatLog.clear();assert.equal(s.combatLog.entries('war-sim').length,0);
+});
+test('temporary SIM calculation contexts cannot reset the human war history',()=>{
+ const s=game(),owner=s.o;s.combatLog.war('Giữ lại',true);s.l.sim=true;s.o={fac:'shaolin',name:'SIM'};
+ void s.combatLog.revision;s.combatLog.war('Không ghi',true);
+ s.l.sim=false;s.o=owner;assert.equal(s.combatLog.entries('war').length,1);assert.equal(s.combatLog.entries('war')[0].target,'Giữ lại');
+ s.o={fac:'gaibang',name:'Other',arenaFaction:'gaibang'};assert.equal(s.combatLog.entries('war').length,0,'real character switches keep histories isolated');
+});

@@ -5,13 +5,14 @@ var combatLog = (function () {
   const numberFormat = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 });
   let lastSecond = -1, timeText = "";
   let owner = null, revision = 0;
-  let events = [], sequence = 0;
+  let events = [], warEvents = [], sequence = 0;
   let simulatorLog = null;
   const targetIds = new WeakMap();
   let nextTargetId = 0;
   function ensureOwner() {
+    if (l.sim) return; // A temporary SIM context is not a character switch.
     const current = o && o.fac ? `${m0}|${o.arenaFaction || o.netOwner || "local"}|${o.name}` : null;
-    if (current !== owner) { owner = current; events = []; sequence = 0; revision++; }
+    if (current !== owner) { owner = current; events = []; warEvents = []; sequence = 0; revision++; }
   }
   function record(type, target, amount, detail = "", outcome = "hit") {
     if (l.sim) return;
@@ -25,11 +26,12 @@ var combatLog = (function () {
     if (events.length > limit) events.splice(0, events.length - limit);
     revision++;
   }
-  function war(message) {
+  function war(message, sim = false) {
+    if (l.sim) return;
     ensureOwner(); if (!owner || l.quiet) return;
     const now = Date.now();
-    events.push({sequence:++sequence,type:"war",target:String(message),targetKey:`war:${sequence}`,amount:0,detail:"",outcome:"event",time:timeFormat.format(new Date(now)),timestamp:now});
-    if(events.length>limit)events.splice(0,events.length-limit);
+    warEvents.push({sequence:++sequence,type:"war",sim:sim === true,target:String(message),targetKey:`war:${sequence}`,amount:0,detail:"",outcome:"event",time:timeFormat.format(new Date(now)),timestamp:now});
+    if(warEvents.length>limit)warEvents.splice(0,warEvents.length-limit);
     revision++;
   }
   function lost(before, after) { return Math.max(0, Math.min(Math.max(0, before), before - after)); }
@@ -57,10 +59,13 @@ var combatLog = (function () {
   };
   function entries(filter = "both") {
     ensureOwner();
-    return events.filter(event => filter === "both" || event.type === filter).map(event => Object.assign({}, event));
+    // Damage spam must never evict kill/death history. Each history is bounded separately.
+    const source = filter === "war" || filter === "war-sim" ? warEvents
+      : filter === "both" ? [...events,...warEvents].sort((a,b)=>a.sequence-b.sequence) : events;
+    return source.filter(event => filter === "both" || filter === "war-sim" && event.type === "war" && event.sim || event.type === filter).map(event => Object.assign({}, event));
   }
   function currentFilter() {
-    return o && ["out", "in", "war", ...(simulatorLog ? ["formula", "sim"] : [])].includes(o.combatLogFilter) ? o.combatLogFilter : "both";
+    return o && ["out", "in", "war", "war-sim", ...(simulatorLog ? ["formula", "sim"] : [])].includes(o.combatLogFilter) ? o.combatLogFilter : "both";
   }
   // Presentation only: preserve every raw event and its actual HP loss in entries().
   // Object identity prevents two monsters with the same name from sharing a total.
@@ -92,16 +97,16 @@ var combatLog = (function () {
     return displayEntries(filter).map(line).join("\n");
   }
   function clear() {
-    ensureOwner(); events = []; sequence = 0; revision++;
+    ensureOwner(); events = []; warEvents = []; sequence = 0; revision++;
   }
   function render(container) {
     const filter = currentFilter();
     // Keep controls mounted: replacing the select closes its native popup during combat.
     if (!container.querySelector(".combat-log-rows") || container._simulatorLogProvider !== simulatorLog) {
       container._simulatorLogProvider = simulatorLog;
-      container.innerHTML = `<div class="combat-log-filter"><label>Hiển thị <select id="combat-log-filter"><option value="both">Tất cả</option><option value="war">Tống Kim</option><option value="out">Gây sát thương</option><option value="in">Nhận sát thương</option>${simulatorLog ? '<option value="formula">Log công thức</option><option value="sim">Log của SIM</option>' : ""}</select></label>${simulatorLog ? '<label class="sim-log-options"><input id="sim-log-enabled" type="checkbox"> Ghi log công thức</label>' : ""}<button id="combat-log-clear" type="button">Xóa log</button><button id="combat-log-copy" type="button">Copy log</button><span class="combat-log-status" role="status"></span></div><div class="combat-log-rows"></div>`;
+      container.innerHTML = `<div class="combat-log-filter"><label>Hiển thị <select id="combat-log-filter"><option value="both">Tất cả</option><option value="war">Tống Kim</option><option value="war-sim">Tống Kim · Chỉ SIM</option><option value="out">Gây sát thương</option><option value="in">Nhận sát thương</option>${simulatorLog ? '<option value="formula">Log công thức</option><option value="sim">Log của SIM</option>' : ""}</select></label>${simulatorLog ? '<label class="sim-log-options"><input id="sim-log-enabled" type="checkbox"> Ghi log công thức</label>' : ""}<button id="combat-log-clear" type="button">Xóa log</button><button id="combat-log-copy" type="button">Copy log</button><span class="combat-log-status" role="status"></span></div><div class="combat-log-rows"></div>`;
       container.querySelector("#combat-log-filter").onchange = event => {
-        o.combatLogFilter = ["out", "in", "war", ...(simulatorLog ? ["formula", "sim"] : [])].includes(event.target.value) ? event.target.value : "both";
+        o.combatLogFilter = ["out", "in", "war", "war-sim", ...(simulatorLog ? ["formula", "sim"] : [])].includes(event.target.value) ? event.target.value : "both";
         $(); T2();
       };
       container.querySelector("#combat-log-clear").onclick = () => {
@@ -139,7 +144,7 @@ var combatLog = (function () {
     }
     if (formulas) { simulatorLog.render(container.querySelector(".combat-log-rows"), filter === "sim"); return; }
     const rows = displayEntries(filter).slice(-100);
-    container.querySelector(".combat-log-rows").innerHTML = rows.length ? rows.map(event => event.type === "war" ? `<div class="cl combat-war"><i>${String(event.sequence).padStart(3,"0")} - ${D(event.time)}</i> <b>Tống Kim</b> · ${D(event.target)}</div>` : `<div class="cl combat-${event.type}"><i>${String(event.sequence).padStart(3, "0")} - ${D(event.time)}</i> ${event.outcome === "miss" ? (event.type === "out" ? "→" : "←") : direction(event)} <b>${event.outcome === "miss" ? "Trượt" : numberFormat.format(event.amount)}</b> ⚔️${event.hits > 1 ? ` ×${event.hits}` : ""} ${event.type === "out" ? "lên" : "từ"} ${D(event.target)}</div>`).join("") : `<div class="combat-empty">${filter === "war" ? "Chưa có sự kiện Tống Kim." : "Chưa có sát thương phù hợp với bộ lọc."}</div>`;
+    container.querySelector(".combat-log-rows").innerHTML = rows.length ? rows.map(event => event.type === "war" ? `<div class="cl combat-war"><i>${String(event.sequence).padStart(3,"0")} - ${D(event.time)}</i> <b>Tống Kim</b> · ${D(event.target)}</div>` : `<div class="cl combat-${event.type}"><i>${String(event.sequence).padStart(3, "0")} - ${D(event.time)}</i> ${event.outcome === "miss" ? (event.type === "out" ? "→" : "←") : direction(event)} <b>${event.outcome === "miss" ? "Trượt" : numberFormat.format(event.amount)}</b> ⚔️${event.hits > 1 ? ` ×${event.hits}` : ""} ${event.type === "out" ? "lên" : "từ"} ${D(event.target)}</div>`).join("") : `<div class="combat-empty">${(filter === "war" || filter === "war-sim") ? "Chưa có lượt hạ gục Tống Kim phù hợp." : "Chưa có sát thương phù hợp với bộ lọc."}</div>`;
   }
   return { registerSimulatorLog(provider) { simulatorLog = provider; revision++; }, get simulatorLog() { return simulatorLog; }, record, war, miss: (type, target) => record(type, target, 0, "", "miss"), entries, render, clear, text, get revision() { ensureOwner(); return revision + (simulatorLog ? simulatorLog.revision : 0); } };
 })();

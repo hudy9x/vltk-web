@@ -53,6 +53,7 @@ export function createNavigationRuntime(actionLocked: (actor: MovingActor) => bo
     return nearest((x / count + 0.5) * grid.cw, (y / count + 0.5) * grid.ch);
   }
   function tryMove(actor: Point, x: number, y: number): boolean {
+    if ((actor as MovingActor).battlefieldFrozen) return false;
     if (canStand(x, y)) { actor.x = x; actor.y = y; return true; }
     if (canStand(x, actor.y)) { actor.x = x; return true; }
     if (canStand(actor.x, y)) { actor.y = y; return true; }

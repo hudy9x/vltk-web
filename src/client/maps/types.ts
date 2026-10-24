@@ -79,6 +79,7 @@ export interface NavigationGrid {
   ok: Uint8Array; free: number; comp: Int32Array; isl: number[];
 }
 export interface MovingActor extends Point {
+  battlefieldFrozen?: boolean;
   _pp?: Point[] | null; _pk?: string; _pr?: number; _pi?: number; _stuck?: number;
 }
 export type MapKey = number | string;
