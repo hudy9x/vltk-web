@@ -399,3 +399,11 @@ test("development is explicitly advertised by the development server", async () 
     db.close();
   }
 });
+
+test('GM adds 10,000 accumulated military merit to the current character and saves without displaying its balance',()=>{
+ const s=game(false),panel=s.nodes.find(node=>node.id==='gm-panel');assert.match(panel.innerHTML,/data-gm="warMerit"/);
+ const message=s.gameMaster.grant('warMerit');assert.equal(s.o.mats.misc.tk_merit,10000);assert.equal(s.saved.at(-1).mats.misc.tk_merit,10000);assert.match(message,/Quan Quân Nhu/);
+ s.gameMaster.grant('warMerit');assert.equal(s.o.mats.misc.tk_merit,20000);assert.doesNotMatch(panel.innerHTML,/20.000/);
+ const first=s.o;s.o={fac:'shaolin',mats:{misc:{tk_merit:300}}};s.gameMaster.grant('warMerit');assert.equal(s.o.mats.misc.tk_merit,10300);assert.equal(first.mats.misc.tk_merit,20000);
+ s.o.mats.misc.tk_merit=Number.MAX_SAFE_INTEGER;assert.throws(()=>s.gameMaster.grant('warMerit'),/giới hạn/);assert.equal(s.o.mats.misc.tk_merit,Number.MAX_SAFE_INTEGER);
+});

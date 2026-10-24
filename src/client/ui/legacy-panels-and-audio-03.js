@@ -669,6 +669,10 @@ var Ms = function (A) {
 };
 
 var nc = function (force = false) {
+  if (l.battlefield || (typeof arenaSimulator !== "undefined" && arenaSimulator?.battlefield.active)) {
+    k("Không thể dùng Thổ Địa Phù trong chiến trường Tống Kim.");
+    return;
+  }
   if (!l.town) {
     if (l.dg && !force) {
       k("Đang trong phó bản / boss tuần");

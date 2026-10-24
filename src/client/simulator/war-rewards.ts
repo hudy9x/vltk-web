@@ -50,7 +50,7 @@ export function warItemStacks(inventory: Partial<Record<WarItem, number>>) {
 }
 export function warRank(points: number) { return [...WAR_RANKS].reverse().find(rank => points >= rank.points)!; }
 interface Credit { source: LegacyEntity; at: number; player: boolean; team: Team }
-export function createWarRewards(host: { player(): LegacyEntity; team(): Team; running(): boolean; alive(): boolean; changed(): void; bonusesChanged?(): void; promoted?(actor: LegacyEntity): void; event?(message: string): void; name?(actor: LegacyEntity): string; storage?(): Record<string,number>; canCollect?(kind:WarItem): boolean; actors?(): LegacyEntity[]; trap?(actor:LegacyEntity, kind:WarItem): void }, random = () => Math.random()) {
+export function createWarRewards(host: { player(): LegacyEntity; team(): Team; running(): boolean; alive(): boolean; changed(): void; earned?(points:number):void; bonusesChanged?(): void; promoted?(actor: LegacyEntity): void; event?(message: string): void; name?(actor: LegacyEntity): string; storage?(): Record<string,number>; canCollect?(kind:WarItem): boolean; actors?(): LegacyEntity[]; trapPlaced?(kind:WarItem):void; trapTriggered?(trap:{kind:WarItem;x:number;y:number;age:number;expires:number}):void; trap?(actor:LegacyEntity, kind:WarItem): void }, random = () => Math.random()) {
   let elapsed=0, nextId=0, credits=new WeakMap<LegacyEntity,Credit>(), defeated=new WeakSet<LegacyEntity>();
   let merits=new WeakMap<LegacyEntity,number>(), soldierKills=new WeakMap<LegacyEntity,number>();
   const totals: Record<Team,number> = {song:0,jin:0};
@@ -62,7 +62,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
   }
   const until = Object.fromEntries(itemKinds.map(kind => [kind,0])) as Record<WarItem,number>;
   let shared = new Map<LegacyEntity,Partial<Record<WarItem,number>>>();
-  const traps: {kind:WarItem;x:number;y:number;expires:number}[] = [];
+  const traps: {kind:WarItem;x:number;y:number;age:number;expires:number}[] = [];
   const drops: { id:number; kind:WarItem; x:number; y:number; expires:number }[] = [];
   function reset() {
     elapsed=0; nextId=0; credits=new WeakMap(); defeated=new WeakSet(); merits=new WeakMap(); soldierKills=new WeakMap(); totals.song=totals.jin=0; drops.length=0; traps.length=0; shared=new Map();
@@ -93,7 +93,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
       host.promoted?.(credit.source);
       host.event?.(`${name(credit.source)} đạt danh hiệu mới: <${title}> (${before+points} quân trạng · +${Math.round(warRank(before+points).bonus*100)}% sát thương vật lý ngoại/nội công, tốc độ đánh và kháng)`);
     }
-    if(credit.player) host.changed();
+    if(credit.player) { host.earned?.(points);host.changed(); }
     if(target.battlefieldMonster && random()<.35 && credit.team===host.team()) {
       const kinds=Object.keys(WAR_ITEMS) as WarItem[], kind=kinds[Math.floor(random()*kinds.length)];
       if(drops.length>=40)drops.shift();
@@ -112,10 +112,10 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     if(expired) { host.bonusesChanged?.();host.changed(); }
     const player=host.player();
     for(let i=traps.length-1;i>=0;i--) {
-      const trap=traps[i];
-      if(trap.expires<=elapsed) { traps.splice(i,1);continue; }
+      const trap=traps[i];trap.age+=dt;
+      if(trap.expires<=trap.age) { traps.splice(i,1);continue; }
       const targets=(host.actors?.()||[]).filter(actor => actor.battlefieldTeam && actor.battlefieldTeam!==host.team() && actor.hp>0 && !actor.dead && Math.hypot(actor.x-trap.x,(actor.y-trap.y)*2)<=90);
-      if(targets.length) { for(const target of targets)host.trap?.(target,trap.kind); traps.splice(i,1); }
+      if(targets.length) { host.trapTriggered?.({...trap});for(const target of targets)host.trap?.(target,trap.kind); traps.splice(i,1); }
 
     }
     for(let i=drops.length-1;i>=0;i--) {
@@ -131,7 +131,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     stock(kind,stock(kind)-1);
     if(kind==='freezeTrap'||kind==='stunTrap'||kind==='slowTrap') {
       const player=host.player(); if(traps.length>=40)traps.shift();
-      traps.push({kind,x:player.x,y:player.y,expires:elapsed+30});
+      traps.push({kind,x:player.x,y:player.y,age:0,expires:30});host.trapPlaced?.(kind);
     } else if(kind==='drum'||kind==='command'||kind==='horn') {
       if(kind==='horn')until.horn=elapsed+WAR_BUFF_SECONDS;
       const player=host.player();

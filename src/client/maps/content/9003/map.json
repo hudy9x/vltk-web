@@ -1969,6 +1969,26 @@
         "x": 2897,
         "y": 749
       }
+    },
+    {
+      "id": "song-quartermaster",
+      "npcId": "quartermaster",
+      "team": "song",
+      "position": {
+        "x": 750,
+        "y": 2740
+      },
+      "direction": 0
+    },
+    {
+      "id": "jin-quartermaster",
+      "npcId": "quartermaster",
+      "team": "jin",
+      "position": {
+        "x": 2834,
+        "y": 844
+      },
+      "direction": 0
     }
   ]
 }

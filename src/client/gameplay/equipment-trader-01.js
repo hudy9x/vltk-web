@@ -286,6 +286,7 @@ var equipmentTrader = (function () {
     const names = new Set(MapsEngine.npcCatalog.map(npc => npc.name));
     const actions = {
       equipment: open,
+      quartermaster: () => { if (typeof quartermaster !== "undefined" && quartermaster) quartermaster.open(); },
       pharmacy: () => {
         if (battle) arenaSimulator.openPharmacy();
         else { Nt = 'med'; lh(); }
@@ -309,16 +310,20 @@ var equipmentTrader = (function () {
     context.save();
     context.fillStyle = "#0007"; context.beginPath(); context.ellipse(npc.x, npc.y, 18, 7, 0, 0, 7); context.fill();
     // Each NPC uses its configured idle sprite, independent of player equipment.
+    let headHeight = 0;
     if (npc.mapNpc) {
       const definition = MapsEngine.getNpc(npc.mapNpc.npcId);
+      headHeight = definition.anchor.y * (npc.mapNpc.scale ?? definition.scale);
       MapsEngine.drawNpc(context, bA(definition.image), npc.mapNpc, performance.now());
-    } else Va(npc.animation, "st", 0, 0, npc.x, npc.y, Jn);
+    } else {
+      const idle = typeof E0 !== "undefined" ? E0.anim?.[npc.animation]?.st : null;
+      headHeight = (idle?.ay || 46) * Jn;
+      Va(npc.animation, "st", 0, 0, npc.x, npc.y, Jn);
+    }
     context.font = '12px "IBM Plex Mono", monospace'; context.textAlign = "center";
     context.strokeStyle = "#000"; context.lineWidth = 3; context.fillStyle = "#f6d27c";
-    const top = npc.y - 105;
+    const top = npc.y - headHeight - 6;
     context.strokeText(npc.name, npc.x, top); context.fillText(npc.name, npc.x, top);
-    context.font = '10px "IBM Plex Mono", monospace';
-    context.strokeText(npc.subtitle, npc.x, top - 16); context.fillText(npc.subtitle, npc.x, top - 16);
     context.restore();
   }
   // Capture only NPC taps so movement, loot and combat targeting stay unchanged.

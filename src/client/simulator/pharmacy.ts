@@ -12,7 +12,7 @@ export function mountWarPharmacy(
   panel.hidden = true;
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-label", "Chủ dược điếm");
-  panel.innerHTML = `<header><h2>Chủ dược điếm</h2><button class="war-close" aria-label="Đóng dược điếm">×</button></header><nav class="war-tabs"><button data-resource="life">Thuốc sinh lực</button><button data-resource="mana">Thuốc nội lực</button></nav><div class="war-content"><div class="war-stock"><span id="war-shop-stock"></span><label>Số lượng mua<input id="war-shop-quantity" type="number" min="1" max="60" value="5"></label></div><p>Bấm tên thuốc để chọn cho ô bên dưới. Mua thuốc tại điểm tập trung; tổng túi tối đa 60 bình, gồm cả thuốc hồi hai loại.</p><div id="war-shop-products"></div><p id="war-shop-message" class="war-note" role="status"></p></div>`;
+  panel.innerHTML = `<header><h2>Chủ dược điếm</h2><button class="war-close" aria-label="Đóng dược điếm">×</button></header><nav class="war-tabs"><button data-resource="life">Thuốc sinh lực</button><button data-resource="mana">Thuốc nội lực</button></nav><div class="war-content"><div class="war-stock"><span id="war-shop-stock"></span><label>Số lượng mua<input id="war-shop-quantity" type="number" min="1" max="60" value="1"></label></div><p>Bấm tên thuốc để chọn cho ô bên dưới. Bấm Mua để mua thuốc bất cứ lúc nào; tổng túi tối đa 60 bình, gồm cả thuốc hồi hai loại.</p><div id="war-shop-products"></div><p id="war-shop-message" class="war-note" role="status"></p></div>`;
   let resource: PotionResource = "life",
     selecting = false,
     lastState = "";
@@ -24,8 +24,15 @@ export function mountWarPharmacy(
   query(".war-close").onclick = close;
   function refresh(force = false) {
     if (panel.hidden) return;
-    const state = supplies.state,
-      stamp = JSON.stringify([
+    const state = supplies.state;
+    const quantityInput = query<HTMLInputElement>("#war-shop-quantity");
+    const remaining = Math.max(0, state.capacity - state.total);
+    quantityInput.max = String(Math.max(1, remaining));
+    quantityInput.disabled = remaining === 0;
+    const requested = Number(quantityInput.value);
+    if (remaining > 0 && Number.isSafeInteger(requested) && requested > remaining)
+      quantityInput.value = String(remaining);
+    const stamp = JSON.stringify([
         state,
         resource,
         query<HTMLInputElement>("#war-shop-quantity").value,
@@ -33,7 +40,7 @@ export function mountWarPharmacy(
     if (!force && stamp === lastState) return;
     lastState = stamp;
     query("#war-shop-stock").textContent =
-      `Túi thuốc: ${state.total}/${state.capacity} bình · Máu ${state.life} · Mana ${state.mana}`;
+      `Túi thuốc: ${state.total}/${state.capacity} bình · Còn ${remaining} chỗ · Thuốc hồi máu ${state.life} · Thuốc hồi nội lực ${state.mana} (thuốc hồi cả hai được tính ở cả hai mục)`;
     panel
       .querySelectorAll<HTMLButtonElement>("[data-resource]")
       .forEach((button) =>
@@ -50,7 +57,7 @@ export function mountWarPharmacy(
       products
         .map(
           (potion) =>
-            `<div class="war-shop-row ${state.selected[resource] === potion.key ? "selected" : ""}"><img src="${escape(potion.ic || "")}" alt=""><button class="war-product" data-select="${escape(potion.key)}"><strong>${escape(potion.n)}</strong><small>Hồi ${potion.total.toLocaleString("vi-VN")} ${potion.kind === "mana" ? "nội lực" : "sinh lực"}${potion.kind === "both" ? ` + ${(potion.mtotal || 0).toLocaleString("vi-VN")} nội lực` : ""} · ${potion.price.toLocaleString("vi-VN")} lượng/bình · trong túi ${state.inventory[potion.key] || 0}</small></button>${selecting ? "" : `<button data-buy="${escape(potion.key)}" ${!state.nearCamp || state.total >= 60 ? "disabled" : ""}>Mua</button>`}</div>`,
+            `<div class="war-shop-row ${state.selected[resource] === potion.key ? "selected" : ""}"><img src="${escape(potion.ic || "")}" alt=""><button class="war-product" data-select="${escape(potion.key)}"><strong>${escape(potion.n)}</strong><small>Hồi ${potion.total.toLocaleString("vi-VN")} ${potion.kind === "mana" ? "nội lực" : "sinh lực"}${potion.kind === "both" ? ` + ${(potion.mtotal || 0).toLocaleString("vi-VN")} nội lực` : ""} · ${potion.price.toLocaleString("vi-VN")} lượng/bình · trong túi ${state.inventory[potion.key] || 0}</small></button><button data-buy="${escape(potion.key)}" ${state.total >= 60 ? "disabled" : ""}>Mua</button></div>`,
         )
         .join("");
     panel.querySelectorAll<HTMLButtonElement>("[data-select]").forEach(

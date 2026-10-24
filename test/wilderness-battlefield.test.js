@@ -77,10 +77,10 @@ test('every camp, 100 army formation slots per side, and service NPC positions a
     assert.ok(Math.hypot(actor.x-to.x, actor.y-to.y) <= 8, 'both camps are reachable with live movement');
   }
   const npcs = maps.mapNpcs(maps.getMap(9003));
-  assert.equal(npcs.length, 6);
+  assert.deepEqual(Array.from(npcs, npc => npc.id), Array.from(maps.getMap(9003).npcs, npc => npc.id));
   for (const team of ['song', 'jin']) {
-    const services = npcs.filter(npc => npc.team === team);
-    assert.deepEqual(Array.from(services, npc => npc.npcId).sort(), ['horse', 'pharmacy', 'tongkim']);
+    const services = npcs.filter(npc => !npc.team || npc.team === team);
+    assert.deepEqual([...new Set(Array.from(services, npc => npc.npcId))].sort(), ['horse', 'pharmacy', 'quartermaster', 'tongkim']);
     for (const npc of services) assert.ok(nav.canStand(npc.position.x, npc.position.y));
   }
 });

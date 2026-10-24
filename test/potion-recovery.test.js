@@ -78,3 +78,18 @@ test('paid potions still deduct currency once and ignore the old recovery-over-t
  assert.equal(s.o.gold,9950);assert.equal(s.o.potUsed,1);assert.equal(s.l.life,110);assert.equal(s.l.hot,undefined);
  s.Td(1);assert.equal(s.l.life,110);assert.equal(s.l.mana,10);
 });
+
+
+test('Tong Kim blocks every town teleport entry including forced calls without mutating battle state',()=>{
+ for(const activeFlag of ['world','simulator'])for(const force of [false,true]){
+  const s=game();s.l.town=false;s.l.tpCd=0;s.l.enemies=[{id:'soldier'},{id:'boss'}];
+  if(activeFlag==='world')s.l.battlefield=true;
+  else s.arenaSimulator={battlefield:{active:true}};
+  const before=JSON.stringify({l:s.l,v:s.v,o:s.o});
+  s.nc(force);
+  assert.equal(JSON.stringify({l:s.l,v:s.v,o:s.o}),before);
+  assert.match(s.messages.at(-1),/Không thể dùng Thổ Địa Phù.*Tống Kim/);
+  s.l.battlefield=false;if(s.arenaSimulator)s.arenaSimulator.battlefield.active=false;
+  s.nc();assert.equal(s.l.town,true,'normal teleport works again after leaving the battlefield');
+ }
+});
