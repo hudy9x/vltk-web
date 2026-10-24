@@ -50,7 +50,7 @@ export function warItemStacks(inventory: Partial<Record<WarItem, number>>) {
 }
 export function warRank(points: number) { return [...WAR_RANKS].reverse().find(rank => points >= rank.points)!; }
 interface Credit { source: LegacyEntity; at: number; player: boolean; team: Team }
-export function createWarRewards(host: { player(): LegacyEntity; team(): Team; running(): boolean; alive(): boolean; changed(): void; earned?(points:number):void; bonusesChanged?(): void; promoted?(actor: LegacyEntity): void; event?(message: string): void; name?(actor: LegacyEntity): string; storage?(): Record<string,number>; canCollect?(kind:WarItem): boolean; actors?(): LegacyEntity[]; trapPlaced?(kind:WarItem):void; trapTriggered?(trap:{kind:WarItem;x:number;y:number;age:number;expires:number}):void; trap?(actor:LegacyEntity, kind:WarItem): void }, random = () => Math.random()) {
+export function createWarRewards(host: { player(): LegacyEntity; team(): Team; running(): boolean; alive(): boolean; changed(): void; earned?(points:number):void; bonusesChanged?(): void; promoted?(actor: LegacyEntity): void; event?(message: string, kind?: 'kill'): void; name?(actor: LegacyEntity): string; storage?(): Record<string,number>; canCollect?(kind:WarItem): boolean; actors?(): LegacyEntity[]; trapPlaced?(kind:WarItem):void; trapTriggered?(trap:{kind:WarItem;x:number;y:number;age:number;expires:number}):void; trap?(actor:LegacyEntity, kind:WarItem): void }, random = () => Math.random()) {
   let elapsed=0, nextId=0, credits=new WeakMap<LegacyEntity,Credit>(), defeated=new WeakSet<LegacyEntity>();
   let merits=new WeakMap<LegacyEntity,number>(), soldierKills=new WeakMap<LegacyEntity,number>();
   const totals: Record<Team,number> = {song:0,jin:0};
@@ -87,7 +87,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     merits.set(credit.source,before+points); totals[credit.team]+=points;
     if(target.battlefieldMonster) soldierKills.set(credit.source,(soldierKills.get(credit.source)||0)+1);
     const name = (actor:LegacyEntity) => host.name?.(actor) || actor.n || (actor===host.player()?'Người chơi':'SIM');
-    host.event?.(`${credit.team==='song'?'Tống':'Kim'} · ${name(credit.source)} tiêu diệt ${name(target)} <${victimTitle}> (+${points} quân trạng)`);
+    if (credit.player || target === host.player()) host.event?.(`${credit.team==='song'?'Tống':'Kim'} · ${name(credit.source)} tiêu diệt ${name(target)} <${victimTitle}> (+${points} quân trạng)`, 'kill');
     const title = warRank(before+points).name;
     if(title!==warRank(before).name) {
       host.promoted?.(credit.source);
