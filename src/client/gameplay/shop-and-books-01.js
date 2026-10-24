@@ -253,7 +253,7 @@ var Rn = function (A) {
   const n = A.curse;
   if (!n) return null;
   const t = ya(),
-    e = { res: {}, def: 0, ar: 0, dmg: 0, ret: 0, slow: 0, regen: 0, poison: 0, crit: 0 };
+    e = { res: {}, def: 0, ar: 0, dmg: 0, ret: 0, slow: 0, run: 0, cast: 0, regen: 0, poison: 0, crit: 0 };
   let a = !1;
   for (const i in n) {
     if (n[i] <= t) continue;
@@ -275,7 +275,11 @@ var Rn = function (A) {
               : d.replace("res_p", "");
           e.res[g] = (e.res[g] || 0) + h;
         } else
-          d === "adddefense_v"
+          d === "fastwalkrun_p"
+            ? (e.run += h)
+            : d === "castspeed_v"
+              ? (e.cast += h)
+            : d === "adddefense_v"
             ? (e.def += h)
             : d === "attackratingenhance_p"
               ? (e.ar += h)

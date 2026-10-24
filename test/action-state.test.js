@@ -60,7 +60,7 @@ test('monster AI waits for hurt to end before attacking',()=>{
  const s=world(),monster={x:50,y:0,hp:100,max:100,r:17,tid:1,spd:100,ar:10,reach:100,atkCd:0,cd:1};
  s.v.x=70;s.l.enemies=[monster];declaration(s,'src/client/core/state-and-save-01.js','$d');
  s.applyActorHurt(monster,60,100);s.$d(monster,.1);assert.ok(!s.l.combatProjectiles?.length);
- run(s,.51);s.$d(monster,.1);assert.ok(s.l.combatProjectiles.length>0);
+ run(s,.51);s.$d(monster,.1);assert.ok(monster.castT>0);assert.equal(s.l.combatProjectiles?.length||0,0);run(s,1);assert.ok(s.l.combatProjectiles.length>0);
 });
 
 test('auto ground input cancels unreleased windups but preserves launched projectiles',()=>{

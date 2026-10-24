@@ -60,6 +60,12 @@ function enemy(s, x = 180, y = 0) {
 function run(s, seconds, dt = 1 / 60) {
   for (let time = 0; time < seconds - 1e-8; time += dt) s.advanceSkillContacts(dt);
 }
+// Contact/geometry assertions below start at projectile release, after the attack pose.
+function finishAttackPose(s, actor=s.v) {
+  if (actor.speedCastDuration > 0) s.advanceSkillContacts(actor.castT);
+}
+function launch(s) { const wait=s.oD(); finishAttackPose(s); return wait; }
+function contact(s, ...args) { const cast=s.queueSkillContact(...args); finishAttackPose(s,args[0]); return cast; }
 function shaolin(s, overrides = {}) {
   s.skill = { id: 10, L: 1, parts: { phys: 10 }, rad: 300, rate: 1, melee: false, targets: 1, ...overrides };
   return s.skill;
@@ -77,7 +83,7 @@ function ray(s, target, overrides = {}) {
 test('Shaolin launch does not damage or apply poison before the flying skill contacts a monster', () => {
   const s = world(), target = enemy(s);
   shaolin(s, { parts: { phys: 10, poison: 1 }, ev: true });
-  s.oD();
+  launch(s);
   assert.equal(target.hp, 100);
   assert.equal(target.poison, undefined);
   assert.equal(s.procCount, 0);
@@ -91,7 +97,7 @@ test('Shaolin launch does not damage or apply poison before the flying skill con
 
 test('a monster can dodge a non-homing Shaolin projectile; missed effects never apply damage', () => {
   const s = world(), target = enemy(s);
-  shaolin(s); s.oD();
+  shaolin(s); launch(s);
   target.y = 150;
   run(s, 2);
   assert.equal(target.hp, 100);
@@ -100,7 +106,7 @@ test('a monster can dodge a non-homing Shaolin projectile; missed effects never 
 
 test('Vo Tuong Tram also waits for its real flying effects before damaging a stationary monster', () => {
   const s = world(), target = enemy(s, 240);
-  shaolin(s, { id: 321, L: 25, nMis: 3 }); s.oD();
+  shaolin(s, { id: 321, L: 25, nMis: 3 }); launch(s);
   assert.equal(target.hp, 100);
   run(s, 0.2); assert.equal(target.hp, 100);
   run(s, 1.5); assert.equal(target.hp, 90);
@@ -109,7 +115,7 @@ test('Vo Tuong Tram also waits for its real flying effects before damaging a sta
 test('stationary AoE contacts every overlapping body once during its active window', () => {
   const s = world(), a = enemy(s, 25), b = enemy(s, 45), far = enemy(s, 180);
   const skill = { melee: false, parts: { phys: 10 }, geo: { k: 'self', r: 80, pierce: true } };
-  s.queueSkillContact(s.v, s.v, skill, target => s.hs(skill, target), { maxTargets: 3, visual: () => {} });
+  contact(s, s.v, s.v, skill, target => s.hs(skill, target), { maxTargets: 3, visual: () => {} });
   assert.equal(a.hp, 100); assert.equal(b.hp, 100);
   run(s, 0.1); assert.equal(a.hp, 90); assert.equal(b.hp, 90);
   run(s, 0.4);
@@ -148,7 +154,7 @@ test('FX cap, low-FX preference and offline simulation do not change collision d
     for (const quiet of [false, true]) {
       const s = world({ preferences, state: { quiet } }), target = enemy(s);
       s.l.fx = Array.from({ length: 170 }, () => ({ k: 'ring', life: 10 }));
-      shaolin(s, { nMis: 5 }); s.oD();
+      shaolin(s, { nMis: 5 }); launch(s);
       assert.equal(s.l.combatProjectiles.length, 5);
       assert.equal(target.hp, 100);
       run(s, 1);
@@ -160,11 +166,11 @@ test('FX cap, low-FX preference and offline simulation do not change collision d
 test('melee damage waits for windup and fails when the target leaves the striking area', () => {
   const s = world(), target = enemy(s, 35);
   const skill = { melee: true, rad: 65, parts: { phys: 10 } };
-  s.queueSkillContact(s.v, target, skill, hit => s.hs(skill, hit), { visual: () => {} });
+  contact(s, s.v, target, skill, hit => s.hs(skill, hit), { visual: () => {} });
   run(s, 0.1); assert.equal(target.hp, 100);
   target.x = 180; run(s, 0.3); assert.equal(target.hp, 100);
   target.x = 35;
-  s.queueSkillContact(s.v, target, skill, hit => s.hs(skill, hit), { visual: () => {} });
+  contact(s, s.v, target, skill, hit => s.hs(skill, hit), { visual: () => {} });
   run(s, 0.2); assert.equal(target.hp, 90);
 });
 
@@ -173,7 +179,7 @@ test('stationary spells remain at their cast position and do not teleport after 
   s.A0.m[9999] = { fly: { w: 32 }, spd: 0 };
   s.A0.k = { 9999: [0, 10, 0, 0, 0, 0, 1, 0, 0, 1] };
   const skill = { melee: false, parts: { phys: 10 }, geo: { k: 'spot', r: 20 } };
-  s.queueSkillContact(s.v, target, skill, hit => s.hs(skill, hit), {
+  contact(s, s.v, target, skill, hit => s.hs(skill, hit), {
     visual: () => s.Wn(9999, target.x, -14, 0, target),
   });
   target.x = 180; run(s, 1);
@@ -183,7 +189,7 @@ test('stationary spells remain at their cast position and do not teleport after 
 test('changing zones or dying clears in-flight damage before a later hit', () => {
   for (const state of [{ zoneShown: 2 }, { deadT: 1 }, { town: true }]) {
     const s = world(), target = enemy(s);
-    shaolin(s); s.oD(); Object.assign(s.l, state); run(s, 1);
+    shaolin(s); launch(s); Object.assign(s.l, state); run(s, 1);
     assert.equal(target.hp, 100);
     assert.equal(s.l.combatProjectiles.length, 0);
   }
@@ -192,7 +198,7 @@ test('changing zones or dying clears in-flight damage before a later hit', () =>
 test('contacts advance without rendering and give the same result at different tick sizes', () => {
   for (const dt of [1 / 60, 1 / 30, 0.05]) {
     const s = world(), target = enemy(s);
-    shaolin(s); s.oD(); run(s, 1, dt);
+    shaolin(s); launch(s); run(s, 1, dt);
     assert.equal(target.hp, 90);
   }
 });
@@ -219,9 +225,9 @@ test('an enemy ranged attack also waits for contact and can be dodged by the pla
   s.$d(attacker, 1 / 60);
   assert.equal(s.l.life, 100);
   run(s, 0.2); assert.equal(s.l.life, 100);
-  s.v.y = 100; run(s, 2); assert.equal(s.l.life, 100);
+  finishAttackPose(s,attacker);s.v.y = 100; run(s, 2); assert.equal(s.l.life, 100);
   s.v.y = 0; attacker.atkCd = 0; s.$d(attacker, 1 / 60);
-  run(s, 1); assert.equal(s.l.life, 90);
+  run(s, 1.6); assert.equal(s.l.life, 90);
 });
 
 function standardSkill(s, id) {
@@ -244,7 +250,7 @@ function standardSkill(s, id) {
 test('Phi Long Tai Thien and Thien Ha Vo Cau use homing metadata and curve toward a moving monster', () => {
   for (const id of [357, 359]) {
     const s = world(), target = enemy(s, 220), skill = standardSkill(s, id);
-    s.queueSkillContact(s.v, target, skill, hit => s.hs(skill, hit));
+    contact(s, s.v, target, skill, hit => s.hs(skill, hit));
     assert.ok(s.l.combatProjectiles.every(effect => effect.kind === 5));
     run(s, 0.2); assert.equal(target.hp, 100);
     target.y = 65;
@@ -257,15 +263,15 @@ test('Phi Long Tai Thien and Thien Ha Vo Cau use homing metadata and curve towar
 test('Thien Dia Vo Cuc stays at its cast point and only pulses on live occupants before expiry', () => {
   const s = world(), target = enemy(s, 80), inside = enemy(s, 120), outside = enemy(s, 260);
   const skill = standardSkill(s, 365);
-  s.queueSkillContact(s.v, target, skill, hit => s.hs(skill, hit));
+  contact(s, s.v, target, skill, hit => s.hs(skill, hit));
   const field = s.l.combatProjectiles[0];
   assert.equal(field.kind, 0); assert.equal(field.age, 0);
   const origin = [field.x, field.y];
   target.x = 350; s.v.x = 400;
   run(s, 0.1);
   assert.deepEqual([field.x, field.y], origin);
-  assert.equal(target.hp, 100); assert.equal(inside.hp, 100); assert.equal(outside.hp, 100);
-  outside.x = 100; run(s, 0.15); assert.equal(outside.hp, 90);assert.equal(inside.hp,90);
+  assert.equal(target.hp, 100); assert.equal(inside.hp, 90); assert.equal(outside.hp, 100);
+  outside.x = 100; run(s, 0.25); assert.equal(outside.hp, 90);assert.equal(inside.hp,80);
   run(s, 1.5);
   target.x = 80; run(s, 0.1); assert.equal(target.hp, 100);
 });
@@ -286,7 +292,7 @@ test('Thien Ngoai Luu Tinh secondary explosion ignores terrain, hits nearby bodi
 
 test('homing missiles expire at their configured range instead of following an unreachable enemy forever', () => {
   const s = world(), target = enemy(s, 2200), skill = standardSkill(s, 357);
-  s.queueSkillContact(s.v, target, skill, hit => s.hs(skill, hit));
+  contact(s, s.v, target, skill, hit => s.hs(skill, hit));
   const missiles = s.l.combatProjectiles.slice();
   const limit = s.t7[166][1] * s.QA;
   assert.ok(missiles.every(effect => effect.travelLimit === limit));
@@ -299,7 +305,7 @@ test('homing missiles expire at their configured range instead of following an u
 test('a stationary fallback field uses its chosen cast coordinate rather than the caster current coordinate', () => {
   const s = world(), target = enemy(s, 200), atCaster = enemy(s, 10);
   const skill = { melee: false, parts: { phys: 10 }, geo: { k: 'spot', r: 40 } };
-  s.queueSkillContact(s.v, target, skill, hit => s.hs(skill, hit), { visual: () => {}, maxTargets: Infinity });
+  contact(s, s.v, target, skill, hit => s.hs(skill, hit), { visual: () => {}, maxTargets: Infinity });
   s.v.x = 400;
   run(s, 0.1);
   assert.equal(target.hp, 90); assert.equal(atCaster.hp, 100);
@@ -325,7 +331,7 @@ test('the terrain-independent spells cast and contact through obstacles but stil
     s.Z0.g = true;
     s.mt = () => false;
     s.R2 = () => false;
-    s.oD();
+    launch(s);
     assert.equal(s.l.moveTo, null, `skill ${id} must cast without approaching an obstacle`);
     assert.ok(s.l.combatProjectiles.length > 0, `skill ${id} emitted`);
     assert.ok(s.l.combatProjectiles.every(effect => effect.combat.ignoreTerrain));
@@ -334,7 +340,7 @@ test('the terrain-independent spells cast and contact through obstacles but stil
     const far = world(), outside = enemy(far, 2000);
     far.skill = standardSkill(far, id);
     far.Z0.g = true; far.mt = () => false; far.R2 = () => false;
-    far.oD(); run(far, 2);
+    launch(far); run(far, 2);
     assert.equal(outside.hp, 100);
     assert.equal(far.l.combatProjectiles.length, 0);
   }
@@ -343,7 +349,7 @@ test('the terrain-independent spells cast and contact through obstacles but stil
 test('ordinary flying attacks remain blocked when casting across terrain', () => {
   const s = world(), target = enemy(s, 80);
   shaolin(s); s.mt = () => false;
-  s.oD(); run(s, 2);
+  launch(s); run(s, 2);
   assert.equal(target.hp, 100);
   assert.equal(s.l.combatProjectiles.length, 0);
 });
@@ -369,7 +375,7 @@ test('cast range widens symmetrically north/south to 60 percent while east/west 
     const s = world(), target = enemy(s, dx, dy);
     target.r = 1;
     s.skill = { ...standardSkill(s, 380), rad: 300, geo: { k: 'spot', r: 40 } };
-    s.oD();
+    launch(s);
     assert.equal((s.l.combatProjectiles || []).length > 0, inRange, `target at ${dx},${dy}`);
   }
 });
@@ -377,7 +383,7 @@ test('cast range widens symmetrically north/south to 60 percent while east/west 
 test('self-centered skill field covers its widened north/south ellipse but excludes targets beyond it', () => {
   const s = world(), north = enemy(s, 0, -52), south = enemy(s, 0, 52), outside = enemy(s, 0, 85);
   const skill = { parts: { phys: 10 }, geo: { k: 'self', r: 100 }, melee: false };
-  s.queueSkillContact(s.v, s.v, skill, hit => s.hs(skill, hit), { visual: () => {}, maxTargets: Infinity });
+  contact(s, s.v, s.v, skill, hit => s.hs(skill, hit), { visual: () => {}, maxTargets: Infinity });
   run(s, 0.1);
   assert.equal(north.hp, 90); assert.equal(south.hp, 90); assert.equal(outside.hp, 100);
 });
@@ -385,21 +391,21 @@ test('self-centered skill field covers its widened north/south ellipse but exclu
 test('Van Long Kich uses a forward narrow rectangle and hits every stacked body without circular side splash', () => {
   const s=world(), target=enemy(s,100), packed=Array.from({length:25},()=>enemy(s,100)),side=enemy(s,100,45),behind=enemy(s,-60);
   const skill=standardSkill(s,361);
-  s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit),{maxTargets:1});
+  contact(s, s.v,target,skill,hit=>s.hs(skill,hit),{maxTargets:1});
   run(s,.2);
   assert.equal(target.hp,90);assert.ok(packed.every(e=>e.hp===90));assert.equal(side.hp,100);assert.equal(behind.hp,100);
 });
 test('Nhan Kiem Hop Nhat sweeps narrow piercing rectangles through all packed bodies and misses off-path bodies', () => {
   const s=world(),target=enemy(s,80),packed=Array.from({length:25},()=>enemy(s,80)),side=enemy(s,80,70);
   const skill=standardSkill(s,368);
-  s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit),{maxTargets:1});
+  contact(s, s.v,target,skill,hit=>s.hs(skill,hit),{maxTargets:1});
   run(s,1);
   assert.equal(target.hp,70);assert.ok(packed.every(e=>e.hp===70));assert.equal(side.hp,100);
 });
 test('the Van Long rectangle keeps its initial heading when the caster and target move after casting',()=>{
   const s=world(),target=enemy(s,0,-60),onPath=enemy(s,0,-80),side=enemy(s,80,-80);
   const skill=standardSkill(s,361);
-  s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
+  contact(s, s.v,target,skill,hit=>s.hs(skill,hit));
   s.v.x=500;target.x=500;
   run(s,.2);
   assert.equal(onPath.hp,90);assert.equal(side.hp,100);assert.equal(target.hp,100);
@@ -407,7 +413,7 @@ test('the Van Long rectangle keeps its initial heading when the caster and targe
 test('Thien Ngoai fields pulse every 300ms, deduplicate visual effects, and inspect live occupants on each pulse',()=>{
   const s=world(),target=enemy(s,200),packed=Array.from({length:25},()=>enemy(s,200)),entering=enemy(s,500);
   const skill={id:362,parts:{fire:10},melee:false,geo:{k:'spot',r:60,pierce:true}};
-  s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit),{
+  contact(s, s.v,target,skill,hit=>s.hs(skill,hit),{
     maxTargets:1,visual:()=>{
       for(let i=0;i<3;i++)s.l.fx.push({k:'boom',x:200,y:-14,t:0,life:1});
     },windup:0,
@@ -425,7 +431,7 @@ test('Thien Ngoai world renderer completes the fall and one landing explosion wi
   const s=world(),target=enemy(s,200);target.hp=1000;
   const skill=standardSkill(s,362),draws=[];
   s.Fa=(sprite,dir,time)=>draws.push({sprite,time});s.CP=()=>{};
-  s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
+  contact(s, s.v,target,skill,hit=>s.hs(skill,hit));
   const meteor=s.l.combatProjectiles.find(effect=>effect.mid===171);assert.ok(meteor);
   const realYP=s.YP;s.YP=effect=>{if(effect.mid===171)realYP(effect);};
   const source=fs.readFileSync(path.join(ROOT,'src/client/render/arena-02.js'),'utf8');
@@ -449,7 +455,7 @@ test('Thien Ngoai logical pulses remain active with quiet or missing visual effe
   for(const quiet of [true,false]){
     const s=world(),target=enemy(s,200);s.l.quiet=quiet;
     const skill={id:362,parts:{fire:10},melee:false,geo:{k:'spot',r:60,pierce:true}};
-    s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit),{visual:()=>{}});
+    contact(s, s.v,target,skill,hit=>s.hs(skill,hit),{visual:()=>{}});
     run(s,.7);assert.equal(target.hp,70);
   }
 });
@@ -463,7 +469,7 @@ test('a non-piercing narrow impact hits all overlapping bodies but stops before 
 
 test('the player combat log is written only after physical skill contact',()=>{
   const s=world(),target=enemy(s,180);s.m0=0;Object.assign(s.o,{fac:'shaolin',name:'Tester'});s.U9=()=>{};s.$d=()=>{};
-  load(s,'src/client/ui/combat-log-01.js');shaolin(s);s.oD();
+  load(s,'src/client/ui/combat-log-01.js');shaolin(s);launch(s);
   assert.equal(s.combatLog.entries().length,0);run(s,.1);assert.equal(s.combatLog.entries().length,0);
   run(s,1);assert.equal(s.combatLog.entries('out').length,1);assert.equal(s.combatLog.entries()[0].amount,10);
 });
@@ -479,7 +485,7 @@ test('Phong Suong primary contact then four real homing rays each damage the sam
  const s=world(),target=enemy(s,100);secondaryWorld(s);
  const skill=standardSkill(s,380);skill.ev=true;s.skill=skill;
  s.tD=(skill,target,live,hit)=>s.eD(skill,target,live,hit,{rays:()=>4,sid:331,max:4});
- s.oD();assert.equal(s.l.combatProjectiles.length,1);run(s,5);
+ launch(s);assert.equal(s.l.combatProjectiles.length,1);run(s,5);
  assert.equal(target.hp,50);
 });
 test('Beggar skills suppress self damage while Phi Long impact field and Tang skills shrink to one third',()=>{
@@ -499,7 +505,7 @@ test('Thien Ngoai secondary sprite stays at its original coordinate throughout i
 });
 test('Loi Dong field lasts three seconds with one hit every 300ms and checks live occupants',()=>{
  const s=world(),target=enemy(s,200),entering=enemy(s,1000),skill=standardSkill(s,375);
- s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
+ contact(s, s.v,target,skill,hit=>s.hs(skill,hit));
  run(s,.05);assert.equal(target.hp,90);run(s,.1);assert.equal(target.hp,90);
  run(s,.1);assert.equal(target.hp,90);run(s,.1);assert.equal(target.hp,80);
  entering.x=200;target.x=1000;run(s,.3);assert.equal(entering.hp,90);assert.equal(target.hp,80);
@@ -522,7 +528,7 @@ test('Loi Dong lightning falls in six frames then renders its explosion instead 
 test('Loi Dong staggers the full lightning field and keeps ten damage pulses at different frame rates',()=>{
  for(const dt of [1/60,1/30,.05]) {
   const s=world(),target=enemy(s,200),skill=standardSkill(s,375);target.hp=1000;
-  const cast=s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
+  const cast=contact(s, s.v,target,skill,hit=>s.hs(skill,hit));
   const bolts=s.l.combatProjectiles.filter(effect=>effect.combat===cast);
   assert.equal(bolts.length,16);assert.equal(new Set(bolts.map(effect=>effect.lightningDelay)).size,16);
   assert.ok(Math.max(...bolts.map(effect=>effect.lightningDelay))+6/18+8*.056<3,'all explosions finish within the field duration');
@@ -544,7 +550,7 @@ test('Thien Dia animation advances twice as fast without changing simulation age
 test('Nhan Kiem registers three sword contacts plus its existing secondary hit, with no duplicated secondary',()=>{
  const s=world(),target=enemy(s,80);secondaryWorld(s);const skill=standardSkill(s,368);skill.ev=true;s.skill=skill;
  s.tD=(skill,target,live,hit)=>s.eD(skill,target,live,hit,{sid:162,col:true,max:3,castFx:'176'});
- s.oD();run(s,2);assert.equal(target.hp,60);
+ launch(s);run(s,2);assert.equal(target.hp,60);
 });
 test('Nhiep Hon secondary shows an actual cosmetic sprite at each damaged body, excluding targets outside its area',()=>{
  const s=world(),target=enemy(s,200),near=enemy(s,220),far=enemy(s,300);secondaryWorld(s);const skill=standardSkill(s,339);
@@ -561,7 +567,7 @@ test('Ngu Doc level 90 impact fields shrink from 150 to 100 without changing cas
   s.eD(skill,target,s.l.enemies,[target],{col:true,max:3,noFx:true});
   assert.equal(s.l.combatProjectiles[0].combat.skill.geo.r,100);assert.equal(s.l.combatProjectiles[0].combat.skill.rad,range);
   run(s,.2);assert.equal(target.hp,90);assert.equal(near.hp,90);assert.equal(far.hp,100);assert.ok(packed.every(mob=>mob.hp===90));
-  const splash=s.queueSkillContact(s.v,target,{...skill,geo:{...skill.geo,area:150}},()=>{}, {visual:()=>{}});
+  const splash=contact(s, s.v,target,{...skill,geo:{...skill.geo,area:150}},()=>{}, {visual:()=>{}});
   assert.equal(splash.skill.geo.area,100);assert.equal(splash.skill.rad,range);assert.equal(skill.geo.area||0,0);
  }
 });
@@ -584,7 +590,7 @@ test('all three Thien Vuong level 90 missiles hit in eight directions, after rea
  for(const id of [322,323,325,326,327,408])for(let dir=0;dir<8;dir++){
   const s=world();load(s,'src/client/data/status-effects-01.js');
   const angle=dir*Math.PI/4,target=enemy(s,Math.cos(angle)*65,Math.sin(angle)*65/2),far=enemy(s,Math.cos(angle)*1000,Math.sin(angle)*1000/2);
-  const skill=standardSkill(s,id);s.queueSkillContact(s.v,target,skill,h=>s.hs(skill,h));
+  const skill=standardSkill(s,id);contact(s, s.v,target,skill,h=>s.hs(skill,h));
   assert.equal(target.hp,100);if(![325,408].includes(id))assert.ok(s.l.combatProjectiles.every(e=>e.mid===({322:326,323:327}[id]||id)&&e.kind===1));
   run(s,2);assert.equal(target.hp,90,`${id} direction ${dir}`);assert.equal(far.hp,100);
  }
@@ -595,7 +601,7 @@ test('Nhiep Hon piercing contacts display one impact on every hit monster beyond
  const emitted=[];s.l.fxQ=[];s.l.fxQ.push=function(...effects){emitted.push(...effects);return Array.prototype.push.apply(this,effects);};
  const skill=standardSkill(s,339);skill.ev=true;s.skill=skill;
  s.tD=(skill,target,live,hit)=>s.eD(skill,target,live,hit,{sid:340,col:true,max:3});
- s.oD();assert.equal(s.l.fx.filter(e=>e.cosmetic).length,0);run(s,1.5);
+ launch(s);assert.equal(s.l.fx.filter(e=>e.cosmetic).length,0);run(s,1.5);
  assert.equal(first.hp,80);assert.equal(second.hp,90);assert.equal(third.hp,90);assert.equal(side.hp,100);
  const impacts=emitted.filter(e=>e.cosmetic&&e.s===s.A0.m[150].fly);
  assert.equal(impacts.length,3);
@@ -604,7 +610,7 @@ test('Nhiep Hon piercing contacts display one impact on every hit monster beyond
 
 test('Thien Dia one-shot stops drawing after its accelerated final frame instead of freezing until contact expiry',()=>{
  const s=world();load(s,'src/client/data/status-effects-01.js');declaration(s,'src/client/render/projectiles-01.js','YP');s.Ds=()=>0;
- const skill=standardSkill(s,365),target=enemy(s,100);s.queueSkillContact(s.v,target,skill,hit=>s.hs(skill,hit));
+ const skill=standardSkill(s,365),target=enemy(s,100);contact(s, s.v,target,skill,hit=>s.hs(skill,hit));
  const effect=s.l.combatProjectiles.find(e=>e.k==='jm');assert.ok(effect);assert.equal(effect.loop,false);
  const frames=[];s.Fa=(sprite,dir,time)=>frames.push(Math.floor(time*1000/sprite.ms));
  effect.age=0;s.YP(effect);assert.equal(frames.at(-1),0);
@@ -622,7 +628,7 @@ test('Thien Vuong hit sheets animate once at a fixed impact point instead of sca
    const s=world();load(s,'src/client/data/status-effects-01.js');s.l.quiet=quiet;
    const originalFly=s.A0.m[spriteId].fly,legacy=s.A0.m[legacyId].hit,target=enemy(s,65),skill=standardSkill(s,id);
    const packed=Array.from({length:8},()=>enemy(s,65));
-   s.queueSkillContact(s.v,target,skill,h=>s.hs(skill,h));
+   contact(s, s.v,target,skill,h=>s.hs(skill,h));
    const missiles=s.l.combatProjectiles;assert.ok(missiles.length);assert.ok(missiles.every(e=>e.mid===spriteId&&e.kind===1&&e.m.fly===null&&e.m.hit===null));
    assert.equal(s.A0.m[spriteId].fly,originalFly);
    declaration(s,'src/client/render/projectiles-01.js','YP');s.Ds=()=>0;const draws=[];s.Fa=(sprite,dir,t,x,y)=>draws.push({file:sprite.f,t,x,y});
@@ -667,7 +673,7 @@ function lotusWorld(options = {}) {
 test('Bang Tung three rays contacting three distinct monsters create three lotus fields at their actual contacts', () => {
   const s = lotusWorld(), targets = [enemy(s, 220), enemy(s, 220, -100), enemy(s, 220, 100)];
   s.skill.nMis = 3;
-  s.oD();
+  launch(s);
   const missiles = s.l.combatProjectiles.slice();
   assert.equal(missiles.length, 3);
   targets.forEach((target, i) => {
@@ -689,7 +695,7 @@ test('Bang Tung three rays contacting three distinct monsters create three lotus
 test('three separate rays hitting one monster produce three blooms and three independent secondary hits', () => {
   const s = lotusWorld(), target = enemy(s, 180);
   s.skill.nMis = 3;
-  s.oD();
+  launch(s);
   const missiles = s.l.combatProjectiles.slice(), direction = missiles[1].ang;
   // Aim the three real missiles at the same body to test per-projectile impacts.
   for (const missile of missiles) missile.ang = direction;
@@ -703,7 +709,7 @@ test('three separate rays hitting one monster produce three blooms and three ind
 test('a single Bang Tung impact creates one real lotus sprite and an 80-radius field; nearby AoE hits do not spawn more flowers', () => {
   const s = lotusWorld(), target = enemy(s, 180), nearby = enemy(s, 180, 35), outside = enemy(s, 180, 65);
   s.skill.nMis = 1;
-  s.oD(); run(s, .95);
+  launch(s); run(s, .95);
   assert.equal(s.flowers.length, 1);
   assert.equal(s.flowers[0].cast.skill.geo.r, 80);
   const flowers = s.l.fx.filter(effect => effect.k === 'boom' && effect.s === s.A0.m[188].fly);
@@ -717,7 +723,7 @@ test('a single Bang Tung impact creates one real lotus sprite and an 80-radius f
 test('lotus fields keep their impact position and expire; entering during the active window gives only one hit', () => {
   const s = lotusWorld(), target = enemy(s, 180), entering = enemy(s, 400, 100);
   s.skill.nMis = 1;
-  s.oD(); run(s, .95);
+  launch(s); run(s, .95);
   assert.equal(s.flowers.length, 1);
   const center = s.flowers[0].center;
   target.x = 500; s.v.x = -300;
@@ -731,7 +737,7 @@ test('lotus fields keep their impact position and expire; entering during the ac
 test('quiet and low-FX combat retain one lotus field per missile and the same damage without visible sprites', () => {
   for (const quiet of [false, true]) {
     const s = lotusWorld({ state: { quiet }, preferences: { lowFx: true } }), target = enemy(s, 180);
-    s.skill.nMis = 3; s.oD();
+    s.skill.nMis = 3; launch(s);
     const missiles = s.l.combatProjectiles.slice();
     for (const missile of missiles) missile.ang = missiles[1].ang;
     run(s, 1.5);
@@ -754,11 +760,14 @@ function simulatorCastWorld(id) {
     s.o = profile; s.v = actor; s.l.P = stats;
     try { return action(); } finally { s.o = player; s.v = v; s.l.P = originalStats; }
   };
-  s.cast = (target, targets) => s.SimSkillCasting.castSimulatorSkill(actor, target, s.skill,
-    () => s.valid, targets, (skill, contact) => {
-      s.hits.push({ actor, skill, contact });
-      return s.withActor(() => s.hs(skill, contact));
-    }, s.withActor);
+  s.cast = (target, targets) => {
+    const cast=s.SimSkillCasting.castSimulatorSkill(actor, target, s.skill,
+      () => s.valid, targets, (skill, contact) => {
+        s.hits.push({ actor, skill, contact });
+        return s.withActor(() => s.hs(skill, contact));
+      }, s.withActor);
+    finishAttackPose(s,actor);return cast;
+  };
   return Object.assign(s, { actor, hero, stats });
 }
 
@@ -819,7 +828,7 @@ test('SIM lotus and lava can hit the player in PK and stop all delayed damage wh
     };
     s.SimSkillCasting.castSimulatorSkill(s.actor, s.hero, s.skill, () => pk,
       () => pk ? [s.hero] : [], hit, s.withActor);
-    run(s, 1);
+    finishAttackPose(s,s.actor);run(s, 1);
     assert.ok(s.hits.some(skill => skill.ev2), `skill ${id}: secondary hits the player`);
     assert.equal(unrelated.hp, 100);
     pk = false;
@@ -867,7 +876,7 @@ function nhanKiemWorld(options = {}) {
 test('level-20 Nhan Kiem shows one native ring per sword/body contact in all eight directions, including up-left',()=>{
  for(const [dx,dy]of [[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]]){
   const s=nhanKiemWorld(),target=enemy(s,dx*50,dy*35);
-  target.hp=target.max=10000;s.oD();const swords=s.l.combatProjectiles.slice();
+  target.hp=target.max=10000;launch(s);const swords=s.l.combatProjectiles.slice();
   assert.equal(swords.length,3);assert.equal(s.impacts.length,0);
   run(s,2);
   const contacts=swords.filter(ray=>ray.contactHits.has(target)).length;
@@ -882,7 +891,7 @@ test('four piercing Nhan Kiem swords each show rings on every contacted body wit
  const s=nhanKiemWorld(),first=enemy(s,55),second=enemy(s,95),third=enemy(s,135),offPath=enemy(s,95,85);
  for(const target of s.l.enemies)target.hp=target.max=10000;
  s.skill.nMis=4;
- s.oD();const swords=s.l.combatProjectiles.slice();assert.equal(swords.length,4);run(s,2);
+ launch(s);const swords=s.l.combatProjectiles.slice();assert.equal(swords.length,4);run(s,2);
  for(const target of [first,second,third]){
   const contacts=swords.filter(ray=>ray.contactHits.has(target)).length;
   assert.equal(contacts,4);
@@ -903,7 +912,7 @@ test('Nhan Kiem contact rings retain level unlock and quiet/low-FX behavior',()=
  ]){
   const s=nhanKiemWorld({state:{quiet},preferences:{lowFx}}),target=enemy(s,60);
   s.skill.L=level;target.hp=target.max=10000;
-  s.oD();run(s,2);
+  launch(s);run(s,2);
   assert.equal(s.impacts.filter(effect=>effect.s===s.A0.m[27].hit).length,expected);
  }
 });
@@ -915,7 +924,7 @@ test('SIM Nhan Kiem uses the same per-sword rings on its permitted targets, away
  const withActor=action=>{const hero=s.v;s.v=actor;try{return action();}finally{s.v=hero;}};
  s.SimSkillCasting.castSimulatorSkill(actor,target,s.skill,()=>true,()=>[target],
   (skill,contact)=>s.hs(skill,contact),withActor);
- const swords=s.l.combatProjectiles.slice();run(s,2);
+ finishAttackPose(s,actor);const swords=s.l.combatProjectiles.slice();run(s,2);
  assert.equal(swords.filter(ray=>ray.contactHits.has(target)).length,4);
  assert.equal(s.impacts.filter(effect=>effect.s===s.A0.m[27].hit).length,4);
  assert.equal(excluded.hp,10000);assert.equal(target.hp,9960,'three primary hits and one existing secondary hit');
@@ -928,10 +937,10 @@ function snowWorld(options = {}) {
  return s;
 }
 
-test('Bang Tam snow begins at cast time and advances through fixed patches to the selected position in eight directions',()=>{
+test('Bang Tam snow begins at attack release and advances through fixed patches to the selected position in eight directions',()=>{
  for(let dir=0;dir<8;dir++){
   const s=snowWorld(),angle=dir*Math.PI/4,target=enemy(s,Math.cos(angle)*350,Math.sin(angle)*350/2);
-  s.oD();const patches=s.l.combatProjectiles.filter(effect=>effect.k==='boom'&&effect.s===s.A0.m[148].fly);
+  launch(s);const patches=s.l.combatProjectiles.filter(effect=>effect.k==='boom'&&effect.s===s.A0.m[148].fly);
   assert.ok(patches.length>=4);assert.equal(patches[0].t,0);assert.equal(patches[0].x,0);assert.equal(patches[0].y,-14);
   assert.equal(patches.at(-1).x,target.x);assert.equal(patches.at(-1).y,target.y-14);
   for(let i=1;i<patches.length;i++)assert.ok(patches[i].t<patches[i-1].t);
@@ -948,7 +957,7 @@ test('Bang Tam snow begins at cast time and advances through fixed patches to th
 
 test('snow affects every live occupant within the old 150 radius along its path without repeated overlap damage',()=>{
  const s=snowWorld(),target=enemy(s,350),nearCaster=enemy(s,0,40),middle=enemy(s,175,35),far=enemy(s,175,130);
- const pack=Array.from({length:6},()=>enemy(s,175,35));s.oD();
+ const pack=Array.from({length:6},()=>enemy(s,175,35));launch(s);
  run(s,.02);assert.equal(nearCaster.hp,90);assert.equal(middle.hp,100);assert.equal(target.hp,100);
  run(s,1.5);assert.equal(middle.hp,90);assert.ok(pack.every(mob=>mob.hp===90));assert.equal(far.hp,100);
  assert.ok(target.hp<100);const health=middle.hp;run(s,1);assert.equal(middle.hp,health);
@@ -958,7 +967,7 @@ test('snow affects every live occupant within the old 150 radius along its path 
 test('snow uses live occupants, keeps damage in quiet and low FX modes and survives missing sprite metadata',()=>{
  for(const quiet of [false,true])for(const missing of [false,true]){
   const s=snowWorld({state:{quiet},preferences:{lowFx:true}}),target=enemy(s,350),entering=enemy(s,175,200);
-  if(missing)delete s.A0.m[148];s.oD();entering.y=35;run(s,1.5);
+  if(missing)delete s.A0.m[148];launch(s);entering.y=35;run(s,1.5);
   assert.equal(entering.hp,90);assert.ok(target.hp<100);
   if(quiet||missing)assert.ok(!s.l.fx.some(effect=>effect.k==='boom'&&effect.s===s.A0.m[148]?.fly));
  }
@@ -970,7 +979,7 @@ test('snow stops at terrain and is invalidated on zone change or player death',(
  const skill={...s.skill,ev2:true};s.spawnSnowTrail(s.v,target,skill,hit=>s.hs(skill,hit));
  assert.ok(s.l.combatProjectiles.every(effect=>effect.x<180));
  for(const field of ['zone','death']){
-  const w=snowWorld(),far=enemy(w,350),near=enemy(w,0,35);w.oD();
+  const w=snowWorld(),far=enemy(w,350),near=enemy(w,0,35);launch(w);
   if(field==='zone')w.l.zoneShown++;else w.l.deadT=1;
   run(w,2);assert.equal(near.hp,100);assert.equal(far.hp,100);assert.equal(w.l.combatProjectiles.length,0);
  }

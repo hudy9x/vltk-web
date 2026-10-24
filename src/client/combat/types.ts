@@ -12,6 +12,8 @@ export interface CombatTarget extends WorldPoint {
   mv?: boolean;
   atT?: number;
   castT?: number;
+  speedCastDuration?: number;
+  speedCastProgress?: number;
   hurtT?: number;
   actionRevision?: number;
   hurtProxy?: boolean;
@@ -34,6 +36,10 @@ export interface SkillGeometry {
 }
 
 export interface CombatSkill {
+  rate?: number;
+  /** Uncapped attack/cast speed; cd remains an independent skill constraint. */
+  rawRate?: number;
+  phys?: boolean;
   id?: number | string;
   L?: number;
   geo?: SkillGeometry;
@@ -55,6 +61,8 @@ export interface CastOptions {
   maxHits?: (target: CombatTarget) => number;
   windup?: number;
   visual?: () => void;
+  /** Linked secondary effects start when the primary attack actually releases. */
+  afterRelease?: () => void;
   hideFallbackVisual?: boolean;
   onImpact?: ContactImpactHandler;
   duration?: number;
@@ -77,6 +85,8 @@ export interface CombatCast {
   origin: WorldPoint;
   direction: number;
   elapsed: number;
+  /** Only the part of the release tick after the attack pose completed. */
+  firstStep?: number;
   pulse: number;
   nextPulse: number;
   pulseFrame: number;

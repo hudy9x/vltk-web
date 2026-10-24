@@ -57,7 +57,8 @@ var F2 = function (A, n, t) {
       t,
     ),
     j = Math.max(Fw[n.id] || 0, G ? G[0] : 0) / 18,
-    X = h ? o7(h) : Math.min(n.phys ? A.aspdP || A.aspd : A.aspdC || A.aspd * 0.9, j ? 1 / j : 99),
+    rawRate = h ? o7(h) : (n.phys ? A.aspdP ?? A.aspd : A.aspdC ?? A.aspd * 0.9),
+    X = Math.min(rawRate, j ? 1 / j : Infinity),
     $0 = (T0) => {
       const aA = b0(n, Rr[T0], t);
       return aA && aA[1] > 0 ? aA[1] / 18 : 0;
@@ -95,6 +96,7 @@ var F2 = function (A, n, t) {
       skAr: _,
       series: n.series >= 0 ? n.series : A.series,
       rate: X,
+      rawRate,
       cd: j,
       coldT: $0("cold"),
       poisonT: $0("poison"),

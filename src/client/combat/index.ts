@@ -31,6 +31,8 @@ export { spawnSnowTrail, SNOW_TRAIL_RADIUS } from './snow-trail';
 export { actorActionLocked, beginActorCast, applyActorHurt, advanceActorActions } from './action-state';
 export { applyPotionRecovery, advanceConsumableCooldowns } from './recovery';
 export { applyColdSlow, coldSlowPower, coldSpeedFactor } from './cold-status';
+export { resolveSpeed, speedSpriteFrame, validateSpeedConfiguration } from '../speed/runtime';
+export { SPEED_CONFIG } from '../speed/config';
 export { enqueueDamageLabel, updateDamageLabels, DAMAGE_LABEL_COLORS, DAMAGE_LABEL_LAYOUT } from './damage-labels';
 export { advancedSkillLayout, configureAdvancedSkillImpact, spawnAdvancedCastVisual, SOUL_PALM_SPACING } from '../render/skills-150';
 export { spawnSwordFlowerCharge, SWORD_FLOWER_CHARGE_RADIUS } from './skill-effects/kiem-hoa-van-tinh';

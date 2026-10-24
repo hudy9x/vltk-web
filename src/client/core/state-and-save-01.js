@@ -736,10 +736,12 @@ var sD = function (A) {
   ) {
     l.dash = null;
     const e = n.tg;
-    (beginActorCast(v), e && !e.dead && e.hp > 0 && q0(v, e) <= ((e.r || 12) + 24) / QA && mt(v.x, v.y, e.x, e.y) && Ls(hs(n.a, e), n.a),
+    (beginActorCast(v, actorAttackTiming(v, n.a).cycleSeconds, () => {
+      if (e && !e.dead && e.hp > 0 && q0(v, e) <= ((e.r || 12) + 24) / QA && mt(v.x, v.y, e.x, e.y)) Ls(hs(n.a, e), n.a);
+      if (n.a.id) G8(n.a.id);
+    }),
       (v.act = "at"),
-      (v.actT = 0),
-      n.a.id && G8(n.a.id));
+      (v.actT = 0));
   }
   return !0;
 };
@@ -868,22 +870,22 @@ var oD = function () {
         if (!lotusEvent.chance || Math.random() < lotusEvent.chance) Ls(hs(lotusSkill, target), lotusSkill);
       });
     } : undefined,
-  });
-  if (snowEvent) {
+    afterRelease: snowEvent ? () => {
     const snowSkill = Object.assign({}, e, {
       parts: S5(e, snowEvent), stun: snowEvent.stun || 0, useAR: false, ev2: true, crit: 0,
     });
     spawnSnowTrail(v, t, snowSkill, target => {
       if (!snowEvent.chance || Math.random() < snowEvent.chance) Ls(hs(snowSkill, target), snowSkill);
     }, undefined, ((b0(T[e.id], "missle_speed_v", e.L) || [30])[0] || 30) * K3);
-  }
+    } : undefined,
+  });
   return (
     (v.face = t.x >= v.x ? 1 : -1),
     (v.dir = kn(t.x - v.x, t.y - v.y)),
     (v.act = "at"),
     (v.actT = 0),
     e.id ? G8(e.id) : W3(Jt() && Jt().anim, "at", 0.4),
-    1 / e.rate
+    Math.max(actorAttackTiming(v, e).cycleSeconds, e.cd || 0)
   );
 };
 
@@ -909,14 +911,13 @@ var $d = function (A, n) {
     A.stun -= n;
     return;
   }
-  const t = coldSpeedFactor(A);
   A.slowT = Math.max(0, (A.slowT || 0) - n);
   if (A.poison > 0) {
     const before = A.hp;
     A.poison -= n; A.hp -= A.poisonDmg * n;
     showDamageNumber(A, Math.max(0, Math.min(before, before - A.hp)), "poison");
   }
-  if (actorActionLocked(A)) { A.moving = false; A.atkCd = Math.max(0, (A.atkCd || 0) - n * t); return; }
+  if (actorActionLocked(A)) { A.moving = false; A.atkCd = Math.max(0, (A.atkCd || 0) - n); return; }
   if (A.home && KD(A, n)) return;
   const e = A.battlefieldMonster && typeof arenaSimulator !== "undefined" && arenaSimulator
     ? arenaSimulator.nearestMonsterTarget(A)
@@ -930,15 +931,14 @@ var $d = function (A, n) {
     (A.seeT = (A.seeT || 0) - n) <= 0 &&
       ((A.seeT = 0.25), (A.see = a > i + 4 || mt(A.x, A.y, e.x, e.y))),
     (A.moving = a > i || !A.see),
-    A.moving && Mw(A, e.x, e.y, A.spd * t * n),
+    A.moving && Mw(A, e.x, e.y, A.spd * actorRunSpeed(A) * n),
     A.home && RD(A),
-    (A.atkCd -= n * t),
+    (A.atkCd -= n),
     a <= i + 4 &&
       A.see &&
       A.atkCd <= 0 &&
-      ((A.atkCd =
-        A.cd * (A.curse && typeof Rn == "function" ? 1 + ((Rn(A) || {}).slow || 0) / 100 : 1)),
-      queueSkillContact(A, e, { melee: !A.ranged, rad: A.reach || 90, parts: { phys: 1 } },
+      ((A.atkCd = actorAttackTiming(A, { rate: 1 / Math.max(.01, A.cd || 1), phys: true }).cycleSeconds),
+      queueSkillContact(A, e, { rate: 1 / Math.max(.01, A.cd || 1), phys: true, melee: !A.ranged, rad: A.reach || 90, parts: { phys: 1 } },
         target => target === v ? U9(A) : target.battlefieldMonster && typeof arenaSimulator !== "undefined" && arenaSimulator
           ? arenaSimulator.receiveSoldierHit(target,A) : target.arenaSim && typeof arenaSimulator !== "undefined" && arenaSimulator
           ? arenaSimulator.receiveMonsterHit(target, A) : hB(target, A),

@@ -23,6 +23,26 @@ var applyPotionRecovery = CombatEngine.applyPotionRecovery;
 var advanceConsumableCooldowns = CombatEngine.advanceConsumableCooldowns;
 var applyColdSlow = CombatEngine.applyColdSlow;
 var coldSpeedFactor = CombatEngine.coldSpeedFactor;
+var resolveSpeed = CombatEngine.resolveSpeed;
+var speedSpriteFrame = CombatEngine.speedSpriteFrame;
+// Adapt legacy world/actor state here; speed/*.ts stays independent of items and skills.
+var actorRunSpeed = function (actor) {
+  const player = typeof v !== 'undefined' && actor === v;
+  const stats = player ? l.P : actor.battlefieldMonster ? null : actor.stats;
+  const mounted = player ? l.mounted : actor.mounted;
+  const base = stats ? (mounted ? stats.speed : stats.speedFoot ?? stats.speed) ?? 1 : 1;
+  const curse = actor.curse && typeof Rn === 'function' ? Rn(actor) : null;
+  const cold = coldSpeedFactor(player ? l : actor);
+  return resolveSpeed('run', Math.max(0, base + (curse?.run || 0) / 100) * cold * 100).multiplier;
+};
+var actorAttackTiming = function (actor, skill) {
+  const player = typeof v !== 'undefined' && actor === v;
+  const curse = actor.curse && typeof Rn === 'function' ? Rn(actor) : null;
+  const raw = skill.rawRate ?? skill.rate ?? 1;
+  const castPenalty = skill.phys === false ? (curse?.cast || 0) / 100 : 0;
+  const recovery = !actor.stats && !player ? 1 + Math.max(0, curse?.slow || 0) / 100 : 1;
+  return resolveSpeed('attack', Math.max(0, raw + castPenalty) * coldSpeedFactor(player ? l : actor) / recovery * 100);
+};
 // Feed raw damage and the recipient into the display queue, after HP is resolved.
 var showDamageNumber = function (target, amount, kind = "phys", critical = false, suffix = "") {
   return CombatEngine.enqueueDamageLabel(l.txt || (l.txt = []), target, amount, kind,

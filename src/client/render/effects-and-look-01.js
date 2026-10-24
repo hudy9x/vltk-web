@@ -216,7 +216,7 @@ var kf = function (A, n, t, e, a, i, r, c = 1) {
   if (!h) return !1;
   const g = bA("img/a/" + h.f);
   if (!g.complete || !g.naturalWidth) return !1;
-  let u = Math.floor((e * 1e3) / h.ms);
+  let u = typeof speedSpriteFrame === 'function' ? speedSpriteFrame(n, e, h.n, h.ms) : Math.floor((e * 1e3) / h.ms);
   u = ff[n] ? Math.min(u, h.n - 1) : u % h.n;
   const w = h.d >= 8 ? t : Math.floor((t * h.d) / 8);
   return (
@@ -452,7 +452,8 @@ var It = function (A, n, t, e, a, i, r, c, d) {
   if (!x) return !1;
   const p = x[4];
   let P;
-  if (A === "st" || A === "run") P = Math.floor((t * 1e3) / (gv[A] || 110)) % p;
+  if (A === "st" || A === "run") P = (typeof speedSpriteFrame === 'function'
+    ? speedSpriteFrame(A, t, p, gv[A] || 110) : Math.floor((t * 1e3) / (gv[A] || 110))) % p;
   else {
     const O = (typeof ws == "function" && ws(c, A)) || p * 0.09;
     P = Math.min(p - 1, Math.floor(E(t / Math.max(0.1, O), 0, 0.999) * p));

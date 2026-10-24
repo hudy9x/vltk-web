@@ -39,6 +39,9 @@ function game() {
   const combat = loadCombatEngine(s, { bridge: false });
   // Keep the cast/tick spies; use the real migrated range/terrain functions.
   for (const name of ['skillIgnoresTerrain', 'SKILL_RANGE_Y_RATIO', 'skillCastDistance', 'actorActionLocked', 'advanceConsumableCooldowns', 'coldSpeedFactor', 'applyColdSlow']) s[name] = combat[name];
+  // Keep input spies but use the production phase adapters and run-speed accessor.
+  for(const name of ['resolveSpeed','actorRunSpeed','actorAttackTiming']) declaration(s,'src/client/combat/legacy-bridge.js',name);
+  declaration(s,'src/client/core/state-and-save-03.js','Ra');
   const ui = 'src/client/ui/legacy-panels-and-audio-04.js';
   for (const name of ['Y','$1','hA','Rv']) declaration(s, ui, name);
   for (const name of ['eh','Wa','Qv','Ah']) declaration(s, 'src/client/ui/legacy-panels-and-audio-03.js', name);
@@ -193,10 +196,10 @@ test('touch tap selects and flashes without a ground move; a later ground tap re
   assert.equal(s.l.clickHold,false);assert.equal(s.l.manTgt,null);assert.equal(s.Y.target.x,450);
 });
 
-test('cold intensity slows keyboard and joystick movement, pursuit and the player attack clock',()=>{
+test('cold intensity slows movement by phase while attack cooldown counts real seconds',()=>{
  const s=game(),e=enemy(s,900);s.applyColdSlow(s.l,100,3);
  s.Qv=()=>[1,0];assert.equal(s.Ah(.2),true);assert.equal(s.v.x,22.5);
  s.Qv=()=>[0,0];s.l.manTgt=e;s.l.moveTo=e;s.l.clickHold=false;s.Y.target=null;
- s.l.atkT=2;s.Td(.2);assert.equal(s.v.x,45);assert.equal(s.l.atkT,1.85);
+ s.l.atkT=2;s.Td(.2);assert.equal(s.v.x,45);assert.equal(s.l.atkT,1.8);
  s.l.slowT=0;s.Ah(.2);s.Qv=()=>[1,0];s.Ah(.2);assert.equal(s.v.x,75,'normal movement after expiry');
 });

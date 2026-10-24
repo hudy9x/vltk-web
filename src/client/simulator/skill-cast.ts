@@ -64,12 +64,12 @@ export function castSimulatorSkill(actor: SimulatorActor, target: LegacyEntity, 
         if (!lotus.chance || Math.random() < lotus.chance) damage(flower, contact);
       }, live));
     } : undefined,
-  });
-  if (snow) withContext(() => {
+    afterRelease: snow ? () => withContext(() => {
     const ability = { ...skill, parts: S5(skill, snow), stun: snow.stun || 0, useAR: false, ev2: true, crit: 0 };
     spawnSnowTrail(actor, target, ability, contact => {
       if (!snow.chance || Math.random() < snow.chance) damage(ability, contact);
     }, live, ((b0(T[skill.id!], 'missle_speed_v', skill.L || 1) || [30])[0] || 30) * K3);
+    }) : undefined,
   });
   return cast;
 }

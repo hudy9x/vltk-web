@@ -499,7 +499,7 @@ var Ah = function (A) {
   if (hA() && l.clickHold) return !1;
   const [n, t] = Qv();
   if (!n && !t) return (Y.tmp && !Y.active && (Y.tmp = !1), !1);
-  const e = 150 * Ra() * coldSpeedFactor(l),
+  const e = 150 * Ra(),
     [a, i] = H5(v.x + n * e * A, v.y + t * e * A);
   return (!gt(v, a, i) && Y.target && (Y.target = null), (l.pickTarget = null), !0);
 };

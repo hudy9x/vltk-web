@@ -113,7 +113,7 @@ var NP = function (A) {
   // the representative set; only sprite/nameplate drawing is reduced.
   for (const a of living) if (!a.arenaSim) {
     a.animKey = r0[a.tid].anim;
-    H8(a, a.stun > 0 ? 0 : A * coldSpeedFactor(a), a.moving ? "run" : "st");
+    H8(a, a.stun > 0 ? 0 : A, a.moving ? "run" : "st");
     if (a.act !== "at" && a.act !== "hurt" && a.act !== "die")
       ps(a, a.moving && !(a.stun > 0) ? "run" : "st");
     if (!crowd.bodies.has(a) && a.hitT > 0) a.hitT -= A;
@@ -158,9 +158,9 @@ var NP = function (A) {
       if (
         ((v.px = v.x),
         (v.py = v.y),
-        (v.moving = Math.hypot(h, g) > 0.4),
+        (v.moving = Math.hypot(h, g) > 0.001),
         v.moving && v.act !== "at" && (v.dir = kn(h, g)),
-        H8(v, l.stunT > 0 ? 0 : A * coldSpeedFactor(l), v.moving ? "run" : "st"),
+        H8(v, l.stunT > 0 ? 0 : A, v.moving ? "run" : "st"),
         l.deadT > 0
           ? ps(v, "die")
           : v.act !== "at" && v.act !== "hurt" && ps(v, v.moving ? "run" : "st"),
