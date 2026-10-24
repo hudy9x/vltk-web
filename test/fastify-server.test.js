@@ -64,6 +64,37 @@ test('JSON parsing keeps the old content-type behavior and cross-site rejection 
   } finally { await app.close(); db.close(); }
 });
 
+test('shared links allow game document navigation while cross-site APIs and embeds remain blocked', async () => {
+  const { app, db } = fixture();
+  const headers = { 'sec-fetch-site': 'cross-site', 'sec-fetch-mode': 'navigate',
+    'sec-fetch-dest': 'document', 'sec-fetch-user': '?1', referer: 'https://www.facebook.com/' };
+  try {
+    for (const url of ['/', '/?fbclid=facebook-test', '/index.html?fbclid=facebook-test']) {
+      for (const method of ['GET', 'HEAD']) {
+        const result = await app.inject({ method, url, headers });
+        assert.equal(result.statusCode, 200, `${method} ${url}`);
+        assert.match(result.headers['content-type'], /text\/html/);
+      }
+    }
+    for (const options of [
+      { url: '/api/health' },
+      { url: '/api/storage' },
+      { url: '/api/storage', method: 'POST', payload: '{' },
+      { url: '/', method: 'POST', payload: '{' },
+      { url: '/', headers: { ...headers, 'sec-fetch-dest': 'iframe' } },
+      { url: '/', headers: { ...headers, 'sec-fetch-mode': 'cors' } },
+      { url: '/', headers: { 'sec-fetch-site': 'cross-site' } },
+    ]) {
+      const result = await app.inject({ headers, ...options });
+      assert.equal(result.statusCode, 403);
+      assert.deepEqual(result.json(), { error: 'Cross-site request rejected' });
+    }
+    const wrongOrigin = await app.inject({ url: '/', headers: { ...headers, origin: 'https://other.example' } });
+    assert.equal(wrongOrigin.statusCode, 403);
+    assert.deepEqual(wrongOrigin.json(), { error: 'Origin rejected' });
+  } finally { await app.close(); db.close(); }
+});
+
 test('HTTPS behind the loopback proxy accepts same-origin writes and sets Secure session cookies', async () => {
   const { app, db } = fixture();
   const headers = { host: 'gamelab.hudy9x.com', origin: 'https://gamelab.hudy9x.com',
