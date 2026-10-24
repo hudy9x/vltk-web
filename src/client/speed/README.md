@@ -1,7 +1,7 @@
 # Speed phases
 
 Edit **`config.ts`** to balance movement and attack animation. This is the only
-place that defines the speed floor/ceiling, thresholds and reference FPS.
+place that defines the speed floor/ceiling, thresholds, movement distance and reference FPS.
 No item IDs, skill effects, damage values or renderer settings belong here.
 
 - `minPercent` / `maxPercent`: final limits, applied **after** buffs and debuffs.
@@ -9,6 +9,10 @@ No item IDs, skill effects, damage values or renderer settings belong here.
   Select the highest threshold reached; 149% running uses the 120% phase.
 - `referenceFrames`: reference sheet size. Actual sheets are normalized so their
   different frame counts do not give different action rates.
+- `run.distanceScale`: physical movement distance multiplier, independent of
+  sprite FPS. `1` keeps current movement, `1.15` travels 15% farther per second,
+  and `1.3` travels 30% farther. It must be finite and positive. Applies to player,
+  SIM, monster pursuit and soldier patrol movement; attack timing is unchanged.
 - Every track must include its minimum, 100%, and maximum thresholds. FPS must
   be positive and nondecreasing. Invalid configuration fails validation at load.
 
@@ -20,7 +24,9 @@ releases one primary cast. Flight speed, field lifetime and secondary pulse
 cadence are independent. A skill's own cooldown may still limit cast frequency.
 
 Running velocity is the actor's base velocity multiplied by the selected FPS
-divided by the 100% phase FPS. Editing a phase's FPS therefore changes both
+divided by the 100% phase FPS, then multiplied by `run.distanceScale`.
+For a fixed route, `1.15` takes about 87% of the previous travel time.
+Editing a phase's FPS therefore changes both
 movement and the step animation. Player/SIM/monster base velocities stay distinct.
 
 `runtime.ts` contains pure phase/frame calculations. `combat/legacy-bridge.js`

@@ -100,6 +100,38 @@ test('each completed attack pose releases exactly one skill at 100, 200 and 300 
   }
 });
 
+test('distance scale changes travel time without changing run frames or attack timing', () => {
+  const s = world();
+  declaration(s, 'src/client/core/state-and-save-03.js', 'Ra');
+  declaration(s, 'src/client/render/arena-01.js', 'H8');
+  declaration(s, 'src/client/render/arena-01.js', 'ps');
+  Object.assign(s.l.P, { speed: 2, speedFoot: 2 });
+  const attackDuration = s.actorAttackTiming(s.v, { rate: 2 }).cycleSeconds;
+  for (const scale of [.8, 1, 1.15, 1.3]) {
+    s.CombatEngine.SPEED_CONFIG.run.distanceScale = scale;
+    s.CombatEngine.validateSpeedConfiguration(s.CombatEngine.SPEED_CONFIG);
+    Object.assign(s.v, { act: 'run', actT: 0 });
+    s.H8(s.v, .1, 'run');
+    assert.equal(s.v.actT, .2);
+    assert.ok(Math.abs(150 * s.Ra() * .1 - 30 * scale) < 1e-9);
+    assert.ok(Math.abs(300 / (150 * s.Ra()) - 1 / scale) < 1e-9);
+    assert.equal(s.actorAttackTiming(s.v, { rate: 2 }).cycleSeconds, attackDuration);
+    // Slow debuffs and the 300% phase cap are applied before distance scaling.
+    const sim = { stats: { speed: 4, speedFoot: 4 }, slowT: 3, slowPower: .5 };
+    assert.equal(s.actorMovementSpeed(sim), 2 * scale);
+    assert.equal(s.actorMovementSpeed({ stats: { speed: 9 } }), 3 * scale);
+    assert.equal(s.actorMovementSpeed({}), scale);
+  }
+});
+
+test('distance scale rejects invalid values at configuration validation', () => {
+  const s = world(), config = JSON.parse(JSON.stringify(s.CombatEngine.SPEED_CONFIG));
+  for (const distanceScale of [0, -1, NaN, Infinity, -Infinity, undefined]) {
+    config.run.distanceScale = distanceScale;
+    assert.throws(() => s.CombatEngine.validateSpeedConfiguration(config), /distanceScale/);
+  }
+});
+
 test('no projectile, contact or linked secondary is emitted before the final attack frame', () => {
   const s=world(),target={x:10,y:0,hp:1000,r:20};s.l.enemies=[target];let emitted=0,secondary=0,hits=0;
   const skill={rate:2,melee:true,parts:{phys:1}};

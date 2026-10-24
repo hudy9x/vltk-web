@@ -2,6 +2,8 @@ import { SPEED_CONFIG } from './config';
 import type { ResolvedSpeed, SpeedConfiguration, SpeedKind } from './types';
 
 export function validateSpeedConfiguration(config: SpeedConfiguration): void {
+  if (!Number.isFinite(config.run.distanceScale) || config.run.distanceScale <= 0)
+    throw new Error('Run distanceScale must be finite and positive.');
   if (!Number.isFinite(config.minPercent) || !Number.isFinite(config.maxPercent) ||
       config.minPercent <= 0 || config.minPercent > 100 || config.maxPercent < 100)
     throw new Error('Speed limits must be positive and contain 100%.');

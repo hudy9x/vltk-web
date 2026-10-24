@@ -40,7 +40,7 @@ function game() {
   // Keep the cast/tick spies; use the real migrated range/terrain functions.
   for (const name of ['skillIgnoresTerrain', 'SKILL_RANGE_Y_RATIO', 'skillCastDistance', 'actorActionLocked', 'advanceConsumableCooldowns', 'coldSpeedFactor', 'applyColdSlow']) s[name] = combat[name];
   // Keep input spies but use the production phase adapters and run-speed accessor.
-  for(const name of ['resolveSpeed','actorRunSpeed','actorAttackTiming']) declaration(s,'src/client/combat/legacy-bridge.js',name);
+  for(const name of ['resolveSpeed','actorRunSpeed','actorMovementSpeed','actorAttackTiming']) declaration(s,'src/client/combat/legacy-bridge.js',name);
   declaration(s,'src/client/core/state-and-save-03.js','Ra');
   const ui = 'src/client/ui/legacy-panels-and-audio-04.js';
   for (const name of ['Y','$1','hA','Rv']) declaration(s, ui, name);

@@ -137,7 +137,7 @@ declare function WP(context: CanvasRenderingContext2D, actor: LegacyEntity, scal
 declare function ZP(context: CanvasRenderingContext2D, actor: LegacyEntity, height: number, scale: number, dt: number): void;
 declare function nameplateOffset(animation: string | undefined, scale: number, ratio: number, padding: number, fallback: number): number;
 declare function actorActionLocked(actor: CombatTarget): boolean;
-declare function actorRunSpeed(actor: CombatTarget): number;
+declare function actorMovementSpeed(actor: CombatTarget): number;
 declare function actorAttackTiming(actor: CombatTarget, skill: SimulatorSkill): import('../speed/types').ResolvedSpeed;
 declare function applyActorHurt(actor: CombatTarget, damage: number, maximumHP: number): boolean;
 
@@ -550,7 +550,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       monsterTick(actor,dt);
       if (actor.hp <= 0 || actorActionLocked(actor) || actor.stun > 0) return;
       if (!target || actor.battlefieldReturning) {
-        patrolSoldier(actor,dt,{move:(unit,x,y,distance)=>Mw(unit,x,y,distance*actorRunSpeed(unit)),direction:kn,clear:(x,y,tx,ty)=>typeof mapNavigation!=='undefined'?mapNavigation.clear(x,y,tx,ty):mt(x,y,tx,ty)});
+        patrolSoldier(actor,dt,{move:(unit,x,y,distance)=>Mw(unit,x,y,distance*actorMovementSpeed(unit)),direction:kn,clear:(x,y,tx,ty)=>typeof mapNavigation!=='undefined'?mapNavigation.clear(x,y,tx,ty):mt(x,y,tx,ty)});
       } else if (loadout && actor.battlefieldSkillCooldown <= 0) {
         castSoldierSkill(actor, target, loadout);
       }
@@ -655,7 +655,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     actor.moving = distance() > reach || !actor.see;
     if (actor.battlefieldBoss && actor.moving) { actor.moving = false; return; }
     if (actor.moving) {
-      const before = { x: actor.x, y: actor.y }, step = 100 * actorRunSpeed(actor) * dt;
+      const before = { x: actor.x, y: actor.y }, step = 100 * actorMovementSpeed(actor) * dt;
       const goal = { x: target.x, y: target.y };
       const clear = (x: number,y: number,tx: number,ty: number) => typeof mapNavigation !== 'undefined' ? mapNavigation.clear(x,y,tx,ty) : mt(x,y,tx,ty);
       const waypoint = actor.battlefieldTeam ? crowd.route(actor,goal,clear) : goal;

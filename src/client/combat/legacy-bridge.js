@@ -35,6 +35,10 @@ var actorRunSpeed = function (actor) {
   const cold = coldSpeedFactor(player ? l : actor);
   return resolveSpeed('run', Math.max(0, base + (curse?.run || 0) / 100) * cold * 100).multiplier;
 };
+// Physical movement has a separate tuning knob; render clocks use actorRunSpeed.
+var actorMovementSpeed = function (actor) {
+  return actorRunSpeed(actor) * CombatEngine.SPEED_CONFIG.run.distanceScale;
+};
 var actorAttackTiming = function (actor, skill) {
   const player = typeof v !== 'undefined' && actor === v;
   const curse = actor.curse && typeof Rn === 'function' ? Rn(actor) : null;

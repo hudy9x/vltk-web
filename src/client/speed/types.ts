@@ -4,7 +4,7 @@ export interface SpeedTrack { referenceFrames: number; phases: readonly SpeedPha
 export interface SpeedConfiguration {
   minPercent: number;
   maxPercent: number;
-  run: SpeedTrack;
+  run: SpeedTrack & { distanceScale: number };
   attack: SpeedTrack;
 }
 export interface ResolvedSpeed {

@@ -643,6 +643,22 @@ test('monster and SIM movement uses final speed phases while cooldowns count rea
  assert.ok(Math.abs(actor.cooldown-1.8)<1e-12);assert.ok(Math.abs(moved-20*s.actorRunSpeed(actor))<1e-12);
 });
 
+test('distance scale reaches native monster pursuit and SIM movement without accelerating cooldowns',()=>{
+ for(const scale of [1,1.3]) {
+  const s=simulatorGame();loadDeclaration(s,'src/client/core/state-and-save-01.js','$d');
+  s.CombatEngine.SPEED_CONFIG.run.distanceScale=scale;
+  s.q0=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);s.r0[0].anim='monster';
+  let moved=0;s.Mw=(_actor,_x,_y,distance)=>moved=distance;
+  const monster={x:0,y:0,hp:1000,max:1000,r:17,tid:0,spd:100,reach:40,atkCd:2,cd:1,ar:1};
+  s.$d(monster,.2);assert.ok(Math.abs(moved-20*scale)<1e-12);assert.equal(monster.atkCd,1.8);
+  const actor=s.arenaSimulator.create('wudang');actor.cooldown=2;
+  s.arenaSimulator.setFarm(true);actor.stats.main.rad=10;actor.x=0;actor.y=0;
+  s.arenaSimulator.tick(.2);
+  assert.ok(Math.abs(moved-20*s.actorRunSpeed(actor)*scale)<1e-12);
+  assert.ok(Math.abs(actor.cooldown-1.8)<1e-12);
+ }
+});
+
 test('allied cold attacks use resisted cold damage for slow intensity',()=>{
  const s=simulatorGame(),target=s.l.enemies[0];Object.assign(target,{x:550,y:500,hp:10000,max:10000,res:{...target.res,cold:50}});
  Object.assign(s,{H2:()=>1,L:{},jh:1000,_1:()=>[target],q0:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),fB(){},

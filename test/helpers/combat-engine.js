@@ -10,6 +10,7 @@ function loadCombatEngine(sandbox, { bridge = true, productionSpeed = false } = 
   // Mechanism tests use a fixed one-second baseline, independently of balance
   // tuning. Tests of the shipped balance table opt into productionSpeed.
   if (!productionSpeed) {
+    sandbox.CombatEngine.SPEED_CONFIG.run.distanceScale = 1;
     const attack = sandbox.CombatEngine.SPEED_CONFIG.attack;
     attack.referenceFrames = 20;
     attack.phases = [25, 50, 75, 100, 125, 150, 200, 250, 300]

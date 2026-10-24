@@ -1,6 +1,6 @@
 import type { SpeedConfiguration } from './types';
 
-/** Balance ONLY speed thresholds and reference sprite FPS here.
+/** Balance ONLY speed thresholds, movement distance and reference sprite FPS here.
  * Actual sprite sheets are normalized to referenceFrames, so different sheets
  * complete the same action in the same time. No item/skill IDs belong here.
  */
@@ -8,6 +8,8 @@ export const SPEED_CONFIG: SpeedConfiguration = {
   minPercent: 25,
   maxPercent: 300,
   run: {
+    // Distance traveled per second only; 1.15 = 15% farther, with the same FPS.
+    distanceScale: 1.15,
     referenceFrames: 8,
     phases: [
       { minPercent: 25, fps: 3 }, { minPercent: 50, fps: 6 },

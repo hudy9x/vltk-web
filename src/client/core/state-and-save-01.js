@@ -931,7 +931,7 @@ var $d = function (A, n) {
     (A.seeT = (A.seeT || 0) - n) <= 0 &&
       ((A.seeT = 0.25), (A.see = a > i + 4 || mt(A.x, A.y, e.x, e.y))),
     (A.moving = a > i || !A.see),
-    A.moving && Mw(A, e.x, e.y, A.spd * actorRunSpeed(A) * n),
+    A.moving && Mw(A, e.x, e.y, A.spd * actorMovementSpeed(A) * n),
     A.home && RD(A),
     (A.atkCd -= n),
     a <= i + 4 &&
