@@ -884,7 +884,7 @@ var oD = function () {
     (v.dir = kn(t.x - v.x, t.y - v.y)),
     (v.act = "at"),
     (v.actT = 0),
-    e.id ? G8(e.id) : W3(Jt() && Jt().anim, "at", 0.4),
+    e.id ? (+e.id !== 1081 && G8(e.id)) : W3(Jt() && Jt().anim, "at", 0.4),
     Math.max(actorAttackTiming(v, e).cycleSeconds, e.cd || 0)
   );
 };
