@@ -99,6 +99,17 @@ select,textarea{background:#0b100e;color:var(--text);border:1px solid var(--line
 .skl.lock{opacity:.5} .skl.main{border-color:var(--gold);box-shadow:inset 3px 0 0 var(--gold)}
 .skl .sic{width:40px;height:40px;border-radius:5px;border:1px solid var(--line2)}
 .skl .info small{display:block;color:var(--dim);font-size:11px}
+.skill-route-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.skill-route-tabs [role=tab]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.skill-route-scroll{overflow-x:auto;margin-top:8px}
+.skill-route-table{width:100%;border-collapse:collapse;font-size:12px}
+.skill-route-table th,.skill-route-table td{padding:7px 5px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.skill-route-table th{color:var(--dim);font-weight:normal;font-size:11px}
+.skill-route-table th:last-child,.skill-route-table td:last-child{text-align:right;white-space:nowrap}
+.skill-route-name{display:flex;gap:8px;align-items:center;min-width:150px}
+.skill-route-name img{flex-shrink:0;border:1px solid var(--line2);border-radius:3px;image-rendering:pixelated}
+.skill-route-table small{display:block;font-size:10px;line-height:1.5}
+.skill-route-unavailable{color:var(--dim)}
 .skl .lvl{color:var(--gold);font-size:12px}
 .tag{font-size:10px;padding:1px 5px;border-radius:3px;background:#2a3a33;color:var(--dim)} .tag.attack{background:#4a2a1f;color:#ffb38a}
 

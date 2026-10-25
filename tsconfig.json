@@ -16,6 +16,7 @@
     "resolveJsonModule": true
   },
   "include": [
+    "src/client/config/**/*.ts",
     "src/client/combat/**/*.ts",
     "src/client/render/**/*.ts",
     "src/client/simulator/**/*.ts",
