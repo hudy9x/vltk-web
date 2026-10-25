@@ -11115,6 +11115,17 @@
     "tier": 150
   }
 };
+  // Project balance: primary lightning at level 27 is 2304 (3196 with +892 magic).
+  // Materialize the original 25-level curve and its 10 equipment levels before
+  // scaling, then repeat the capped endpoint so b0 cannot extrapolate past 35.
+  const thunderPrimary = skills[1081].attr.lightingdamage_v;
+  const thunderLast = thunderPrimary.at(-1)[0], thunderStep = thunderLast - thunderPrimary.at(-2)[0];
+  skills[1081].attr.lightingdamage_v = thunderPrimary.concat(
+    Array.from({length:11}, (_, index) => [thunderLast + Math.min(index + 1, 10) * thunderStep, 0, 0]),
+  ).map(row => {
+    const damage = Math.round(row[0] * 2304 / 368);
+    return [damage, 0, damage];
+  });
   // Vô Ảnh Xuyên: double flight speed at every level (frames use this curve).
   skills[1069].attr.missle_speed_v = skills[1069].attr.missle_speed_v.map(speed => speed * 2);
   Object.assign(window.JX.skills, skills);

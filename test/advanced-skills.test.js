@@ -1044,6 +1044,21 @@ test('Thiên Địa and Tật Hỏa deliver exactly five/three beats in world an
   }
 });
 
+test('Kunlun primary balance reaches 3196 per beat with 892 magic and preserves its level cap',()=>{
+  const {s}=advancedCombat();
+  const stats={skillBonus:{},seriesSkill:0,wmin:100,wmax:100,physPct:0,add:{},enh:{},magAdd:{light:892},crit:0,ignoreDef:0,aspd:2,series:4};
+  const main=s.F2(stats,s.T[1081],27);
+  assert.equal(main.tot,3196);
+  assert.equal(main.parts.light,3196);
+  for(const [level,expected] of [[1,157],[5,451],[10,820],[15,1190],[20,1565],[25,2154],[27,2304],[30,2529],[35,2905],[36,2905],[45,2905]])
+    assert.deepEqual(Array.from(s.b0(s.T[1081],'lightingdamage_v',level)),[expected,0,expected]);
+  const ui=normalizedSkillUi();
+  assert.match(ui.Kf(1081,25,2,27,27,0),/Lôi sát: 2304 đến 2304 điểm/);
+  const before=JSON.stringify(s.T[1081].attr.lightingdamage_v);
+  load(s,'src/client/data/advanced-skills-01.js');
+  assert.equal(JSON.stringify(s.T[1081].attr.lightingdamage_v),before,'reloading the catalog must not apply the multiplier twice');
+});
+
 test('Thiên Lôi delivers five timed primary strikes inside radius 150 at different frame rates and FX settings',()=>{
   for(const level of [1,25])for(const mode of ['native','quiet','missing'])for(const dt of [1/60,.05,.4,2]) {
     const {s,skill}=advancedCombat(),ability=skill(1081,level);
@@ -1096,6 +1111,26 @@ test('Kunlun tier 2 applies its own +252% support and retains damage with quiet,
     assert.ok(secondary.every(hit=>Math.abs(hit.damage/game.ability.parts.light-.55*3.52)<1e-9));
     assert.ok(secondary.every(hit=>game.targets.includes(hit.target)));
   }
+});
+
+test('Kunlun tooltip shows secondary points from native damage including current support and preview level',()=>{
+  const {s}=kunlunThunderCombat(27,{support:true});
+  s.l.P.magAdd={light:892};
+  load(s,'src/client/ui/skill-150-effects-01.js');
+  const at=level=>s.skill150EffectRows(s.T[1081],level).map(row=>row[1]).join('\n');
+  for(const level of [27,29,30]) {
+    const main=s.F2(s.l.P,s.T[1081],level),damage=s.S5(main,s.F5(main)[0]).light;
+    assert.ok(at(level).includes(`Lôi sát: ${Math.round(damage*.85)} đến ${Math.round(damage*1.15)} điểm (trước kháng)`));
+    assert.doesNotMatch(at(level),/55%/);
+  }
+  const before=at(29);
+  s.l.P.skillBonus[1109]=241;
+  assert.notEqual(at(29),before,'tooltip must react to the current support bonus');
+  assert.match(at(29),/Đã gồm chỉ số nhân vật và hỗ trợ tầng 2 hiện tại/);
+  assert.match(at(10),/từ cấp 11/);
+  assert.doesNotMatch(at(10),/trước kháng/);
+  const ui=normalizedSkillUi();
+  assert.match(ui.skill150EffectRows(ui.T[1079],25).map(row=>row[1]).join('\n'),/35% sát thương chiêu chính/);
 });
 
 test('Kunlun tier 2 respects cast interruption, zone changes and dead recipients',()=>{
