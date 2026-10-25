@@ -132,7 +132,8 @@ var j8 = function () {
     ((c0.ctx = new A()),
     (c0.gain = c0.ctx.createGain()),
     c0.gain.connect(c0.ctx.destination),
-    ks());
+    ks(),
+    z8(Me.skill[1081]));
 };
 
 var ks = function () {

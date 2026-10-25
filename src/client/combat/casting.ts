@@ -4,6 +4,7 @@ import { beginActorCast } from './action-state';
 import { defaultCombatTargets } from './spatial/contact-query';
 import { resolveSpeed } from '../speed/runtime';
 import type { ResolvedSpeed } from '../speed/types';
+declare function G8(skillId: number | string): void;
 declare function actorAttackTiming(actor: CombatTarget, skill: CombatSkill): ResolvedSpeed;
 // Secondary fields created synchronously at release inherit the same tick remainder.
 let releaseStep: number | undefined;
@@ -123,6 +124,8 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
         (l.combatProjectiles || (l.combatProjectiles = [])).push(effect);
         if (!l.quiet && !options.hideFallbackVisual) l.fx.push(effect);
       }
+      // One sound per primary release, shared by world combat and arena.
+      if (+skill.id! === 1081 && !skill.ev2 && typeof G8 === 'function') G8(1081);
       options.afterRelease?.();
     } finally {
       activeCombatCast = previous;

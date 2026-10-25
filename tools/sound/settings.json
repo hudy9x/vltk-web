@@ -1,0 +1,6 @@
+{
+  "target_mean_dbfs": -17,
+  "peak_ceiling_dbfs": -3,
+  "max_gain_db": 24,
+  "silence_threshold_dbfs": -70
+}

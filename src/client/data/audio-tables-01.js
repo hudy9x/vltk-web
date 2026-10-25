@@ -100,6 +100,7 @@ window.JS["npc"] = {
 };
 
 window.JS["skill"] = {
+  1081: "snd/thien-loi-chan-nhac.m4a",
   10: "snd/sound_k001.mp3",
   11: "snd/sound_k002.mp3",
   13: "snd/sound_k011.mp3",
