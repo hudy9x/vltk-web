@@ -7,7 +7,7 @@ const root = path.resolve(__dirname,'../..');
 
 function potentialFixture(faction='wudang', points=12, mainTier=90) {
   const bundle = potentialBundle(), declarations = new Map();
-  const context = { Math, Date, console }; context.window = context;
+  const context = { Math, Date, console, PotentialAllocation: { config: JSON.parse(fs.readFileSync(path.join(root, 'src/client/config/potential-allocation.json'), 'utf8')) } }; context.window = context;
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root,'public/data.js'),'utf8'),context);
   context.JFX={m:{},c:{},f:{}};

@@ -2293,6 +2293,19 @@
       "lines": 876
     },
     {
+      "file": "gameplay/skill-routes-01.js",
+      "symbols": ["skillRouteCatalog", "getSkillRoutes", "selectSkillRoute", "planSkillRoute", "applySkillRoute"]
+    },
+    {
+      "file": "config/potential-allocation.ts",
+      "global": "PotentialAllocation",
+      "symbols": ["PotentialAllocation"]
+    },
+    {
+      "file": "gameplay/potential-routes-01.js",
+      "symbols": ["potentialAllocationConfig", "getPotentialProfiles", "planPotentialRoute", "applyPotentialRoute"]
+    },
+    {
       "file": "systems/activities-and-stash-07.js",
       "symbols": [
         "Nk",

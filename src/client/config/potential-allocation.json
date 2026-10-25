@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "equipmentFirst": true,
+  "preserveAllocatedPoints": true,
+  "defaults": {
+    "external": { "str": 65, "dex": 5, "vit": 30, "eng": 0 },
+    "internal": { "str": 0, "dex": 5, "vit": 90, "eng": 5 }
+  },
+  "overrides": {
+    "shaolin": {
+      "staff": { "str": 55, "dex": 15, "vit": 30, "eng": 0 },
+      "fist": { "str": 55, "dex": 15, "vit": 30, "eng": 0 }
+    },
+    "tianwang": {
+      "spear": { "str": 55, "dex": 15, "vit": 30, "eng": 0 },
+      "blade": { "str": 55, "dex": 15, "vit": 30, "eng": 0 },
+      "hammer": { "str": 55, "dex": 15, "vit": 30, "eng": 0 }
+    },
+    "tangmen": {
+      "dart": { "str": 0, "dex": 70, "vit": 30, "eng": 0 },
+      "knife": { "str": 0, "dex": 70, "vit": 30, "eng": 0 },
+      "crossbow": { "str": 0, "dex": 70, "vit": 30, "eng": 0 }
+    },
+    "wudu": {
+      "curse": { "str": 0, "dex": 5, "vit": 85, "eng": 10 }
+    },
+    "emei": {
+      "palm": { "str": 0, "dex": 5, "vit": 85, "eng": 10 },
+      "support": { "str": 0, "dex": 5, "vit": 75, "eng": 20 }
+    },
+    "cuiyan": {
+      "dual": { "str": 0, "dex": 5, "vit": 85, "eng": 10 }
+    },
+    "tianren": {
+      "fire": { "str": 0, "dex": 5, "vit": 85, "eng": 10 },
+      "curse": { "str": 0, "dex": 5, "vit": 85, "eng": 10 }
+    },
+    "wudang": {
+      "sword": { "str": 50, "dex": 15, "vit": 25, "eng": 10 },
+      "qi": { "str": 0, "dex": 5, "vit": 65, "eng": 30 }
+    },
+    "kunlun": {
+      "curse": { "str": 0, "dex": 5, "vit": 85, "eng": 10 }
+    }
+  }
+}

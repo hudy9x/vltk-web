@@ -260,6 +260,7 @@ var Iw = function (A) {
 var Pt = function () {
   const A = I[o.fac];
   if (!A) return 0;
+  if (!l.sim) return applySkillRoute(o.skillRoute);
   const n = l.buffAssume;
   ((l.buffAssume = !0), (l.ignoreEqt = null));
   try {
@@ -449,6 +450,7 @@ var j5 = function () {
 };
 
 var yt = function () {
+  if (!l.sim && selectSkillRoute()) return applyPotentialRoute(o.skillRoute);
   let A = j5();
   const n = Lw();
   if (n) {

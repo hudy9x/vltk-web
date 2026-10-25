@@ -2,20 +2,11 @@
 var Nk = function () {
   const A = Ik(),
     n = G0(j0()),
-    t = { skills: [], attrs: [], gainSk: 0, gainAt: 0 },
-    e = JSON.stringify(o.skL || {});
+    t = { attrs: [], gainAt: 0 },
+    sim = l.sim, buffAssume = l.buffAssume;
   ((l.sim = 1), (l.buffAssume = !0));
   try {
-    if (o.skPts > 0) {
-      const a = Object.assign({}, o.sk);
-      Pt();
-      for (const i in o.sk) {
-        const r = o.sk[i] - (a[i] || 0);
-        r > 0 && t.skills.push({ id: +i, n: T[i].n, d: r, to: o.sk[i], max: T[i].max });
-      }
-      t.gainSk = G0(j0()) / Math.max(1, n) - 1;
-    }
-    if ((pg(A), o.attrPts > 0)) {
+    if (o.attrPts > 0) {
       const a = Object.assign({}, o.attr);
       Dg();
       for (const i of Object.keys(nn)) {
@@ -25,19 +16,30 @@ var Nk = function () {
       t.gainAt = G0(j0()) / Math.max(1, n) - 1;
     }
   } finally {
-    ((l.buffAssume = !1), pg(A), (l.sim = 0), (o.skL = JSON.parse(e)));
+    ((l.buffAssume = buffAssume), pg(A), (l.sim = sim));
   }
   return t;
 };
 
-var D2 = function s() {
-  const A = Nk(),
+var D2 = function s(routeId) {
+  const routes = getSkillRoutes(), plan = planSkillRoute(typeof routeId === "string" ? routeId : undefined),
+    potential = planPotentialRoute(plan.route && plan.route.id),
+    A = plan.route ? { attrs: [] } : Nk(),
     n = (r) => (r >= 0 ? "+" : "") + (r * 100).toFixed(1) + "%",
-    t = A.skills.length
-      ? `<div class="card"><b>Võ công</b> <small class="cp">sức mạnh ${n(A.gainSk)}</small>${A.skills.map((r) => `<div>${D(r.n)}: +${r.d} → ${r.to}/${r.max}</div>`).join("")}<div class="btnrow"><button class="btn" id="sgSk">Áp dụng</button></div></div>`
-      : "",
+    tabs = routes.length > 1 ? `<div class="skill-route-tabs" role="tablist" aria-label="Tuyến võ công">${routes.map(route => `<button type="button" class="btn sm${route.id === plan.route.id ? " on" : ""}" role="tab" id="route-${route.id}" aria-selected="${route.id === plan.route.id}" aria-controls="skill-route-panel" tabindex="${route.id === plan.route.id ? 0 : -1}" data-skill-route="${route.id}">${D(route.name)}</button>`).join("")}</div>` : "",
+    prerequisites = plan.route && plan.route.finisher ? ee[plan.route.finisher] : [],
+    t = plan.route
+      ? `<section class="card skill-route" id="skill-route-panel"${routes.length > 1 ? ` role="tabpanel" aria-labelledby="route-${plan.route.id}"` : ""}>
+        <b>${D(plan.route.name)}</b> <small class="dim">${o.skPts} điểm còn lại</small>
+        ${prerequisites.length ? `<p class="desc">Tăng đều ${prerequisites.length} kỹ năng nền, mỗi chiêu ít nhất 5 điểm để mở <b>${D(T[plan.route.finisher].n)}</b>. Cấp tối đa của chiêu này tăng theo kỹ năng nền thấp nhất; vẫn cần đủ cấp và bí kíp.</p>` : ""}
+        <div class="skill-route-scroll"><table class="skill-route-table"><thead><tr><th scope="col">Kỹ năng</th><th scope="col">Cấp</th><th scope="col">Hiện tại → Đề xuất</th></tr></thead><tbody>${plan.rows.map(row => `<tr${row.reason && !row.add ? ' class="skill-route-unavailable"' : ""}><td><div class="skill-route-name"><img src="${D(row.skill.ic || "")}" alt="" width="32" height="32"><span>${D(row.skill.n)}<small class="dim">${row.prerequisite ? "Kỹ năng nền" : SA(row.id) ? "Chiêu 8x · cộng bằng điểm" : row.shared ? "Dùng chung" : "Kỹ năng theo tuyến"}${row.reason ? ` · ${D(row.add && row.reason === "Đã tối đa" ? "Đạt tối đa" : row.reason)}` : ""}</small></span></div></td><td>${row.skill.req}</td><td><span>${row.before} → <b>${row.to}</b>/${row.skill.max}</span>${row.add ? `<small class="up">+${row.add}</small>` : ""}</td></tr>`).join("")}</tbody></table></div>
+        <p class="small">Cộng <b>${plan.spent}</b> điểm · Còn <b>${plan.remaining}</b> điểm.</p>
+        <div class="btnrow"><button class="btn" id="sgSk" ${plan.spent ? "" : "disabled"}>Đồng ý · ${D(plan.route.name)}</button></div>
+        ${!plan.spent ? `<p class="dim small">${o.skPts > 0 ? "Chưa có kỹ năng đủ điều kiện để cộng thêm." : "Bạn không còn điểm kỹ năng để cộng."}</p>` : ""}
+      </section>`
+      : '<p class="dim">Gia nhập môn phái để xem tuyến võ công.</p>',
     e = e4(),
-    a = e.total
+    a = e.total && potentialAllocationConfig.equipmentFirst
       ? `<div class="card"><b>Đủ điểm cho đồ đang mặc</b> <small class="dim">cần ${e.total} điểm · đang có ${o.attrPts}${e.total > o.attrPts ? ` · thiếu ${e.total - o.attrPts} (≈ ${Math.ceil((e.total - o.attrPts) / z2)} cấp nữa)` : ""}</small>${e.list
           .map(
             (r) =>
@@ -49,23 +51,48 @@ var D2 = function s() {
           )
           .join(
             "",
-          )}<div class="dim small">Gợi ý tiềm năng bên dưới cộng phần này trước, phần còn lại theo lực chiến.</div></div>`
+          )}<div class="dim small">Gợi ý tiềm năng bên dưới cộng phần này trước, phần còn lại cân đối theo tỷ lệ của tuyến đã chọn.</div></div>`
       : "",
-    i = A.attrs.length
+    i = potential.route
+      ? `<section class="card potential-route"><b>Tiềm năng · ${D(potential.route.name)}</b>
+        <p class="dim small">${potential.source === "override" ? "Tỷ lệ riêng của tuyến" : `Tỷ lệ chung ${potential.damageType === "external" ? "ngoại công" : "nội công"}`}</p>
+        <p class="desc">${potentialAllocationConfig.equipmentFirst ? "Ưu tiên đủ điểm cho đồ đang mặc, sau đó bù chỉ số còn thiếu theo tỷ lệ mục tiêu." : "Cộng điểm theo tỷ lệ mục tiêu, không ưu tiên điều kiện trang bị."} Giữ nguyên điểm đã cộng; tỷ lệ có thể lệch do yêu cầu trang bị và điểm cũ.</p>
+        <p class="dim small">${potential.type === "ranged" ? "Ám khí lấy sát thương vũ khí từ Thân pháp." : ["physical", "swordShield"].includes(potential.type) ? "Sức mạnh tăng sát thương vật lý; Thân pháp tăng chính xác và phòng thủ." : "Nội công tăng nội lực, không trực tiếp tăng sát thương phép."}${["shield", "swordShield"].includes(potential.type) ? " Nội lực còn hỗ trợ Tọa Vọng Vô Ngã khi dùng nội lực hộ thân." : ""}</p>
+        <div class="skill-route-scroll"><table class="skill-route-table"><thead><tr><th scope="col">Tiềm năng</th><th scope="col">Mục tiêu</th><th scope="col">Hiện tại → Đề xuất</th></tr></thead><tbody>${potential.rows.map(row => `<tr><td>${nn[row.key]}${row.equipment ? `<small class="dim">${row.equipment} điểm cho trang bị</small>` : ""}</td><td>${row.weight}%</td><td>${row.before} → <b>${row.to}</b>${row.add ? `<small class="up">+${row.add}</small>` : ""}</td></tr>`).join("")}</tbody></table></div>
+        <p class="small">Cộng <b>${potential.spent}</b> điểm · Còn <b>${potential.remaining}</b> điểm.${potential.equipmentMissing ? ` <span class="reqbad">Còn thiếu ${potential.equipmentMissing} điểm cho trang bị.</span>` : ""}</p>
+        <div class="btnrow"><button class="btn" id="sgAt" ${potential.spent ? "" : "disabled"}>Đồng ý · Tiềm năng ${D(potential.route.name)}</button></div></section>`
+      : A.attrs.length
       ? `<div class="card"><b>Tiềm năng</b> <small class="cp">sức mạnh ${n(A.gainAt)}</small>${A.attrs.map((r) => `<div>${r.n}: +${r.d}</div>`).join("")}<div class="btnrow"><button class="btn" id="sgAt">Áp dụng</button></div></div>`
       : "";
   J(
-    `<h3>Gợi ý cộng điểm</h3><p class="desc">Xem trước, chưa cộng gì. Gợi ý chọn cách tăng sức mạnh nhiều nhất với trang bị hiện tại. Bạn vẫn rút điểm được bằng nút −.</p>${t}${a}${i}${!t && !i ? '<p class="dim">Bạn không có điểm nào để cộng.</p>' : ""}`,
+    `<h3>Gợi ý cộng điểm</h3><p class="desc">Chọn tuyến để xem trước. Điểm còn dư được chia đều cho kỹ năng đủ điều kiện, giữ nguyên điểm đã cộng. Bỏ qua chiêu luyện 8x/90, 150 và chiêu 120; chiêu 8x hỗ trợ/bùa chú/bẫy vẫn cộng bằng điểm.</p>${tabs}${t}${a}${i}`,
     () => {
+      const tabButtons = [...document.querySelectorAll("#mBody [data-skill-route]")];
+      tabButtons.forEach((button, index) => {
+        button.onclick = () => { s(button.dataset.skillRoute); m(`#route-${button.dataset.skillRoute}`).focus(); };
+        button.onkeydown = event => {
+          let next;
+          if (event.key === "ArrowRight") next = (index + 1) % tabButtons.length;
+          else if (event.key === "ArrowLeft") next = (index + tabButtons.length - 1) % tabButtons.length;
+          else if (event.key === "Home") next = 0;
+          else if (event.key === "End") next = tabButtons.length - 1;
+          else return;
+          event.preventDefault(); tabButtons[next].click();
+        };
+      });
       const r = m("#sgSk");
       r &&
         (r.onclick = () => {
-          (Pt(), D0(), $(), V(), s());
+          const spent = applySkillRoute(plan.route.id);
+          (D0(), $(), V(), k(`Đã cộng ${spent} điểm · ${plan.route.name}`), s(plan.route.id));
         });
       const c = m("#sgAt");
       c &&
         (c.onclick = () => {
-          (Dg(), D0(), $(), V(), s());
+          if (potential.route) {
+            const spent = applyPotentialRoute(potential.route.id);
+            (D0(), $(), V(), k(`Đã cộng ${spent} điểm tiềm năng · ${potential.route.name}`), s(potential.route.id));
+          } else (Dg(), D0(), $(), V(), s());
         });
     },
   );
