@@ -381,6 +381,23 @@ var RB = function (A) {
   return null;
 };
 
+// Delegate to the document so quick equip survives panel and bag re-renders.
+var quickEquipContextMenu = function (event) {
+  const button = event.target.closest && event.target.closest(".it[data-uid]");
+  if (!button || !o || !o.fac) return;
+  const modal = m("#modal");
+  if (modal && !modal.classList.contains("hidden")) return;
+  const slot = button.closest("#t-char .slot[data-slot]"),
+    inBag = button.closest("#t-inv .invgrid, #t-inv-bag .invgrid"),
+    item = slot ? o.eq[slot.dataset.slot] : inBag && o.inv.find((entry) => entry.uid === +button.dataset.uid);
+  if (!item || item.uid !== +button.dataset.uid || item.pack || item.ktc || !rA[item.d]) return;
+  event.preventDefault();
+  event.stopPropagation();
+  S2();
+  if (slot) Dv(slot.dataset.slot);
+  else J1(item);
+};
+
 var xm = function () {
   window.__u2tip ||
     ((window.__u2tip = 1),
@@ -419,6 +436,7 @@ var xm = function () {
       },
       { passive: !0 },
     ),
+    document.addEventListener("contextmenu", quickEquipContextMenu),
     document.addEventListener("pointerdown", S2, !0),
     window.addEventListener("blur", S2));
 };
