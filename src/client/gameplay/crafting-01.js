@@ -214,7 +214,7 @@ var Yp = (s) =>
     s.set &&
     s.set.kind === "platina" &&
     typeof F1 < "u" &&
-    (F1.has(Rp(s.n)) || S.sets.platina.some((A) => A.vng === 2 && A.n === s.n))
+    (F1.has(Rp(s.n)) || S.sets.platina.some((A) => A.n === s.n && A.d === s.d && A.k === s.k && !A.fixed && A.d <= 9))
   );
 
 var U6 = null;

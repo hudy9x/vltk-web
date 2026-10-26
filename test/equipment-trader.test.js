@@ -435,3 +435,46 @@ test('Thien Tu tab defaults to the current faction and the rings tab isolates it
   click({ traderReceive: '' });
   assert.ok(s.o.inv.every(item => item.req.some(([id, value]) => id === 39 && value === s.I.emei.id)));
 });
+
+test('Thien Tu pieces retain their identity through save reload migrations for every faction', () => {
+  const s = game();
+  const source = fs.readFileSync('src/client/gameplay/crafting-01.js', 'utf8');
+  const ast = acorn.parse(source, { ecmaVersion: 'latest' });
+  for (const name of ['Rp', 'Yp', 'ZA', 'r3']) {
+    const node = ast.body.find(n => n.type === 'VariableDeclaration' && n.declarations.some(d => d.id.name === name));
+    vm.runInContext(source.slice(node.start, node.end), s);
+  }
+  const migrationSource = fs.readFileSync('src/client/gameplay/crafting-02.js', 'utf8');
+  const migrationAst = acorn.parse(migrationSource, { ecmaVersion: 'latest' });
+  const migration = migrationAst.body.find(n => n.type === 'VariableDeclaration' && n.declarations.some(d => d.id.name === 'rs'));
+  vm.runInContext(migrationSource.slice(migration.start, migration.end), s);
+  for (const faction of Object.keys(s.I)) {
+    for (const set of s.equipmentTrader.thientuCatalog(faction)) {
+      s.o.inv = [];
+      const items = s.equipmentTrader.trade({ kind: 'thientu', faction, set: set.key });
+      const restored = JSON.parse(JSON.stringify(items));
+      for (let index = 0; index < restored.length; index++) {
+        const item = restored[index], before = items[index];
+        assert.equal(s.ZA(item), false, `${faction}: ${item.n} must be recognized`);
+        s.ft(item);
+        for (const key of ['n', 'd', 'k', 's', 'base', 'req', 'set']) {
+          assert.deepEqual(JSON.parse(JSON.stringify(item[key])), JSON.parse(JSON.stringify(before[key])), `${faction}: ${before.n}: ${key}`);
+        }
+        s.ft(item);
+        assert.equal(item.n, before.n);
+      }
+    }
+  }
+});
+
+test('obsolete platina armor cannot migrate into a weapon when its slot has no native upgrade', () => {
+  const s = game();
+  s.ZA = item => item.n === 'Legacy armor';
+  const weapon = s.S.sets.platina.find(item => item.vng === 2 && item.d === 0);
+  const faction = weapon.req.find(([id]) => id === 39)[1];
+  s.JX.sets.platina = [weapon];
+  const item = { n: 'Legacy armor', d: 2, k: 0, r: 5, req: [[39, faction]], set: { kind: 'platina' } };
+  const before = JSON.stringify(item);
+  assert.equal(s.nw(item), false);
+  assert.equal(JSON.stringify(item), before);
+});
