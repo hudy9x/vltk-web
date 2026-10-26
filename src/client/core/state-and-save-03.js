@@ -65,7 +65,7 @@ var eP = {
   182: 1,
   372: 1,
   375: 1,
-  // 150 follows the mounted restriction of its matching 90 weapon branch.
+  // 150 generally follows its matching 90 branch, with explicit exceptions below.
   // Mounted-capable branches (e.g. Vô Tướng Trảm -> Tam Giới Quy Thiền)
   // intentionally remain unrestricted, just like their existing 90 skills.
   1055: 1, // Đạt Ma Độ Giang -> Đại Lực Kim Cang Chưởng
@@ -73,7 +73,7 @@ var eP = {
   1059: 1, 1060: 1, // Thiên Vương: thương / chùy
   1061: 1, 1062: 1, // Nga My
   1063: 1, 1065: 1, // Thúy Yên
-  1067: 1, // Ngũ Độc chưởng
+  1066: 1, // Hình Tiêu Cốt Lập requires dismount; U Hồn Phệ Ảnh is unrestricted.
   1069: 1, 1071: 1, // Đường Môn: phi đao / phi tiêu
   1073: 1, 1074: 1, // Cái Bang
   1076: 1, // Thiên Nhẫn nội công

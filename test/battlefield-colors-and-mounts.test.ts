@@ -29,7 +29,6 @@
       [380, 1062],
       [336, 1063],
       [337, 1065],
-      [353, 1067],
       [339, 1069],
       [302, 1070],
       [342, 1071],
@@ -42,7 +41,6 @@
       [375, 1081],
       [321, 1057],
       [322, 1058],
-      [355, 1066],
       [361, 1075],
     ];
     for (const [base, advanced] of pairs)
@@ -52,6 +50,10 @@
           game.E3(game.T[base], mounted),
           `${advanced} riding=${mounted}`,
         );
+    assert.equal(game.E3(game.T[1066], false), true, "Hình Tiêu Cốt Lập on foot");
+    assert.equal(game.E3(game.T[1066], true), false, "Hình Tiêu Cốt Lập requires dismount");
+    assert.equal(game.E3(game.T[1067], false), true, "U Hồn Phệ Ảnh on foot");
+    assert.equal(game.E3(game.T[1067], true), true, "U Hồn Phệ Ảnh while mounted");
   });
   function ridingFixture() {
     const game = createHeadlessGame(process.cwd());
