@@ -7,4 +7,4 @@ export const skillCastDistance = (actor: CombatTarget, target: CombatTarget): nu
 
 /** Bỏ qua địa hình, nhưng vẫn phải đúng tầm và chạm hitbox/vùng đang hoạt động. */
 export const skillIgnoresTerrain = (skill?: CombatSkill | null): boolean => !!skill &&
-  (skill.ignoreTerrain === true || [362, 365, 375, 380].includes(Number(skill.id)));
+  (skill.ignoreTerrain === true || [302, 362, 365, 375, 380, 1066, 1070, 1078, 1081].includes(Number(skill.id)));

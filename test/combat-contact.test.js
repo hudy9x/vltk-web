@@ -325,8 +325,9 @@ test('an enemy entering the Thien Ngoai explosion before activation is hit even 
 });
 
 test('the terrain-independent spells cast and contact through obstacles but still require range', () => {
-  for (const id of [362, 365, 375, 380]) {
+  for (const id of [302, 362, 365, 375, 380, 1066, 1070, 1078, 1081]) {
     const s = world(), target = enemy(s, 80);
+    if (id >= 1000) load(s, 'src/client/data/advanced-skills-01.js');
     s.skill = standardSkill(s, id);
     s.Z0.g = true;
     s.mt = () => false;
@@ -338,6 +339,7 @@ test('the terrain-independent spells cast and contact through obstacles but stil
     run(s, 2);
     assert.ok(target.hp <= 90, `skill ${id} must contact through terrain`);
     const far = world(), outside = enemy(far, 2000);
+    if (id >= 1000) load(far, 'src/client/data/advanced-skills-01.js');
     far.skill = standardSkill(far, id);
     far.Z0.g = true; far.mt = () => false; far.R2 = () => false;
     launch(far); run(far, 2);
