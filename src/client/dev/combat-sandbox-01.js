@@ -123,13 +123,13 @@ var combatSandbox = (function () {
     }
     return nearest;
   }
-  function selectSkill(id) {
+  function selectSkill(id, preserveWeapon = false) {
     maxLevel90Skills(o);
     if (id !== "basic" && (!I[o.fac].skills.includes(+id) || !o.sk[id] || !UA(T[id]))) throw new Error("Chiêu không thuộc nhân vật này.");
     o.main = id === "basic" ? "basic" : +id;
     o.mainLock = true; o.rot = false;
     const weapon = id === "basic" ? null : j1(T[id]);
-    if (weapon !== null) {
+    if (weapon !== null && !(preserveWeapon && o.eq.weapon)) {
       const item = _A(weapon >= 100 ? 1 : 0, weapon >= 100 ? weapon - 100 : weapon === -1 ? 6 : weapon, 1, 0);
       if (item) o.eq.weapon = item;
     }
@@ -164,7 +164,8 @@ var combatSandbox = (function () {
     Vf(); D0(); l.life = l.P.life; l.mana = l.P.mana;
     pi(); n0(true); M1(); uo(); tt(); fA("log");
     localStorage.setItem(selectionKey, faction);
-    selectSkill(o.main);
+    // Restoring a saved profile must not replace its equipped weapon with training gear.
+    selectSkill(o.main, true);
     const matching = filterMonsters(options.level, options.rarity);
     const selectedMonster = matching.find(entry => entry.id === options.monster && entry.rarity === options.monsterRarity) || matching[0];
     if (selectedMonster) spawnMonsters(selectedMonster.id, options.count, options.stationary, options.level, selectedMonster.rarity);

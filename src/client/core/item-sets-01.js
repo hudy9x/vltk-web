@@ -108,7 +108,6 @@ var nw = function (A) {
     ? [
         d.filter((u) => u.d === A.d && u.k === A.k),
         d.filter((u) => u.d === A.d),
-        d,
         r.filter((u) => n(u) < 0 && u.d === A.d),
         r.filter((u) => u.d === A.d),
       ]

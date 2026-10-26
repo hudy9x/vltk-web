@@ -1600,3 +1600,30 @@ test('failed marshal preparation reports a recoverable error without synchronous
   assert.match(match.state.preparationError,/Worker unavailable/);match.tick(600);
   assert.equal(match.running,true);assert.equal(s.arenaSimulator.actors.length,0);match.reset();
 });
+
+test('arena restores the equipped Thien Tu weapon across profile switches and reloads', () => {
+  const s = game();
+  s.combatSandbox.switchFaction('tangmen');
+  const skill = s.I.tangmen.skills.find(id => s.o.sk[id] && s.UA(s.T[id]));
+  s.j1 = () => 101;
+  s._A = (d, k) => ({ n: 'Training weapon', d, k });
+  s.combatSandbox.selectSkill(skill);
+  const weapon = { uid: 12345, n: '[Thiên Tứ] Băng Hàn Đơn Chỉ Phi Đao', d: 1, k: 1,
+    set: { kind: 'platina' }, lock: true, enh: 8, mag: [{ a: 85, p: [200, -1, 0] }] };
+  s.o.eq.weapon = JSON.parse(JSON.stringify(weapon));
+  s.$();
+  s.combatSandbox.switchFaction('shaolin');
+  s.combatSandbox.switchFaction('tangmen');
+  assert.deepEqual(JSON.parse(JSON.stringify(s.o.eq.weapon)), weapon);
+  const reloaded = game(true, s.entries);
+  // Re-run the startup restore with real weapon provisioning enabled in this fixture.
+  reloaded.j1 = () => 101;
+  reloaded._A = s._A;
+  reloaded.combatSandbox.switchFaction('tangmen');
+  assert.deepEqual(JSON.parse(JSON.stringify(reloaded.o.eq.weapon)), weapon);
+  const saved = reloaded.t1(JSON.parse(reloaded.entries.get('jxidle_arena_profiles')).tangmen);
+  assert.equal(saved.ok, true);
+  assert.deepEqual(JSON.parse(JSON.stringify(saved.state.eq.weapon)), weapon);
+  reloaded.combatSandbox.selectSkill(skill);
+  assert.equal(reloaded.o.eq.weapon.n, 'Training weapon', 'explicit skill selection still provisions its training weapon');
+});
