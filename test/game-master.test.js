@@ -407,3 +407,55 @@ test('GM adds 10,000 accumulated military merit to the current character and sav
  const first=s.o;s.o={fac:'shaolin',mats:{misc:{tk_merit:300}}};s.gameMaster.grant('warMerit');assert.equal(s.o.mats.misc.tk_merit,10300);assert.equal(first.mats.misc.tk_merit,20000);
  s.o.mats.misc.tk_merit=Number.MAX_SAFE_INTEGER;assert.throws(()=>s.gameMaster.grant('warMerit'),/giới hạn/);assert.equal(s.o.mats.misc.tk_merit,Number.MAX_SAFE_INTEGER);
 });
+
+test('GM learns real 120/150 skills for every faction and maxes only learned 90/150 skills', () => {
+  const s = game(false);
+  const catalog = {};
+  catalog.window = catalog;
+  vm.createContext(catalog);
+  for (const file of ['public/data.js', 'src/client/data/projectile-effects-01.js', 'src/client/data/projectile-effects-02.js', 'src/client/data/advanced-skills-01.js'])
+    vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), catalog);
+  s.T = catalog.JX.skills;
+  for (const skill of Object.values(s.T))
+    if (skill.learn === '90') Object.assign(skill, { tier: 90, req: 80 });
+  s.I = Object.fromEntries(catalog.JX.factions.filter(f => f.skills?.length).map(f => [f.key, f]));
+  vm.runInContext(declaration('src/client/gameplay/shop-and-books-01.js', 'va'), s);
+  vm.runInContext(declaration('src/client/combat/skills-01.js', 'W2'), s);
+  const panel = s.nodes.find(node => node.id === 'gm-panel');
+  assert.match(panel.innerHTML, /data-gm="learn120"/);
+  assert.match(panel.innerHTML, /data-gm="learn150"/);
+  assert.match(panel.innerHTML, /Nâng tối đa các chiêu cấp 90 và 150 đã học/);
+  for (const faction of Object.values(s.I)) {
+    Object.assign(s.o, { fac: faction.key, lvl: 150, sk: {}, skL: {}, bkOk: {} });
+    for (const tier of [120, 150]) {
+      const ids = faction.skills.filter(id => s.T[id]?.tier === tier);
+      assert.ok(ids.length, `${faction.key}: ${tier}`);
+      s.o.lvl = tier - 1;
+      assert.throws(() => s.gameMaster.grant(`learn${tier}`), /Chưa đủ cấp/);
+      assert.ok(ids.every(id => !s.o.sk[id]));
+      s.o.lvl = 150;
+      s.gameMaster.grant(`learn${tier}`);
+      assert.ok(ids.every(id => s.o.sk[id] === 1 && s.o.bkOk[id] === 1));
+      const first = ids[0];
+      s.o.sk[first] = 5;
+      s.o.skL[first] = { lv: 5, xp: 42 };
+      s.gameMaster.grant(`learn${tier}`);
+      assert.equal(s.o.sk[first], 5);
+      assert.equal(s.o.skL[first].xp, 42);
+    }
+    s.gameMaster.grant('learn90');
+    const skipped = faction.skills.find(id => s.T[id]?.tier === 150);
+    delete s.o.sk[skipped];
+    s.gameMaster.grant('max90');
+    assert.equal(s.o.sk[skipped], undefined);
+    for (const id of faction.skills.filter(id => s.o.sk[id])) {
+      const skill = s.T[id];
+      assert.equal(s.saved.at(-1).sk[id], skill.tier === 120 ? s.o.sk[id] : skill.max);
+      if (skill.tier !== 120) {
+        assert.equal(s.o.skL[id].lv, skill.max);
+        assert.equal(s.o.skL[id].xp, 0);
+      }
+    }
+    assert.equal(s.o.skPts, 0);
+  }
+});

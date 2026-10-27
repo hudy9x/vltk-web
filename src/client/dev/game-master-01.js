@@ -83,7 +83,7 @@ var gameMaster = (function () {
     context.restore();
   }
 
-  const amounts = { gold: 1_000_000_000_000, knb: 100_000, xp: 100_000_000, chest: 100, level150: 150, learn90: 1, max90: 1, potential: 3000, warMerit: 10000 };
+  const amounts = { gold: 1_000_000_000_000, knb: 100_000, xp: 100_000_000, chest: 100, level150: 150, learn90: 1, learn120: 1, learn150: 1, max90: 1, potential: 3000, warMerit: 10000 };
   function grant(action) {
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
     if (!(action in amounts)) throw new Error("Lệnh GM không hợp lệ.");
@@ -109,24 +109,27 @@ var gameMaster = (function () {
       saveAndRefresh();
       return "Đã lên cấp 150 và nhận điểm tiềm năng, kỹ năng tương ứng.";
     }
-    if (action === "learn90" || action === "max90") {
+    if (["learn90", "learn120", "learn150", "max90"].includes(action)) {
+      const maxSkills = action === "max90";
+      const tier = maxSkills ? null : Number(action.slice(5));
+      const tierLabel = maxSkills ? "90 và 150" : String(tier);
       const faction = I[o.fac];
       if (!faction || !faction.skills) throw new Error("Hãy gia nhập môn phái trước.");
-      const skills = [...new Set(faction.skills.map(Number))].map(id => T[id]).filter(skill => skill && skill.tier === 90);
-      if (!skills.length) throw new Error("Môn phái này không có chiêu cấp 90.");
-      const eligible = action === "learn90" ? skills : skills.filter(skill => (o.sk[skill.id] || 0) > 0);
-      if (!eligible.length) throw new Error("Hãy học chiêu cấp 90 trước khi nâng tối đa.");
-      if (eligible.some(skill => !W2(skill))) throw new Error("Chưa đủ cấp học chiêu 90. Hãy dùng nút lên cấp 150 trước.");
+      const skills = [...new Set(faction.skills.map(Number))].map(id => T[id]).filter(skill => skill && (maxSkills ? [90, 150].includes(skill.tier) : skill.tier === tier));
+      if (!skills.length) throw new Error("Môn phái này không có chiêu cấp " + tierLabel + ".");
+      const eligible = !maxSkills ? skills : skills.filter(skill => (o.sk[skill.id] || 0) > 0);
+      if (!eligible.length) throw new Error("Hãy học chiêu cấp 90 hoặc 150 trước khi nâng tối đa.");
+      if (eligible.some(skill => !W2(skill))) throw new Error("Chưa đủ cấp học chiêu " + tierLabel + ". Hãy dùng nút lên cấp 150 trước.");
       o.bkOk || (o.bkOk = {});
       const mastery = va();
       for (const skill of eligible) {
-        const level = action === "max90" ? skill.max : Math.max(1, o.sk[skill.id] || 0, mastery[skill.id]?.lv || 0);
+        const level = maxSkills ? skill.max : Math.max(1, o.sk[skill.id] || 0, mastery[skill.id]?.lv || 0);
         o.bkOk[skill.id] = 1;
         o.sk[skill.id] = level;
-        mastery[skill.id] = { lv: level, xp: action === "max90" ? 0 : mastery[skill.id]?.xp || 0 };
+        mastery[skill.id] = { lv: level, xp: maxSkills ? 0 : mastery[skill.id]?.xp || 0 };
       }
       saveAndRefresh();
-      return (action === "learn90" ? "Đã học: " : "Đã nâng tối đa: ") + eligible.map(skill => skill.n).join(" · ") + ".";
+      return (!maxSkills ? "Đã học: " : "Đã nâng tối đa: ") + eligible.map(skill => skill.n).join(" · ") + ".";
     }
     if (action === "potential") {
       const next = (o.attrPts || 0) + amounts.potential;
@@ -218,7 +221,9 @@ var gameMaster = (function () {
     <label id="gm-damage-label" title="Vùng màu cam: vùng va chạm của chiêu đang hoạt động, gồm cả SIM. Chưa cộng kích thước thân mục tiêu."><input type="checkbox" id="gm-show-damage">Hiển thị vùng sát thương (cam)</label>
     <button type="button" data-gm="level150">Tăng nhân vật lên cấp 150</button>
     <button type="button" data-gm="learn90">Học tất cả chiêu cấp 90 của môn phái</button>
-    <button type="button" data-gm="max90">Nâng tối đa các chiêu cấp 90 đã học</button>
+    <button type="button" data-gm="learn120">Học tất cả chiêu cấp 120 của môn phái</button>
+    <button type="button" data-gm="learn150">Học tất cả chiêu cấp 150 của môn phái</button>
+    <button type="button" data-gm="max90">Nâng tối đa các chiêu cấp 90 và 150 đã học</button>
     ${development ? '<button type="button" data-gm="potential">+3.000 điểm tiềm năng</button>' : ""}
     <button type="button" data-gm="gold">+100 triệu vạn lượng (1.000 tỷ lượng)</button>
     <button type="button" data-gm="knb"><img src="img/ep/knb.png" alt="">+10 vạn Kim Nguyên Bảo</button>
