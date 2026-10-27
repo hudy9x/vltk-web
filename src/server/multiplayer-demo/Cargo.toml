@@ -1,0 +1,29 @@
+[package]
+name = "multiplayer-demo"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+path = "lib.rs"
+
+[[bin]]
+name = "demo-websocket"
+path = "websocket/main.rs"
+
+[[bin]]
+name = "demo-webtransport"
+path = "webtransport/main.rs"
+
+[dependencies]
+anyhow = "1"
+axum = { version = "0.8.9", features = ["ws"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "sync", "time", "signal"] }
+tower-http = { version = "0.6", features = ["fs", "set-header", "cors"] }
+wtransport = "0.7.2"
+
+[profile.release]
+lto = "thin"
+strip = true

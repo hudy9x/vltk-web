@@ -1,0 +1,31 @@
+[Unit]
+Description=VLTK multiplayer %i demo (Rust)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=vltk-demo
+Group=vltk-demo
+WorkingDirectory=/opt/vltk-multiplayer-demo/current
+EnvironmentFile=/etc/vltk-multiplayer-demo/%i.env
+ExecStart=/opt/vltk-multiplayer-demo/current/bin/demo-%i
+Restart=always
+RestartSec=3
+# Refresh the ephemeral 14-day WebTransport certificate before it expires.
+RuntimeMaxSec=7d
+TimeoutStopSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryAccounting=true
+MemoryMax=128M
+CPUAccounting=true
+CPUWeight=20
+TasksMax=64
+LimitNOFILE=1024
+
+[Install]
+WantedBy=multi-user.target

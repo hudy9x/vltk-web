@@ -242,6 +242,42 @@ bay dùng để kiểm tra va chạm được ẩn, cách tính sát thương gi
 Thiên Ngoại Lưu Tinh giữ cố định hiệu ứng; Thiên Địa Vô Cực chạy animation
 nhanh gấp đôi, không thay đổi nhịp tính sát thương.
 
+## Demo multiplayer — WebSocket và WebTransport
+
+Hai demo nhiều người chơi thật, server viết bằng **Rust**, client vẽ nhân vật
+bằng Canvas. **Chỉ bấm chuột trái vào vị trí muốn đến**; không hỗ trợ phím mũi
+tên hoặc WASD. Mỗi tab là một nhân vật, tối đa **8 người/phòng**. Server quyết
+định vị trí với tốc độ 220 px/s, cập nhật và gửi snapshot ở 20 Hz; client nội suy
+để hiển thị mượt. Hai cơ chế có phòng riêng, chạy độc lập với save và combat của game.
+
+Chạy từ root repository, mỗi lệnh trong một terminal riêng (cần Rust 1.88+):
+
+```sh
+# Terminal 1: WebSocket
+cargo run --manifest-path src/server/multiplayer-demo/Cargo.toml --bin demo-websocket
+
+# Terminal 2: WebTransport
+cargo run --manifest-path src/server/multiplayer-demo/Cargo.toml --bin demo-webtransport
+```
+
+| Cơ chế | Chơi hoàn toàn local | Client local kết nối server VPS |
+|---|---|---|
+| WebSocket | [Mở demo local](http://localhost:3101/websocket/) | [Thử WSS trên VPS](http://localhost:3101/websocket/?server=https%3A%2F%2Fgamelab.hudy9x.com%2Fmultiplayer-demo%2F) |
+| WebTransport | [Mở demo local](http://localhost:3102/webtransport/) | [Thử QUIC/UDP trên VPS](http://localhost:3102/webtransport/?server=https%3A%2F%2Fgamelab.hudy9x.com%2Fmultiplayer-demo%2F) |
+
+Mở hai tab cùng một link để thử di chuyển đồng bộ. Với chế độ VPS, giao diện
+vẫn được phục vụ local, còn dữ liệu di chuyển gửi tới VPS; khung kết nối hiện
+**VPS · gamelab.hudy9x.com**. WebSocket dùng WSS qua nginx/Cloudflare;
+WebTransport dùng QUIC/UDP trực tiếp tới `103.121.91.177:4433`, với fingerprint
+chứng chỉ lấy qua HTTPS. Giao diện có ping RTT, số snapshot nhận mỗi giây và FPS.
+
+Client nằm trong `src/client/multiplayer-demo/{websocket,webtransport}/`, server
+nằm trong `src/server/multiplayer-demo/{websocket,webtransport}/`.
+Xem [hướng dẫn demo và kiểm thử](src/server/multiplayer-demo/README.md) hoặc
+[triển khai, vận hành trên VPS](deploy/multiplayer-demo/README.md).
+
+![Demo multiplayer WebSocket và WebTransport với nhân vật di chuyển bằng chuột](multipler-demo.png)
+
 ## Kiến trúc
 
 Nút **Xóa log** xóa toàn bộ log của nhân vật hiện tại; **Copy log** sao chép
