@@ -15,12 +15,7 @@
     {
       "id": "ground",
       "type": "ground",
-      "image": "./assets/ground.webp"
-    },
-    {
-      "id": "contact-shadows",
-      "type": "shadow",
-      "image": "./assets/shadows.webp"
+      "image": "./assets/ground.jpg"
     },
     {
       "id": "world",
