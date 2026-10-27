@@ -291,10 +291,13 @@ def build():
     shadow_layer = shadows.filter(ImageFilter.GaussianBlur(9))
     ground.save(ASSETS / 'ground.webp', quality=88, method=6)
     shadow_layer.save(ASSETS / 'shadows.webp', lossless=True, method=6)
+    # Match farming maps: one opaque JPEG at runtime. Keep the separate WebP
+    # sources for editing, but bake static contact shadows below all world props.
+    Image.alpha_composite(ground.convert('RGBA'), shadow_layer).convert('RGB').save(
+        ASSETS / 'ground.jpg', quality=92, subsampling=0, optimize=True)
     document = {'schemaVersion': 1, 'id': 9003, 'name': 'Tống Kim · Hoang Nguyên',
         'status': 'available', 'size': {'width': SIZE, 'height': SIZE}, 'entry': CAMPS['song'],
-        'layers': [{'id': 'ground', 'type': 'ground', 'image': './assets/ground.webp'},
-                   {'id': 'contact-shadows', 'type': 'shadow', 'image': './assets/shadows.webp'},
+        'layers': [{'id': 'ground', 'type': 'ground', 'image': './assets/ground.jpg'},
                    {'id': 'world', 'type': 'world', 'objects': objects}],
         'navigation': {'kind': 'grid', 'cellSize': {'width': 32, 'height': 16}, 'columns': columns,
                        'rows': rows, 'blockedBase64': base64.b64encode(bits).decode()},
