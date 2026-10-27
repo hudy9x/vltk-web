@@ -6,6 +6,8 @@ var Rv = function () {
     return [(e.clientX - a.left) / i, (e.clientY - a.top) / i];
   };
   (lA.addEventListener("pointerdown", (e) => {
+    if (typeof gameMultiplayer !== "undefined" && gameMultiplayer.active &&
+        (e.pointerType !== "mouse" || e.button !== 0)) return;
     if (Y.active) return;
     if (Hs() && e.pointerType !== "touch") {
       const [r, c] = A(e),
@@ -119,6 +121,10 @@ var Rv = function () {
     window.addEventListener("keydown", (e) => {
       if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
       const a = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (typeof gameMultiplayer !== "undefined" && gameMultiplayer.active &&
+          ["w", "a", "s", "d", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(a)) {
+        e.preventDefault(); return;
+      }
       ((Y.keys[a] = !0),
         ["w", "a", "s", "d", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(a) &&
           !$1() &&

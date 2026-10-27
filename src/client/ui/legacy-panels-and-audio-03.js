@@ -462,6 +462,11 @@ var zv = function () {
 };
 
 var Qv = function () {
+  if (typeof gameMultiplayer !== "undefined" && gameMultiplayer.active) {
+    if (!Y.target) return [0, 0];
+    const dx = Y.target.x - v.x, dy = Y.target.y - v.y, distance = Math.hypot(dx, dy);
+    return distance < 6 ? ((Y.target = null), [0, 0]) : [dx / distance, dy / distance];
+  }
   if (Y.active && Y.moved) {
     const a = Y.x - Y.ox,
       i = Y.y - Y.oy,

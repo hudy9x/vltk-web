@@ -125,6 +125,7 @@ var NP = function (A) {
       mapScene.worldObjects({ x: B0.x, y: B0.y, width: M0.w, height: M0.h }),
       typeof othEnts == "function" ? othEnts() : [],
       typeof rm == "function" ? rm() : [],
+      typeof gameMultiplayer !== "undefined" ? gameMultiplayer.entities() : [],
       typeof equipmentTrader !== "undefined" ? equipmentTrader.entities() : [],
     )
     .sort((a, i) => a.y - i.y);
@@ -132,6 +133,7 @@ var NP = function (A) {
     // Finish the previous entity's anchored nameplate before drawing the next
     // (closer) body. Never collect all nameplates into a foreground overlay.
     IP();
+    if (a.remotePlayer) { gameMultiplayer.draw(n, a); continue; }
     if (a.mapObject) { mapScene.drawObject(n, a.mapObject); continue; }
     if (a.equipmentTrader) {
       equipmentTrader.draw(n, a);

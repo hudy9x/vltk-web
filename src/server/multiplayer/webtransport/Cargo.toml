@@ -1,0 +1,18 @@
+[package]
+name = "vltk-multiplayer-webtransport"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+anyhow = "1"
+axum = "0.8.9"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "sync", "time", "signal"] }
+serde_json = "1"
+wtransport = "0.7.2"
+hmac = "0.12"
+sha2 = "0.10"
+
+[profile.release]
+lto = "thin"
+strip = true

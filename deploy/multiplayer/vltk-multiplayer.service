@@ -1,0 +1,21 @@
+[Unit]
+Description=Vo Lam game multiplayer WebTransport
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+DynamicUser=yes
+EnvironmentFile=/etc/vltk-multiplayer.env
+ExecStart=/opt/vltk-multiplayer/bin/vltk-multiplayer-webtransport
+Restart=always
+RestartSec=3
+RuntimeMaxSec=7d
+MemoryMax=128M
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

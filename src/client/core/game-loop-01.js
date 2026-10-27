@@ -192,6 +192,7 @@ var p_ = function (A) {
     (Td(Lr), (N2 -= Lr), n++);
   }
   n === Xm && (N2 = 0);
+  if (typeof gameMultiplayer !== "undefined") gameMultiplayer.tick();
 };
 
 var D_ = function (A) {

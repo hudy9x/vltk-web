@@ -1,0 +1,151 @@
+use crate::protocol::{self, Appearance, MAX_PLAYERS, Position};
+use anyhow::{Result, ensure};
+use std::{
+    collections::BTreeMap,
+    time::{Duration, Instant},
+};
+
+pub struct Player {
+    pub account: [u8; 16],
+    pub appearance: Appearance,
+    pub position: Option<Position>,
+    pub seen: Instant,
+}
+#[derive(Default)]
+pub struct World {
+    pub players: BTreeMap<u32, Player>,
+    next: u32,
+    pub revision: u32,
+}
+impl World {
+    pub fn join(&mut self, account: [u8; 16], appearance: Appearance) -> Result<u32> {
+        ensure!(self.players.len() < 128, "server full");
+        ensure!(
+            !self.players.values().any(|p| p.account == account),
+            "account already connected"
+        );
+        self.next = self.next.wrapping_add(1).max(1);
+        let id = self.next;
+        self.players.insert(
+            id,
+            Player {
+                account,
+                appearance,
+                position: None,
+                seen: Instant::now(),
+            },
+        );
+        self.revision = self.revision.wrapping_add(1);
+        Ok(id)
+    }
+    pub fn leave(&mut self, id: u32) {
+        self.players.remove(&id);
+        self.revision = self.revision.wrapping_add(1);
+    }
+    pub fn update(&mut self, id: u32, position: Position) -> Result<()> {
+        let player = self
+            .players
+            .get(&id)
+            .ok_or_else(|| anyhow::anyhow!("unknown player"))?;
+        if player
+            .position
+            .is_some_and(|old| !protocol::newer(position.seq, old.seq))
+        {
+            return Ok(());
+        }
+        let changed_map = player.position.is_none_or(|old| old.map != position.map);
+        if changed_map {
+            ensure!(
+                self.players
+                    .values()
+                    .filter(|p| p.position.is_some_and(|v| v.map == position.map))
+                    .count()
+                    < MAX_PLAYERS,
+                "map full"
+            );
+            self.revision = self.revision.wrapping_add(1);
+        }
+        let player = self.players.get_mut(&id).unwrap();
+        player.position = Some(position);
+        player.seen = Instant::now();
+        Ok(())
+    }
+    pub fn packets(
+        &self,
+        id: u32,
+        tick: u32,
+        include_roster: bool,
+    ) -> Option<(Vec<u8>, Option<Vec<u8>>)> {
+        let map = self.players.get(&id)?.position?.map;
+        let room: Vec<_> = self
+            .players
+            .iter()
+            .filter(|(_, p)| {
+                p.position.is_some_and(|v| v.map == map)
+                    && p.seen.elapsed() < Duration::from_secs(3)
+            })
+            .collect();
+        Some((
+            protocol::snapshot(
+                tick,
+                id,
+                map,
+                &room
+                    .iter()
+                    .map(|(id, p)| (**id, p.position.unwrap()))
+                    .collect::<Vec<_>>(),
+            ),
+            include_roster.then(|| {
+                protocol::roster(
+                    self.revision,
+                    map,
+                    &room
+                        .iter()
+                        .map(|(id, p)| (**id, p.appearance.clone()))
+                        .collect::<Vec<_>>(),
+                )
+            }),
+        ))
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn look() -> Appearance {
+        Appearance {
+            faction: 1,
+            sex: 0,
+            body_sex: 0,
+            ride: 0,
+            parts: [-1, 0, 0, -1],
+            name: "Người chơi".into(),
+        }
+    }
+    fn pos(map: u32, seq: u32) -> Position {
+        Position {
+            seq,
+            map,
+            x: 100.0,
+            y: 200.0,
+            dir: 0,
+            moving: 1,
+        }
+    }
+    #[test]
+    fn rooms_reordering_and_disconnect() {
+        let mut world = World::default();
+        let a = world.join([1; 16], look()).unwrap();
+        let b = world.join([2; 16], look()).unwrap();
+        assert!(world.join([1; 16], look()).is_err());
+        world.update(a, pos(1, 2)).unwrap();
+        world.update(a, pos(2, 1)).unwrap();
+        world.update(b, pos(2, 1)).unwrap();
+        assert_eq!(world.packets(a, 1, false).unwrap().0.len(), 34);
+        assert!(world.packets(a, 1, false).unwrap().1.is_none());
+        assert!(world.packets(a, 1, true).unwrap().1.is_some());
+        world.update(b, pos(1, 2)).unwrap();
+        assert_eq!(world.packets(a, 2, false).unwrap().0.len(), 52);
+        world.leave(b);
+        assert_eq!(world.packets(a, 3, false).unwrap().0.len(), 34);
+    }
+}

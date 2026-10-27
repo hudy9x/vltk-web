@@ -2888,6 +2888,8 @@
         "statusInspector"
       ]
     },
+    {"file":"multiplayer/webtransport/index.ts","global":"GameWebTransport","symbols":["GameWebTransport"]},
+    {"file":"multiplayer/webtransport/legacy-bridge.js","symbols":["gameMultiplayer"]},
     {"file":"core/asset-preload-01.js","symbols":[]}
   ]
 }

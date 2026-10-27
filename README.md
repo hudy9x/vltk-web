@@ -278,6 +278,18 @@ Xem [hướng dẫn demo và kiểm thử](src/server/multiplayer-demo/README.md
 
 ![Demo multiplayer WebSocket và WebTransport với nhân vật di chuyển bằng chuột](multipler-demo.png)
 
+## Multiplayer trong game — WebTransport + Rust
+
+Demo tham khảo đã được lưu ở commit `6d6a72f`. Bản tích hợp dùng thư mục riêng:
+`src/client/multiplayer/webtransport/` và `src/server/multiplayer/webtransport/`.
+Hai account cùng map có thể thấy nhân vật và chuyển động của nhau; điều khiển
+di chuyển bằng chuột trái. Dữ liệu QUIC dùng binary little endian: gói vị trí
+20 byte, snapshot đủ 32 người 592 byte, roster ngoại hình đi qua stream tin cậy.
+
+Đợt này đồng bộ presence và di chuyển, chưa đưa va chạm/chống gian lận hay chiến đấu
+lên Rust. Xem [phạm vi, giao thức và cách chạy local](src/client/multiplayer/webtransport/README.md)
+và [cấu hình VPS riêng cho bản tích hợp](deploy/multiplayer/README.md).
+
 ## Kiến trúc
 
 Nút **Xóa log** xóa toàn bộ log của nhân vật hiện tại; **Copy log** sao chép

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { registerAccounts } from '../accounts.ts';
+import { registerMultiplayerWebTransport } from '../multiplayer/webtransport/session.ts';
 import { parseJsonBody, sendJson } from '../http.ts';
 import type { ServerServices } from '../types.ts';
 
@@ -7,6 +8,7 @@ import type { ServerServices } from '../types.ts';
 export function registerApiRoutes(app: FastifyInstance, services: ServerServices): void {
   const { db, assets, development, combatSandbox } = services;
   const storage = registerAccounts(app, db);
+  registerMultiplayerWebTransport(app, storage.requireUser);
   app.get('/api/config', (_request, reply) => sendJson(reply, 200,
     { development, ...(development && combatSandbox ? { combatSandbox: true } : {}) }));
   app.get('/api/health', (_request, reply) => sendJson(reply, 200, { ok: true, database: 'sqlite', mode: 'local' }));

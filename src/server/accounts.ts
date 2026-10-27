@@ -118,5 +118,5 @@ export function registerAccounts(app: FastifyInstance, db: DatabaseSync) {
     if (!state.initialized) write(request, { id: randomUUID(), generation: state.generation, operations });
     return read(request);
   };
-  return { read, write, initialize };
+  return { read, write, initialize, requireUser };
 }
