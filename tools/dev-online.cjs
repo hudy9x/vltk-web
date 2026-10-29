@@ -77,7 +77,7 @@ async function main() {
       const response = await fetch(new URL('/config', control), {
         signal: AbortSignal.any([cancelled.signal, AbortSignal.timeout(1000)]),
       });
-      if (response.ok && (await response.json()).protocol === 7) break;
+      if (response.ok && (await response.json()).protocol === 8) break;
     } catch { /* Cargo may still be building. */ }
     if (!stopping) await sleep(200, undefined, { signal: cancelled.signal }).catch(() => {});
   }
