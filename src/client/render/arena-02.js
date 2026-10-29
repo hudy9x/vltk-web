@@ -1,6 +1,55 @@
 // render/arena — shared IIFE scope; order is defined in modules.json.
 var crowdRenderer = CrowdVisibility.createCrowdVisibility();
 
+// Gold artwork represents ngân lượng; it does not grant the separate KNB currency.
+var goldLootVisuals = (() => {
+  const images = [], pending = [];
+  const tier = amount => amount >= 100000 ? 4 : amount >= 10000 ? 3 : amount >= 100 ? 2 : amount >= 10 ? 1 : 0;
+  function draw(ctx, amount, x, y, mine = true) {
+    const index = tier(amount);
+    let image = images[index];
+    if (!image) {
+      image = images[index] = new Image();
+      image.src = `/img/loot/yuanbao-${index + 1}.png`;
+    }
+    ctx.save();
+    ctx.globalAlpha *= mine ? 1 : 0.5;
+    const width = [25, 32, 40, 50, 60][index];
+    if (image.complete && image.naturalWidth) {
+      const height = width * image.naturalHeight / image.naturalWidth;
+      ctx.drawImage(image, x - width / 2, y - height + 5, width, height);
+    }
+    ctx.fillStyle = mine ? '#ffd66b' : '#aaa18a';
+    ctx.strokeStyle = '#261707';
+    ctx.lineWidth = 3;
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    const label = `${Math.floor(amount).toLocaleString('vi-VN')} lượng`;
+    const labelY = y - width * 0.7 - 4;
+    ctx.strokeText(label, x, labelY);
+    ctx.fillText(label, x, labelY);
+    ctx.restore();
+  }
+  return { tier, draw,
+    drop(amount, x, y) {
+      if (!(amount > 0) || l.quiet) return;
+      pending.push({ amount, x, y, map: Z0.key, time: performance.now() });
+      if (pending.length > 40) pending.shift();
+    },
+    frame(ctx) {
+      const now = performance.now();
+      for (let i = pending.length - 1; i >= 0; i--) {
+        const drop = pending[i], age = (now - drop.time) / 1000;
+        if (drop.map !== Z0.key || age >= 1.5) { pending.splice(i, 1); continue; }
+        ctx.save();
+        ctx.globalAlpha *= Math.min(1, (1.5 - age) * 3);
+        draw(ctx, drop.amount, drop.x, drop.y - Math.sin(Math.min(1, age * 3) * Math.PI) * 12);
+        ctx.restore();
+      }
+    }
+  };
+})();
+
 var NP = function (A) {
   if (typeof renderImages !== 'undefined' && renderImages) {
     if (renderMapKey !== Z0.key) { renderImages.clear(); renderMapKey = Z0.key; }
@@ -26,6 +75,7 @@ var NP = function (A) {
     n.stroke();
     n.restore();
   } else if (clicked) l.clickedTarget = null;
+  goldLootVisuals.frame(n);
   for (const a of l.town ? [] : l.ground) {
     const i = a.it.ic ? bA(a.it.ic) : null,
       r = mA(a.it),

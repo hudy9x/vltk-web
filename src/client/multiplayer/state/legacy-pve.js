@@ -333,13 +333,7 @@ var onlineWorld = (() => {
     },
     draw(ctx, entity) {
       const d = entity.onlineLoot;
-      ctx.fillStyle = d.mine ? '#ffd66b' : '#8e8872';
-      ctx.beginPath();
-      ctx.ellipse(d.x, d.y, 9, 5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.font = '11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${d.gold} lượng`, d.x, d.y - 12);
+      goldLootVisuals.draw(ctx, d.gold, d.x, d.y, d.mine);
     },
 
   };

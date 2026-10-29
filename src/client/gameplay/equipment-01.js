@@ -205,8 +205,7 @@ var v6 = function (A) {
 
 var Z7 = function (A) {
   let n = 0;
-  const t = A.L >= 119 ? 0.5 : 1;
-  for (let e = 0; e < (vp[A.cls] || 1); e++) Math.random() < O6 && (n += E6(A) * t);
+  for (let e = 0; e < (vp[A.cls] || 1); e++) Math.random() < O6 && (n += E6(A));
   return Math.round(n);
 };
 

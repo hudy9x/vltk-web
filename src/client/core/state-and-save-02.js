@@ -161,6 +161,7 @@ var cD = function (A) {
         h8().rew,
     ),
     a = l.tower ? 0 : Math.round(Z7(A) * h8().rew);
+  if (typeof goldLootVisuals !== "undefined") goldLootVisuals.drop(a, A.x, A.y);
   ((o.gold += a),
     e >= 1 &&
       C(
