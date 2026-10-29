@@ -12,7 +12,6 @@
   "maxPlayers": 128,
   "maxLootPerMap": 64,
   "rewards": {
-    "xpPerMonsterLevel": 5,
-    "goldPerMonsterLevel": 0.5
+    "xpPerMonsterLevel": 5
   }
 }

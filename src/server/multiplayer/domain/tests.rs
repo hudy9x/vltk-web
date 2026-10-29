@@ -947,3 +947,34 @@ fn slaughter_auto_heal_support_recognizes_player_enemies_without_monsters(){
     let before=g.actors[&1].hp;g.step();assert!(g.actors[&1].hp>before);
     assert!(g.events.iter().any(|e|e.kind==6&&e.source==1&&e.skill==269));remove_fixture(g);
 }
+
+#[test]
+fn random_gold_is_rolled_at_death_and_pickup_journals_that_exact_amount_once() {
+    let mut g = game();
+    field(&mut g);
+    g.rng = 1;
+    let mob = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
+    mob.def.gold_min = Some(16000);
+    mob.def.gold = 20000;
+    let id = mob.id;
+    let mut events = vec![];
+    g.commit_rewards(&mut events, vec![(2, id, 1)]);
+    let loot = &g.rooms[&2].loot[0];
+    let (loot_id, amount) = (loot.id, loot.gold);
+    assert!((16000..=20000).contains(&amount));
+    g.actors.get_mut(&1).unwrap().pickup = loot_id;
+    g.commit_rewards(&mut events, vec![]);
+    assert!(g.rooms[&2].loot.is_empty());
+    let grants: Vec<_> = g.outbox.pending.values().filter(|grant| grant.gold > 0).collect();
+    assert_eq!(grants.len(), 1);
+    assert_eq!(grants[0].gold, amount);
+    g.actors.get_mut(&1).unwrap().pickup = loot_id;
+    g.commit_rewards(&mut events, vec![]);
+    assert_eq!(g.outbox.pending.values().filter(|grant| grant.gold > 0).count(), 1);
+    let file = g.outbox.path_for_test();
+    drop(g);
+    let reopened = Outbox::open(file.clone()).unwrap();
+    assert_eq!(reopened.pending.values().find(|grant| grant.gold > 0).unwrap().gold, amount);
+    drop(reopened);
+    std::fs::remove_file(file).unwrap();
+}

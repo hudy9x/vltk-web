@@ -205,7 +205,7 @@ var v6 = function (A) {
 
 var Z7 = function (A) {
   let n = 0;
-  for (let e = 0; e < (vp[A.cls] || 1); e++) Math.random() < O6 && (n += E6(A));
+  for (let e = 0; e < (vp[A.cls] || 1); e++) Math.random() < O6 && (n += GoldLoot.rollGoldDrop(A.L) * (us[A.cls] || us.normal).xp);
   return Math.round(n);
 };
 

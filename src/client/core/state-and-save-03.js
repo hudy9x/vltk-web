@@ -663,7 +663,7 @@ var hP = function () {
   const d = De(o.stage),
     f = o.lvl,
     h = _d(d) * c * Nd(o.lvl, d),
-    g = Math.round(O6 * E6({ L: d, cls: "normal" }) * (d >= 119 ? 0.5 : 1) * c * w8);
+    g = Math.round(O6 * E6({ L: d, cls: "normal" }) * c * w8);
   (d8(h * z5()),
     (o.gold += g),
     d >= o.lvl - 10 && Z5(c, !0, l.P && l.P.main ? { [l.P.main.id]: 1 } : null));

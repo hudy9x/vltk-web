@@ -4,6 +4,7 @@ const native = require('./runtime.cjs'),
 const root = path.resolve(__dirname, '../../../..');
 const elements = ['phys', 'poison', 'cold', 'fire', 'light'];
 const rules = require('../../../shared/multiplayer/rules.json');
+const { goldDropRange } = require('../../../client/gameplay/gold-loot.ts');
 const { linearProjectile } = require('./projectiles.cjs');
 const characterCache=new Map();
 exports.character = function (profile, activeBuffs = [], includeSupport = true, activeAuras = null) {
@@ -110,7 +111,8 @@ exports.world = function () {
           speed: 30 + (source.monsters[id].run || 6) * 4,
           res: elements.map(() => Math.min(75, level * 0.35)),
           xp: Math.max(1, level * rules.rewards.xpPerMonsterLevel),
-          gold: Math.max(1, Math.ceil(level * rules.rewards.goldPerMonsterLevel)),
+          gold: goldDropRange(level).max,
+          goldMin: goldDropRange(level).min,
         })),
     });
   };

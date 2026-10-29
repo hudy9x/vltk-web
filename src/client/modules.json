@@ -781,6 +781,10 @@
       "lines": 387
     },
     {
+      "file": "gameplay/gold-loot.ts",
+      "global": "GoldLoot"
+    },
+    {
       "file": "gameplay/equipment-01.js",
       "symbols": [
         "Wi",

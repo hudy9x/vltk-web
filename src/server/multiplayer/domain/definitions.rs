@@ -118,6 +118,8 @@ pub struct MonsterDefinition {
     pub series: i8,
     pub xp: u32,
     pub gold: u32,
+    #[serde(default, rename = "goldMin")]
+    pub gold_min: Option<u32>,
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct MapDefinition {

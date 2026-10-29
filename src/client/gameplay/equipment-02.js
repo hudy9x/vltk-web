@@ -89,7 +89,7 @@ var O6 = 0.1;
 
 var vp = { normal: 1, elite: 2, boss: 5 };
 
-var E6 = (s) => v6(s.L) * (us[s.cls] || us.normal).xp;
+var E6 = (s) => GoldLoot.meanGoldDrop(s.L) * (us[s.cls] || us.normal).xp;
 
 var bp = 1540;
 

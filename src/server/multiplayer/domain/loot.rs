@@ -27,7 +27,7 @@ impl Game {
                         owner_slot: a.slot,
                         x: m.x,
                         y: m.y,
-                        gold: m.def.gold,
+                        gold: roll_gold(&mut self.rng, m.def.gold_min.unwrap_or(m.def.gold), m.def.gold),
                         ttl: self.rules.loot_seconds,
                     });
                 }
@@ -61,5 +61,38 @@ impl Game {
                 }
             }
         }
+    }
+}
+
+// Roll once when creating the drop; pickup persists this exact amount.
+fn roll_gold(rng: &mut u64, min: u32, max: u32) -> u32 {
+    let min = min.min(max);
+    if min == max {
+        return max;
+    }
+    *rng ^= *rng << 13;
+    *rng ^= *rng >> 7;
+    *rng ^= *rng << 17;
+    min + (*rng % (u64::from(max) - u64::from(min) + 1)) as u32
+}
+
+#[cfg(test)]
+mod tests {
+    use super::roll_gold;
+
+    #[test]
+    fn gold_rolls_stay_in_range_and_vary_between_deaths() {
+        let mut rng = 1;
+        let mut amounts = std::collections::BTreeSet::new();
+        for _ in 0..10000 {
+            let gold = roll_gold(&mut rng, 16000, 20000);
+            assert!((16000..=20000).contains(&gold));
+            amounts.insert(gold);
+        }
+        assert!(amounts.len() > 3000);
+        assert!(amounts.contains(&16000));
+        assert!(amounts.contains(&20000));
+        assert_eq!(roll_gold(&mut rng, 1, 1), 1);
+        assert_eq!(roll_gold(&mut rng, 2, 2), 2);
     }
 }
