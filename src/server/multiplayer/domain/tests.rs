@@ -1370,3 +1370,21 @@ fn resume_hint_continues_checkpoint_without_changing_map_life_or_resources() {
     g.resume_position(1,Some(ResumePosition{map,x,y,life}));assert_eq!(g.actors[&1].x,x+10.0);
     remove_fixture(g);
 }
+
+#[test]
+fn purchased_potions_refresh_live_stock_without_replaying_unacknowledged_debits() {
+    let mut g=game();
+    let potion:Potion=serde_json::from_value(serde_json::json!({"id":1,"kind":"life","tier":1,"level":1,"hp":100,"mp":0,"count":0,"spent":0})).unwrap();
+    let a=g.actors.get_mut(&1).unwrap();a.profile.potions=vec![potion];a.hp=10.0;
+    let mut purchased=g.actors[&1].profile.clone();purchased.potions[0].count=1;
+    g.refresh_profile(1,purchased.clone(),1);
+    assert_eq!(g.actors[&1].profile.potions[0].count,1,"a new bottle must reach the running combat actor");
+    g.command(1,cmd(1,7,1,0,1,0.0,0.0)).unwrap();
+    assert_eq!(g.actors[&1].hp,110.0);assert_eq!(g.actors[&1].profile.potions[0].count,0);
+    g.refresh_profile(1,purchased.clone(),2);
+    assert_eq!((g.actors[&1].profile.potions[0].count,g.actors[&1].profile.potions[0].spent),(0,1),"a pending debit wins over a delayed stock snapshot");
+    purchased.potions[0].spent=1;
+    g.refresh_profile(1,purchased,3);
+    assert_eq!((g.actors[&1].profile.potions[0].count,g.actors[&1].profile.potions[0].spent),(1,1),"a genuinely replenished bottle is not charged twice");
+    assert_eq!(g.outbox.pending.len(),1);remove_fixture(g);
+}
