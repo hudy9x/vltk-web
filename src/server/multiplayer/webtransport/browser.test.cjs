@@ -51,9 +51,12 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   });
   await ready(`http://127.0.0.1:${control}/health`,rust,()=>logs);
   await ready(base+'/api/health',node,()=>logs);
-  if(process.env.LIFECYCLE_TEST==='1'){
+  if(process.env.LIFECYCLE_TEST==='1'||process.env.AUTOMATION_TEST==='1'){
     const definitions=structuredClone(require('../definitions/catalog.cjs').world());
-    for(const map of definitions.maps)map.monsters=[];
+    for(const map of definitions.maps){
+      if(process.env.LIFECYCLE_TEST==='1')map.monsters=[];
+      else for(const mob of map.monsters){mob.hp=100;mob.damage=20;mob.cooldown=1.5;}
+    }
     const response=await fetch(`http://127.0.0.1:${control}/catalog`,{method:'POST',headers:{'content-type':'application/json','x-multiplayer-secret':secret},body:JSON.stringify(definitions)});
     assert.ok(response.ok);
   }
@@ -149,6 +152,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
         progression:()=>({lvl:o.lvl,xp:o.xp,fac:o.fac,attr:structuredClone(o.attr),attrPts:o.attrPts,sk:structuredClone(o.sk),skPts:o.skPts,stage:o.stage,map:Z0.key,mapLevel:AA(o.stage).lo}),
         state:()=>({x:v.x,y:v.y,map:Z0.key,pve:onlineWorld.state,status:document.getElementById("multiplayerStatus")?.textContent,remote:gameMultiplayer.entities().filter(e=>e.remotePlayer).map(e=>e.remotePlayer),draws:window.__onlineDraws,
           target:Y.target,blocked:i0.blocked,hidden:document.hidden,modal:document.getElementById('modal').className}),
+        assistant:()=>Hr('basic'),automationState:()=>({used:o.potUsed,gold:o.gold,hp:l.life,mp:l.mana,auto:o.ctrl,potOff:o.potOff,potHp:o.potHp,potMp:o.potMp}),
         mapPresentation:()=>({map:Z0.key,bg:l.bgImg?.src,ready:!!l.bgImg?.complete&&!!l.bgImg?.naturalWidth,scene:mapScene.hasMap()}),
         battlefieldStart:()=>arenaSimulator.battlefield.start('song'),battlefieldExit:()=>arenaSimulator.battlefield.reset(),
         town:()=>nc(true),field:()=>en(AA(1)),travelReady:()=>!(l.tpCd>0),
@@ -180,6 +184,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
           if(advanced==='cuiyan'){o.sk={269:20,100:20,109:20,99:19,105:20,108:20,114:30,336:20,1063:25};o.slots=[1063,336,108,-1];o.main=1063;}
           else if(!advanced){o.sk[216]=1;o.main=216;o.slots[0]=216;}
           if(advanced)o.attr.vit=2000;
+          if(${process.env.AUTOMATION_TEST==='1'}){o.lvl=10;o.sk[10]=1;o.main=10;o.slots=[10,-1,-1,-1];o.gold=100000;o.potStock={};o.autoMap=false;}
           o.mainLock=true;l.dirty=true;D0();$();await window.localGameStorage?.flush();
         },
         unlockSkill:()=>{o.mainLock=false;l.dirty=true;D0();return o.slots.findIndex(id=>T[id]&&UA(T[id]));},
@@ -235,6 +240,35 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   await a.page.waitForTimeout(1700);
   for(const {page} of [a,b]) await page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   assert.ok((await a.page.evaluate(()=>window.__onlineTest.state())).draws>0);
+  if(process.env.AUTOMATION_TEST==='1'){
+    const page=a.page;
+    await page.evaluate(()=>window.__onlineTest.field());
+    await page.waitForFunction(()=>window.__onlineTest.state().pve?.map===140);
+    // Drain enough mana on the first attack to exercise the real auto-potion UI.
+    // The GM grant advances SQLite to the same revision, keeping later stock
+    // refreshes ordered normally once automatic purchases begin.
+    const saved=await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json();
+    const native=require('../definitions/catalog.cjs').character(saved.profile);
+    native.support=null;native.manaRegen=0;native.skills.find(s=>s.id===10).cost=10;
+    const refresh=await fetch(`http://127.0.0.1:${control}/refresh`,{method:'POST',headers:{'content-type':'application/json','x-multiplayer-secret':secret},body:JSON.stringify({account:a.account,slot:0,revision:saved.revision+1,nonce:'',profile:native})});
+    assert.ok(refresh.ok);
+    const fundedBalance=await page.evaluate(()=>window.__onlineTest.deathWallet());
+    await page.evaluate(()=>window.__onlineTest.assistant());
+    await page.locator('#tPot').check();await page.locator('#tBuy').check();
+    await page.locator('[data-pk="potHp"]').selectOption('90');await page.locator('[data-pk="potMp"]').selectOption('90');
+    await page.locator('#tAuto').check();
+    if(await page.locator('#u20wx').isVisible())await page.locator('#u20wx').click();else await page.locator('#mClose').click();
+    await page.waitForFunction(()=>{const s=window.__onlineTest.state().pve;return s?.actors.find(a=>a.id===s.self)?.farming;});
+    await page.waitForFunction(async()=>{const p=(await (await fetch('/api/multiplayer/character?slot=0')).json()).profile;return p.onlinePotionSpent?.life?.[1]>0&&p.onlinePotionSpent?.mana?.[1]>0;},null,{timeout:30000});
+    await page.waitForFunction(()=>{const s=window.__onlineTest.state().pve;return s.events.some(e=>e.kind===4&&e.source===s.self);},null,{timeout:30000});
+    await page.waitForFunction(async()=>{const p=(await (await fetch('/api/multiplayer/character?slot=0')).json()).profile;return p.xp>0&&p.onlinePotionSpent?.life?.[1]>0&&p.onlinePotionSpent?.mana?.[1]>0;});
+    const canonical=(await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json()).profile;
+    assert.ok(canonical.potUsed>=2);assert.ok(canonical.gold<fundedBalance,'bottles are purchased using canonical silver');
+    await page.evaluate(()=>window.__onlineTest.assistant());await page.locator('#tAuto').uncheck();
+    await page.waitForFunction(()=>{const s=window.__onlineTest.state().pve;return !s.actors.find(a=>a.id===s.self).farming;});
+    await page.screenshot({path:path.join(root,'output/multiplayer/automation-assistant-audit.png')});
+    assert.deepEqual(errors,[]);console.log('Automation browser: real assistant checkbox starts/stops Rust farming, kills and loots silver; HP/MP thresholds buy empty-stock bottles and persist canonical potion debits.');return;
+  }
   if(process.env.PRIMARY_SKILL_TEST==='1'){
     const page=a.page;
     await page.evaluate(()=>window.__onlineTest.primarySetup());
