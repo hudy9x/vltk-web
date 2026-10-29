@@ -1,5 +1,6 @@
 // core/state-and-save — shared IIFE scope; order is defined in modules.json.
 var Td = function (A) {
+  if(typeof gameMultiplayer!=="undefined"&&gameMultiplayer.pve){onlineWorld.simulate(A);return;}
   ($w(),
     Sb(A),
     (l.sweepT = (l.sweepT || 0) + A) > 30 &&

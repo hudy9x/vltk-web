@@ -1,5 +1,10 @@
 // render/projectiles — shared IIFE scope; order is defined in modules.json.
 var jP = 0.8;
+// Capture a presentation context when scheduling secondary FX, rather than
+// letting a delayed remote cast borrow the local player's position/globals.
+var skillVisualContext = null;
+var scheduleSkillVisual = (action,delay) => skillVisualContext
+  ? skillVisualContext.schedule(action,delay) : setTimeout(action,delay);
 
 var zP = () =>
   !(typeof so == "function" && so()) &&
@@ -112,6 +117,7 @@ var Wn = function (A, n, t, e, a, i, r) {
   (M && ((g = 0), (h = Math.min(h || 12, 14)), (t += 14)), (h = E(h || 12, 1, 72)));
   const B = {
     k: "jm",
+    visualCaster: typeof skillVisualContext!=="undefined" ? skillVisualContext?.actor : null,
     life: 1,
     m: c,
     mid: A,
@@ -210,8 +216,8 @@ var KP = function (A) {
     case 3:
     case 4: {
       ((A.ang += T8 * A.spin), A.kind === 4 && (A.rad += (A.spd + 50) * T8));
-      const t = A.kind === 3 && !A.combat ? v.x : A.cx,
-        e = A.kind === 3 && !A.combat ? v.y : A.cy;
+      const t = A.kind === 3 && !A.combat ? (A.visualCaster||v).x : A.cx,
+        e = A.kind === 3 && !A.combat ? (A.visualCaster||v).y : A.cy;
       ((A.x = t + Math.cos(A.ang) * A.rad), (A.y = e - 14 + (Math.sin(A.ang) * A.rad) / 2));
       break;
     }
@@ -385,6 +391,7 @@ var bs = function (A, n, t, e, a, i, r) {
 };
 
 var G3 = function (A, n, t) {
+  const later=typeof scheduleSkillVisual==="function"?scheduleSkillVisual:setTimeout;
   let e = (t.id && A0.f && A0.f[t.id]) || {},
     a = A0.g && A0.g[t.id];
   const i = T[t.id],
@@ -507,7 +514,7 @@ var G3 = function (A, n, t) {
   if (P && _ && p("skill_flyevent")) {
     const y = { x: n.x, y: n.y + 6 };
     for (let M = 0; M < _; M += P.t)
-      setTimeout(
+      later(
         () => {
           l.quiet || bs(P.mid, P.form, P.n, null, y, n, null);
         },
@@ -518,7 +525,7 @@ var G3 = function (A, n, t) {
     e.sub &&
       !C8.has(+t.id) &&
       String(e.sub.c) !== String(f) &&
-      setTimeout(() => {
+      later(() => {
         l.quiet ||
           bs(
             e.sub.c,

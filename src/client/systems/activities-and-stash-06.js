@@ -152,6 +152,11 @@ var og = function (A) {
 };
 
 var rg = function (A) {
+  if(A==='slaughter'){
+    if(typeof gameMultiplayer==='undefined'||!gameMultiplayer.pve||!onlineWorld.setPvp(true)){k('Đồ sát cần kết nối online.');return;}
+    $();V();return;
+  }
+  if(o.mode==='slaughter'&&typeof gameMultiplayer!=='undefined'&&gameMultiplayer.pve){onlineWorld.setPvp(false);o.mode='slaughter';}
   if ((o.mode || "farm") !== A) {
     if (
       ((o.mode = A),
@@ -266,6 +271,7 @@ var Zo = 0;
 
 var cl = [
   ["farm", "⚔", "Luyện Công", "Dịch chuyển tới bãi luyện công hợp cấp"],
+  ["slaughter", "⚔", "Đồ Sát", "Ngoài thành: đánh người khác màu tên; người cùng màu không bị trúng đòn"],
   [
     "dg",
     "🏯",

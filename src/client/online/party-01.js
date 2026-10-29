@@ -531,12 +531,13 @@ var hB = function (A, n) {
   }
 };
 
-var uB = function (A, n, t) {
+var uB = function (A, n, t, presentation = null) {
   ((A.fillStyle = "#0007"), A.beginPath(), A.ellipse(n.x, n.y, 16, 6, 0, 0, 7), A.fill());
   const e = n.atT > 0 ? "at" : n.hurtT > 0 ? "hurt" : n.mv ? "run" : "st",
     a = e === "at" ? (n.atD || 0.45) - n.atT : e === "hurt" ? Math.max(0, 0.5 - n.hurtT) : n.t,
     i = Jt(n.f, n.s);
   n.gk = i && i.anim;
+  presentation?.under?.(n);
   let r = !1;
   (n.J &&
     typeof It == "function" &&
@@ -550,11 +551,12 @@ var uB = function (A, n, t) {
         Va(i.anim, "st", n.dir || 0, n.t, n.x, n.y, Jn)),
     r ||
       ((A.fillStyle = w0[I[n.f].series]), A.beginPath(), A.arc(n.x, n.y - 20, 12, 0, 7), A.fill()),
+    presentation?.over?.(n),
     L3(
       n.x,
       n.y - nameplateOffset(n.gk, Jn, 0.9, 6, 58),
       `${n.n}`,
-      "#7fe36a",
+      presentation?.nameColor || "#7fe36a",
       11,
       n.hp / n.hpMax,
       "#5fd35a",

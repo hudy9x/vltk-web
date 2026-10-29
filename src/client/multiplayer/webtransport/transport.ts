@@ -11,7 +11,7 @@ export async function connect(config: ConnectionConfig, hello: Uint8Array,
   receive: (packet: Packet) => void, disconnected: (error: Error) => void) {
   const api = globalThis as typeof globalThis & { WebTransport?: new (url: string, options: unknown) => Transport };
   if (!api.WebTransport || !isSecureContext) throw new Error('Cần Chrome/Edge và HTTPS hoặc localhost.');
-  if (config.protocol !== 1 || config.certificateHash.length !== 32) throw new Error('Sai phiên bản giao thức.');
+  if (config.protocol !== 7 || config.certificateHash.length !== 32) throw new Error('Sai phiên bản giao thức. Hãy cập nhật client và Rust server cùng phiên bản.');
   const transport = new api.WebTransport(config.playUrl, {
     serverCertificateHashes: [{ algorithm: 'sha-256', value: new Uint8Array(config.certificateHash) }],
   });
@@ -32,10 +32,18 @@ export async function connect(config: ConnectionConfig, hello: Uint8Array,
   };
   void transport.closed.then(() => fail(new Error('Kết nối đã đóng.')), fail);
   const timer = setTimeout(() => fail(new Error('Không kết nối được QUIC/UDP.')), 8000);
-  async function reliable(bytes: Uint8Array) {
+  let controlTail=Promise.resolve(), queuedControls=0;
+  async function writeReliable(bytes: Uint8Array) {
+    if(stopped)throw new Error("Kết nối đã đóng.");
     const stream = await transport.createUnidirectionalStream();
     const output = stream.getWriter();
     try { await output.write(bytes); await output.close(); } finally { output.releaseLock(); }
+  }
+  function reliable(bytes:Uint8Array):Promise<void> {
+    if(queuedControls>=32)return Promise.reject(new Error('Hàng đợi lệnh đã đầy.'));
+    queuedControls++;
+    const task=controlTail.then(()=>writeReliable(bytes));controlTail=task.catch(()=>{});
+    return task.finally(()=>{queuedControls--;});
   }
   try {
     await transport.ready;
@@ -62,7 +70,7 @@ export async function connect(config: ConnectionConfig, hello: Uint8Array,
         let bytes = new Uint8Array(0);
         while (!stopped) {
           const chunk = await reader.read(); if (chunk.done) break;
-          if (bytes.length + chunk.value.length > 4096) throw new Error('Gói roster quá lớn.');
+          if (bytes.length + chunk.value.length > 16384) throw new Error('Gói dữ liệu thế giới quá lớn.');
           const joined = new Uint8Array(bytes.length + chunk.value.length);
           joined.set(bytes); joined.set(chunk.value, bytes.length); bytes = joined;
         }

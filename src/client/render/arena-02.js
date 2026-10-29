@@ -78,9 +78,12 @@ var NP = function (A) {
     // repeating fields restart their visuals at each damage interval.
     const repeating = cast && !cast.pulseCount && ![362, 375].includes(+cast.skill.id) && cast.interval && cast.pulse >= 0;
     const phase = repeating ? Math.max(0, cast.elapsed - (cast.nextPulse - cast.interval)) : 0;
+    const drawEffect=()=>{
     if (effect.k === "jm") YP(repeating && effect.age >= 0 ? Object.assign({}, effect, { age: phase * K3 }) : effect);
     else if (effect.k === "mis" || effect.k === "boom") CP(repeating && effect.t >= 0 ? Object.assign({}, effect, { t: phase }) : effect);
     else if (effect.k === "contact") drawContactProjectile(effect);
+    };
+    if(typeof onlineTrace!=='undefined')onlineTrace.render(effect,drawEffect);else drawEffect();
   }
   for (const a of l.fx) {
     if (a.k === "mis" || a.k === "boom" || a.k === "jm" || a.k === "contact") continue;
@@ -133,7 +136,7 @@ var NP = function (A) {
     // Finish the previous entity's anchored nameplate before drawing the next
     // (closer) body. Never collect all nameplates into a foreground overlay.
     IP();
-    if (a.remotePlayer) { gameMultiplayer.draw(n, a); continue; }
+    if (a.remotePlayer || a.onlineLoot) { gameMultiplayer.draw(n, a); continue; }
     if (a.mapObject) { mapScene.drawObject(n, a.mapObject); continue; }
     if (a.equipmentTrader) {
       equipmentTrader.draw(n, a);

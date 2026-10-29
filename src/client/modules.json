@@ -1364,7 +1364,13 @@
       "global": "nameplateOffset",
       "lines": 1
     },
-    {"file":"render/raster-cache.ts","global":"RasterAssets","symbols":["RasterAssets"]},
+    {
+      "file": "render/raster-cache.ts",
+      "global": "RasterAssets",
+      "symbols": [
+        "RasterAssets"
+      ]
+    },
     {
       "file": "render/arena-01.js",
       "symbols": [
@@ -2294,16 +2300,29 @@
     },
     {
       "file": "gameplay/skill-routes-01.js",
-      "symbols": ["skillRouteCatalog", "getSkillRoutes", "selectSkillRoute", "planSkillRoute", "applySkillRoute"]
+      "symbols": [
+        "skillRouteCatalog",
+        "getSkillRoutes",
+        "selectSkillRoute",
+        "planSkillRoute",
+        "applySkillRoute"
+      ]
     },
     {
       "file": "config/potential-allocation.ts",
       "global": "PotentialAllocation",
-      "symbols": ["PotentialAllocation"]
+      "symbols": [
+        "PotentialAllocation"
+      ]
     },
     {
       "file": "gameplay/potential-routes-01.js",
-      "symbols": ["potentialAllocationConfig", "getPotentialProfiles", "planPotentialRoute", "applyPotentialRoute"]
+      "symbols": [
+        "potentialAllocationConfig",
+        "getPotentialProfiles",
+        "planPotentialRoute",
+        "applyPotentialRoute"
+      ]
     },
     {
       "file": "systems/activities-and-stash-07.js",
@@ -2833,7 +2852,13 @@
       ],
       "lines": 667
     },
-    {"file":"ui/developer-tools-01.js","symbols":["developerTools","manaNotice"]},
+    {
+      "file": "ui/developer-tools-01.js",
+      "symbols": [
+        "developerTools",
+        "manaNotice"
+      ]
+    },
     {
       "file": "dev/game-master-01.js",
       "symbols": [
@@ -2876,7 +2901,13 @@
         "horseTrader"
       ]
     },
-    {"file":"gameplay/quartermaster/index.ts","global":"quartermaster","symbols":["quartermaster"]},
+    {
+      "file": "gameplay/quartermaster/index.ts",
+      "global": "quartermaster",
+      "symbols": [
+        "quartermaster"
+      ]
+    },
     {
       "file": "ui/mouse-cursors-01.js",
       "symbols": []
@@ -2888,8 +2919,49 @@
         "statusInspector"
       ]
     },
-    {"file":"multiplayer/webtransport/index.ts","global":"GameWebTransport","symbols":["GameWebTransport"]},
-    {"file":"multiplayer/webtransport/legacy-bridge.js","symbols":["gameMultiplayer"]},
-    {"file":"core/asset-preload-01.js","symbols":[]}
+    {
+      "file": "multiplayer/webtransport/index.ts",
+      "global": "GameWebTransport",
+      "symbols": [
+        "GameWebTransport"
+      ]
+    },
+    {
+      "file": "multiplayer/state/diagnostics.js",
+      "symbols": [
+        "onlineTrace"
+      ]
+    },
+    {
+      "file": "multiplayer/state/skill-visuals.js",
+      "symbols": [
+        "OnlineSkillVisuals"
+      ]
+    },
+    {
+      "file": "multiplayer/state/consumables.js"
+    },
+    {
+      "file": "multiplayer/state/support.js"
+    },
+    {
+      "file": "multiplayer/state/pvp.js"
+    },
+    {
+      "file": "multiplayer/state/legacy-pve.js",
+      "symbols": [
+        "onlineWorld"
+      ]
+    },
+    {
+      "file": "multiplayer/webtransport/legacy-bridge.js",
+      "symbols": [
+        "gameMultiplayer"
+      ]
+    },
+    {
+      "file": "core/asset-preload-01.js",
+      "symbols": []
+    }
   ]
 }

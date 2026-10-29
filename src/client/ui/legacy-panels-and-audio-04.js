@@ -8,6 +8,9 @@ var Rv = function () {
   (lA.addEventListener("pointerdown", (e) => {
     if (typeof gameMultiplayer !== "undefined" && gameMultiplayer.active &&
         (e.pointerType !== "mouse" || e.button !== 0)) return;
+    if (typeof gameMultiplayer!=="undefined"&&gameMultiplayer.pve) {
+      const [px,py]=A(e);if(onlineWorld.pickAt(px+B0.x,py+B0.y))return;
+    }
     if (Y.active) return;
     if (Hs() && e.pointerType !== "touch") {
       const [r, c] = A(e),
@@ -225,11 +228,13 @@ var Y = {
     }
   },
   moveTarget(x, y) {
+    if(typeof gameMultiplayer!=="undefined"&&gameMultiplayer.pve)onlineWorld.move(x,y);
     Y.target = { x, y };
     // Cancel before the next simulation tick can release an auto windup.
     Y.prioritizeMovement();
   },
   selectTarget(target) {
+    if(typeof gameMultiplayer!=="undefined"&&gameMultiplayer.pve){l.manTgt=target;Y.selected=true;onlineWorld.attack(target);return;}
     if (!hA()) Wa("manual", !0);
     l.manTgt = target;
     l.clickedTarget = target;

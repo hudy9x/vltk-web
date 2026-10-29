@@ -510,6 +510,10 @@ var Ah = function (A) {
 };
 
 var Wa = function (A, n) {
+  if (typeof gameMultiplayer !== "undefined" && gameMultiplayer.pve) {
+    onlineWorld.farm(A !== "manual");
+    return;
+  }
   ((o.ctrl = A),
     (l.clickHold = false),
     (l.moveTo = null),
@@ -639,6 +643,7 @@ var Ac = function (A) {
     Z8(A);
     return;
   }
+  if(typeof gameMultiplayer!=="undefined"&&gameMultiplayer.pve){onlineWorld.cast(n);return;}
   if (T[n] && !UA(T[n])) {
     if (wn(T[n]) === "curse" && !l.town && !(l.deadT > 0)) {
       Y.releaseTarget();
@@ -661,6 +666,7 @@ var Ac = function (A) {
 };
 
 var Ms = function (A) {
+  if(typeof gameMultiplayer!=="undefined"&&gameMultiplayer.pve){onlineWorld.potion(A);return;}
   if (((l.potCd = l.potCd || { life: 0, mana: 0 }), l.potCd[A] > 0)) return;
   const n = ic(A === "mana" ? 1 : 0);
   if (!n) {
@@ -733,13 +739,15 @@ var Gv = function (A) {
 
 var qA = function () {
   if (!o || !o.fac) return;
+  const selected = o.mainLock ? Number(o.main) || 0 : l.P?.main?.id;
   (tn(),
     document.querySelectorAll("#pad .sk").forEach((e) => {
       const a = o.slots[+e.dataset.i],
         i = T[a];
       (e.classList.toggle("empty", !i),
         e.classList.toggle("nowp", !!i && UA(i) && !Ci(i)),
-        e.classList.toggle("cur", !!(i && UA(i) && l.P && l.P.main && l.P.main.id === a)),
+        e.classList.toggle("cur", !!(i && UA(i) && selected === a)),
+        e.setAttribute('aria-pressed', String(!!(i && UA(i) && selected === a))),
         (e.querySelector("i").style.backgroundImage = i && i.ic ? `url('${i.ic}')` : ""));
       const r = i ? (o.sk[a] || 0) + (typeof z1 == "function" ? z1(a) : 0) : 0,
         c = i && typeof z1 == "function" ? z1(a) : 0;
@@ -751,11 +759,11 @@ var qA = function () {
         (d.textContent = i ? r : ""),
         d.classList.toggle("up", !!c));
     }));
-  const A = l.P && l.P.main,
+  const A = selected && T[selected] ? T[selected] : l.P && l.P.main,
     n = m("#bMain");
   if (n) {
     const e = o.eq && o.eq.weapon,
-      a = A && l.P.basic === A,
+      a = A && (!selected || l.P.basic === A),
       i = a ? "img/s/8.png" : A && T[A.id] && T[A.id].ic;
     ((n.querySelector("i").style.backgroundImage = i ? `url('${i}')` : ""),
       (n.title = "Chiêu chính: " + (a ? "Đánh thường" : A && T[A.id] ? T[A.id].n : "—")));

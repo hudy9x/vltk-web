@@ -2,8 +2,12 @@
 var gameMultiplayer = (() => {
   const factions = Object.keys(I);
   let statusButton = null, previous = null, nextAppearance = 0, appearance = null, movedAt = -Infinity, direction = 0;
-  const client = GameWebTransport.createClient({ status(text, online) {
-    if (!text) { statusButton?.remove(); statusButton = null; return; }
+  const client = GameWebTransport.createClient({ slot:()=>m0,
+    async prepare(){ $(); await window.localGameStorage?.flush(); },
+    world:state=>onlineWorld.snapshot(state),profile:value=>onlineWorld.profile(value),reset:()=>onlineWorld.reset(),
+    status(text, online) {
+    if(typeof onlineTrace!=='undefined')onlineTrace.once('status:'+text,'connection-status',{text,online});
+    if (!text) { statusButton?.remove(); statusButton = null; document.getElementById("multiplayerFarm")?.remove(); return; }
     const battle = document.getElementById("battle");
     if (!battle) return;
     if (!statusButton) {
@@ -17,10 +21,13 @@ var gameMultiplayer = (() => {
     statusButton.dataset.online = String(online);
     statusButton.title = "Đồng bộ người chơi cùng bản đồ. Bấm để kết nối lại.";
   }});
+  onlineWorld.bind(client);
   window.addEventListener("pagehide", () => client.close());
   return {
-    get active() { return client.active; },
+    get active() { return client.active || client.authoritative; },
+    get pve(){return onlineWorld.active;},
     tick() {
+      if(l.battlefield||l.dg||l.tower){client.suspend();return;}
       if (!o?.fac || !Z0.key || window.localGameConfig?.combatSandbox) return;
       const now = performance.now();
       if (!appearance || now >= nextAppearance) {
@@ -28,25 +35,57 @@ var gameMultiplayer = (() => {
         appearance = { name: String(o.name || "Người chơi"), faction: Math.max(0, factions.indexOf(o.fac)), sex: o.sex ? 1 : 0,
           bodySex: j?.sx === "f" ? 1 : 0, ride: o.eq?.horse ? 1 : 0,
           helm: rows.helm ?? -1, armor: rows.armor ?? -1, weapon: rows.weapon ?? 0,
-          horse: o.eq?.horse ? (rows.horse ?? -1) : -1 };
-        nextAppearance = now + 1000;
+          horse: o.eq?.horse ? (rows.horse ?? -1) : -1,
+          rebirth: o.lookFx === false ? 0 : Math.min(5, v0()),
+          effects: JP().map(sprite => +Object.keys(U1).find(id => U1[id] === sprite)).filter(id => id > 0).slice(0, 12) };
+        nextAppearance = now + 100;
       }
       const map = typeof Z0.key === "number" ? Z0.key : E0.town.id;
-      const dx = previous?.map === map ? v.x - previous.x : 0;
-      const dy = previous?.map === map ? v.y - previous.y : 0;
+      // Match D_ without mutating simulation: sampling fixed-step positions causes a 30/20 Hz beat.
+      const fraction = typeof N2 === "number" && typeof Lr === "number" ? Math.max(0, Math.min(1, N2 / Lr)) : 1;
+      const interpolate = Number.isFinite(v._px) && Number.isFinite(v._py) &&
+        Math.hypot(v.x - v._px, v.y - v._py) < (typeof __ === "number" ? __ : 250);
+      const x = interpolate ? v._px + (v.x - v._px) * fraction : v.x;
+      const y = interpolate ? v._py + (v.y - v._py) * fraction : v.y;
+      const dx = previous?.map === map ? x - previous.x : 0;
+      const dy = previous?.map === map ? y - previous.y : 0;
       if (Math.hypot(dx, dy) > 0.001) { movedAt = now; direction = kn(dx,dy); }
-      client.update({ map, x: v.x, y: v.y, dir: direction, moving: now - movedAt < 120 }, appearance);
-      if (client.active && o.ctrl !== "manual") Wa("manual", true);
-      previous = { map, x: v.x, y: v.y };
+      client.update({ map, timestamp: Math.floor(now) >>> 0, effectTime: Math.max(0, l.clock || 0),
+        x, y, dir: direction, moving: now - movedAt < 120 }, appearance);
+      if (client.online) onlineWorld.syncControls?.();
+      if (client.online && statusButton && !document.getElementById("multiplayerFarm")) {
+        const farm=document.createElement("button");farm.id="multiplayerFarm";farm.style.cssText=statusButton.style.cssText+";top:80px";
+        farm.textContent="Luyện công online";farm.onclick=()=>onlineWorld.farm(o.ctrl !== 'auto');statusButton.parentElement.appendChild(farm);
+      }
+      const farm=document.getElementById("multiplayerFarm");if(farm){farm.disabled=!client.online;farm.textContent=onlineWorld.state?.actors.find(a=>a.id===onlineWorld.state.self)?.farming?"Dừng luyện công":"Luyện công online";}
+      previous = { map, x, y };
     },
-    entities() { return client.players().map(player => ({ remotePlayer: player, x: player.x, y: player.y })); },
+    entities() { return onlineWorld.entities().concat(client.players().map(player => ({ remotePlayer: player, x: player.x, y: player.y }))); },
     draw(ctx, entity) {
+      if(entity.onlineLoot){onlineWorld.draw(ctx,entity);return;}
       const p = entity.remotePlayer, look = p.appearance;
+      const authoritative=onlineWorld.state?.actors.find(a=>a.id===p.id);
       const actor = { n: look.name, f: factions[look.faction] || factions[0], s: look.sex, x: p.x, y: p.y,
-        dir: p.dir, mv: p.moving, t: p.animationTime, hp: 1, hpMax: 1,
+        dir: p.dir, mv: p.moving, t: p.animationTime, hurtT:authoritative?.hurt||0,poison:authoritative?.poison||0,slowT:authoritative?.cold||0,slowPower:authoritative?.coldPower||0,stun:authoritative?.stun||0,dead:authoritative?.hp===0,act:authoritative?.hp===0?'die':undefined, hp: onlineWorld.state?.actors.find(a=>a.id===p.id)?.hp??1, hpMax: onlineWorld.state?.actors.find(a=>a.id===p.id)?.maxHp??1,
         J: look.armor >= 0 ? lB({ sx: look.bodySex ? "f" : "m", ride: look.ride,
           r: { helm: look.helm, armor: look.armor, weapon: look.weapon, horse: look.horse } }) : null };
-      uB(ctx, actor, 0);
+      const castPose=onlineWorld.pose?.(p.id);if(castPose)Object.assign(actor,castPose);
+      const drawEffects = layer => {
+        actor.animKey = actor.gk;
+        const phase = p.effectTime || 0;
+        if (layer === "under" && look.rebirth && vf[look.rebirth])
+          F3(ctx, vf[look.rebirth], actor.x, actor.y, 0, phase, Jn, 0.95, actor);
+        const support=onlineWorld.state?.actors.find(a=>a.id===p.id)?.supports||[];
+        const serverEffects=support.filter(s=>s.active&&U1[s.skill]).map(s=>s.skill);
+        const effects=[...new Set([...(look.effects||[]).filter(id=>!T[id]||!['buff','aura'].includes(wn(T[id]))),...serverEffects])];
+        for (const id of effects) {
+          const sprite = U1[id];
+          if (sprite && (sprite.pos === "foot") === (layer === "under"))
+            F3(ctx, sprite, actor.x, actor.y, 0, phase, Jn, sprite.pos === "foot" ? 0.85 : 0.9, actor);
+        }
+      };
+      uB(ctx, actor, 0, { nameColor: authoritative?.alignment!==undefined&&typeof Gh!=='undefined'?Gh[['chinh','trung','ta','tan'][authoritative.alignment]].c:typeof Tb === "function" ? Tb(actor.f) : "#ececec",
+        under: () => drawEffects("under"), over: () => drawEffects("over") });
     },
   };
 })();

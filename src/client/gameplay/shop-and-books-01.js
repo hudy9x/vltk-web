@@ -120,6 +120,7 @@ var castSupportSkill = function (id) {
   const skill = T[id], kind = skill && wn(skill);
   const fail = message => { k(message); return false; };
   if (!canSlotSkill(id) || kind === "atk") return false;
+  if(typeof gameMultiplayer!=="undefined"&&gameMultiplayer.pve)return !!onlineWorld.support(id);
   if (!l.P || l.town || l.deadT > 0) return fail("Chỉ dùng chiêu hỗ trợ khi đang ở bãi luyện công");
   if (l.stunT > 0 || actorActionLocked(v)) return fail("Chưa thể thi triển khi đang xuất chiêu hoặc bị khống chế");
   if (kind === "aura") {
