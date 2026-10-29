@@ -160,3 +160,6 @@ body.nochat #modeSw{left:6px}
 }
 .it u.up.soon{color:#9aa4a8}
 #chatLines .cl.sys.hb,#u20lines .cl.sys.hb{color:#ffd24a;font-style:normal;font-weight:bold}   /* v587: Thong bao he thong (Hong Bao) */
+
+/* Keep the chosen attack legible over decorative skill icons and cooldowns. */
+#pad .pbtn.sk.cur::after{content:"";position:absolute;inset:1px;border:2px solid #ffd24a;box-shadow:inset 0 0 4px #ffd24a;pointer-events:none;z-index:4}
