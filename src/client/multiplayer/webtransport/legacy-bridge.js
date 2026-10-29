@@ -3,6 +3,7 @@ var gameMultiplayer = (() => {
   const factions = Object.keys(I);
   let statusButton = null, previous = null, nextAppearance = 0, appearance = null, movedAt = -Infinity, direction = 0;
   const client = GameWebTransport.createClient({ slot:()=>m0,
+    position:()=>OnlineLifecycle.hint(),
     async prepare(){ $(); await window.localGameStorage?.flush(); },
     world:state=>onlineWorld.snapshot(state),profile:value=>onlineWorld.profile(value),reset:()=>{onlineWorld.reset();OnlineParty.reset();},
     status(text, online) {
@@ -61,11 +62,12 @@ var gameMultiplayer = (() => {
       const farm=document.getElementById("multiplayerFarm");if(farm){farm.disabled=!client.online;farm.textContent=onlineWorld.state?.actors.find(a=>a.id===onlineWorld.state.self)?.farming?"Dừng luyện công":"Luyện công online";}
       previous = { map, x, y };
     },
-    entities() { return onlineWorld.entities().concat(client.players().map(player => ({ remotePlayer: player, x: player.x, y: player.y }))); },
+    entities() { return onlineWorld.entities().concat(client.players().filter(player=>!(onlineWorld.state?.actors.find(a=>a.id===player.id)?.hp<=0)).map(player => ({ remotePlayer: player, x: player.x, y: player.y }))); },
     draw(ctx, entity) {
       if(entity.onlineLoot){onlineWorld.draw(ctx,entity);return;}
       const p = entity.remotePlayer, look = p.appearance;
       const authoritative=onlineWorld.state?.actors.find(a=>a.id===p.id);
+      if(authoritative?.hp<=0)return;
       const actor = { n: look.name, f: factions[look.faction] || factions[0], s: look.sex, x: p.x, y: p.y,
         dir: p.dir, mv: p.moving, t: p.animationTime, hurtT:authoritative?.hurt||0,poison:authoritative?.poison||0,slowT:authoritative?.cold||0,slowPower:authoritative?.coldPower||0,stun:authoritative?.stun||0,dead:authoritative?.hp===0,act:authoritative?.hp===0?'die':undefined, hp: onlineWorld.state?.actors.find(a=>a.id===p.id)?.hp??1, hpMax: onlineWorld.state?.actors.find(a=>a.id===p.id)?.maxHp??1,
         J: look.armor >= 0 ? lB({ sx: look.bodySex ? "f" : "m", ride: look.ride,

@@ -13,18 +13,6 @@ impl Game {
                 *cd = if *cd <= dt + 0.000001 { 0.0 } else { *cd - dt };
             }
             if a.hp <= 0.0 {
-                a.dead -= dt;
-                if a.dead <= 0.0 {
-                    a.move_goal = None;
-                    a.life = a.life.wrapping_add(1).max(1);
-                    a.hp = a.profile.hp;
-                    a.mp = a.profile.mp;
-                    (a.x, a.y) = room
-                        .nav
-                        .nearest(room.definition.entry.x, room.definition.entry.y);
-                    a.target = 0;
-                    a.path.clear();
-                }
                 continue;
             }
             a.hp = (a.hp + a.profile.regen * dt).min(a.profile.hp);
@@ -41,8 +29,9 @@ impl Game {
                     .loot
                     .iter()
                     .filter(|l| {
-                        l.owner == a.account
+                        (l.public || l.knb > 0 || l.owner == a.account
                             && l.owner_slot == a.slot
+                        )
                             && distance(a.x, a.y, l.x, l.y) < self.rules.leash_range
                     })
                     .min_by(|x, y| {

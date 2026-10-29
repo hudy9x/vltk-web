@@ -126,3 +126,15 @@ test('remote name uses the faction palette and support effects draw under and ov
     appearance:{name:'Thiếu Lâm',faction:0,sex:0,bodySex:0,ride:0,armor:-1,effects:[10,11,12]}}});
   assert.deepEqual(draws,[['foot',100,200,12.5],['body'],['body',100,200,12.5],['head',100,200,12.5]]);
 });
+
+test('remote dead players disappear from entities and draw, then reappear after recovery',()=>{
+  const players=[{id:2,x:100,y:200,appearance:{name:'Victim',faction:0,armor:-1}},{id:3,x:50,y:60,appearance:{name:'Alive',faction:0,armor:-1}}];
+  let draws=0;
+  const scope={OnlinePvp:{healthColor:()=>''},onlineWorld:{bind(){},entities:()=>[],state:{actors:[{id:2,hp:0},{id:3,hp:100}]}},I:{shaolin:{}},GameWebTransport:{createClient:()=>({players:()=>players})},window:{addEventListener(){}},uB:()=>draws++};
+  vm.runInNewContext(fs.readFileSync('src/client/multiplayer/webtransport/legacy-bridge.js','utf8'),scope);
+  assert.deepEqual(Array.from(scope.gameMultiplayer.entities(),e=>e.remotePlayer.id),[3]);
+  scope.gameMultiplayer.draw({}, {remotePlayer:players[0]});assert.equal(draws,0);
+  scope.onlineWorld.state.actors[0].hp=100;
+  assert.deepEqual(Array.from(scope.gameMultiplayer.entities(),e=>e.remotePlayer.id),[2,3]);
+  scope.gameMultiplayer.draw({}, {remotePlayer:players[0]});assert.equal(draws,1);
+});

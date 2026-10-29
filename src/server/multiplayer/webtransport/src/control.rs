@@ -99,6 +99,11 @@ pub fn routes(world: Arc<Mutex<World>>, secret: String) -> Router {
                 ))
             }),
         )
+        .route("/deaths/ack",post(|State(s):State<Control>,h:HeaderMap,Json(receipt):Json<DeathReceipt>|async move{
+            authorize(&h,&s)?;
+            let accepted=s.world.lock().unwrap().game.accept_death_drop(&receipt.id,receipt.amount,receipt.currency=="knb").map_err(|_|StatusCode::BAD_REQUEST)?;
+            Ok::<_,StatusCode>(Json(accepted))
+        }))
         .route(
             "/rewards/ack",
             post(
@@ -121,3 +126,6 @@ pub fn routes(world: Arc<Mutex<World>>, secret: String) -> Router {
         .layer(DefaultBodyLimit::max(4 * 1024 * 1024))
         .with_state(Control { world, secret })
 }
+
+#[derive(serde::Deserialize)]
+struct DeathReceipt {id:String,amount:u32,#[serde(default)]currency:String}

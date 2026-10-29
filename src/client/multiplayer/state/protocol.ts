@@ -31,6 +31,7 @@ export interface MonsterState {
   moving: boolean;
 }
 export interface LootState {
+  knb?:number;
   id: number;
   x: number;
   y: number;
@@ -60,6 +61,7 @@ export interface PartyMember {id:number;map:number;hp:number;maxHp:number;alignm
 export interface PartyInvitation {id:number;from:number;remaining:number;name:string}
 export interface PartyState {leader:number;reply:{seq:number;code:number};members:PartyMember[];invitations:PartyInvitation[]}
 export interface WorldState {
+  death?:{killer:number;name:string;player:boolean};
   party?:PartyState;
   type: 'world';
   tick: number;
@@ -160,13 +162,11 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     life: u32(),
     coldPower: f32(),
   }));
-  const loot = Array.from({ length: counts[2] }, () => ({
-    id: u32(),
-    x: f32(),
-    y: f32(),
-    gold: u32(),
-    mine: flag(),
-  }));
+  const loot:LootState[] = Array.from({ length: counts[2] }, () => {
+    const id=u32(),x=f32(),y=f32(),amount=u32(),flags=bytes[at++];
+    if(flags>3)throw new Error('Invalid loot flags');
+    return {id,x,y,gold:flags&2?0:amount,mine:!!(flags&1),...(flags&2?{knb:amount}:{})};
+  });
   const events = Array.from({length:counts[3]},()=>{
     const event:WorldEvent={id:u32(),source:u32(),target:u32(),skill:u16(),kind:bytes[at++],value:f32(),tick:u32()};
     if(event.kind===2){
@@ -177,7 +177,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     }
     if(event.kind===1){event.cast={level:u16(),missiles:bytes[at++],flags:bytes[at++],range:f32(),x:f32(),y:f32(),targetX:f32(),targetY:f32()};
       if(event.cast.level<1||event.cast.missiles<1||event.cast.missiles>16||event.cast.flags>3||event.cast.range<0)throw new Error('Invalid cast visual');}
-    if(event.kind<1||event.kind>6)throw new Error('Invalid world event');return event;
+    if(event.kind<1||event.kind>7)throw new Error('Invalid world event');return event;
   });
   if(at+2>bytes.length)throw new Error('Invalid world size');
   const supportCount=u16();
@@ -207,6 +207,11 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     if(at+13>bytes.length)throw new Error('Invalid party size');
     return {id:u32(),from:u32(),remaining:f32(),name:readName()};
   });
+  let death:WorldState['death'];
+  if(at<bytes.length){
+    if(at+7>bytes.length||bytes[at++]!==0xd1)throw new Error('Invalid death state');
+    const killer=u32(),player=flag(),name=readName();death={killer,player,name};
+  }
   if(at!==bytes.length)throw new Error('Invalid world size');
   const self=v.getUint32(10,true);
   if((leader===0)!==(members.length===0)||members.length===1||
@@ -222,6 +227,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     throw new Error('Invalid entity state');
   return {
     type: 'world',
+    ...(death?{death}:{}),
     party,
     movement,
     tick: v.getUint32(2, true),

@@ -255,6 +255,7 @@ async fn main() -> Result<()> {
                     }
                     state.game.actors.get_mut(&id).unwrap().profile_revision = admission.revision;
                     state.game.actors.get_mut(&id).unwrap().name = state.players[&id].appearance.name.clone();
+                    state.game.resume_position(id,admission.position);
                     Ok(id)
                 }
                 .await;

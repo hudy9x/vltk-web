@@ -9,6 +9,7 @@ pub struct PvpState {
     pub poison: f32,
     poison_damage: f32,
     poison_owner: u32,
+    poison_name: String,
     poison_pending: f32,
     poison_elapsed: f32,
 }
@@ -106,6 +107,8 @@ pub(super) fn hit(
     if !can_hit(game, source, target) {
         return;
     }
+    let source_name=game.actors[&source].name.clone();
+    let target_name=game.actors[&target].name.clone();
     let mut skill = input.clone();
     let factor = scale();
     for part in &mut skill.parts {
@@ -180,6 +183,7 @@ pub(super) fn hit(
             defender.pvp.poison = defender.pvp.poison.max(duration);
             defender.pvp.poison_damage = pool / defender.pvp.poison;
             defender.pvp.poison_owner = source;
+            defender.pvp.poison_name = source_name.clone();
         }
     }
     let hurt = parts[2] <= 0.0 && amount >= defender.profile.hp * 0.15;
@@ -188,6 +192,7 @@ pub(super) fn hit(
         defender.support.lock = 0.0;
     }
     let map = defender.map;
+    if amount > 0.0 {defender.last_attacker=source;defender.last_attacker_name=source_name;defender.last_attacker_player=true;}
     if crate::diagnostics::enabled() {
         crate::diagnostics::log(
             "pvp-hit",
@@ -211,6 +216,7 @@ pub(super) fn hit(
     if reflection > 0.0 {
         let lost = reflection.min(attacker.hp);
         attacker.hp = (attacker.hp - reflection).max(0.0);
+        if lost>0.0 {attacker.last_attacker=target;attacker.last_attacker_name=target_name;attacker.last_attacker_player=true;}
         if lost >= attacker.profile.hp * 0.15 {
             attacker.pvp.hurt = 0.5;
             attacker.support.lock = 0.0;
@@ -256,6 +262,7 @@ impl Game {
             let elapsed = dt.min(a.pvp.poison);
             let lost = (a.pvp.poison_damage * elapsed).min(a.hp);
             a.hp -= lost;
+            if lost>0.0 {a.last_attacker=a.pvp.poison_owner;a.last_attacker_name=a.pvp.poison_name.clone();a.last_attacker_player=true;}
             a.pvp.poison = (a.pvp.poison - elapsed).max(0.0);
             a.pvp.poison_pending += lost;
             a.pvp.poison_elapsed += elapsed;

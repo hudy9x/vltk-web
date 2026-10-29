@@ -11,6 +11,7 @@ export interface RenderPlayer extends RemotePosition {
   animationTime: number;
 }
 interface Hooks {
+  position?:()=>{map:number;x:number;y:number;life:number}|undefined;
   status: (text: string, online: boolean) => void;
   slot?: () => number;
   prepare?: () => Promise<void>;
@@ -48,6 +49,7 @@ export function createClient(hooks: Hooks) {
     waitingAt = 0,
     rosterRevision: number | undefined;
   let latestPosition: Position | undefined, latestLook: Appearance | undefined;
+  let initialWorld=true,returningTown=false;
   let roster = new Map<number, Appearance>();
   const history = new Map<number, RemoteTimeline>();
   const lives=new Map<number,number>();
@@ -71,6 +73,7 @@ export function createClient(hooks: Hooks) {
     hooks.status(`Online: ${error.message} · bấm để thử lại`, false);
   };
   async function start() {
+    initialWorld=true;returningTown=false;
     const attempt = ++generation;
     sessionSlot = hooks.slot?.() ?? 0;
     connecting = true;
@@ -80,7 +83,7 @@ export function createClient(hooks: Hooks) {
       const response = await fetch('/api/multiplayer/webtransport/session', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ slot: hooks.slot?.() ?? 0 }),
+        body: JSON.stringify({ slot: hooks.slot?.() ?? 0, position:hooks.position?.() }),
         signal: AbortSignal.timeout(15000),
       });
       if (!response.ok) throw new Error('Không cấp được vé kết nối.');
@@ -101,7 +104,15 @@ export function createClient(hooks: Hooks) {
         config,
         encodeAppearance(latestLook!, ticket),
         (packet) => {
-          if (attempt !== generation || packet.map !== map) return;
+          if (attempt !== generation) return;
+          if(packet.type==='roster'&&(initialWorld||returningTown)){
+            rosterRevision=packet.revision;roster=packet.players;return;
+          }
+          if(packet.type==='world'&&(initialWorld||returningTown&&packet.map!==map)){
+            if(packet.map!==map){map=packet.map;history.clear();lives.clear();tick=undefined;worldTick=undefined;}
+            initialWorld=false;returningTown=false;
+          }
+          if(packet.map!==map)return;
           if (packet.type === 'world') {
             if (worldTick !== undefined && !newer(packet.tick, worldTick)) return;
             worldTick = packet.tick;
@@ -142,7 +153,6 @@ export function createClient(hooks: Hooks) {
       }
       connection = result;
       waitingAt = performance.now();
-      await result.reliable(encodeCommand(VERSION, ++commandSequence, { kind: 1, map }));
       lastLook = JSON.stringify(latestLook);
       lookAt = performance.now();
     } catch (error) {
@@ -174,6 +184,7 @@ export function createClient(hooks: Hooks) {
     },
     command(c: Command) {
       if (!connection || !online) return 0;
+      if(c.kind===17)returningTown=true;
       const seq = ++commandSequence;
       const attempt = generation;
       void connection.reliable(encodeCommand(VERSION, seq, c)).catch((e) => {
@@ -203,7 +214,7 @@ export function createClient(hooks: Hooks) {
       }
       const now = performance.now();
       latestLook = appearance;
-      if (position.map !== map) {
+      if (position.map !== map && !initialWorld && !returningTown) {
         map = position.map;
         clear();
         waitingAt = now;

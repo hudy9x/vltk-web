@@ -43,6 +43,7 @@ var onlineWorld = (() => {
     goal = null;
     motion.clear();
     visuals.reset();
+    if(typeof OnlineLifecycle!=='undefined')OnlineLifecycle.reset();
     if(v._onlineCast){v._onlineCast=false;v.castT=0;v.speedCastDuration=undefined;}
     if(typeof OnlineSupport!=='undefined')OnlineSupport.reset();
     if(typeof OnlinePvp!=='undefined')OnlinePvp.reset();
@@ -62,7 +63,12 @@ var onlineWorld = (() => {
   function snapshot(next) {
     const trace=typeof onlineTrace!=='undefined'?onlineTrace:null;
     trace?.world(next);
-    if (!active() || next.map !== mapId()) {trace?.once('drop:'+next.map+':'+mapId(),'world-ignored',{map:next.map,currentMap:mapId(),active:active()});return;}
+    if (!active()) {trace?.once('drop:'+next.map+':'+mapId(),'world-ignored',{map:next.map,currentMap:mapId(),active:active()});return;}
+    if(next.map!==mapId()){
+      if(typeof OnlineLifecycle==='undefined')return;
+      motion.clear();visuals.reset();monsters.clear();goal=null;pendingMode=null;lastEvent=0;
+    }
+    if(typeof OnlineLifecycle!=='undefined')OnlineLifecycle.sync(next,send);
     state = next;
     if(typeof OnlineSupport!=='undefined')OnlineSupport.sync(next);
     if(typeof OnlinePvp!=='undefined')OnlinePvp.sync(next,send);
@@ -145,6 +151,7 @@ var onlineWorld = (() => {
       if(event.kind===6 && from && typeof $A==='function')$A(from.x,from.y-60,(event.value>0?'✚ ':'')+(T[event.skill]?.n||''),'#8f8',12);
       if(event.kind===5 && event.source===next.self && typeof OnlineConsumables!=='undefined')OnlineConsumables.received(event);
       if (event.kind === 4 && event.source === next.self) k(`Nhặt được ${event.value} lượng`);
+      if (event.kind === 7 && event.source === next.self) k(`Nhặt được ${event.value.toLocaleString('vi-VN')} kim nguyên bảo`);
     }
   }
   function simulate(dt) {
@@ -187,6 +194,7 @@ var onlineWorld = (() => {
       v._onlineCast=true;v.castT=pose.atT;v.speedCastDuration=pose.atD;v.speedCastProgress=1-pose.atT/pose.atD;ps(v,'at');
     }else if(v._onlineCast){v._onlineCast=false;v.castT=0;v.speedCastDuration=undefined;if(v.act==='at')ps(v,'st');}
     if(typeof onlineTrace!=='undefined')onlineTrace.advance();
+    if(typeof OnlineLifecycle!=='undefined')OnlineLifecycle.remember();
   }
   function profile(saved) {
     if (currentSlot !== m0) {
@@ -351,7 +359,7 @@ var onlineWorld = (() => {
     },
     draw(ctx, entity) {
       const d = entity.onlineLoot;
-      goldLootVisuals.draw(ctx, d.gold, d.x, d.y, d.mine);
+      goldLootVisuals.draw(ctx, d.knb||d.gold, d.x, d.y, d.mine,d.knb?'KNB':'lượng');
     },
 
   };

@@ -2960,6 +2960,9 @@
       "file": "multiplayer/state/pvp.js"
     },
     {
+      "file": "multiplayer/state/lifecycle.js"
+    },
+    {
       "file": "multiplayer/state/legacy-pve.js",
       "symbols": [
         "onlineWorld"

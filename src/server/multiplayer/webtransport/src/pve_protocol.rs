@@ -75,8 +75,8 @@ pub fn snapshot(game: &Game, id: u32) -> Option<Vec<u8>> {
         for v in [l.x, l.y] {
             b.extend(v.to_le_bytes());
         }
-        b.extend(l.gold.to_le_bytes());
-        b.push(u8::from(l.owner == a.account && l.owner_slot == a.slot));
+        b.extend(if l.knb>0{l.knb}else{l.gold}.to_le_bytes());
+        b.push(if l.knb>0{3}else{u8::from(l.public || l.owner == a.account && l.owner_slot == a.slot)});
     }
     for e in events.into_iter().rev() {
         for v in [e.id, e.source, e.target] {
@@ -108,6 +108,11 @@ pub fn snapshot(game: &Game, id: u32) -> Option<Vec<u8>> {
         b.push(u8::from(active)|(u8::from(skill.aura)<<1));
     }
     crate::domain::party::encode(game, id, &mut b);
+    if let Some(death)=&a.death_notice {
+        b.push(0xd1);b.extend(death.killer.to_le_bytes());b.push(u8::from(death.player));
+        let mut name=death.name.clone();while name.len()>96{name.pop();}
+        b.push(name.len() as u8);b.extend(name.as_bytes());
+    }
     Some(b)
 }
 pub fn command(bytes: &[u8]) -> Result<Command> {

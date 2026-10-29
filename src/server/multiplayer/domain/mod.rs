@@ -1,4 +1,5 @@
 mod attacks;
+pub mod lifecycle;
 pub mod definitions;
 mod loot;
 mod monsters;
@@ -38,6 +39,10 @@ pub struct Rules {
     pub max_loot_per_map: usize,
 }
 pub struct Actor {
+    pub death_notice: Option<lifecycle::DeathNotice>,
+    pub last_attacker: u32,
+    pub last_attacker_name: String,
+    pub last_attacker_player: bool,
     pub profile_revision: u64,
     pub name: String,
     pub party_alignment: Option<u8>,
@@ -91,7 +96,14 @@ pub struct Mob {
     poison_owner: u32,
     path: Vec<(f32, f32)>,
 }
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Loot {
+    #[serde(default)]
+    pub public: bool,
+    #[serde(default)]
+    pub knb: u32,
+    #[serde(default)]
+    pub grant_id: Option<String>,
     pub owner_slot: u8,
     pub id: u32,
     pub owner: String,
@@ -141,6 +153,7 @@ struct Pending {
     flight: Option<projectiles::Flight>,
 }
 pub struct Game {
+    checkpoints: lifecycle::Checkpoints,
     contacts: BTreeMap<u32, attacks::ContactGate>,
     pub parties: party::Parties,
     pub actors: BTreeMap<u32, Actor>,
@@ -165,7 +178,10 @@ pub struct Command {
 }
 impl Game {
     pub fn new(path: std::path::PathBuf) -> Result<Self> {
+        let checkpoints=lifecycle::Checkpoints::open(path.with_extension("state.json"))?;
+        let next=checkpoints.next();
         Ok(Self {
+            checkpoints,
             contacts: BTreeMap::new(),
             parties: party::Parties::default(),
             actors: BTreeMap::new(),
@@ -174,7 +190,7 @@ impl Game {
             rules: serde_json::from_str(include_str!("../../../shared/multiplayer/rules.json"))?,
             outbox: Outbox::open(path)?,
             tick: 0,
-            next: 1000,
+            next,
             pending: vec![],
             rng: std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)?
@@ -262,6 +278,7 @@ impl Game {
             );
         }
         self.rooms = rooms;
+        self.restore_drops();
         Ok(())
     }
     pub fn join(&mut self, id: u32, account: String, slot: u8, mut profile: Profile) -> Result<()> {
@@ -295,6 +312,10 @@ impl Game {
         self.actors.insert(
             id,
             Actor {
+                death_notice: None,
+                last_attacker: 0,
+                last_attacker_name: String::new(),
+                last_attacker_player: false,
                 profile_revision: 0,
                 name: String::new(),
                 party_alignment: None,
@@ -325,6 +346,7 @@ impl Game {
             },
         );
         support::initialize(self.actors.get_mut(&id).unwrap());
+        self.restore_actor(id);
         Ok(())
     }
     pub fn command(&mut self, id: u32, c: Command) -> Result<()> {
@@ -336,6 +358,7 @@ impl Game {
             return Ok(());
         }
         a.seq = c.seq;
+        if c.kind == 17 { return self.return_to_town(id,c.map); }
         if c.kind == 16 {
             self.confirm_contact(id, &c);
             return Ok(());
@@ -384,6 +407,7 @@ impl Game {
         a.command_tick = self.tick;
         a.move_goal = None;
         if c.kind == 1 {
+            if a.hp<=0.0 {return Ok(());}
             let room = self
                 .rooms
                 .get(&c.map)
@@ -448,7 +472,7 @@ impl Game {
                 if let Some(drop) = room
                     .loot
                     .iter()
-                    .find(|l| l.id == c.target && l.owner == a.account && l.owner_slot == a.slot)
+                    .find(|l| l.id == c.target && (l.public || l.knb>0 || l.owner == a.account && l.owner_slot == a.slot))
                 {
                     a.pickup = drop.id;
                     a.target = 0;
@@ -531,10 +555,12 @@ impl Game {
         self.advance_attacks(&mut events);
         self.resolve_contacts(&mut events);
         let deaths = self.advance_monsters(&mut events);
+        self.finalize_deaths();
         self.commit_rewards(&mut events, deaths);
         for (map, kind, source, target, skill, value, hit) in events {
             self.event(map, kind, source, target, skill, value, hit);
         }
+        if self.tick.is_multiple_of(20) {if let Err(error)=self.checkpoint(){eprintln!("world checkpoint: {error}");}}
     }
 }
 fn chance(rng: &mut u64, percent: f32) -> bool {

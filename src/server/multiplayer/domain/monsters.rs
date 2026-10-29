@@ -87,6 +87,7 @@ impl Game {
                                 &a.profile.res,
                             );
                             let (amount,reflected)=support::receive_hit(a,amount);
+                            if amount>0.0 {a.last_attacker=m.id;a.last_attacker_name=m.def._name.clone();a.last_attacker_player=false;}
                             if reflected>0.0{
                                 let lost=reflected.min(m.hp);m.hp=(m.hp-reflected).max(0.0);m.killer=m.target;
                                 events.push((map,2,m.target,m.id,0,lost,0));

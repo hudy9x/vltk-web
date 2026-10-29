@@ -1,11 +1,11 @@
 // render/arena — shared IIFE scope; order is defined in modules.json.
 var crowdRenderer = CrowdVisibility.createCrowdVisibility();
 
-// Gold artwork represents ngân lượng; it does not grant the separate KNB currency.
+// Shared yuanbao artwork; the explicit currency label distinguishes ngân lượng and KNB.
 var goldLootVisuals = (() => {
   const images = [], pending = [];
   const tier = amount => amount >= 100000 ? 4 : amount >= 10000 ? 3 : amount >= 100 ? 2 : amount >= 10 ? 1 : 0;
-  function draw(ctx, amount, x, y, mine = true) {
+  function draw(ctx, amount, x, y, mine = true, currency = 'lượng') {
     const index = tier(amount);
     let image = images[index];
     if (!image) {
@@ -24,7 +24,9 @@ var goldLootVisuals = (() => {
     ctx.lineWidth = 3;
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
-    const label = `${Math.floor(amount).toLocaleString('vi-VN')} lượng`;
+    const label = currency==='lượng'&&amount>=10000
+      ? `${(Math.floor(amount)/10000).toLocaleString('vi-VN',{maximumFractionDigits:4})} vạn lượng`
+      : `${Math.floor(amount).toLocaleString('vi-VN')} ${currency}`;
     const labelY = y - width * 0.7 - 4;
     ctx.strokeText(label, x, labelY);
     ctx.fillText(label, x, labelY);

@@ -9,6 +9,10 @@ use std::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Grant {
     #[serde(default, skip_serializing_if="Option::is_none")]
+    pub death: Option<DeathRequest>,
+    #[serde(default, skip_serializing_if="is_zero")]
+    pub knb: u32,
+    #[serde(default, skip_serializing_if="Option::is_none")]
     pub potion: Option<PotionDebit>,
     pub id: String,
     pub account: String,
@@ -18,6 +22,9 @@ pub struct Grant {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PotionDebit { pub id: u16, pub spent: u32 }
+fn is_zero(value:&u32)->bool{*value==0}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeathRequest {pub map:u32,pub x:f32,pub y:f32,pub life:u32,pub notice:super::lifecycle::DeathNotice}
 /// Write-ahead grants survive crashes. SQLite delivery is idempotent by grant ID.
 pub struct Outbox {
     path: PathBuf,
@@ -88,6 +95,8 @@ impl Outbox {
         }
         ensure!(self.pending.len() < 4096, "reward delivery backlog full");
         let g = Grant {
+            death: None,
+            knb: 0,
             potion: None,
             id,
             account,
@@ -103,11 +112,28 @@ impl Outbox {
     pub fn consume(&mut self, account:String, slot:u8, potion:PotionDebit) -> Result<()> {
         let id=format!("{}-{}-2",self.epoch,self.next_debit);
         ensure!(self.pending.len()<4096,"delivery backlog full");
-        let grant=Grant{id,account,slot,xp:0,gold:0,potion:Some(potion)};
+        let grant=Grant{id,account,slot,xp:0,gold:0,potion:Some(potion),death:None,knb:0};
         self.append(format!("{}\n",serde_json::to_string(&grant)?).as_bytes())?;
         self.next_debit+=1;
         self.pending.insert(grant.id.clone(),grant);
         Ok(())
+    }
+    pub fn death(&mut self,actor:u32,life:u32,account:String,slot:u8,death:DeathRequest)->Result<String>{
+        let id=format!("{}-{actor}-{life}-3",self.epoch);
+        self.currency_grant(Grant{id:id.clone(),account,slot,xp:0,gold:0,potion:None,death:Some(death),knb:0})?;
+        Ok(id)
+    }
+    pub fn credit_knb(&mut self,id:String,account:String,slot:u8,knb:u32)->Result<()> {
+        self.currency_grant(Grant{id,account,slot,xp:0,gold:0,potion:None,death:None,knb})
+    }
+    pub fn credit_gold(&mut self,id:String,account:String,slot:u8,gold:u32)->Result<()> {
+        self.currency_grant(Grant{id,account,slot,xp:0,gold,potion:None,death:None,knb:0})
+    }
+    fn currency_grant(&mut self,grant:Grant)->Result<()> {
+        if self.pending.contains_key(&grant.id){return Ok(());}
+        ensure!(self.pending.len()<4096,"delivery backlog full");
+        self.append(format!("{}\n",serde_json::to_string(&grant)?).as_bytes())?;
+        self.pending.insert(grant.id.clone(),grant);Ok(())
     }
     pub fn ack(&mut self, ids: &[String]) -> Result<()> {
         let ids: Vec<_> = ids

@@ -60,6 +60,7 @@ impl World {
         Ok(id)
     }
     pub fn leave(&mut self, id: u32) {
+        if let Err(error)=self.game.checkpoint(){eprintln!("disconnect checkpoint: {error}");}
         self.game.party_leave(id);
         self.game.parties.replies.remove(&id);
         self.players.remove(&id);

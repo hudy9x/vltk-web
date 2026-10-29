@@ -22,12 +22,19 @@ impl Game {
                 if room.loot.len() < self.rules.max_loot_per_map {
                     self.next = self.next.wrapping_add(1);
                     room.loot.push(Loot {
+                        public: false,
+                        knb: 0,
+                        grant_id: None,
                         id: self.next,
                         owner: a.account.clone(),
                         owner_slot: a.slot,
                         x: m.x,
                         y: m.y,
-                        gold: roll_gold(&mut self.rng, m.def.gold_min.unwrap_or(m.def.gold), m.def.gold),
+                        gold: roll_gold(
+                            &mut self.rng,
+                            m.def.gold_min.unwrap_or(m.def.gold),
+                            m.def.gold,
+                        ),
                         ttl: self.rules.loot_seconds,
                     });
                 }
@@ -35,30 +42,55 @@ impl Game {
             m.respawn = self.rules.respawn_seconds;
             events.push((map, 3, owner, id, 0, 0.0, 0));
         }
+        let mut picked_knb = false;
         for (&id, a) in &mut self.actors {
+            if a.hp <= 0.0 {
+                continue;
+            }
             let room = self.rooms.get_mut(&a.map).unwrap();
             if let Some(index) = room.loot.iter().position(|l| {
                 l.id == a.pickup
-                    && l.owner == a.account
-                    && l.owner_slot == a.slot
+                    && (l.public || l.knb > 0 || l.owner == a.account && l.owner_slot == a.slot)
                     && distance(a.x, a.y, l.x, l.y) <= self.rules.pickup_range
             }) {
                 let drop = &room.loot[index];
-                if self
-                    .outbox
-                    .grant(
+                let delivery = if drop.knb > 0 {
+                    self.outbox.credit_knb(
+                        drop.grant_id.clone().expect("KNB ledger identity"),
+                        a.account.clone(),
+                        a.slot,
+                        drop.knb,
+                    )
+                } else if let Some(key)=&drop.grant_id {
+                    self.outbox.credit_gold(key.clone(),a.account.clone(),a.slot,drop.gold)
+                } else {
+                    self.outbox.grant(
                         format!("{}-0-1", drop.id),
                         a.account.clone(),
                         a.slot,
                         0,
                         drop.gold,
                     )
-                    .is_ok()
-                {
-                    events.push((a.map, 4, id, drop.id, 0, drop.gold as f32, 0));
+                };
+                if delivery.is_ok() {
+                    picked_knb |= drop.knb > 0 || drop.public;
+                    events.push((
+                        a.map,
+                        if drop.knb > 0 { 7 } else { 4 },
+                        id,
+                        drop.id,
+                        0,
+                        if drop.knb > 0 { drop.knb } else { drop.gold } as f32,
+                        0,
+                    ));
                     room.loot.remove(index);
                     a.pickup = 0;
                 }
+            }
+        }
+        if picked_knb {
+            if let Err(error) = self.checkpoint() {
+                eprintln!("KNB pickup checkpoint: {error}");
             }
         }
     }

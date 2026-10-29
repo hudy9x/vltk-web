@@ -60,8 +60,9 @@ export function registerMultiplayerWebTransport(
         const grants = await controlCall('/rewards');
         const ids: string[] = [];
         for (const grant of grants) {
-          characters.apply(grant);
-          ids.push(grant.id);
+          const deathDrop=characters.apply(grant);
+          if(deathDrop)await controlCall('/deaths/ack',deathDrop);
+          else ids.push(grant.id);
         }
         await refreshProfiles();
         if (ids.length) await controlCall('/rewards/ack', ids);
@@ -129,7 +130,7 @@ export function registerMultiplayerWebTransport(
     const config = (await response.json()) as Record<string, unknown>;
     const ticket = issueMultiplayerTicket(String(user.id), secret);
     // The shared Fastify parser deliberately returns a raw JSON string.
-    const payload = parseJsonBody(request.body) as { slot?: unknown } | null;
+    const payload = parseJsonBody(request.body) as { slot?: unknown;position?:unknown } | null;
     const slot = payload && typeof payload === 'object' && !Array.isArray(payload)
       ? (payload.slot === undefined ? 0 : payload.slot)
       : null;
@@ -143,9 +144,17 @@ export function registerMultiplayerWebTransport(
         account: String(user.id),
         slot,
         revision:saved.revision,
+        position:parseResumePosition(payload?.position),
         profile: characters.character(saved.profile),
       });
     }
     return sendJson(reply, 200, { enabled: true, ...config, ticket: ticket.toString('base64') });
   });
+}
+function parseResumePosition(input:unknown){
+  if(!input||typeof input!=='object')return undefined;
+  const p=input as Record<string,unknown>;
+  if(!Number.isInteger(p.map)||Number(p.map)<1||Number(p.map)>0xffffffff||!Number.isInteger(p.life)||Number(p.life)<1||Number(p.life)>0xffffffff||
+    typeof p.x!=='number'||typeof p.y!=='number'||!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.y<0||p.x>1e7||p.y>1e7)return undefined;
+  return {map:p.map,x:p.x,y:p.y,life:p.life};
 }

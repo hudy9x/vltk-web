@@ -20,3 +20,5 @@ src/client/game.js.map
 # Durable online reward journals (account data).
 database/*outbox.jsonl
 database/*outbox.tmp
+database/*outbox.state.json
+database/*outbox.state*.tmp

@@ -152,12 +152,16 @@ pub struct Definitions {
 #[derive(Clone, Debug, Deserialize)]
 pub struct Admission {
     #[serde(default)]
+    pub position: Option<ResumePosition>,
+    #[serde(default)]
     pub revision: u64,
     pub nonce: String,
     pub account: String,
     pub slot: u8,
     pub profile: Profile,
 }
+#[derive(Clone,Debug,Deserialize)]
+pub struct ResumePosition {pub map:u32,pub x:f32,pub y:f32,pub life:u32}
 
 fn one_level() -> u16 {
     1

@@ -13,13 +13,19 @@ export interface Reward {
   xp: number;
   gold: number;
   potion?: {id:number;spent:number};
+  death?: {map:number;x:number;y:number;life:number;notice:unknown};
+  knb?: number;
 }
 /** The online profile is imported once. Legacy local-storage writes cannot replace it. */
 export function createCharacters(db: DatabaseSync) {
   db.exec(`CREATE TABLE IF NOT EXISTS multiplayer_characters(account TEXT NOT NULL,slot INTEGER NOT NULL,profile TEXT NOT NULL,revision INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(account,slot));
     CREATE TABLE IF NOT EXISTS multiplayer_rewards(id TEXT PRIMARY KEY,account TEXT NOT NULL,slot INTEGER NOT NULL,xp INTEGER NOT NULL,gold INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS multiplayer_progression_commands(account TEXT NOT NULL,slot INTEGER NOT NULL,id TEXT NOT NULL,hash TEXT NOT NULL,PRIMARY KEY(account,slot,id));
-    CREATE TABLE IF NOT EXISTS multiplayer_profile_updates(account TEXT NOT NULL,slot INTEGER NOT NULL,revision INTEGER NOT NULL,PRIMARY KEY(account,slot));`);
+    CREATE TABLE IF NOT EXISTS multiplayer_profile_updates(account TEXT NOT NULL,slot INTEGER NOT NULL,revision INTEGER NOT NULL,PRIMARY KEY(account,slot));
+    CREATE TABLE IF NOT EXISTS multiplayer_death_drops(id TEXT PRIMARY KEY,amount INTEGER NOT NULL,currency TEXT NOT NULL DEFAULT 'gold');`);
+  // Preserve the currency of receipts already committed by the earlier KNB version.
+  if(!db.prepare('PRAGMA table_info(multiplayer_death_drops)').all().some(row=>row.name==='currency'))
+    db.exec("ALTER TABLE multiplayer_death_drops ADD COLUMN currency TEXT NOT NULL DEFAULT 'knb'");
   function read(account: string, slot: number): { profile: Character; revision: number } {
     if (!Number.isInteger(slot) || slot < 0 || slot > 2)
       throw Object.assign(new Error('Ô nhân vật không hợp lệ.'), { status: 400 });
@@ -55,19 +61,35 @@ export function createCharacters(db: DatabaseSync) {
       grant.xp < 0 ||
       grant.xp > 1e8 ||
       grant.gold < 0 ||
-      grant.gold > 1e8
+      grant.gold > 1e8 ||
+      grant.knb !== undefined && (!Number.isSafeInteger(grant.knb)||grant.knb<0||grant.knb>1e6) ||
+      grant.death !== undefined && (grant.xp!==0||grant.gold!==0||!!grant.knb||!!grant.potion||!Number.isInteger(grant.death.map)||!Number.isInteger(grant.death.life)||!Number.isFinite(grant.death.x)||!Number.isFinite(grant.death.y))
     )
       throw new Error('Invalid server reward');
     db.exec('BEGIN IMMEDIATE');
     try {
       if (db.prepare('SELECT 1 FROM multiplayer_rewards WHERE id=?').get(grant.id)) {
+        const death=grant.death?db.prepare('SELECT amount,currency FROM multiplayer_death_drops WHERE id=?').get(grant.id):undefined;
         db.exec('COMMIT');
-        return;
+        return death?{id:grant.id,amount:Number(death.amount),currency:String(death.currency)}:undefined;
       }
       const { profile: p } = read(grant.account, grant.slot);
       if(grant.potion)applyPotionDebit(p,grant.potion);
       progression.addExperience(p,grant.xp);
       p.gold = (p.gold || 0) + grant.gold;
+      let deathDrop:{id:string;amount:number;currency:string}|undefined;
+      if(grant.death){
+        const balance=Number.isSafeInteger(p.gold)&&p.gold>0?p.gold:0;
+        const amount=Math.min(1_000_000,Math.floor(balance/5));
+        p.gold=balance-amount;
+        db.prepare("INSERT INTO multiplayer_death_drops(id,amount,currency) VALUES(?,?,'gold')").run(grant.id,amount);
+        deathDrop={id:grant.id,amount,currency:'gold'};
+      }
+      if(grant.knb){
+        const balance=Number.isSafeInteger(p.knb)&&p.knb>0?p.knb:0;
+        if(!Number.isSafeInteger(balance+grant.knb))throw new Error('KNB balance overflow');
+        p.knb=balance+grant.knb;
+      }
       db.prepare('INSERT INTO multiplayer_rewards VALUES(?,?,?,?,?)').run(
         grant.id,
         grant.account,
@@ -80,6 +102,7 @@ export function createCharacters(db: DatabaseSync) {
       ).run(JSON.stringify(p), grant.account, grant.slot);
       queueProfile(grant.account,grant.slot);
       db.exec('COMMIT');
+      return deathDrop;
     } catch (error) {
       db.exec('ROLLBACK');
       throw error;

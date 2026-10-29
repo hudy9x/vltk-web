@@ -987,13 +987,16 @@ fn slaughter_piercing_hits_other_colors_once_and_never_same_color(){
     remove_fixture(g);
 }
 #[test]
-fn slaughter_death_respawns_without_pve_reward_and_auto_selects_players(){
+fn slaughter_death_waits_for_town_recovery_and_does_not_grant_pve_rewards(){
     let mut g=pvp_fixture();g.command(1,cmd(2,5,2,1,1,0.0,0.0)).unwrap();g.step();assert_eq!(g.actors[&1].target,2);
     let mut skill=g.actors[&1].profile.skills[0].clone();skill.parts=[10000.0,0.0,0.0,0.0,0.0];
     pvp::hit(&mut g,1,2,&skill,&mut vec![]);assert_eq!(g.actors[&2].hp,0.0);assert!(g.outbox.pending.is_empty());
     g.actors.get_mut(&1).unwrap().farming=false;
     let life=g.actors[&2].life;for _ in 0..122{g.step();}
-    assert!(g.actors[&2].hp>0.0);assert_eq!(g.actors[&2].life,life+1);assert!(g.outbox.pending.is_empty());
+    assert_eq!(g.actors[&2].hp,0.0);assert_eq!(g.actors[&2].life,life);
+    assert!(g.outbox.pending.values().all(|grant|grant.xp==0&&grant.gold==0&&grant.death.is_some()));
+    g.command(2,cmd(2,17,2,0,0,0.0,0.0)).unwrap();
+    assert!(g.actors[&2].hp>0.0);assert_eq!(g.actors[&2].life,life+1);assert_eq!(g.actors[&2].map,1);
     remove_fixture(g);
 }
 
@@ -1267,4 +1270,103 @@ fn vo_tuong_tram_pvp_requires_both_physical_contact_and_client_confirmation() {
         g.command(1,report(4)).unwrap();g.step();assert_eq!(g.actors[&2].hp,180.0);
         remove_fixture(g);
     }
+}
+
+#[test]
+fn authoritative_position_survives_reconnect_restart_and_character_slot_isolation() {
+    let mut g=game();field(&mut g);
+    let a=g.actors.get_mut(&1).unwrap();a.x=345.0;a.y=456.0;a.hp=123.0;
+    let profile=a.profile.clone();
+    let definitions=Definitions{version:1,town:1,maps:g.rooms.values().map(|r|r.definition.clone()).collect()};
+    g.checkpoint().unwrap();
+    let file=g.outbox.path_for_test();drop(g);
+    let mut g=Game::new(file.clone()).unwrap();g.install(definitions).unwrap();
+    g.join(10,"account-a".into(),0,profile.clone()).unwrap();
+    let a=&g.actors[&10];assert_eq!((a.map,a.x,a.y,a.hp),(2,345.0,456.0,123.0));
+    g.join(11,"account-a".into(),1,profile).unwrap();assert_eq!(g.actors[&11].map,1);
+    assert_eq!((g.actors[&11].x,g.actors[&11].y),(100.0,100.0));
+    remove_fixture(g);let _=std::fs::remove_file(file.with_extension("state.json"));
+}
+
+#[test]
+fn player_death_persists_killer_and_waits_for_explicit_town_button_after_reload() {
+    let mut g=pvp_fixture();g.actors.get_mut(&1).unwrap().name="Sát Thủ <script>".into();
+    let mut s=g.actors[&1].profile.skills[0].clone();s.parts=[10000.0,0.0,0.0,0.0,0.0];
+    pvp::hit(&mut g,1,2,&s,&mut vec![]);g.step();
+    let a=&g.actors[&2];assert_eq!(a.death_notice.as_ref().unwrap().name,"Sát Thủ <script>");assert!(a.death_notice.as_ref().unwrap().player);
+    let profile=a.profile.clone();let life=a.life;
+    let request=a.death_notice.as_ref().unwrap().request.clone().unwrap();
+    assert_eq!(g.outbox.pending.len(),1);
+    g.actors.remove(&2);g.join(20,"account-b".into(),0,profile).unwrap();
+    assert_eq!(g.actors[&20].hp,0.0);assert_eq!(g.actors[&20].map,2);
+    for _ in 0..140{g.step();}
+    assert_eq!(g.actors[&20].hp,0.0);assert_eq!(g.outbox.pending.len(),1,"reload never charges a second death");
+    g.command(20,cmd(1,1,1,0,0,0.0,0.0)).unwrap();assert_eq!(g.actors[&20].map,2,"dead players cannot use normal map travel");
+    g.command(20,cmd(2,17,2,0,0,0.0,0.0)).unwrap();
+    let a=&g.actors[&20];assert_eq!(a.map,1);assert_eq!(a.hp,a.profile.hp);assert_eq!(a.life,life+1);assert!(a.death_notice.is_none());
+    // A delayed debit receipt still creates the piles at the place of death.
+    assert!(g.accept_death_drop(&request,333,false).unwrap());
+    assert_eq!(g.rooms[&2].loot.len(),8);assert!(g.rooms[&1].loot.is_empty());
+    assert_eq!(g.rooms[&2].loot.iter().map(|d|d.gold).sum::<u32>(),333);
+    assert!(g.accept_death_drop(&request,333,false).unwrap());assert_eq!(g.rooms[&2].loot.len(),8);
+    remove_fixture(g);
+}
+
+#[test]
+fn monster_deaths_have_named_killers_and_zero_knb_receipts_do_not_make_empty_piles() {
+    let mut g=game();field(&mut g);let mob=g.rooms[&2].mobs[0].id;
+    let a=g.actors.get_mut(&1).unwrap();a.hp=1.0;
+    let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];m.x=100.0;m.y=100.0;m.cd=0.0;m.target=1;m.def.damage=9999.0;
+    g.step();let a=&g.actors[&1];assert_eq!(a.hp,0.0);
+    let death=a.death_notice.as_ref().unwrap();assert_eq!(death.killer,mob);assert!(!death.player);assert_eq!(death.name,"fixture");
+    let request=death.request.clone().unwrap();assert!(g.accept_death_drop(&request,0,false).unwrap());assert!(g.rooms[&2].loot.iter().all(|d|d.gold==0));
+    remove_fixture(g);
+}
+
+#[test]
+fn knb_piles_survive_restart_are_public_and_competing_pickups_credit_once() {
+    let mut g=pvp_fixture();g.actors.get_mut(&2).unwrap().hp=0.0;g.actors.get_mut(&2).unwrap().last_attacker=1;g.step();
+    let request=g.actors[&2].death_notice.as_ref().unwrap().request.clone().unwrap();
+    assert!(g.accept_death_drop(&request,1_000_001,false).is_err());
+    assert!(g.accept_death_drop(&request,1_000_000,false).unwrap());
+    let profile=g.actors[&1].profile.clone();
+    let definitions=Definitions{version:1,town:1,maps:g.rooms.values().map(|r|r.definition.clone()).collect()};
+    let file=g.outbox.path_for_test();drop(g);
+    let mut g=Game::new(file.clone()).unwrap();g.install(definitions).unwrap();
+    assert_eq!(g.rooms[&2].loot.iter().map(|d|d.gold).sum::<u32>(),1_000_000);
+    let drop=g.rooms[&2].loot[0].clone();assert!(drop.owner.is_empty());
+    for (id,account) in [(10,"stranger-a"),(11,"stranger-b")] {
+        g.join(id,account.into(),0,profile.clone()).unwrap();
+        let a=g.actors.get_mut(&id).unwrap();a.map=2;a.x=drop.x;a.y=drop.y;
+        g.command(id,cmd(1,6,2,drop.id,0,0.0,0.0)).unwrap();
+    }
+    g.step();assert!(!g.rooms[&2].loot.iter().any(|d|d.id==drop.id));
+    let credits:Vec<_>=g.outbox.pending.values().filter(|g|g.gold>0).collect();assert_eq!(credits.len(),1);assert_eq!(credits[0].gold,drop.gold);
+    assert_eq!(g.rooms[&2].loot.iter().map(|d|d.gold).sum::<u32>()+credits[0].gold,1_000_000);
+    remove_fixture(g);let _=std::fs::remove_file(file.with_extension("state.json"));
+}
+
+#[test]
+fn poison_death_keeps_the_killer_name_even_if_the_attacker_disconnected() {
+    let mut g=pvp_fixture();g.actors.get_mut(&1).unwrap().name="Độc Sư".into();
+    let mut s=g.actors[&1].profile.skills[0].clone();s.parts=[0.0,2000.0,0.0,0.0,0.0];s.poison=2.0;
+    pvp::hit(&mut g,1,2,&s,&mut vec![]);g.actors.remove(&1);
+    for _ in 0..45 {g.step();}
+    let a=&g.actors[&2];assert_eq!(a.hp,0.0);
+    let notice=a.death_notice.as_ref().unwrap();assert_eq!(notice.name,"Độc Sư");assert!(notice.player);
+    remove_fixture(g);
+}
+
+#[test]
+fn resume_hint_continues_checkpoint_without_changing_map_life_or_resources() {
+    let mut g=game();field(&mut g);g.checkpoint().unwrap();
+    let a=&g.actors[&1];let (x,y,map,life,hp,mp)=(a.x,a.y,a.map,a.life,a.hp,a.mp);
+    g.resume_position(1,Some(ResumePosition{map,x:x+10.0,y,life}));
+    assert_eq!(g.actors[&1].x,x+10.0);assert_eq!((g.actors[&1].hp,g.actors[&1].mp),(hp,mp));
+    for p in [ResumePosition{map:1,x,y,life},ResumePosition{map,x:100000.0,y,life},ResumePosition{map,x,y,life:life+1},ResumePosition{map,x:f32::NAN,y,life}] {
+        g.resume_position(1,Some(p));assert_eq!(g.actors[&1].x,x+10.0);
+    }
+    g.actors.get_mut(&1).unwrap().hp=0.0;
+    g.resume_position(1,Some(ResumePosition{map,x,y,life}));assert_eq!(g.actors[&1].x,x+10.0);
+    remove_fixture(g);
 }
