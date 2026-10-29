@@ -1,6 +1,6 @@
 // Replay approved casts through the existing skill/impact pipeline. This world
 // owns only FX and proxy bodies; no callback writes HP, MP, XP or inventory.
-var OnlineSkillVisuals = function () {
+var OnlineSkillVisuals = function (onContact = () => {}) {
   let world = null, generation = 0, frame = null;
   const bodies = new Map(), timers = new Set();
   const proxy = id => {
@@ -81,7 +81,19 @@ var OnlineSkillVisuals = function () {
         Object.assign(skill,{id:event.skill,L:meta.level,nMis:meta.missiles,rad:meta.range,melee:!!(meta.flags&1),phys:!!(meta.flags&2)});
         // The server has already approved this release; never add another local windup.
         delete skill.rate;delete skill.rawRate;
-        const cast=GameWebTransport.castSkillVisual(caster,target,skill,()=>token===generation,()=>targets,()=>1,action=>run(caster,action,info));
+        const reported=new Set();
+        const contact=(_ability,body)=>{
+          if((event.source!==frame?.self&&body.id!==frame?.self)||reported.has(body.id))return 1;
+          reported.add(body.id);
+          // Send only after the collision frame has had a chance to paint.
+          const report=()=>{
+            const handle=setTimeout(()=>{timers.delete(handle);if(token===generation)onContact(event,body.id);},0);
+            timers.add(handle);
+          };
+          if(typeof requestAnimationFrame==='function')requestAnimationFrame(report);else report();
+          return 1;
+        };
+        const cast=GameWebTransport.castSkillVisual(caster,target,skill,()=>token===generation,()=>targets,contact,action=>run(caster,action,info));
         if(cast&&info)cast.onlineTrace=info;
         // Reuse the authoritative native cycle; cosmetic replay still releases immediately.
         const duration=Number.isFinite(event.value)&&event.value>0?event.value:.4;

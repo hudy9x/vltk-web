@@ -109,6 +109,7 @@ impl Game {
                                 a.cooldowns.insert(skill.id, interval);
                                 if self.pending.len() < 4096 {
                                     self.pending.push(Pending {
+                                        cast_id: 0,
                                         source: id,
                                         map: a.map,
                                         target: target_id,

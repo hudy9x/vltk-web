@@ -12,7 +12,9 @@ var onlineWorld = (() => {
     imported = false;
   let selectedSkill, blockedSkill, pendingMode = null;
   const motion=new GameWebTransport.LocalMotion();
-  const visuals=OnlineSkillVisuals();
+  const visuals=OnlineSkillVisuals((event,target)=>{
+    if(active())send(16,{target,skill:event.skill,x:event.id&65535,y:event.id>>>16});
+  });
   const monsters = new Map();
   const mapId = () => (typeof Z0.key === 'number' ? Z0.key : E0.town.id);
   const active = () =>

@@ -1,5 +1,88 @@
 use super::*;
+pub(super) struct ContactGate {
+    source: u32,
+    map: u32,
+    skill: Skill,
+    tick: u32,
+    confirmed: std::collections::BTreeSet<u32>,
+    victim_confirmed: std::collections::BTreeSet<u32>,
+    candidates: std::collections::BTreeSet<u32>,
+    applied: std::collections::BTreeSet<u32>,
+}
+impl ContactGate {
+    pub(super) fn new(source: u32, map: u32, skill: Skill, tick: u32) -> Self {
+        Self {
+            source,
+            map,
+            skill,
+            tick,
+            confirmed: Default::default(),
+            victim_confirmed: Default::default(),
+            candidates: Default::default(),
+            applied: Default::default(),
+        }
+    }
+}
 impl Game {
+    pub(super) fn confirm_contact(&mut self, source: u32, command: &Command) {
+        if ![command.x, command.y]
+            .iter()
+            .all(|v| v.is_finite() && *v >= 0.0 && *v <= 65535.0 && v.fract() == 0.0)
+        {
+            return;
+        }
+        let cast_id = command.x as u32 | ((command.y as u32) << 16);
+        let Some(gate) = self.contacts.get_mut(&cast_id) else {
+            return;
+        };
+        if gate.map != command.map
+            || gate.skill.id != command.skill
+            || self.tick.wrapping_sub(gate.tick) > 100
+            || gate.confirmed.len() >= 256
+        {
+            return;
+        }
+        if gate.source == source {
+            gate.confirmed.insert(command.target);
+        } else if source == command.target
+            && self.actors.get(&source).is_some_and(|a| a.map == gate.map)
+        {
+            gate.victim_confirmed.insert(command.target);
+        }
+    }
+    pub(super) fn resolve_contacts(&mut self, events: &mut Vec<EventData>) {
+        let mut gates = std::mem::take(&mut self.contacts);
+        for gate in gates.values_mut() {
+            if self.tick.wrapping_sub(gate.tick) > 100 {
+                continue;
+            }
+            let ready: Vec<_> = gate
+                .candidates
+                .intersection(&gate.confirmed)
+                .copied()
+                .filter(|id| {
+                    !gate.applied.contains(id)
+                        && (!self.actors.contains_key(id) || gate.victim_confirmed.contains(id))
+                })
+                .collect();
+            for target in ready {
+                gate.applied.insert(target);
+                let p = Pending {
+                    cast_id: 0,
+                    source: gate.source,
+                    map: gate.map,
+                    target,
+                    skill: gate.skill.clone(),
+                    remaining: 0.0,
+                    origin: (0.0, 0.0),
+                    flight: None,
+                };
+                self.contact(&p, target, events);
+            }
+        }
+        gates.retain(|_, gate| self.tick.wrapping_sub(gate.tick) <= 100);
+        self.contacts = gates;
+    }
     pub(super) fn advance_attacks(&mut self, events: &mut Vec<EventData>) {
         let dt = self.rules.tick_seconds;
         let pending = std::mem::take(&mut self.pending);
@@ -43,6 +126,11 @@ impl Game {
                             y: a.y,
                         }),
                 );
+                if geometry.homing {
+                    if let Some(target) = bodies.iter().find(|b| b.id == p.target) {
+                        flight.steer((target.x, target.y), step);
+                    }
+                }
                 let (alive, contacts) = flight.advance_bodies(geometry, &room.nav, &bodies, step);
                 for id in contacts {
                     self.contact(&p, id, events);
@@ -103,6 +191,12 @@ impl Game {
         }
     }
     fn contact(&mut self, p: &Pending, target: u32, events: &mut Vec<EventData>) {
+        if p.cast_id != 0 {
+            if let Some(gate) = self.contacts.get_mut(&p.cast_id) {
+                gate.candidates.insert(target);
+            }
+            return;
+        }
         if !self
             .actors
             .get(&p.source)

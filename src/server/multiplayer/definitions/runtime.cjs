@@ -192,11 +192,29 @@ exports.contactGeometry = function (skill) {
   scope.CombatEngine.configureAdvancedSkillImpact(+skill.id, cast);
   const row = scope.T[skill.id];
   const speed = row && scope.b0(row, 'missle_speed_v', skill.L || 1)?.[0];
-  const fx = scope.A0.f[skill.id], missile = fx && scope.A0.m[fx.c];
+  let fx = scope.A0.f[skill.id], layout = scope.A0.g?.[skill.id];
+  const child = row?.child;
+  if(layout?.[0] === 12 && scope.A0.g?.[child] && scope.A0.f?.[child]?.c){
+    fx = scope.A0.f[child]; layout = scope.A0.g[child];
+  }
+  const parent = ({322:326,323:327,326:326,327:327})[+skill.id];
+  const id = parent && scope.A0.m[parent]?.fly ? parent : fx?.c || scope.A0.s?.[skill.id];
+  const missile = scope.A0.m[id], motion = scope.R3(id), movement = scope.t7?.[id];
+  const kind = missile?.fly ? motion?.[0] ?? movement?.[0] ?? 1 : 0;
+  // Wn stores speed in native frames, then KP advances at K3 frames/second.
+  const velocity = speed > 0 ? speed : motion?.[2] ?? Math.round((missile?.spd || 360) / scope.K3);
+  const limit = movement?.[0] && ![3,4].includes(movement[0])
+    ? Math.max(movement[1] || 0,skill.rad || 0) * scope.QA : 0;
+  const nativeLife = row && scope.b0(row,'missle_lifetime_v',skill.L||1)?.[0];
+  const frames = Math.max(1,Math.min(72,nativeLife ||
+    (limit && velocity > 0 && !motion ? Math.ceil(limit/velocity) : motion?.[1] || 16)));
   return JSON.parse(JSON.stringify({
-    geometry: cast.skill.geo || null,
+    geometry: cast.skill.geo || skill.geo || null,
     scale: scope.QA,
-    speed: speed > 0 ? speed * scope.K3 : missile?.spd || 360,
+    speed: velocity * scope.K3,
+    moving: (missile ? !!kind : skill.melee === false) && !scope.XP.has(+skill.id) && ![362,375].includes(+skill.id),
+    homing: kind === 5,
+    range: missile ? Math.min(limit || Infinity,velocity * frames) : 720,
     ignoreTerrain: scope.CombatEngine.skillIgnoresTerrain(skill),
   }));
 };

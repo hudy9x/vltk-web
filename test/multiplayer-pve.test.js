@@ -80,14 +80,15 @@ test('CAST binary preserves level, missiles, frozen anchors and event timing',()
   b[at+25]=7;b.writeFloatLE(Infinity,at+27);assert.throws(()=>p.decodePacket(b),/float/);
 });
 
-test('piercing DTO preserves native line flags and level gates without treating area skills as rays',()=>{
+test('projectile DTO preserves native movement, piercing level gates and stationary areas',()=>{
   const {linearProjectile}=require('../src/server/multiplayer/definitions/projectiles.cjs');
   const line={id:1069,L:10,rad:400,geo:{k:'line',len:500,pierce:false}};
-  assert.equal(linearProjectile(line),null);
+  assert.equal(linearProjectile(line).pierce,false);
   assert.ok(linearProjectile({...line,L:11}).range>400);
   for(const id of [361,368,1075]){const p=linearProjectile({id,L:25,rad:200});assert.equal(p.width,24*.81);assert.equal(p.range,162);assert.ok(p.speed>0);}
   assert.equal(linearProjectile({id:1078,L:25,rad:512,geo:{k:'spot',r:512,pierce:true}}),null);
-  assert.equal(linearProjectile({id:153,L:1,rad:400,geo:{k:'line',pierce:false,len:400}}),null);
+  const ordinary=linearProjectile({id:153,L:1,rad:400,geo:{k:'line',pierce:false,len:400}});
+  assert.equal(ordinary.pierce,false);assert.equal(ordinary.speed,native.contactGeometry({id:153,L:1,rad:400}).speed);
   for(const id of [1073,1080])assert.ok(linearProjectile({id,L:1,rad:400}), 'native advanced piercing '+id);
   const profile=catalog.character({fac:'shaolin',lvl:90,sk:{318:1}});
   const skill=profile.skills.find(s=>s.id===318);assert.ok(skill.projectile);assert.equal(skill.projectile.width,16);

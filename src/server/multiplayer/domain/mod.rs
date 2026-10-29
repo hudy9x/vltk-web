@@ -131,6 +131,7 @@ pub struct Event {
     pub hit: u8,
 }
 struct Pending {
+    cast_id: u32,
     source: u32,
     map: u32,
     target: u32,
@@ -140,6 +141,7 @@ struct Pending {
     flight: Option<projectiles::Flight>,
 }
 pub struct Game {
+    contacts: BTreeMap<u32, attacks::ContactGate>,
     pub parties: party::Parties,
     pub actors: BTreeMap<u32, Actor>,
     pub rooms: BTreeMap<u32, Room>,
@@ -164,6 +166,7 @@ pub struct Command {
 impl Game {
     pub fn new(path: std::path::PathBuf) -> Result<Self> {
         Ok(Self {
+            contacts: BTreeMap::new(),
             parties: party::Parties::default(),
             actors: BTreeMap::new(),
             rooms: BTreeMap::new(),
@@ -333,6 +336,10 @@ impl Game {
             return Ok(());
         }
         a.seq = c.seq;
+        if c.kind == 16 {
+            self.confirm_contact(id, &c);
+            return Ok(());
+        }
         if (12..=15).contains(&c.kind) {
             self.party_command(id, &c);
             return Ok(());
@@ -454,6 +461,12 @@ impl Game {
     }
     fn event(&mut self, map: u32, kind: u8, source: u32, target: u32, skill: u16, value: f32, hit: u8) {
         let id = self.id();
+        if kind == 1 {
+            if let Some(p) = self.pending.iter_mut().rev().find(|p| p.cast_id == 0 && p.source == source && p.skill.id == skill && p.map == map) {
+                p.cast_id = id;
+                self.contacts.insert(id, attacks::ContactGate::new(source, map, p.skill.clone(), self.tick));
+            }
+        }
         let cast = if kind == 1 {
             self.actors.get(&source).and_then(|a| {
                 a.profile
@@ -516,6 +529,7 @@ impl Game {
             self.event(map, kind, source, target, skill, value, hit);
         }
         self.advance_attacks(&mut events);
+        self.resolve_contacts(&mut events);
         let deaths = self.advance_monsters(&mut events);
         self.commit_rewards(&mut events, deaths);
         for (map, kind, source, target, skill, value, hit) in events {

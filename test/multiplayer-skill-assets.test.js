@@ -50,3 +50,45 @@ test('form-12 child used as the main projectile remains required before release'
   child.complete=true;child.dispatchEvent(new Event('load'));await pending;
   assert.equal(f.calls.length,1);f.visuals.reset();
 });
+
+test('client reports a physical hit only after its collision frame paints, once per cast/body',async()=>{
+  const f=fixture(),frames=[],reports=[];f.load();
+  f.game.requestAnimationFrame=callback=>frames.push(callback);
+  let hit;
+  f.game.GameWebTransport.castSkillVisual=(...args)=>{hit=args[5];};
+  const visuals=f.game.OnlineSkillVisuals((...args)=>reports.push(args));
+  visuals.sync({self:1,actors:[{id:1,x:10,y:20}],monsters:[{id:2,x:60,y:20,hp:100}]});
+  const event={...f.event,id:0xabcdef01,skill:321};f.game.T[321]={};
+  visuals.play(event,null,true);
+  assert.equal(reports.length,0,'release is not a hit');
+  hit({}, {id:2});hit({}, {id:2});
+  assert.equal(reports.length,0,'collision callback must not send before paint');
+  assert.equal(frames.length,1);
+  frames.shift()();await new Promise(resolve=>setTimeout(resolve,5));
+  assert.equal(reports.length,1);assert.equal(reports[0][0].id,event.id);assert.equal(reports[0][1],2);
+  visuals.reset();
+});
+
+test('reset cancels contact reports and observers cannot confirm another player cast',async()=>{
+  const f=fixture(),reports=[];f.load();let hit;
+  f.game.GameWebTransport.castSkillVisual=(...args)=>{hit=args[5];};
+  const visuals=f.game.OnlineSkillVisuals((...args)=>reports.push(args));
+  visuals.sync({self:1,actors:[{id:1,x:10,y:20}],monsters:[{id:2,x:60,y:20,hp:100}]});
+  visuals.play(f.event,null,true);hit({}, {id:2});visuals.reset();
+  await new Promise(resolve=>setTimeout(resolve,5));assert.equal(reports.length,0);
+  visuals.sync({self:99,actors:[{id:1,x:10,y:20}],monsters:[{id:2,x:60,y:20,hp:100}]});
+  visuals.play(f.event,null,true);hit({}, {id:2});
+  await new Promise(resolve=>setTimeout(resolve,5));assert.equal(reports.length,0);
+  visuals.reset();
+});
+
+test('the PvP victim confirms its own displayed impact without acting as the attacker',async()=>{
+  const f=fixture(),reports=[];f.load();let hit;
+  f.game.GameWebTransport.castSkillVisual=(...args)=>{hit=args[5];};
+  const visuals=f.game.OnlineSkillVisuals((...args)=>reports.push(args));
+  visuals.sync({self:2,actors:[{id:1,x:10,y:20},{id:2,x:60,y:20}],monsters:[]});
+  visuals.play(f.event,null,true);hit({}, {id:2});
+  assert.equal(reports.length,0);
+  await new Promise(resolve=>setTimeout(resolve,5));assert.equal(reports.length,1);assert.equal(reports[0][1],2);
+  visuals.reset();
+});

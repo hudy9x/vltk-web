@@ -15,6 +15,19 @@ pub(super) struct Flight {
     hits: BTreeSet<(u32, u32)>,
 }
 impl Flight {
+    pub(super) fn steer(&mut self, aim: (f32, f32), dt: f32) {
+        let current = self.point(self.traveled);
+        let angle = self.direction.1.atan2(self.direction.0);
+        let desired = ((aim.1 - current.1) * 2.0).atan2(aim.0 - current.0);
+        let turn = (desired - angle + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU)
+            - std::f32::consts::PI;
+        let next = angle + turn.clamp(-0.35 * 18.0 * dt, 0.35 * 18.0 * dt);
+        self.direction = (next.cos(), next.sin());
+        self.origin = (
+            current.0 - self.direction.0 * self.traveled,
+            current.1 - self.direction.1 * self.traveled / 2.0,
+        );
+    }
     pub(super) fn new(origin: (f32, f32), aim: (f32, f32)) -> Self {
         let dx = aim.0 - origin.0;
         let dy = (aim.1 - origin.1) * 2.0;
@@ -85,16 +98,45 @@ impl Flight {
                 {
                     return None;
                 }
-                Some((index, along, mob.id, mob.life))
+                let entry = (along - (body * body - side_gap * side_gap).max(0.0).sqrt()).max(from);
+                Some((index, entry, mob.id, mob.life))
             })
             .collect();
         contacts.sort_by(|a, b| a.1.total_cmp(&b.1).then(a.2.cmp(&b.2)));
+        let stopped = !geometry.pierce && !contacts.is_empty();
+        if stopped {
+            to = contacts[0].1;
+            let point = self.point(to);
+            // Stop at the first body; splash begins at that physical impact.
+            contacts = bodies
+                .iter()
+                .enumerate()
+                .filter_map(|(index, body)| {
+                    if self.hits.contains(&(body.id, body.life)) {
+                        return None;
+                    }
+                    let dx = body.x - point.0;
+                    let dy = (body.y - point.1) * 2.0;
+                    let along = dx * self.direction.0 + dy * self.direction.1;
+                    let across = (dx * self.direction.1 - dy * self.direction.0).abs();
+                    let overlap = along.hypot((across - geometry.width / 2.0).max(0.0)) <= 17.001;
+                    let splash = geometry.area > 0.0 && dx.hypot(dy) <= geometry.area + 17.0;
+                    if !(overlap || splash)
+                        || (!geometry.ignore_terrain
+                            && !nav.clear(point.0, point.1, body.x, body.y))
+                    {
+                        return None;
+                    }
+                    Some((index, to, body.id, body.life))
+                })
+                .collect();
+        }
         for &(_, _, id, life) in &contacts {
             self.hits.insert((id, life));
         }
         self.traveled = to;
         (
-            !blocked && to < geometry.range,
+            !stopped && !blocked && to < geometry.range,
             contacts.into_iter().map(|c| c.2).collect(),
         )
     }

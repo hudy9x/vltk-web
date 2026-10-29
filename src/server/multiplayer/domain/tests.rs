@@ -52,14 +52,14 @@ fn shared_hp_cooldown_mana_and_status() {
     let mob = g.rooms[&2].mobs[0].id;
     g.command(1, cmd(2, 3, 2, mob, 1, 0.0, 0.0)).unwrap();
     for _ in 0..3 {
-        g.step();
+        client_step(&mut g);
     }
     assert_eq!(g.rooms[&2].mobs[0].hp, 10.0);
     assert_eq!(g.actors[&1].mp, 20.0);
     assert!(g.rooms[&2].mobs[0].cold > 0.0);
     assert!(g.rooms[&2].mobs[0].stun > 0.0);
     g.command(1, cmd(3, 4, 2, mob, 1, 0.0, 0.0)).unwrap();
-    g.step();
+    client_step(&mut g);
     assert_eq!(g.rooms[&2].mobs[0].hp, 10.0);
     assert_eq!(g.actors[&1].mp, 20.0);
     assert_eq!(
@@ -67,13 +67,80 @@ fn shared_hp_cooldown_mana_and_status() {
         crate::pve_protocol::snapshot(&g, 2).unwrap()[43 + 55 * 2 + 16..43 + 55 * 2 + 20]
     );
     for _ in 0..25 {
-        g.step();
+        client_step(&mut g);
     }
     assert_eq!(g.outbox.pending.len(), 1);
     assert_eq!(g.rooms[&2].loot.len(), 1);
     let file = g.outbox.path_for_test();
     drop(g);
     std::fs::remove_file(file).unwrap();
+}
+
+#[test]
+fn party_invitation_membership_colors_and_leader_succession() {
+    let mut g=game();field(&mut g);
+    g.actors.get_mut(&1).unwrap().profile.alignment=0;
+    g.actors.get_mut(&2).unwrap().profile.alignment=1;
+    g.actors.get_mut(&1).unwrap().pvp.enabled=true;
+    assert!(pvp::can_hit(&g,1,2));
+    g.command(1,cmd(2,12,2,2,0,0.0,0.0)).unwrap();
+    assert_eq!(g.parties.leader(1),0); // Never join before consent.
+    let invitation=g.parties.invitations[&2].id;
+    g.command(2,cmd(2,13,2,invitation,0,0.0,0.0)).unwrap();
+    assert_eq!(g.parties.groups[&1],vec![1,2]);
+    assert_eq!(g.actors[&2].party_alignment,Some(0));
+    assert!(!pvp::can_hit(&g,1,2));assert!(!pvp::can_hit(&g,2,1));
+    let profile=g.actors[&2].profile.clone();
+    g.join(3,"third".into(),0,profile).unwrap();g.actors.get_mut(&3).unwrap().map=2;
+    g.command(1,cmd(3,12,2,3,0,0.0,0.0)).unwrap();
+    let invitation=g.parties.invitations[&3].id;
+    g.command(3,cmd(1,13,2,invitation,0,0.0,0.0)).unwrap();
+    g.party_leave(1);
+    assert_eq!(g.parties.groups[&2],vec![2,3]);
+    assert_eq!(g.actors[&1].party_alignment,None);
+    assert_eq!(g.actors[&3].party_alignment,Some(1));
+    g.command(3,cmd(2,15,2,0,0,0.0,0.0)).unwrap();
+    assert!(g.parties.groups.is_empty());assert_eq!(g.actors[&2].party_alignment,None);
+}
+
+#[test]
+fn party_rejects_stale_remote_replayed_or_unauthorized_invitations() {
+    let mut g=game();
+    g.command(1,cmd(1,12,1,1,0,0.0,0.0)).unwrap();assert!(g.parties.invitations.is_empty());
+    g.command(1,cmd(2,12,1,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
+    g.command(2,cmd(1,13,1,invite+1,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&2].1,8);
+    g.command(2,cmd(2,14,1,invite,0,0.0,0.0)).unwrap();assert!(g.parties.invitations.is_empty());
+    g.command(1,cmd(3,12,1,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
+    g.tick+= (party::INVITE_SECONDS/g.rules.tick_seconds) as u32+1;
+    g.command(2,cmd(3,13,1,invite,0,0.0,0.0)).unwrap();assert_eq!(g.parties.leader(2),0);
+    g.command(1,cmd(4,12,1,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
+    g.party_leave(1);g.actors.remove(&1);
+    g.command(2,cmd(4,13,1,invite,0,0.0,0.0)).unwrap();assert!(g.parties.groups.is_empty());
+}
+
+#[test]
+fn party_capacity_map_guards_and_in_flight_friendly_fire() {
+    let mut g=game();field(&mut g);
+    g.actors.get_mut(&1).unwrap().profile.alignment=0;
+    g.actors.get_mut(&2).unwrap().profile.alignment=1;
+    g.actors.get_mut(&1).unwrap().pvp.enabled=true;
+    let profile=g.actors[&2].profile.clone();
+    for id in 3..=10 {g.join(id,format!("account-{id}"),0,profile.clone()).unwrap();g.actors.get_mut(&id).unwrap().map=2;}
+    g.command(1,cmd(2,12,1,2,0,0.0,0.0)).unwrap();assert!(g.parties.invitations.is_empty());
+    g.actors.get_mut(&2).unwrap().x=2000.0;
+    g.command(1,cmd(3,12,2,2,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&1].1,9);
+    g.actors.get_mut(&2).unwrap().x=100.0;
+    for id in 2..=8 {
+        g.command(1,cmd(id+2,12,2,id,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&id].id;
+        g.command(id,cmd(10,13,2,invite,0,0.0,0.0)).unwrap();
+    }
+    assert_eq!(g.parties.groups[&1].len(),8);
+    g.command(1,cmd(20,12,2,9,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&1].1,7);
+    g.command(2,cmd(11,12,2,9,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&2].1,6);
+    let hp=g.actors[&2].hp;let skill=g.actors[&1].profile.skills[0].clone();
+    let mut events=vec![];pvp::hit(&mut g,1,2,&skill,&mut events);
+    assert_eq!(g.actors[&2].hp,hp);assert!(events.is_empty());
+    let bytes=crate::pve_protocol::snapshot(&g,1).unwrap();assert_eq!(bytes[0],8);
 }
 #[test]
 fn ownership_replay_and_durable_rewards() {
@@ -82,18 +149,18 @@ fn ownership_replay_and_durable_rewards() {
     let mob = g.rooms[&2].mobs[0].id;
     g.command(1, cmd(2, 3, 2, mob, 1, 0.0, 0.0)).unwrap();
     for _ in 0..25 {
-        g.step();
+        client_step(&mut g);
     }
     let loot = g.rooms[&2].loot[0].id;
     g.command(2, cmd(2, 6, 2, loot, 0, 0.0, 0.0)).unwrap();
-    g.step();
+    client_step(&mut g);
     assert_eq!(g.rooms[&2].loot.len(), 1);
     g.command(1, cmd(3, 6, 2, loot, 0, 0.0, 0.0)).unwrap();
-    g.step();
+    client_step(&mut g);
     assert!(g.rooms[&2].loot.is_empty());
     let count = g.outbox.pending.len();
     g.command(1, cmd(3, 6, 2, loot, 0, 0.0, 0.0)).unwrap();
-    g.step();
+    client_step(&mut g);
     assert_eq!(g.outbox.pending.len(), count);
     let file = g.outbox.path_for_test();
     drop(g);
@@ -255,9 +322,11 @@ fn piercing_fixture(points: &[(f32, f32)], speed: f32) -> Game {
         width: 24.0,
         speed,
         ignore_terrain: false,
+        pierce: true, area: 0.0, homing: false,
     });
     let target = room.mobs[0].id;
     g.pending.push(Pending {
+        cast_id: 0,
         source: 1,
         map: 2,
         target,
@@ -657,7 +726,7 @@ fn poison_death_emits_typed_ticks_and_grants_one_shared_reward() {
     let mob = g.rooms[&2].mobs[0].id;
     g.command(1, cmd(2, 3, 2, mob, 1, 0.0, 0.0)).unwrap();
     for _ in 0..26 {
-        g.step();
+        client_step(&mut g);
     }
     assert_eq!(g.rooms[&2].mobs[0].hp, 0.0);
     assert_eq!(g.outbox.pending.len(), 1);
@@ -672,7 +741,7 @@ fn poison_death_emits_typed_ticks_and_grants_one_shared_reward() {
     let monsters = 43 + 55 * 2;
     assert_eq!(&a[monsters..monsters + 48], &b[monsters..monsters + 48]);
     for _ in 0..10 {
-        g.step();
+        client_step(&mut g);
     }
     assert_eq!(g.outbox.pending.len(), 1);
     remove_fixture(g);
@@ -720,7 +789,7 @@ fn weapon_leech_recovers_on_real_hits_and_is_capped(){
     a.hp=100.0;a.mp=0.0;
     let s=&mut a.profile.skills[0];s.cost=0.0;s.mana_leech=8.0;s.leech=10.0;
     g.command(1,cmd(2,4,2,g.rooms[&2].mobs[0].id,1,0.0,0.0)).unwrap();
-    for _ in 0..5 {g.step();}
+    for _ in 0..5 {client_step(&mut g);}
     let damage=g.events.iter().find(|e|e.kind==2&&e.source==1).unwrap().value;
     assert!((g.actors[&1].mp-damage*0.08).abs()<0.001);
     let a=g.actors.get_mut(&1).unwrap();let s=a.profile.skills[0].clone();
@@ -910,8 +979,8 @@ fn slaughter_piercing_hits_other_colors_once_and_never_same_color(){
     let mut g=pvp_fixture();let profile=g.actors[&1].profile.clone();g.join(3,"account-c".into(),0,profile.clone()).unwrap();g.join(4,"account-d".into(),0,profile).unwrap();
     for id in 1..=4{let a=g.actors.get_mut(&id).unwrap();a.map=2;a.x=100.0+(id-1)as f32*50.0;a.y=100.0;}
     g.actors.get_mut(&4).unwrap().profile.alignment=2;
-    let mut skill=g.actors[&1].profile.skills[0].clone();skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.travel=0.4;skill.projectile=Some(LinearProjectile{range:300.0,width:24.0,speed:1000.0,ignore_terrain:false});
-    g.pending.push(Pending{source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),flight:Some(projectiles::Flight::new((100.0,100.0),(150.0,100.0)))});
+    let mut skill=g.actors[&1].profile.skills[0].clone();skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.travel=0.4;skill.projectile=Some(LinearProjectile{range:300.0,width:24.0,speed:1000.0,ignore_terrain:false,pierce:true,area:0.0,homing:false});
+    g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),flight:Some(projectiles::Flight::new((100.0,100.0),(150.0,100.0)))});
     for _ in 0..16{g.step();}
     assert_eq!(g.actors[&2].hp,180.0);assert_eq!(g.actors[&3].hp,200.0);assert_eq!(g.actors[&4].hp,180.0);
     assert_eq!(g.events.iter().filter(|e|e.kind==2&&e.source==1).count(),2);
@@ -949,34 +1018,79 @@ fn slaughter_auto_heal_support_recognizes_player_enemies_without_monsters(){
 }
 
 #[test]
-fn random_gold_is_rolled_at_death_and_pickup_journals_that_exact_amount_once() {
-    let mut g = game();
-    field(&mut g);
-    g.rng = 1;
-    let mob = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
-    mob.def.gold_min = Some(16000);
-    mob.def.gold = 20000;
-    let id = mob.id;
-    let mut events = vec![];
-    g.commit_rewards(&mut events, vec![(2, id, 1)]);
-    let loot = &g.rooms[&2].loot[0];
-    let (loot_id, amount) = (loot.id, loot.gold);
-    assert!((16000..=20000).contains(&amount));
-    g.actors.get_mut(&1).unwrap().pickup = loot_id;
-    g.commit_rewards(&mut events, vec![]);
-    assert!(g.rooms[&2].loot.is_empty());
-    let grants: Vec<_> = g.outbox.pending.values().filter(|grant| grant.gold > 0).collect();
-    assert_eq!(grants.len(), 1);
-    assert_eq!(grants[0].gold, amount);
-    g.actors.get_mut(&1).unwrap().pickup = loot_id;
-    g.commit_rewards(&mut events, vec![]);
-    assert_eq!(g.outbox.pending.values().filter(|grant| grant.gold > 0).count(), 1);
-    let file = g.outbox.path_for_test();
-    drop(g);
-    let reopened = Outbox::open(file.clone()).unwrap();
-    assert_eq!(reopened.pending.values().find(|grant| grant.gold > 0).unwrap().gold, amount);
-    drop(reopened);
-    std::fs::remove_file(file).unwrap();
+fn party_join_blocks_projectiles_already_in_flight_and_clears_enemy_poison() {
+    let mut g=pvp_fixture();
+    let mut skill=g.actors[&1].profile.skills[0].clone();
+    skill.parts=[0.0,100.0,0.0,0.0,0.0];skill.poison=4.0;
+    pvp::hit(&mut g,1,2,&skill,&mut vec![]);
+    assert!(g.actors[&2].pvp.poison>0.0);
+    skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.poison=0.0;skill.travel=0.4;
+    skill.projectile=Some(LinearProjectile{range:300.0,width:24.0,speed:1000.0,ignore_terrain:false,pierce:true,area:0.0,homing:false});
+    g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),flight:Some(projectiles::Flight::new((100.0,100.0),(150.0,100.0)))});
+    g.command(1,cmd(2,12,2,2,0,0.0,0.0)).unwrap();let invitation=g.parties.invitations[&2].id;
+    g.command(2,cmd(2,13,2,invitation,0,0.0,0.0)).unwrap();
+    let hp=g.actors[&2].hp;
+    for _ in 0..20 {g.step();}
+    assert_eq!(g.actors[&2].hp,hp);assert_eq!(g.actors[&2].pvp.poison,0.0);
+    assert!(!g.events.iter().any(|e|e.kind==2&&e.target==2));
+    remove_fixture(g);
+}
+
+#[test]
+fn progression_refresh_same_level_uses_revision_preserves_resources_and_rejects_old_profiles(){
+    let mut g=game();
+    g.actors.get_mut(&1).unwrap().hp=100.0;
+    g.actors.get_mut(&1).unwrap().mp=15.0;
+    let mut p=g.actors[&1].base_profile.clone();p.hp=400.0;p.mp=60.0;p.skills[0].parts[0]=500.0;
+    g.refresh_profile(1,p.clone(),2);
+    assert_eq!(g.actors[&1].profile.level,1);assert_eq!(g.actors[&1].profile.hp,400.0);
+    assert_eq!((g.actors[&1].hp,g.actors[&1].mp),(200.0,30.0));assert_eq!(g.actors[&1].profile.skills[0].parts[0],500.0);
+    p.hp=100.0;g.refresh_profile(1,p,1);assert_eq!(g.actors[&1].profile.hp,400.0);assert_eq!(g.actors[&1].profile_revision,2);
+    remove_fixture(g);
+}
+#[test]
+fn progression_refresh_removes_old_buffs_and_updates_party_colors_on_faction_change(){
+    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("kunlun")).unwrap();
+    let a=g.actors.get_mut(&1).unwrap();a.support.active.insert(171,10.0);support::resolve(a);
+    g.command(1,cmd(1,12,1,2,0,0.0,0.0)).unwrap();let invitation=g.parties.invitations[&2].id;
+    g.command(2,cmd(1,13,1,invitation,0,0.0,0.0)).unwrap();
+    let mut p=g.actors[&2].base_profile.clone();p.alignment=2;p.hp=300.0;
+    g.refresh_profile(1,p,1);
+    assert!(g.actors[&1].support.active.is_empty());assert_eq!(g.actors[&1].profile.hp,300.0);
+    assert_eq!(g.actors[&2].party_alignment,Some(2));assert_eq!(g.actors[&1].party_alignment,Some(2));
+    remove_fixture(g);
+}
+#[test]
+fn progression_refresh_preserves_existing_buff_timers_and_does_not_revive_dead_players(){
+    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("kunlun")).unwrap();
+    let a=g.actors.get_mut(&1).unwrap();a.support.active.insert(171,9.0);a.support.cooldowns.insert(171,12.0);support::resolve(a);a.hp=0.0;
+    let p=a.base_profile.clone();g.refresh_profile(1,p,1);
+    assert_eq!(g.actors[&1].support.active[&171],9.0);assert_eq!(g.actors[&1].support.cooldowns[&171],12.0);assert_eq!(g.actors[&1].hp,0.0);
+    remove_fixture(g);
+}
+#[test]
+fn progression_refresh_does_not_reenable_supports_disabled_during_the_session(){
+    let mut g=game();g.actors.remove(&1);let original=support_fixture("kunlun");g.join(1,"account-a".into(),0,original.clone()).unwrap();
+    g.command(1,cmd(1,9,1,0,171,0.0,0.0)).unwrap();
+    g.refresh_profile(1,original,1);
+    let ability=g.actors[&1].base_profile.support.as_ref().unwrap().skills.iter().find(|s|s.id==171).unwrap();
+    assert!(!ability.enabled);remove_fixture(g);
+}
+
+#[test]
+fn equipment_refresh_changes_distance_and_snapshot_speed_without_reissuing_mouse_goal() {
+    let mut g=game();
+    g.command(1,cmd(1,2,1,0,0,900.0,100.0)).unwrap();
+    g.step();let before=g.actors[&1].x;
+    g.step();let foot=g.actors[&1].x-before;
+    let mut profile=g.actors[&1].base_profile.clone();profile.speed=300.0;
+    g.refresh_profile(1,profile,1);
+    let before=g.actors[&1].x;g.step();let ride=g.actors[&1].x-before;
+    assert!((ride-foot*2.0).abs()<0.01);
+    assert_eq!(g.actors[&1].move_goal,Some((900.0,100.0)));
+    let packet=crate::pve_protocol::snapshot(&g,1).unwrap();
+    assert_eq!(f32::from_le_bytes(packet[30..34].try_into().unwrap()),300.0);
+    remove_fixture(g);
 }
 
 #[test]
@@ -1019,128 +1133,138 @@ fn native_baseline_attacks_repeat_every_sixteen_ticks_without_float_drift() {
 }
 
 #[test]
-fn progression_refresh_same_level_uses_revision_preserves_resources_and_rejects_old_profiles(){
-    let mut g=game();
-    g.actors.get_mut(&1).unwrap().hp=100.0;
-    g.actors.get_mut(&1).unwrap().mp=15.0;
-    let mut p=g.actors[&1].base_profile.clone();p.hp=400.0;p.mp=60.0;p.skills[0].parts[0]=500.0;
-    g.refresh_profile(1,p.clone(),2);
-    assert_eq!(g.actors[&1].profile.level,1);assert_eq!(g.actors[&1].profile.hp,400.0);
-    assert_eq!((g.actors[&1].hp,g.actors[&1].mp),(200.0,30.0));assert_eq!(g.actors[&1].profile.skills[0].parts[0],500.0);
-    p.hp=100.0;g.refresh_profile(1,p,1);assert_eq!(g.actors[&1].profile.hp,400.0);assert_eq!(g.actors[&1].profile_revision,2);
+fn random_gold_is_rolled_at_death_and_pickup_journals_that_exact_amount_once() {
+    let mut g = game();
+    field(&mut g);
+    g.rng = 1;
+    let mob = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
+    mob.def.gold_min = Some(16000);
+    mob.def.gold = 20000;
+    let id = mob.id;
+    let mut events = vec![];
+    g.commit_rewards(&mut events, vec![(2, id, 1)]);
+    let loot = &g.rooms[&2].loot[0];
+    let (loot_id, amount) = (loot.id, loot.gold);
+    assert!((16000..=20000).contains(&amount));
+    g.actors.get_mut(&1).unwrap().pickup = loot_id;
+    g.commit_rewards(&mut events, vec![]);
+    assert!(g.rooms[&2].loot.is_empty());
+    let grants: Vec<_> = g.outbox.pending.values().filter(|grant| grant.gold > 0).collect();
+    assert_eq!(grants.len(), 1);
+    assert_eq!(grants[0].gold, amount);
+    g.actors.get_mut(&1).unwrap().pickup = loot_id;
+    g.commit_rewards(&mut events, vec![]);
+    assert_eq!(g.outbox.pending.values().filter(|grant| grant.gold > 0).count(), 1);
+    let file = g.outbox.path_for_test();
+    drop(g);
+    let reopened = Outbox::open(file.clone()).unwrap();
+    assert_eq!(reopened.pending.values().find(|grant| grant.gold > 0).unwrap().gold, amount);
+    drop(reopened);
+    std::fs::remove_file(file).unwrap();
+}
+
+#[test]
+fn ordinary_missiles_wait_for_contact_and_stop_at_the_first_monster() {
+    let mut g = piercing_fixture(&[(250.0,100.0),(180.0,100.0)],100.0);
+    g.pending[0].skill.projectile.as_mut().unwrap().pierce=false;
+    let target=g.rooms[&2].mobs[0].id;
+    for _ in 0..10 { g.step(); }
+    assert!(g.rooms[&2].mobs.iter().all(|m|m.hp==100.0),"timer expiry cannot cause a remote hit");
+    for _ in 0..10 { g.step(); }
+    assert_eq!(g.rooms[&2].mobs[0].hp,100.0,"the selected target is shielded by the nearer body");
+    assert_eq!(g.rooms[&2].mobs[1].hp,90.0);
+    assert!(g.pending.is_empty());
+    assert!(!g.events.iter().any(|e|e.kind==2&&e.target==target));
     remove_fixture(g);
 }
 
 #[test]
-fn progression_refresh_preserves_existing_buff_timers_and_does_not_revive_dead_players(){
-    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("kunlun")).unwrap();
-    let a=g.actors.get_mut(&1).unwrap();a.support.active.insert(171,9.0);a.support.cooldowns.insert(171,12.0);support::resolve(a);a.hp=0.0;
-    let p=a.base_profile.clone();g.refresh_profile(1,p,1);
-    assert_eq!(g.actors[&1].support.active[&171],9.0);assert_eq!(g.actors[&1].support.cooldowns[&171],12.0);assert_eq!(g.actors[&1].hp,0.0);
+fn ordinary_missiles_allow_monsters_to_dodge_after_cast() {
+    let mut g = piercing_fixture(&[(250.0,100.0)],100.0);
+    g.pending[0].skill.projectile.as_mut().unwrap().pierce=false;
+    for _ in 0..10 { g.step(); }
+    g.rooms.get_mut(&2).unwrap().mobs[0].y=200.0;
+    for _ in 0..60 { g.step(); }
+    assert_eq!(g.rooms[&2].mobs[0].hp,100.0);
+    assert!(g.pending.is_empty());
     remove_fixture(g);
 }
 
 #[test]
-fn progression_refresh_does_not_reenable_supports_disabled_during_the_session(){
-    let mut g=game();g.actors.remove(&1);let original=support_fixture("kunlun");g.join(1,"account-a".into(),0,original.clone()).unwrap();
-    g.command(1,cmd(1,9,1,0,171,0.0,0.0)).unwrap();
-    g.refresh_profile(1,original,1);
-    let ability=g.actors[&1].base_profile.support.as_ref().unwrap().skills.iter().find(|s|s.id==171).unwrap();
-    assert!(!ability.enabled);remove_fixture(g);
-}
-
-#[test]
-fn equipment_refresh_changes_distance_and_snapshot_speed_without_reissuing_mouse_goal() {
-    let mut g=game();
-    g.command(1,cmd(1,2,1,0,0,900.0,100.0)).unwrap();
-    g.step();let before=g.actors[&1].x;
-    g.step();let foot=g.actors[&1].x-before;
-    let mut profile=g.actors[&1].base_profile.clone();profile.speed=300.0;
-    g.refresh_profile(1,profile,1);
-    let before=g.actors[&1].x;g.step();let ride=g.actors[&1].x-before;
-    assert!((ride-foot*2.0).abs()<0.01);
-    assert_eq!(g.actors[&1].move_goal,Some((900.0,100.0)));
-    let packet=crate::pve_protocol::snapshot(&g,1).unwrap();
-    assert_eq!(f32::from_le_bytes(packet[30..34].try_into().unwrap()),300.0);
-    remove_fixture(g);
-}
-
-#[test]
-fn party_invitation_membership_colors_and_leader_succession() {
-    let mut g=game();field(&mut g);
-    g.actors.get_mut(&1).unwrap().profile.alignment=0;
-    g.actors.get_mut(&2).unwrap().profile.alignment=1;
-    g.actors.get_mut(&1).unwrap().pvp.enabled=true;
-    assert!(pvp::can_hit(&g,1,2));
-    g.command(1,cmd(2,12,2,2,0,0.0,0.0)).unwrap();
-    assert_eq!(g.parties.leader(1),0); // Never join before consent.
-    let invitation=g.parties.invitations[&2].id;
-    g.command(2,cmd(2,13,2,invitation,0,0.0,0.0)).unwrap();
-    assert_eq!(g.parties.groups[&1],vec![1,2]);
-    assert_eq!(g.actors[&2].party_alignment,Some(0));
-    assert!(!pvp::can_hit(&g,1,2));assert!(!pvp::can_hit(&g,2,1));
-    let profile=g.actors[&2].profile.clone();
-    g.join(3,"third".into(),0,profile).unwrap();g.actors.get_mut(&3).unwrap().map=2;
-    g.command(1,cmd(3,12,2,3,0,0.0,0.0)).unwrap();
-    let invitation=g.parties.invitations[&3].id;
-    g.command(3,cmd(1,13,2,invitation,0,0.0,0.0)).unwrap();
-    g.party_leave(1);
-    assert_eq!(g.parties.groups[&2],vec![2,3]);
-    assert_eq!(g.actors[&1].party_alignment,None);
-    assert_eq!(g.actors[&3].party_alignment,Some(1));
-    g.command(3,cmd(2,15,2,0,0,0.0,0.0)).unwrap();
-    assert!(g.parties.groups.is_empty());assert_eq!(g.actors[&2].party_alignment,None);
-}
-
-#[test]
-fn party_rejects_stale_remote_replayed_or_unauthorized_invitations() {
-    let mut g=game();
-    g.command(1,cmd(1,12,1,1,0,0.0,0.0)).unwrap();assert!(g.parties.invitations.is_empty());
-    g.command(1,cmd(2,12,1,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
-    g.command(2,cmd(1,13,1,invite+1,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&2].1,8);
-    g.command(2,cmd(2,14,1,invite,0,0.0,0.0)).unwrap();assert!(g.parties.invitations.is_empty());
-    g.command(1,cmd(3,12,1,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
-    g.tick+= (party::INVITE_SECONDS/g.rules.tick_seconds) as u32+1;
-    g.command(2,cmd(3,13,1,invite,0,0.0,0.0)).unwrap();assert_eq!(g.parties.leader(2),0);
-    g.command(1,cmd(4,12,1,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
-    g.party_leave(1);g.actors.remove(&1);
-    g.command(2,cmd(4,13,1,invite,0,0.0,0.0)).unwrap();assert!(g.parties.groups.is_empty());
-}
-
-#[test]
-fn party_capacity_map_guards_and_in_flight_friendly_fire() {
-    let mut g=game();field(&mut g);
-    g.actors.get_mut(&1).unwrap().profile.alignment=0;
-    g.actors.get_mut(&2).unwrap().profile.alignment=1;
-    g.actors.get_mut(&1).unwrap().pvp.enabled=true;
-    let profile=g.actors[&2].profile.clone();
-    for id in 3..=10 {g.join(id,format!("account-{id}"),0,profile.clone()).unwrap();g.actors.get_mut(&id).unwrap().map=2;}
-    g.command(1,cmd(2,12,1,2,0,0.0,0.0)).unwrap();assert!(g.parties.invitations.is_empty());
-    g.actors.get_mut(&2).unwrap().x=2000.0;
-    g.command(1,cmd(3,12,2,2,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&1].1,9);
-    g.actors.get_mut(&2).unwrap().x=100.0;
-    for id in 2..=8 {
-        g.command(1,cmd(id+2,12,2,id,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&id].id;
-        g.command(id,cmd(10,13,2,invite,0,0.0,0.0)).unwrap();
+fn ordinary_pvp_missiles_do_not_damage_players_before_arrival_or_after_dodging() {
+    for dodge in [false,true] {
+        let mut g=pvp_fixture();
+        g.rooms.get_mut(&2).unwrap().mobs.clear();
+        {let b=g.actors.get_mut(&2).unwrap();b.x=250.0;b.y=100.0;}
+        let mut skill=g.actors[&1].profile.skills[0].clone();
+        skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.stun=0.0;skill.cold=0.0;skill.travel=0.4;
+        skill.projectile=Some(LinearProjectile{range:300.0,width:16.0,speed:100.0,ignore_terrain:false,pierce:false,area:0.0,homing:false});
+        g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),flight:Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)))});
+        for _ in 0..10 {g.step();}
+        assert_eq!(g.actors[&2].hp,200.0,"no damage at the former fixed deadline");
+        if dodge {g.actors.get_mut(&2).unwrap().y=200.0;}
+        for _ in 0..60 {g.step();}
+        assert_eq!(g.actors[&2].hp,if dodge {200.0}else{180.0});
+        assert!(g.pending.is_empty());
+        remove_fixture(g);
     }
-    assert_eq!(g.parties.groups[&1].len(),8);
-    g.command(1,cmd(20,12,2,9,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&1].1,7);
-    g.command(2,cmd(11,12,2,9,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&2].1,6);
-    let hp=g.actors[&2].hp;let skill=g.actors[&1].profile.skills[0].clone();
-    let mut events=vec![];pvp::hit(&mut g,1,2,&skill,&mut events);
-    assert_eq!(g.actors[&2].hp,hp);assert!(events.is_empty());
-    let bytes=crate::pve_protocol::snapshot(&g,1).unwrap();assert_eq!(bytes[0],8);
+}
+
+// Simulated client acknowledges its rendered casts without consuming test command sequences.
+fn client_step(g: &mut Game) {
+    let reports: Vec<_> = g.contacts.iter().filter_map(|(&id,_gate)| {
+        g.events.iter().find(|e| e.id==id).map(|e|(e.source,e.map,e.target,e.skill))
+            .map(|(source,map,target,skill)|(source,cmd(0,16,map,target,skill,(id&65535) as f32,(id>>16) as f32)))
+    }).collect();
+    for (source,report) in reports {g.confirm_contact(source,&report);}
+    g.step();
+}
+#[test]
+fn client_contact_is_required_before_server_updates_hp_and_cannot_be_replayed_or_forged() {
+    let mut g=game();field(&mut g);
+    let mob=g.rooms[&2].mobs[0].id;
+    g.rooms.get_mut(&2).unwrap().mobs[0].stun=1000.0;
+    g.actors.get_mut(&1).unwrap().profile.skills[0].cooldown=100.0;
+    g.command(1,cmd(2,4,2,mob,1,0.0,0.0)).unwrap();
+    for _ in 0..10 {g.step();}
+    let cast=g.events.iter().find(|e|e.kind==1&&e.source==1).unwrap().id;
+    assert_eq!(g.rooms[&2].mobs[0].hp,20.0,"server contact alone never changes HP");
+    let report=|seq,map,target,skill|cmd(seq,16,map,target,skill,(cast&65535) as f32,(cast>>16) as f32);
+    g.command(2,report(2,2,mob,1)).unwrap();g.step();
+    g.command(1,report(3,1,mob,1)).unwrap();g.step();
+    g.command(1,report(4,2,mob,99)).unwrap();g.step();
+    g.command(1,report(5,2,mob+1,1)).unwrap();g.step();
+    assert_eq!(g.rooms[&2].mobs[0].hp,20.0,"wrong owner, map, skill or body cannot deal damage");
+    g.command(1,report(6,2,mob,1)).unwrap();g.step();
+    assert_eq!(g.rooms[&2].mobs[0].hp,10.0);
+    g.command(1,report(7,2,mob,1)).unwrap();g.step();
+    assert_eq!(g.rooms[&2].mobs[0].hp,10.0,"each cast/body applies only once");
+    remove_fixture(g);
 }
 
 #[test]
-fn progression_refresh_removes_old_buffs_and_updates_party_colors_on_faction_change(){
-    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("kunlun")).unwrap();
-    let a=g.actors.get_mut(&1).unwrap();a.support.active.insert(171,10.0);support::resolve(a);
-    g.command(1,cmd(1,12,1,2,0,0.0,0.0)).unwrap();let invitation=g.parties.invitations[&2].id;
-    g.command(2,cmd(1,13,1,invitation,0,0.0,0.0)).unwrap();
-    let mut p=g.actors[&2].base_profile.clone();p.alignment=2;p.hp=300.0;
-    g.refresh_profile(1,p,1);
-    assert!(g.actors[&1].support.active.is_empty());assert_eq!(g.actors[&1].profile.hp,300.0);
-    assert_eq!(g.actors[&2].party_alignment,Some(2));assert_eq!(g.actors[&1].party_alignment,Some(2));
-    remove_fixture(g);
+fn vo_tuong_tram_pvp_requires_both_physical_contact_and_client_confirmation() {
+    for early_report in [false,true] {
+        let mut g=pvp_fixture();
+        g.actors.get_mut(&2).unwrap().x=250.0;
+        let a=g.actors.get_mut(&1).unwrap();let s=&mut a.profile.skills[0];
+        s.id=321;s.range=400.0;s.cooldown=100.0;s.parts=[100.0,0.0,0.0,0.0,0.0];s.travel=0.4;
+        s.projectile=Some(LinearProjectile{range:400.0,width:16.0,speed:100.0,ignore_terrain:false,pierce:true,area:0.0,homing:false});
+        g.command(1,cmd(2,11,2,2,321,0.0,0.0)).unwrap();g.step();
+        let cast=g.events.iter().find(|e|e.kind==1&&e.source==1).unwrap().id;
+        let report=|seq|cmd(seq,16,2,2,321,(cast&65535) as f32,(cast>>16) as f32);
+        if early_report {g.command(1,report(3)).unwrap();}
+        for _ in 0..10 {g.step();}
+        assert_eq!(g.actors[&2].hp,200.0,"a client report cannot bypass server flight validation");
+        for _ in 0..30 {g.step();}
+        if !early_report {
+            assert_eq!(g.actors[&2].hp,200.0,"server arrival must wait for the client's collision frame");
+            g.command(1,report(3)).unwrap();g.step();
+        }
+        assert_eq!(g.actors[&2].hp,200.0,"PvP also waits for the victim to display the impact");
+        g.command(2,report(2)).unwrap();g.step();
+        assert_eq!(g.actors[&2].hp,180.0);
+        g.command(1,report(4)).unwrap();g.step();assert_eq!(g.actors[&2].hp,180.0);
+        remove_fixture(g);
+    }
 }

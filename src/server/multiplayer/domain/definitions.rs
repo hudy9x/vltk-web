@@ -59,7 +59,14 @@ pub struct LinearProjectile {
     pub width: f32,
     pub speed: f32,
     pub ignore_terrain: bool,
+    #[serde(default = "default_pierce")]
+    pub pierce: bool,
+    #[serde(default)]
+    pub area: f32,
+    #[serde(default)]
+    pub homing: bool,
 }
+fn default_pierce() -> bool { true }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
