@@ -1064,3 +1064,83 @@ fn equipment_refresh_changes_distance_and_snapshot_speed_without_reissuing_mouse
     assert_eq!(f32::from_le_bytes(packet[30..34].try_into().unwrap()),300.0);
     remove_fixture(g);
 }
+
+#[test]
+fn party_invitation_membership_colors_and_leader_succession() {
+    let mut g=game();field(&mut g);
+    g.actors.get_mut(&1).unwrap().profile.alignment=0;
+    g.actors.get_mut(&2).unwrap().profile.alignment=1;
+    g.actors.get_mut(&1).unwrap().pvp.enabled=true;
+    assert!(pvp::can_hit(&g,1,2));
+    g.command(1,cmd(2,12,2,2,0,0.0,0.0)).unwrap();
+    assert_eq!(g.parties.leader(1),0); // Never join before consent.
+    let invitation=g.parties.invitations[&2].id;
+    g.command(2,cmd(2,13,2,invitation,0,0.0,0.0)).unwrap();
+    assert_eq!(g.parties.groups[&1],vec![1,2]);
+    assert_eq!(g.actors[&2].party_alignment,Some(0));
+    assert!(!pvp::can_hit(&g,1,2));assert!(!pvp::can_hit(&g,2,1));
+    let profile=g.actors[&2].profile.clone();
+    g.join(3,"third".into(),0,profile).unwrap();g.actors.get_mut(&3).unwrap().map=2;
+    g.command(1,cmd(3,12,2,3,0,0.0,0.0)).unwrap();
+    let invitation=g.parties.invitations[&3].id;
+    g.command(3,cmd(1,13,2,invitation,0,0.0,0.0)).unwrap();
+    g.party_leave(1);
+    assert_eq!(g.parties.groups[&2],vec![2,3]);
+    assert_eq!(g.actors[&1].party_alignment,None);
+    assert_eq!(g.actors[&3].party_alignment,Some(1));
+    g.command(3,cmd(2,15,2,0,0,0.0,0.0)).unwrap();
+    assert!(g.parties.groups.is_empty());assert_eq!(g.actors[&2].party_alignment,None);
+}
+
+#[test]
+fn party_rejects_stale_remote_replayed_or_unauthorized_invitations() {
+    let mut g=game();
+    g.command(1,cmd(1,12,1,1,0,0.0,0.0)).unwrap();assert!(g.parties.invitations.is_empty());
+    g.command(1,cmd(2,12,1,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
+    g.command(2,cmd(1,13,1,invite+1,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&2].1,8);
+    g.command(2,cmd(2,14,1,invite,0,0.0,0.0)).unwrap();assert!(g.parties.invitations.is_empty());
+    g.command(1,cmd(3,12,1,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
+    g.tick+= (party::INVITE_SECONDS/g.rules.tick_seconds) as u32+1;
+    g.command(2,cmd(3,13,1,invite,0,0.0,0.0)).unwrap();assert_eq!(g.parties.leader(2),0);
+    g.command(1,cmd(4,12,1,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
+    g.party_leave(1);g.actors.remove(&1);
+    g.command(2,cmd(4,13,1,invite,0,0.0,0.0)).unwrap();assert!(g.parties.groups.is_empty());
+}
+
+#[test]
+fn party_capacity_map_guards_and_in_flight_friendly_fire() {
+    let mut g=game();field(&mut g);
+    g.actors.get_mut(&1).unwrap().profile.alignment=0;
+    g.actors.get_mut(&2).unwrap().profile.alignment=1;
+    g.actors.get_mut(&1).unwrap().pvp.enabled=true;
+    let profile=g.actors[&2].profile.clone();
+    for id in 3..=10 {g.join(id,format!("account-{id}"),0,profile.clone()).unwrap();g.actors.get_mut(&id).unwrap().map=2;}
+    g.command(1,cmd(2,12,1,2,0,0.0,0.0)).unwrap();assert!(g.parties.invitations.is_empty());
+    g.actors.get_mut(&2).unwrap().x=2000.0;
+    g.command(1,cmd(3,12,2,2,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&1].1,9);
+    g.actors.get_mut(&2).unwrap().x=100.0;
+    for id in 2..=8 {
+        g.command(1,cmd(id+2,12,2,id,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&id].id;
+        g.command(id,cmd(10,13,2,invite,0,0.0,0.0)).unwrap();
+    }
+    assert_eq!(g.parties.groups[&1].len(),8);
+    g.command(1,cmd(20,12,2,9,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&1].1,7);
+    g.command(2,cmd(11,12,2,9,0,0.0,0.0)).unwrap();assert_eq!(g.parties.replies[&2].1,6);
+    let hp=g.actors[&2].hp;let skill=g.actors[&1].profile.skills[0].clone();
+    let mut events=vec![];pvp::hit(&mut g,1,2,&skill,&mut events);
+    assert_eq!(g.actors[&2].hp,hp);assert!(events.is_empty());
+    let bytes=crate::pve_protocol::snapshot(&g,1).unwrap();assert_eq!(bytes[0],8);
+}
+
+#[test]
+fn progression_refresh_removes_old_buffs_and_updates_party_colors_on_faction_change(){
+    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("kunlun")).unwrap();
+    let a=g.actors.get_mut(&1).unwrap();a.support.active.insert(171,10.0);support::resolve(a);
+    g.command(1,cmd(1,12,1,2,0,0.0,0.0)).unwrap();let invitation=g.parties.invitations[&2].id;
+    g.command(2,cmd(1,13,1,invitation,0,0.0,0.0)).unwrap();
+    let mut p=g.actors[&2].base_profile.clone();p.alignment=2;p.hp=300.0;
+    g.refresh_profile(1,p,1);
+    assert!(g.actors[&1].support.active.is_empty());assert_eq!(g.actors[&1].profile.hp,300.0);
+    assert_eq!(g.actors[&2].party_alignment,Some(2));assert_eq!(g.actors[&1].party_alignment,Some(2));
+    remove_fixture(g);
+}

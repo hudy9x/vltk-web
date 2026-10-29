@@ -31,7 +31,7 @@ test('online canonical profile survives legacy writes; rewards are transactional
   assert.throws(()=>store.apply({...g,id:'123-3',gold:-10}));assert.throws(()=>store.read('account',-1));assert.throws(()=>store.read('account',1.1));db.close();
 });
 test('world binary exact layout, floats and count limits',()=>{
-  const p=protocol();const b=Buffer.alloc(45+55+48+17+24);b.set([7,17]);b.writeUInt32LE(9,2);b.writeUInt32LE(140,6);b.writeUInt32LE(7,10);b.writeUInt32LE(2,14);
+  const p=protocol();const b=Buffer.alloc(56+55+48+17+24);b.set([8,17]);b.writeUInt32LE(9,2);b.writeUInt32LE(140,6);b.writeUInt32LE(7,10);b.writeUInt32LE(2,14);
   for(const offset of [18,20,22,24])b.writeUInt16LE(1,offset);
   b.writeFloatLE(150,30);b.writeFloatLE(100,34);b.writeFloatLE(200,38);b[42]=1;
   let at=43;b.writeUInt32LE(7,at);for(const [i,value]of [100,200,100,20,100,20,0,0].entries())b.writeFloatLE(value,at+4+i*4);b.writeUInt32LE(1,at+39);at+=55;
@@ -52,13 +52,13 @@ test('progress endpoint returns 204 for unchanged revisions and isolates the acc
     const initial=await app.inject({url:'/api/multiplayer/character?slot=0',headers:{cookie}});assert.equal(initial.statusCode,200);assert.equal(initial.json().profile.inv.length,1);
     assert.equal((await app.inject({url:'/api/multiplayer/character?slot=0&revision=0',headers:{cookie}})).statusCode,204);
     createCharacters(db).apply({id:'456-1-0-0',account,slot:0,xp:5,gold:1});
-    const delta=await app.inject({url:'/api/multiplayer/character?slot=0&revision=0',headers:{cookie}});assert.equal(delta.json().revision,1);assert.equal(delta.json().profile.gold,1);assert.equal(delta.json().profile.inv,undefined);
+    const delta=await app.inject({url:'/api/multiplayer/character?slot=0&revision=0',headers:{cookie}});assert.equal(delta.json().revision,1);assert.equal(delta.json().profile.gold,1);assert.deepEqual(delta.json().profile.inv,[{id:1,n:'Fixture item'}]);
   }finally{await app.close();db.close();}
 });
 test('unsupported modes preserve their native enemies and ignore late online snapshots',()=>{
   const fs=require('node:fs');
   const original={id:9003,n:'Native encounter'};
-  const game={OnlineSkillVisuals:()=>({reset(){}}),GameWebTransport:{LocalMotion:class{clear(){}}},window:{},l:{dg:true,tower:false,battlefield:false,enemies:[original],ground:[1],fx:[2],combatProjectiles:[3]},Z0:{key:140},E0:{town:{id:37}},clearTimeout};
+  const game={v:{},OnlineSkillVisuals:()=>({reset(){}}),GameWebTransport:{LocalMotion:class{clear(){}}},window:{},l:{dg:true,tower:false,battlefield:false,enemies:[original],ground:[1],fx:[2],combatProjectiles:[3]},Z0:{key:140},E0:{town:{id:37}},clearTimeout};
   vm.createContext(game);vm.runInContext(fs.readFileSync('src/client/multiplayer/state/legacy-pve.js','utf8'),game);
   game.onlineWorld.bind({authoritative:true});assert.equal(game.onlineWorld.active,false);
   game.onlineWorld.snapshot({map:140,monsters:[]});game.onlineWorld.reset();assert.equal(game.l.enemies[0],original);assert.deepEqual(game.l.ground,[1]);
@@ -66,7 +66,7 @@ test('unsupported modes preserve their native enemies and ignore late online sna
 });
 
 test('CAST binary preserves level, missiles, frozen anchors and event timing',()=>{
-  const p=protocol(),b=Buffer.alloc(45+47);b.set([7,17]);b.writeUInt16LE(1,24);
+  const p=protocol(),b=Buffer.alloc(56+47);b.set([8,17]);b.writeUInt16LE(1,24);
   b.writeUInt32LE(100,26);b.writeFloatLE(150,30);b[42]=2;
   const at=43;b.writeUInt32LE(9,at);b.writeUInt32LE(7,at+4);b.writeUInt32LE(1001,at+8);
   b.writeUInt16LE(1078,at+12);b[at+14]=1;b.writeUInt32LE(102,at+19);

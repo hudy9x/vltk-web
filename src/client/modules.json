@@ -2952,6 +2952,11 @@
       "file": "multiplayer/state/support.js"
     },
     {
+      "file": "multiplayer/party/index.ts",
+      "global": "OnlineParty",
+      "symbols": ["OnlineParty"]
+    },
+    {
       "file": "multiplayer/state/pvp.js"
     },
     {

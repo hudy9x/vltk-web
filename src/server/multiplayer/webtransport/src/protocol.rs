@@ -1,6 +1,6 @@
 use anyhow::{Result, ensure};
 
-pub const VERSION: u8 = 7;
+pub const VERSION: u8 = 8;
 pub const MAX_PLAYERS: usize = 32;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Appearance {
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn binary_golden_and_bounds() {
         let bytes = [
-            7, 2, 4, 3, 2, 1, 42, 0, 0, 0, 250, 0, 0, 0, 0, 0, 32, 64, 0, 0, 246, 66, 0, 0, 8, 195,
+            8, 2, 4, 3, 2, 1, 42, 0, 0, 0, 250, 0, 0, 0, 0, 0, 32, 64, 0, 0, 246, 66, 0, 0, 8, 195,
             7, 1,
         ];
         let point = position(&bytes).unwrap();

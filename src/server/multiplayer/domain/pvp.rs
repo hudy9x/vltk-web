@@ -31,7 +31,7 @@ pub(super) fn peers(game: &Game) -> Vec<Peer> {
             x: a.x,
             y: a.y,
             hp: a.hp,
-            alignment: a.profile.alignment,
+            alignment: a.party_alignment.unwrap_or(a.profile.alignment),
             enabled: a.pvp.enabled,
         })
         .collect()
@@ -42,7 +42,7 @@ pub(super) fn hostile(id: u32, a: &Actor, b: &Peer, town: bool) -> bool {
         && a.hp > 0.0
         && b.hp > 0.0
         && a.map == b.map
-        && a.profile.alignment != b.alignment
+        && a.party_alignment.unwrap_or(a.profile.alignment) != b.alignment
         && (a.pvp.enabled || b.enabled)
 }
 pub(super) fn can_hit(game: &Game, source: u32, target: u32) -> bool {
@@ -59,7 +59,7 @@ pub(super) fn can_hit(game: &Game, source: u32, target: u32) -> bool {
             x: b.x,
             y: b.y,
             hp: b.hp,
-            alignment: b.profile.alignment,
+            alignment: b.party_alignment.unwrap_or(b.profile.alignment),
             enabled: b.pvp.enabled,
         },
         town,
@@ -224,6 +224,10 @@ pub(super) fn hit(
 impl Game {
     pub(super) fn advance_pvp_status(&mut self, events: &mut Vec<EventData>) {
         let dt = self.rules.tick_seconds;
+        let friendly_poison: std::collections::BTreeSet<_> = self.actors.iter()
+            .filter(|(_,a)| a.pvp.poison > 0.0 && self.actors.get(&a.pvp.poison_owner).is_some_and(|source|
+                source.party_alignment.unwrap_or(source.profile.alignment) == a.party_alignment.unwrap_or(a.profile.alignment)))
+            .map(|(&id,_)| id).collect();
         for (&id, a) in &mut self.actors {
             a.pvp.hurt = (a.pvp.hurt - dt).max(0.0);
             if a.cold <= 0.0 {
@@ -231,6 +235,13 @@ impl Game {
             }
             if a.hp <= 0.0 {
                 continue;
+            }
+            // Joining a party also stops a former enemy's poison from hurting allies.
+            if friendly_poison.contains(&id) {
+                a.pvp.poison = 0.0;
+                a.pvp.poison_damage = 0.0;
+                a.pvp.poison_pending = 0.0;
+                a.pvp.poison_elapsed = 0.0;
             }
             if self.rooms.get(&a.map).is_none_or(|r| r.definition.town) {
                 a.pvp.poison = 0.0;

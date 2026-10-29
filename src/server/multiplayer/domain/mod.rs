@@ -12,6 +12,7 @@ mod combat;
 mod status;
 mod recovery;
 pub mod pvp;
+pub mod party;
 mod progression;
 pub mod support;
 #[path = "../persistence/outbox.rs"]
@@ -38,6 +39,8 @@ pub struct Rules {
 }
 pub struct Actor {
     pub profile_revision: u64,
+    pub name: String,
+    pub party_alignment: Option<u8>,
     pub account: String,
     pub slot: u8,
     pub profile: Profile,
@@ -137,6 +140,7 @@ struct Pending {
     flight: Option<projectiles::Flight>,
 }
 pub struct Game {
+    pub parties: party::Parties,
     pub actors: BTreeMap<u32, Actor>,
     pub rooms: BTreeMap<u32, Room>,
     pub events: Vec<Event>,
@@ -160,6 +164,7 @@ pub struct Command {
 impl Game {
     pub fn new(path: std::path::PathBuf) -> Result<Self> {
         Ok(Self {
+            parties: party::Parties::default(),
             actors: BTreeMap::new(),
             rooms: BTreeMap::new(),
             events: vec![],
@@ -288,6 +293,8 @@ impl Game {
             id,
             Actor {
                 profile_revision: 0,
+                name: String::new(),
+                party_alignment: None,
                 account,
                 slot,
                 map: room.definition.id,
@@ -326,6 +333,10 @@ impl Game {
             return Ok(());
         }
         a.seq = c.seq;
+        if (12..=15).contains(&c.kind) {
+            self.party_command(id, &c);
+            return Ok(());
+        }
         if c.kind==10 {
             if c.map==a.map&&c.target<=1{a.pvp.enabled=c.target==1;a.target=0;a.pickup=0;a.path.clear();a.move_goal=None;}
             return Ok(());

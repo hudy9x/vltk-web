@@ -4,7 +4,7 @@ var gameMultiplayer = (() => {
   let statusButton = null, previous = null, nextAppearance = 0, appearance = null, movedAt = -Infinity, direction = 0;
   const client = GameWebTransport.createClient({ slot:()=>m0,
     async prepare(){ $(); await window.localGameStorage?.flush(); },
-    world:state=>onlineWorld.snapshot(state),profile:value=>onlineWorld.profile(value),reset:()=>onlineWorld.reset(),
+    world:state=>onlineWorld.snapshot(state),profile:value=>onlineWorld.profile(value),reset:()=>{onlineWorld.reset();OnlineParty.reset();},
     status(text, online) {
     if(typeof onlineTrace!=='undefined')onlineTrace.once('status:'+text,'connection-status',{text,online});
     if (!text) { statusButton?.remove(); statusButton = null; document.getElementById("multiplayerFarm")?.remove(); return; }
@@ -27,6 +27,7 @@ var gameMultiplayer = (() => {
     get active() { return client.active || client.authoritative; },
     get pve(){return onlineWorld.active;},
     tick() {
+      OnlineParty.update(onlineWorld.state,client.players(),(kind,target)=>client.command({kind,map:typeof Z0.key==='number'?Z0.key:E0.town.id,target}),client.online&&onlineWorld.active);
       if(l.battlefield||l.dg||l.tower){client.suspend();return;}
       if (!o?.fac || !Z0.key || window.localGameConfig?.combatSandbox) return;
       const now = performance.now();
@@ -88,7 +89,7 @@ var gameMultiplayer = (() => {
             F3(ctx, sprite, actor.x, actor.y, 0, phase, Jn, sprite.pos === "foot" ? 0.85 : 0.9, actor);
         }
       };
-      uB(ctx, actor, 0, { nameColor: authoritative?.alignment!==undefined&&typeof Gh!=='undefined'?Gh[['chinh','trung','ta','tan'][authoritative.alignment]].c:typeof Tb === "function" ? Tb(actor.f) : "#ececec",
+      uB(ctx, actor, 0, { hpColor:OnlinePvp.healthColor(onlineWorld.state,authoritative), nameColor: authoritative?.alignment!==undefined&&typeof Gh!=='undefined'?Gh[['chinh','trung','ta','tan'][authoritative.alignment]].c:typeof Tb === "function" ? Tb(actor.f) : "#ececec",
         under: () => drawEffects("under"), over: () => drawEffects("over") });
     },
   };

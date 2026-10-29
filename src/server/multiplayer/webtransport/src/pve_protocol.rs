@@ -54,7 +54,7 @@ pub fn snapshot(game: &Game, id: u32) -> Option<Vec<u8>> {
             b.extend(v.to_le_bytes());
         }
         b.push(u8::from(a.farming));
-        b.push(a.profile.alignment);b.push(u8::from(a.pvp.enabled));b.extend(a.life.to_le_bytes());
+        b.push(a.party_alignment.unwrap_or(a.profile.alignment));b.push(u8::from(a.pvp.enabled));b.extend(a.life.to_le_bytes());
         for value in [a.pvp.cold_power,a.pvp.hurt,a.pvp.poison]{b.extend(value.to_le_bytes());}
     }
     for m in &room.mobs {
@@ -107,6 +107,7 @@ pub fn snapshot(game: &Game, id: u32) -> Option<Vec<u8>> {
         let active=actor.hp>0.0&&(actor.support.active.contains_key(&skill.id)||actor.support.auras.contains(&skill.id));
         b.push(u8::from(active)|(u8::from(skill.aura)<<1));
     }
+    crate::domain::party::encode(game, id, &mut b);
     Some(b)
 }
 pub fn command(bytes: &[u8]) -> Result<Command> {
@@ -124,7 +125,7 @@ pub fn command(bytes: &[u8]) -> Result<Command> {
         y: f32::from_le_bytes(bytes[21..25].try_into()?),
     };
     ensure!(
-        (1..=11).contains(&c.kind) && c.x.is_finite() && c.y.is_finite(),
+        (1..=17).contains(&c.kind) && c.x.is_finite() && c.y.is_finite(),
         "invalid command data"
     );
     Ok(c)

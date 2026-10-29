@@ -60,6 +60,8 @@ impl World {
         Ok(id)
     }
     pub fn leave(&mut self, id: u32) {
+        self.game.party_leave(id);
+        self.game.parties.replies.remove(&id);
         self.players.remove(&id);
         self.game.actors.remove(&id);
         self.revision = self.revision.wrapping_add(1);

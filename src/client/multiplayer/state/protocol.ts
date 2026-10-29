@@ -56,7 +56,11 @@ export interface WorldEvent {
   cast?:CastVisual;
   hit?:HitVisual;
 }
+export interface PartyMember {id:number;map:number;hp:number;maxHp:number;alignment:number;name:string}
+export interface PartyInvitation {id:number;from:number;remaining:number;name:string}
+export interface PartyState {leader:number;reply:{seq:number;code:number};members:PartyMember[];invitations:PartyInvitation[]}
 export interface WorldState {
+  party?:PartyState;
   type: 'world';
   tick: number;
   map: number;
@@ -77,7 +81,7 @@ export interface Command {
   y?: number;
 }
 export function encodeCommand(version: number, seq: number, c: Command): Uint8Array {
-  if (!Number.isFinite(c.x ?? 0) || !Number.isFinite(c.y ?? 0) || c.kind < 1 || c.kind > 11)
+  if (!Number.isFinite(c.x ?? 0) || !Number.isFinite(c.y ?? 0) || c.kind < 1 || c.kind > 17)
     throw new Error('Invalid command');
   const b = new Uint8Array(25),
     v = new DataView(b.buffer);
@@ -177,7 +181,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
   });
   if(at+2>bytes.length)throw new Error('Invalid world size');
   const supportCount=u16();
-  if(supportCount>512||at+supportCount*15!==bytes.length)throw new Error('Invalid support size');
+  if(supportCount>512||at+supportCount*15+11>bytes.length)throw new Error('Invalid support size');
   const supportKeys=new Set<string>();
   for(let i=0;i<supportCount;i++){
     const owner=u32(),skill=u16(),remaining=f32(),cooldown=f32(),flags=bytes[at++];
@@ -186,7 +190,31 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     supportKeys.add(key);
     const record=actor as ActorState;(record.supports ||= []).push({skill,remaining,cooldown,active:!!(flags&1),aura:!!(flags&2)});
   }
+  if(at+11>bytes.length)throw new Error('Invalid party size');
+  const leader=u32(),reply={seq:u32(),code:bytes[at++]},memberCount=bytes[at++],inviteCount=bytes[at++];
+  if(memberCount>8||inviteCount>1||reply.code>10)throw new Error('Invalid party state');
+  const readName=()=>{
+    if(at>=bytes.length)throw new Error('Invalid party size');
+    const size=bytes[at++];
+    if(size>96||at+size>bytes.length)throw new Error('Invalid party name');
+    const name=new TextDecoder('utf-8',{fatal:true}).decode(bytes.subarray(at,at+size));at+=size;return name;
+  };
+  const members:PartyMember[]=Array.from({length:memberCount},()=>{
+    if(at+18>bytes.length)throw new Error('Invalid party size');
+    return {id:u32(),map:u32(),hp:f32(),maxHp:f32(),alignment:bytes[at++],name:readName()};
+  });
+  const invitations:PartyInvitation[]=Array.from({length:inviteCount},()=>{
+    if(at+13>bytes.length)throw new Error('Invalid party size');
+    return {id:u32(),from:u32(),remaining:f32(),name:readName()};
+  });
   if(at!==bytes.length)throw new Error('Invalid world size');
+  const self=v.getUint32(10,true);
+  if((leader===0)!==(members.length===0)||members.length===1||
+    members.length&&(!members.some(m=>m.id===self)||members[0].id!==leader)||
+    new Set(members.map(m=>m.id)).size!==members.length||
+    members.some(m=>!m.id||m.hp<0||m.maxHp<=0||m.alignment>3)||
+    invitations.some(i=>!i.id||!i.from||i.from===self||i.remaining<=0||i.remaining>60))throw new Error('Invalid party state');
+  const party={leader,reply,members,invitations};
   if (
     actors.some((a) => a.hp < 0 || a.maxHp <= 0 || a.alignment>3 || a.life<1 || a.coldPower<0 || a.coldPower>.75 || a.hurt<0 || a.poison<0) ||
     monsters.some((m) => m.dir > 7 || m.hp < 0 || m.maxHp <= 0 || m.coldPower < 0 || m.coldPower > .75)
@@ -194,6 +222,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     throw new Error('Invalid entity state');
   return {
     type: 'world',
+    party,
     movement,
     tick: v.getUint32(2, true),
     map: v.getUint32(6, true),

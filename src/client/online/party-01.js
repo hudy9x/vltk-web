@@ -559,7 +559,7 @@ var uB = function (A, n, t, presentation = null) {
       presentation?.nameColor || "#7fe36a",
       11,
       n.hp / n.hpMax,
-      "#5fd35a",
+      presentation?.hpColor || "#5fd35a",
     ));
 };
 

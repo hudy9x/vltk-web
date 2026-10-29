@@ -11,7 +11,7 @@ export async function connect(config: ConnectionConfig, hello: Uint8Array,
   receive: (packet: Packet) => void, disconnected: (error: Error) => void) {
   const api = globalThis as typeof globalThis & { WebTransport?: new (url: string, options: unknown) => Transport };
   if (!api.WebTransport || !isSecureContext) throw new Error('Cần Chrome/Edge và HTTPS hoặc localhost.');
-  if (config.protocol !== 7 || config.certificateHash.length !== 32) throw new Error('Sai phiên bản giao thức. Hãy cập nhật client và Rust server cùng phiên bản.');
+  if (config.protocol !== 8 || config.certificateHash.length !== 32) throw new Error('Sai phiên bản giao thức. Hãy cập nhật client và Rust server cùng phiên bản.');
   const transport = new api.WebTransport(config.playUrl, {
     serverCertificateHashes: [{ algorithm: 'sha-256', value: new Uint8Array(config.certificateHash) }],
   });

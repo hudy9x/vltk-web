@@ -7,6 +7,8 @@ var OnlinePvp=(()=>{
   function targets(state){return (state?.actors||[]).filter(a=>hostile(state,a)).map(a=>({...a,onlinePlayer:true,max:a.maxHp,dead:a.hp<=0,r:17,n:'Người chơi'}));}
   function select(enabled,send){const seq=send(10,{target:+enabled});if(!seq)return false;wanted=enabled;pending=seq;o.mode=enabled?'slaughter':'farm';if(typeof cg==='function')cg();return true;}
   return {targets,hostile,
+    nameColor(state,actor){const a=actor||self(state);return a&&typeof Gh!=='undefined'?Gh[['chinh','trung','ta','tan'][a.alignment]]?.c:null;},
+    healthColor(state,actor){const a=actor||self(state),me=self(state);return a?.pk?(color(a)===color(me)?'#ff79b0':'#ef4242'):'#4fd04f';},
     select,
     reset(){initialized=false;pending=0;},
     sync(state,send){const me=self(state);if(!me)return;

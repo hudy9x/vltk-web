@@ -254,6 +254,7 @@ async fn main() -> Result<()> {
                         return Err(error);
                     }
                     state.game.actors.get_mut(&id).unwrap().profile_revision = admission.revision;
+                    state.game.actors.get_mut(&id).unwrap().name = state.players[&id].appearance.name.clone();
                     Ok(id)
                 }
                 .await;

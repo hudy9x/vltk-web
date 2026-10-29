@@ -1,7 +1,7 @@
 import { decodeWorld } from '../state/protocol';
 import type { WorldState } from '../state/protocol';
-/** Protocol v7: little endian, pixel coordinates float32. No JSON in QUIC packets. */
-export const VERSION = 7;
+/** Protocol v8: little endian, pixel coordinates float32. No JSON in QUIC packets. */
+export const VERSION = 8;
 export const MAX_PLAYERS = 32;
 export interface Appearance {
   name: string; faction: number; sex: number; bodySex: number; ride: number;

@@ -38,7 +38,7 @@ test('out-of-order inputs, wraparound, stopping and teleports stay bounded',()=>
 
 test('sender samples the same interpolated position as local rendering without moving simulation state',()=>{
   let sent;
-  const game={onlineWorld:{bind(){},entities:()=>[],state:null},I:{shaolin:{}},GameWebTransport:{createClient:()=>({active:false,update:p=>{sent=p;}})},
+  const game={OnlineParty:{update(){}},onlineWorld:{bind(){},entities:()=>[],state:null},I:{shaolin:{}},GameWebTransport:{createClient:()=>({active:false,players:()=>[],update:p=>{sent=p;}})},
     window:{addEventListener(){}},o:{fac:'shaolin',name:'Test',eq:{}},l:{clock:1},Z0:{key:1},
     v:{x:10,y:20,_px:0,_py:10},N2:0.025,Lr:0.05,__:250,
     document:{getElementById:()=>null},performance:{now:()=>100},v0:()=>0,JP:()=>[],U1:{},Math};

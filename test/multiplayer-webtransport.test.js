@@ -16,8 +16,8 @@ const protocol = scope.module.exports;
 
 test('binary position matches Rust golden bytes and rejects malformed snapshots', () => {
   const packet = protocol.encodePosition({ seq:0x01020304,map:42,timestamp:250,effectTime:2.5,x:123,y:-136,dir:7,moving:true });
-  assert.deepEqual([...packet],[7,2,4,3,2,1,42,0,0,0,250,0,0,0,0,0,32,64,0,0,246,66,0,0,8,195,7,1]);
-  const snapshot = Buffer.alloc(42); snapshot.set([7,4]);
+  assert.deepEqual([...packet],[8,2,4,3,2,1,42,0,0,0,250,0,0,0,0,0,32,64,0,0,246,66,0,0,8,195,7,1]);
+  const snapshot = Buffer.alloc(42); snapshot.set([8,4]);
   snapshot.writeUInt32LE(99,2); snapshot.writeUInt32LE(5,6); snapshot.writeUInt32LE(42,10); snapshot.writeUInt16LE(1,14);
   snapshot.writeUInt32LE(5,16); snapshot.set(packet.subarray(2,6),20); snapshot.set(packet.subarray(10),24);
   const decoded = protocol.decodePacket(snapshot);
@@ -34,7 +34,7 @@ test('Vietnamese identity uses UTF-8 binary and exact length; ticket uses HMAC a
   const offset = 22;
   assert.equal(hello.length,offset+Buffer.byteLength(look.name)+69);
   assert.equal(Buffer.from(hello.subarray(offset,offset+Buffer.byteLength(look.name))).toString(),look.name);
-  const roster = Buffer.alloc(12+20+4+Buffer.byteLength(look.name)); roster.set([7,5]);
+  const roster = Buffer.alloc(12+20+4+Buffer.byteLength(look.name)); roster.set([8,5]);
   roster.writeUInt32LE(1,2); roster.writeUInt32LE(42,6); roster.writeUInt16LE(1,10); roster.writeUInt32LE(8,12);
   roster.set(hello.subarray(2,offset+Buffer.byteLength(look.name)),16);
   assert.equal(protocol.decodePacket(roster).players.get(8).name,look.name);
@@ -74,7 +74,7 @@ test('online input ignores keyboard and joystick but follows the mouse target', 
 test('enabled multiplayer issues a signed ticket for the cookie account, ignoring spoofed payload IDs', async () => {
   const { createServer: httpServer } = require('node:http');
   const { once } = require('node:events');
-  const config = { protocol:7,playUrl:'https://127.0.0.1:4434/play',certificateHash:Array(32).fill(7) };
+  const config = { protocol:8,playUrl:'https://127.0.0.1:4434/play',certificateHash:Array(32).fill(7) };
   const control = httpServer((_request,response)=>{response.setHeader('Content-Type','application/json');response.end(JSON.stringify(config));});
   control.listen(0,'127.0.0.1');await once(control,'listening');
   const previousSecret=process.env.MULTIPLAYER_SECRET,previousControl=process.env.MULTIPLAYER_WT_CONTROL_URL;
@@ -101,7 +101,7 @@ test('enabled multiplayer issues a signed ticket for the cookie account, ignorin
 
 test('remote character with pending body appearance falls back to the base sprite', () => {
   let rendered;
-  const scope={onlineWorld:{bind(){},entities:()=>[],state:null},I:{shaolin:{}},GameWebTransport:{createClient:()=>({})},window:{addEventListener(){}},
+  const scope={OnlinePvp:{healthColor:()=>"#4fd04f"},onlineWorld:{bind(){},entities:()=>[],state:null},I:{shaolin:{}},GameWebTransport:{createClient:()=>({})},window:{addEventListener(){}},
     lB:()=>{throw new Error('Incomplete equipment must not render a weapon-only body');},
     uB:(_ctx,actor)=>{rendered=actor;}};
   vm.createContext(scope);
@@ -114,7 +114,7 @@ test('remote character with pending body appearance falls back to the base sprit
 
 test('remote name uses the faction palette and support effects draw under and over the body', () => {
   const draws=[];
-  const scope={onlineWorld:{bind(){},entities:()=>[],state:null},I:{shaolin:{},emei:{}},GameWebTransport:{createClient:()=>({})},window:{addEventListener(){}},
+  const scope={OnlinePvp:{healthColor:()=>"#4fd04f"},onlineWorld:{bind(){},entities:()=>[],state:null},I:{shaolin:{},emei:{}},GameWebTransport:{createClient:()=>({})},window:{addEventListener(){}},
     T:{},Tb:f=>f==='shaolin'?'#ff9900':'#80ddff', Jn:1,U1:{10:{pos:'foot'},11:{pos:'body'},12:{pos:'head'}},vf:{},
     F3:(_ctx,sprite,x,y,_height,time)=>draws.push([sprite.pos,x,y,time]),
     uB:(_ctx,actor,_dt,presentation)=>{
