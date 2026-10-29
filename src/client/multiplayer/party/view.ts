@@ -13,7 +13,7 @@ export function mountPartyView(escape:(value:string)=>string, action:(kind:numbe
   invitation.setAttribute('role','dialog');invitation.setAttribute('aria-label','Lời mời tổ đội');
   invitation.innerHTML='<header><h2>Lời mời tổ đội</h2></header><div class="war-content"><p id="online-party-from"></p><div class="war-actions"><button id="online-party-accept">Đồng ý</button><button id="online-party-decline">Từ chối</button></div></div>';
   const style=document.createElement('style');style.textContent=`
-  #online-party-toggle{align-self:flex-end;position:relative;width:32px;height:32px;flex:none;padding:0;border:0;border-radius:50%;background:url(/img/u2/team.png) 0 0/96px 32px no-repeat;image-rendering:pixelated;box-shadow:0 1px 3px #000;cursor:pointer;margin-top:4px}
+  #online-party-toggle{align-self:flex-end;position:relative;width:32px;height:32px;flex:none;padding:0;border:0;border-radius:50%;background:url(/img/u2/team.png) 0 0/96px 32px no-repeat;image-rendering:pixelated;box-shadow:0 1px 3px #000;cursor:pointer}
   #online-party-toggle.in{background-position:-64px 0}#online-party-toggle.inv{background-position:-32px 0;box-shadow:0 0 9px #edc778}
   #online-party-toggle:focus-visible{outline:2px solid #edc778;outline-offset:2px}
   #online-party h3{font:inherit;color:#ead18e;margin:0 0 12px}#online-party .party-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #484938;padding:10px 2px;min-width:0}
@@ -68,7 +68,7 @@ export function mountPartyView(escape:(value:string)=>string, action:(kind:numbe
   return {
     update(state:WorldState|null,players:Candidate[],online:boolean,busy:boolean){
       current=state;nearby=players;connected=online;pending=busy;
-      const parent=document.getElementById('u20rc');
+      const parent=document.getElementById('u20travel');
       if(parent&&!toggle){toggle=document.createElement('button');toggle.id='online-party-toggle';toggle.type='button';toggle.setAttribute('aria-label','Tổ đội');toggle.setAttribute('aria-controls','online-party');toggle.setAttribute('aria-expanded','false');toggle.onclick=()=>panel.hidden?open():close();parent.appendChild(toggle);}
       render();
     },

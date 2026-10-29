@@ -20,7 +20,7 @@ var developerTools = (function () {
     if (kind === 'sale') closeSale = onClose;
     if (!toolbar) {
       toolbar = document.createElement('nav'); toolbar.id = 'dev-tools'; toolbar.setAttribute('aria-label','Công cụ thử nghiệm');
-      document.body.appendChild(toolbar);
+      (document.getElementById('u20travel') || document.body).appendChild(toolbar);
       document.addEventListener('keydown', event => {
         if (event.key !== 'Escape' || event.repeat) return;
         const result = document.getElementById('battlefield-result');

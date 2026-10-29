@@ -198,13 +198,6 @@ var Rv = function () {
     const e = m("#ktcBtn");
     e && (e.onclick = () => iA());
   }
-  ((m("#bShop").onclick = () => lh()),
-    (m("#bKtcT").onclick = () => iA()),
-    (m("#bStashT").onclick = () => Rt()),
-    (m("#bSellTown").onclick = () =>
-      K8((e) => {
-        (k(`Bán ${e.n} món`), V());
-      })));
 };
 
 var ah = function (A) {};

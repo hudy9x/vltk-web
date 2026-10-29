@@ -40,8 +40,9 @@ var OnlineLifecycle=(()=>{
     // A missing map is not a loaded town: reconnect must mount its scene/ground.
     const current=Z0.key==='town'?E0.town.id:Z0.key;
     l.town=town;l.zoneShown=state.map;
+    document.getElementById('bBack')?.classList.toggle('hidden',!town);
     if(current!==state.map){
-      l.town=town;l.zoneShown=state.map;l.enemies=[];l.ground=[];l.fx=[];l.combatProjectiles=[];Y.target=null;
+      l.enemies=[];l.ground=[];l.fx=[];l.combatProjectiles=[];Y.target=null;
       ma(town?'town':state.map);
       let zone=town?E0.town:JW.zones.find(z=>z.id===state.map);
       if(!town&&typeof k0!=='undefined'&&typeof o!=='undefined'){
@@ -56,8 +57,6 @@ var OnlineLifecycle=(()=>{
       l.banner={t:2.2,text:zone?.n||'Bản đồ',sub:town?'Biện Kinh · Về thành dưỡng sức':''};
       if(typeof M1==='function')M1();
       if(typeof _e==='function')_e(state.map);
-      document.getElementById('townBar')?.classList.toggle('hidden',!town);
-      const name=document.getElementById('townName');if(name&&town)name.textContent=E0.town.n;
     }
     if(!initialized||life!==actor.life||current!==state.map){
       Object.assign(v,{x:actor.x,y:actor.y,_px:actor.x,_py:actor.y,act:actor.hp<=0?'die':'st',actT:0});

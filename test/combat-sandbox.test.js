@@ -1345,8 +1345,8 @@ test('production battlefield owns its map across field ticks, empty waves and to
   for (const mapId of [9003]) {
     const s=battlefieldGame(false),match=s.arenaSimulator.battlefield;
     assert.ok(!s.window.NO_FIELD,'production keeps the training field enabled');
-    const hidden=new Set(),townBar={id:'townBar',classList:{add:k=>hidden.add(k),toggle:(k,on)=>on?hidden.add(k):hidden.delete(k)}};
-    s.simNodes.push(townBar);
+    const hidden=new Set(),returnButton={id:'bBack',classList:{add:k=>hidden.add(k),toggle:(k,on)=>on?hidden.add(k):hidden.delete(k)}};
+    s.simNodes.push(returnButton);
     s.Z0.key=37;Object.assign(s.l,{town:true,zoneShown:37,bgImg:{path:'bien-kinh'}});
     const origin={x:s.v.x,y:s.v.y,bgImg:s.l.bgImg,life:s.l.life,mana:s.l.mana};
     match.start('song',undefined,mapId);
@@ -1361,7 +1361,7 @@ test('production battlefield owns its map across field ticks, empty waves and to
     assert.equal(s.Z0.key,mapId,'field tick must not reload the selected training map');
     assert.equal(s.l.zoneShown,mapId);assert.equal(s.l.bgImg.path,'battle-ground');
     assert.equal(fieldTicks,0);assert.equal(waves,0);
-    assert.equal(hidden.has('hidden'),true,'town toolbar is hidden inside the battlefield');
+    assert.equal(hidden.has('hidden'),true,'return-to-training icon is hidden inside the battlefield');
     loadDeclaration(s,'src/client/ui/legacy-panels-and-audio-03.js','nc');
     const battleActors=match.state.soldiers;
     const battlePosition={x:s.v.x,y:s.v.y};

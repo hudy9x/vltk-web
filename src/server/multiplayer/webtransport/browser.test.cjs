@@ -70,6 +70,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     // Observe game state without shipping debug globals in the production bundle.
     await page.route('**/app/game.js?*',async route=>{
       const response=await route.fetch();let body=await response.text();
+      body=body.replace('const client = GameWebTransport.createClient({','const client = window.__onlineClient = GameWebTransport.createClient({');
       const at=body.lastIndexOf('\n})();');assert.ok(at>0);
       body=body.slice(0,at)+`
       window.__onlineDraws=0;
@@ -150,7 +151,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
         closeModal:()=>n0(true),
         staleProgressionSave:async()=>{o.lvl=150;o.stage=700;o.maxStage=700;o.autoMap=true;$();await window.localGameStorage?.flush();},
         progression:()=>({lvl:o.lvl,xp:o.xp,fac:o.fac,attr:structuredClone(o.attr),attrPts:o.attrPts,sk:structuredClone(o.sk),skPts:o.skPts,stage:o.stage,map:Z0.key,mapLevel:AA(o.stage).lo}),
-        state:()=>({x:v.x,y:v.y,map:Z0.key,pve:onlineWorld.state,status:document.getElementById("multiplayerStatus")?.textContent,remote:gameMultiplayer.entities().filter(e=>e.remotePlayer).map(e=>e.remotePlayer),draws:window.__onlineDraws,
+        state:()=>({x:v.x,y:v.y,map:Z0.key,pve:onlineWorld.state,status:window.__onlineClient?.online,remote:gameMultiplayer.entities().filter(e=>e.remotePlayer).map(e=>e.remotePlayer),draws:window.__onlineDraws,
           target:Y.target,blocked:i0.blocked,hidden:document.hidden,modal:document.getElementById('modal').className}),
         assistant:()=>Hr('basic'),automationState:()=>({used:o.potUsed,gold:o.gold,hp:l.life,mp:l.mana,auto:o.ctrl,potOff:o.potOff,potHp:o.potHp,potMp:o.potMp}),
         mapPresentation:()=>({map:Z0.key,bg:l.bgImg?.src,ready:!!l.bgImg?.complete&&!!l.bgImg?.naturalWidth,scene:mapScene.hasMap()}),
@@ -220,7 +221,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     await page.waitForSelector('#csNew, #ncName');
     if(await page.locator('#csNew').isVisible()) await page.locator('#csNew').click();
     await page.locator('#ncName').fill(name);await page.locator('#ncGo').click();
-    await page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
     const understood=page.getByRole('button',{name:'Đã hiểu',exact:true});
     if(await understood.isVisible())await understood.click();
     await page.evaluate(()=>window.__onlineTest.tutorialDone());
@@ -240,6 +241,30 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   await a.page.waitForTimeout(1700);
   for(const {page} of [a,b]) await page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   assert.ok((await a.page.evaluate(()=>window.__onlineTest.state())).draws>0);
+  if(process.env.HUD_TEST==='1'){
+    const page=a.page;
+    for(const selector of ['#status-log-toggle','#status-log-panel','#multiplayerStatus','#multiplayerFarm','#townBar'])assert.equal(await page.locator(selector).count(),0,selector+' was removed');
+    await page.waitForSelector('#online-party-toggle');
+    await page.waitForSelector('#u20travel #bBack:not(.hidden)');
+    const positions=await page.evaluate(()=>({back:document.getElementById('bBack').getBoundingClientRect().toJSON(),party:document.getElementById('online-party-toggle').getBoundingClientRect().toJSON()}));
+    assert.ok(Math.abs(positions.back.x+positions.back.width/2-positions.party.x-positions.party.width/2)<2,'travel and party share one column');
+    assert.ok(positions.back.bottom<positions.party.y,'return icon sits above the party icon');
+    assert.equal(await page.locator('#bBack').getAttribute('aria-label'),'Trở lại bãi luyện công');
+    await page.screenshot({path:path.join(root,'output/multiplayer/hud-town.png')});
+    const townMap=await page.evaluate(()=>window.__onlineTest.state().pve.map);
+    await page.waitForFunction(()=>window.__onlineTest.travelReady());
+    await page.locator('#bBack').click();
+    await page.waitForFunction(map=>{const s=window.__onlineTest.state().pve;return s&&s.map!==map;},townMap);
+    await page.waitForSelector('#bBack.hidden',{state:'attached'});
+    await page.screenshot({path:path.join(root,'output/multiplayer/hud-field.png')});
+    await page.evaluate(()=>window.__onlineTest.town());
+    await page.waitForFunction(map=>window.__onlineTest.state().pve?.map===map,townMap);
+    await page.waitForSelector('#u20travel #bBack:not(.hidden)');
+    await page.setViewportSize({width:900,height:500});
+    await page.waitForFunction(()=>document.getElementById('bBack').getBoundingClientRect().width>0);
+    await page.screenshot({path:path.join(root,'output/multiplayer/hud-town-compact.png')});
+    assert.deepEqual(errors,[]);console.log('HUD browser: obsolete controls removed, return icon beside party, real town-to-field travel and compact layout passed.');return;
+  }
   if(process.env.AUTOMATION_TEST==='1'){
     const page=a.page;
     await page.evaluate(()=>window.__onlineTest.field());
@@ -285,7 +310,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     await page.waitForFunction(()=>window.__onlineTest.controls().main===10);
     await page.evaluate(()=>window.__onlineTest.skillDetails(1055));await page.locator('#skMain').click();
     await page.waitForFunction(()=>window.__onlineTest.controls().main===1055);await page.locator('#mClose').click();
-    await page.reload();await page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
     const restored=await page.evaluate(()=>window.__onlineTest.controls());assert.equal(restored.main,1055);assert.equal(restored.locked,true);assert.equal(restored.slots[1],1055);
     await page.screenshot({path:path.join(root,'output/multiplayer/primary-skill-restored.png')});
     assert.deepEqual(errors,[]);console.log('Primary skill: real F-slot and detail clicks, repeated level-150 casts, rewards and reload retain canonical main and slots.');return;
@@ -304,7 +329,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     await a.page.reload();await a.page.waitForFunction(()=>window.__onlineTest);
     const preview=await a.page.evaluate(()=>({initial:window.__onlineTest.initialPosition,pve:window.__onlineTest.state().pve}));
     assert.equal(preview.pve,null,'local preview appears before server session');assert.equal(preview.initial.map,saved.map);assert.ok(Math.hypot(preview.initial.x-saved.x,preview.initial.y-saved.y)<.2,'first frame restores local position');
-    await a.page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await a.page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
     const restored=await a.page.evaluate(()=>{const s=window.__onlineTest.state();return {map:s.pve.map,x:s.x,y:s.y};});
     assert.equal(restored.map,saved.map);assert.ok(Math.hypot(restored.x-saved.x,restored.y-saved.y)<.2,'reload keeps exact server position');
     const balance=await b.page.evaluate(()=>window.__onlineTest.deathWallet());
@@ -337,7 +362,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     assert.ok(await b.page.getByRole('button',{name:'Về thành',exact:true}).evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),'chat must not cover the return button');
     await b.page.setViewportSize({width:1280,height:850});
     await a.page.screenshot({path:path.join(root,'output/multiplayer/death-gold-piles.png')});
-    await b.page.reload();await b.page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});await b.page.waitForSelector('#onlineDeath');
+    await b.page.reload();await b.page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});await b.page.waitForSelector('#onlineDeath');
     assert.ok((await b.page.locator('#onlineDeath').innerText()).includes('Kiếm Khách'));
     assert.equal((await (await b.context.request.get(base+'/api/multiplayer/character?slot=0')).json()).profile.gold,balance-loss);
     await b.page.getByRole('button',{name:'Về thành',exact:true}).click();
@@ -348,7 +373,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     const loot=await a.page.evaluate(d=>window.__onlineTest.screen(d.x,d.y),pile);await a.page.mouse.click(loot.x,loot.y);
     await a.page.waitForFunction(id=>!window.__onlineTest.state().pve.loot.some(d=>d.id===id),pile.id);
     await a.page.waitForFunction(async expected=>{const r=await fetch('/api/multiplayer/character?slot=0');return (await r.json()).profile.gold===expected;},oldBalance+pile.gold);
-    await b.page.reload();await b.page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await b.page.reload();await b.page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
     await b.page.waitForFunction(()=>{const p=window.__onlineTest.mapPresentation();return p.map==='town'&&p.ready&&p.scene&&p.bg.includes('/37/assets/ground.jpg');});
     await b.page.screenshot({path:path.join(root,'output/multiplayer/town-restored.png')});
     await b.page.evaluate(()=>window.__onlineTest.battlefieldStart());
@@ -378,7 +403,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     await page.waitForFunction(()=>{const s=window.__onlineTest.equipmentState();return s.mounted&&Math.abs(s.serverSpeed-s.localSpeed)<.01;});
     const expected=await page.evaluate(()=>window.__onlineTest.equipmentState());
     assert.ok(expected.serverSpeed>172.5,'horse increases physical movement speed');
-    await page.reload();await page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
     await page.waitForFunction(()=>{const s=window.__onlineTest.equipmentState();return s.serverSpeed>172.5&&s.mounted;});
     const actual=await page.evaluate(()=>window.__onlineTest.equipmentState());
     for(const key of ['eq','inv','uid','knb'])assert.deepEqual(actual[key],expected[key],key+' survives reload');
@@ -390,7 +415,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     const page=a.page;
     // Reproduce the old split-brain save: legacy level 150, canonical level 1.
     await page.evaluate(()=>window.__onlineTest.staleProgressionSave());
-    await page.reload();await page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
     await page.waitForFunction(()=>window.__onlineTest.state().pve?.actors.some(a=>a.id===window.__onlineTest.state().pve.self));
     const repaired=await page.evaluate(()=>window.__onlineTest.progression());
     assert.equal(repaired.lvl,1);assert.ok(repaired.mapLevel<=1,'canonical level is applied before selecting a map');
@@ -416,7 +441,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     await page.locator('[data-gm="xp"]').click();await page.waitForFunction(()=>window.__onlineTest.progression().xp>0);
     const expected=await page.evaluate(()=>window.__onlineTest.progression());
     await page.reload();
-    await page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
     await page.waitForFunction(()=>window.__onlineTest.state().pve?.actors.some(a=>a.id===window.__onlineTest.state().pve.self));
     const actual=await page.evaluate(()=>window.__onlineTest.progression());
     for(const key of ['lvl','xp','fac','attr','attrPts','sk','skPts'])assert.deepEqual(actual[key],expected[key],'canonical '+key+' survives reload');
@@ -494,7 +519,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   assert.equal(await a.page.locator('#ctrlBtn').evaluate(e=>e.classList.contains('on')),true,'Auto stays on across render frames');
   await a.page.keyboard.press('f');
   await a.page.waitForFunction(()=>{const s=window.__onlineTest.state();return window.__onlineTest.controls().ctrl==='manual'&&!s.pve.actors.find(p=>p.id===s.pve.self)?.farming;});
-  await a.page.locator('#multiplayerFarm').click();
+  await a.page.locator('#ctrlBtn').click();
   await a.page.waitForFunction(()=>window.__onlineTest.controls().ctrl==='auto');
   await a.page.locator('#ctrlBtn').click();
   await a.page.waitForFunction(()=>{const s=window.__onlineTest.state();return window.__onlineTest.controls().ctrl==='manual'&&!s.pve.actors.find(p=>p.id===s.pve.self)?.farming;});
@@ -548,8 +573,8 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   await b.page.waitForFunction(()=>window.__onlineTest.state().remote.length===0);
   await a.page.evaluate(()=>window.__onlineTest.town());
   await b.page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
-  await a.page.locator('#multiplayerStatus').click();
-  await a.page.waitForSelector('#multiplayerStatus[data-online="true"]');
+  await a.page.evaluate(()=>window.__onlineClient.retry());
+  await a.page.waitForFunction(()=>window.__onlineClient?.online);
   await b.page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   // Shared PvE world: a real click starts the server attack, both clients see the same death.
   for(const {page} of [a,b]){await page.waitForTimeout(700);await page.evaluate(()=>window.__onlineTest.field());}
@@ -568,8 +593,8 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   const drop=await a.page.evaluate(()=>window.__onlineTest.state().pve.loot.find(d=>d.mine));
   assert.equal(await b.page.evaluate(id=>window.__onlineTest.state().pve.loot.find(d=>d.id===id)?.mine,drop.id),false);
   // Ownership belongs to the authenticated account, so reconnect cannot lose the right to pick up.
-  await a.page.locator('#multiplayerStatus').click();
-  await a.page.waitForSelector('#multiplayerStatus[data-online="true"]');
+  await a.page.evaluate(()=>window.__onlineClient.retry());
+  await a.page.waitForFunction(()=>window.__onlineClient?.online);
   await a.page.waitForFunction(id=>window.__onlineTest.state().pve?.loot.some(d=>d.id===id&&d.mine),drop.id);
   const point=await a.page.evaluate(d=>window.__onlineTest.screen(d.x,d.y),drop);
   await a.page.mouse.click(point.x,point.y);

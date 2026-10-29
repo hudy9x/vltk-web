@@ -9,8 +9,11 @@ var dm = function () {
     `<div id="u20menu">${um.map(([a, i, r]) => `<button class="u20mi" data-u="${a}" title="${r}" style="background-image:url(img/u2/${i}.png)"><i class="dot"></i></button>`).join("")}</div>`,
   ),
     A(
-      '<div id="u20rc"><div id="u20trk" style="display:none"></div><button id="u20mail" title="Hộp thư: quà, đồ gửi, đồ mua ở Chợ"><b id="u20mailN"></b></button><button id="u20stb" title="Mã Trường: bộ sưu tập ngựa"><b id="u20stbN"></b></button><button id="u20tt" title="Trợ Thủ Kiếm Hiệp: tự đánh, thuốc, ưu tiên mục tiêu, nhặt đồ"></button></div>',
+      '<div id="u20rc"><div id="u20trk" style="display:none"></div><button id="u20mail" title="Hộp thư: quà, đồ gửi, đồ mua ở Chợ"><b id="u20mailN"></b></button><button id="u20stb" title="Mã Trường: bộ sưu tập ngựa"><b id="u20stbN"></b></button><button id="u20tt" title="Trợ Thủ Kiếm Hiệp: tự đánh, thuốc, ưu tiên mục tiêu, nhặt đồ"></button><div id="u20travel"></div></div>',
     ));
+  m("#u20travel").appendChild(m("#bBack"));
+  const tools = document.getElementById("dev-tools");
+  if (tools) m("#u20travel").appendChild(tools);
   {
     const a = m("#pwS");
     a &&

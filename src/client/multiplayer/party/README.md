@@ -2,7 +2,7 @@
 
 `index.ts` nối snapshot và command với UI, `model.ts` lọc người chơi theo khung nhìn camera,
 `view.ts` dùng mẫu `war-dialog` chung với dược điếm/Mã Phu. Nút dùng sprite tổ đội sẵn có,
-đặt ngay dưới `#u20tt` trong `#u20rc`.
+đặt dưới icon trở lại bãi trong cột `#u20travel`, ngay dưới `#u20tt` trong `#u20rc`.
 
 Nguồn sự thật nằm ở `src/server/multiplayer/domain/party.rs`. Đội tối đa 8 người,
 lời mời tồn tại 60 giây, chỉ đội trưởng mời thêm được. Nhóm được tạo sau khi người nhận

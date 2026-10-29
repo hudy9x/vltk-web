@@ -709,8 +709,7 @@ var nc = function (force = false) {
       (l.bgImg = bA(E0.town.bg)),
       o0("use"),
       _e(E0.town.id),
-      (m("#townName").textContent = E0.town.n),
-      m("#townBar").classList.remove("hidden"),
+      m("#bBack").classList.remove("hidden"),
       (l.banner = { t: 2.2, text: E0.town.n, sub: "Hồi phục · bán đồ · trở lại bãi" }),
       C(`Dùng Thổ Địa Phù về <b>${D(E0.town.n)}</b>.`));
   }
@@ -729,7 +728,7 @@ var en = function (destination = AA(Math.min(o.stage, d0))) {
       (o.wave = 1),
       (l.spawnT = 0.5),
       (l.zoneShown = null),
-      m("#townBar").classList.add("hidden"),
+      m("#bBack").classList.add("hidden"),
       Gn(destination));
   }
 };

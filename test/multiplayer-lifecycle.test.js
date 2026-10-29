@@ -46,7 +46,7 @@ test('binary snapshots distinguish public KNB from gold and carry UTF-8 killer n
 function ui(){
   const nodes=new Map();
   function element(){return {style:{},children:[],get textContent(){return this.children.map(n=>typeof n==='string'?n:n.textContent||'').join('');},set textContent(value){this.children=[value];},replaceChildren(...items){this.children=[];this.append(...items);},classList:{toggle(){}},setAttribute(){},append(...items){this.children.push(...items);for(const n of items)if(n.id)nodes.set(n.id,n);},appendChild(n){this.append(n);},remove(){if(this.id)nodes.delete(this.id);}};}
-  nodes.set('battle',element());nodes.set('townBar',element());nodes.set('townName',element());
+  nodes.set('battle',element());nodes.set('bBack',element());
   const game={document:{head:element(),body:element(),createElement:element,getElementById:id=>nodes.get(id)||null},E0:{town:{id:37,n:'Biện Kinh'}},Z0:{key:2},JW:{zones:[{id:2,n:'Bãi luyện công'}]},l:{},v:{},Y:{},GameWebTransport:{newer:(a,b)=>(a-b|0)>0},ma:key=>{game.Z0.key=key;},M1(){},_e(){},bA:()=>null};
   vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/lifecycle.js','utf8'),game);return {game,nodes};
 }

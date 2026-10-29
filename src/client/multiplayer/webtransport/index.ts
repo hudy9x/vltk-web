@@ -141,7 +141,7 @@ export function createClient(hooks: Hooks) {
           }
           online = true;
           failures = 0;
-          hooks.status(`Online · ${packet.players.length} người · WebTransport`, true);
+          hooks.status('Online', true);
         },
         (error) => {
           if (attempt === generation) disconnected(error);

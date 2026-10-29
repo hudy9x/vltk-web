@@ -16,7 +16,7 @@ Demo tham khảo tại `src/{client,server}/multiplayer-demo/` giữ nguyên; co
 | Animation skill, số tia, hướng và FX va chạm | Pipeline gốc của client | CAST mang cấp chiêu và tọa độ lúc phát; kết quả combat vẫn do Rust |
 | Chiêu xuyên dạng đường thẳng có độ rộng | Có | Rust quét từng đoạn bay, trúng từng thân quái; giữ hướng lúc tung đòn |
 | Băng làm chậm, độc theo tick, choáng trên quái | Có | Rust; các client cùng nhận thời gian còn lại |
-| Luyện công tự động | Có | Nút **Auto** / phím **F** hoặc **Luyện công online**; Rust dùng chiêu chính đã chọn, tìm quái và nhặt tiền thuộc nhân vật |
+| Luyện công tự động | Có | Nút **Auto** / phím **F**; Rust dùng chiêu chính đã chọn, tìm quái và nhặt tiền thuộc nhân vật |
 | HP/MP người thật, quái đánh người, chết/hồi sinh | Có | Giữ trạng thái chết; nút “Về thành” hồi sinh tại Biện Kinh, hiển thị người/quái đã hạ gục |
 | Vị trí khi reload/reconnect | Có | Checkpoint tọa độ server theo account + slot; khôi phục bản đồ và tọa độ, không gửi lệnh vào lại cổng map khi kết nối |
 | Ngân lượng rơi khi nhân vật chết | Có | SQLite trừ 20%, tối đa 1.000.000 lượng/lần; tối đa 8 đống công khai, ai cũng nhặt được |

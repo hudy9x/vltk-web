@@ -1,26 +1,13 @@
 // Small adapter into the legacy game IIFE. No remote actor can be selected or attacked.
 var gameMultiplayer = (() => {
   const factions = Object.keys(I);
-  let statusButton = null, previous = null, nextAppearance = 0, appearance = null, movedAt = -Infinity, direction = 0;
+  let previous = null, nextAppearance = 0, appearance = null, movedAt = -Infinity, direction = 0;
   const client = GameWebTransport.createClient({ slot:()=>m0,
     position:()=>OnlineLifecycle.hint(),
     async prepare(){ $(); await window.localGameStorage?.flush(); },
     world:state=>onlineWorld.snapshot(state),profile:value=>onlineWorld.profile(value),reset:()=>{onlineWorld.reset();OnlineParty.reset();},
     status(text, online) {
-    if(typeof onlineTrace!=='undefined')onlineTrace.once('status:'+text,'connection-status',{text,online});
-    if (!text) { statusButton?.remove(); statusButton = null; document.getElementById("multiplayerFarm")?.remove(); return; }
-    const battle = document.getElementById("battle");
-    if (!battle) return;
-    if (!statusButton) {
-      statusButton = document.createElement("button");
-      statusButton.id = "multiplayerStatus";
-      statusButton.style.cssText = "position:absolute;right:8px;top:48px;z-index:6;font-size:10px;max-width:260px;background:#16251e;color:#c8edd6;padding:5px 8px;border:1px solid #43644f;border-radius:4px";
-      statusButton.onclick = () => client.retry();
-      battle.appendChild(statusButton);
-    }
-    statusButton.textContent = text;
-    statusButton.dataset.online = String(online);
-    statusButton.title = "Đồng bộ người chơi cùng bản đồ. Bấm để kết nối lại.";
+      if(typeof onlineTrace!=='undefined')onlineTrace.once('status:'+text,'connection-status',{text,online});
   }});
   onlineWorld.bind(client);
   window.addEventListener("pagehide", () => client.close());
@@ -55,11 +42,6 @@ var gameMultiplayer = (() => {
       client.update({ map, timestamp: Math.floor(now) >>> 0, effectTime: Math.max(0, l.clock || 0),
         x, y, dir: direction, moving: now - movedAt < 120 }, appearance);
       if (client.online) onlineWorld.syncControls?.();
-      if (client.online && statusButton && !document.getElementById("multiplayerFarm")) {
-        const farm=document.createElement("button");farm.id="multiplayerFarm";farm.style.cssText=statusButton.style.cssText+";top:80px";
-        farm.textContent="Luyện công online";farm.onclick=()=>onlineWorld.farm(o.ctrl !== 'auto');statusButton.parentElement.appendChild(farm);
-      }
-      const farm=document.getElementById("multiplayerFarm");if(farm){farm.disabled=!client.online;farm.textContent=onlineWorld.state?.actors.find(a=>a.id===onlineWorld.state.self)?.farming?"Dừng luyện công":"Luyện công online";}
       previous = { map, x, y };
     },
     entities() { return onlineWorld.entities().concat(client.players().filter(player=>!(onlineWorld.state?.actors.find(a=>a.id===player.id)?.hp<=0)).map(player => ({ remotePlayer: player, x: player.x, y: player.y }))); },

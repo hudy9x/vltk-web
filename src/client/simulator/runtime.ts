@@ -1253,7 +1253,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       sandbox.clearCombat?.(false);
       ma(BATTLE_MAP); l.bgImg = bA(MapsEngine.getMapBackground(BATTLE_MAP)); l.zoneShown = BATTLE_MAP;
       l.town = false; l.battlefield = true; o.ctrl = 'manual'; o.autoMap = false;
-      document.getElementById('townBar')?.classList.add('hidden');
+      document.getElementById('bBack')?.classList.add('hidden');
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = true;
       Object.assign(v, CAMPS[team]); l.life = l.P.life; l.mana = l.P.mana;
       simNames.reset(); warEvents.length=0; warRewards.reset(); supplies.reset(true); roadMonsters.start(); updateWarNpcs();
@@ -1271,7 +1271,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       sandbox.clearCombat?.(false);
       ma(previousField.key); Object.assign(v, { x: previousField.x, y: previousField.y });
       Object.assign(l, { bgImg: previousField.bgImg, zoneShown: previousField.zoneShown, town: previousField.town, life: previousField.life, mana: previousField.mana, battlefield: false, deadT: 0 });
-      document.getElementById('townBar')?.classList.toggle('hidden', !l.town);
+      document.getElementById('bBack')?.classList.toggle('hidden', !l.town);
       o.ctrl = previousField.ctrl; o.autoMap = previousField.autoMap; previousField = null;
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = false;
     },
