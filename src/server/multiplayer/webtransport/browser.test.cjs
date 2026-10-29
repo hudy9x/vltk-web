@@ -27,6 +27,7 @@ async function ready(url,child,logs) {
 }
 test('game WebTransport binary: two human accounts, movement, rooms, appearance and reconnect', {timeout:120000}, async t=>{
   const directory=await fs.mkdtemp(path.join(os.tmpdir(),'vltk-online-'));
+  await fs.mkdir(path.join(root,'output/multiplayer'),{recursive:true});
   const [http,control,udp]=await Promise.all([tcpPort(),tcpPort(),udpPort()]);
   const base=`http://127.0.0.1:${http}`,secret=randomBytes(32).toString('hex');
   let logs='';const clientTraces=[];
@@ -50,6 +51,12 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   });
   await ready(`http://127.0.0.1:${control}/health`,rust,()=>logs);
   await ready(base+'/api/health',node,()=>logs);
+  if(process.env.LIFECYCLE_TEST==='1'){
+    const definitions=structuredClone(require('../definitions/catalog.cjs').world());
+    for(const map of definitions.maps)map.monsters=[];
+    const response=await fetch(`http://127.0.0.1:${control}/catalog`,{method:'POST',headers:{'content-type':'application/json','x-multiplayer-secret':secret},body:JSON.stringify(definitions)});
+    assert.ok(response.ok);
+  }
   browser=await chromium.launch({headless:true,args:['--enable-quic']});
   async function player(username,name,advanced=false) {
     const context=await browser.newContext({viewport:{width:1280,height:850},serviceWorkers:process.env.ONLINE_TEST_SW==='1'?'allow':'block'});
@@ -74,9 +81,9 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
       }
       const originalDrawImage=W.drawImage;
       W.drawImage=function(...args){if(drawingSkill)window.__skillDraws[drawingSkill]=(window.__skillDraws[drawingSkill]||0)+1;return originalDrawImage.apply(this,args);};
-      window.__onlineColors={};window.__supportDraws={};
+      window.__onlineColors={};window.__onlineHealth={};window.__supportDraws={};
       const originalNameplate=L3,originalSupport=F3;
-      L3=function(x,y,name,color,...rest){window.__onlineColors[name]=color;return originalNameplate(x,y,name,color,...rest);};
+      L3=function(x,y,name,color,...rest){window.__onlineColors[name]=color;window.__onlineHealth[name]=rest[2];return originalNameplate(x,y,name,color,...rest);};
       F3=function(...args){if(args[8]&&args[8]!==v)window.__supportDraws[args[1].f]=args[1].pos;return originalSupport(...args);};
       const originalOnlineDraw=gameMultiplayer.draw;
       gameMultiplayer.draw=function(...args){window.__onlineDraws++;return originalOnlineDraw(...args);};
@@ -129,8 +136,21 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
           }}finally{l.town=town;l.fx=saved;}
           return result;
         },
+        equipmentSetup:async()=>{await OnlineProgression.run({kind:'gm',action:'level150'});await OnlineProgression.run({kind:'join',faction:'shaolin'});await OnlineProgression.run({kind:'gm',action:'knb'});await OnlineProgression.run({kind:'potential',key:'str',amount:200});o.autoRide=false;},
+        primarySetup:async()=>{await OnlineProgression.run({kind:'gm',action:'level150'});if(I[o.fac]?.novice)await OnlineProgression.run({kind:'join',faction:'shaolin'});if(o.eq.weapon)await OnlineProgression.run({kind:'unequip',slot:'weapon'});await OnlineProgression.run({kind:'gm',action:'learn150'});if(!o.sk[10])await OnlineProgression.run({kind:'skill',skill:10});await OnlineProgression.run({kind:'skillSlot',index:0,skill:10});await OnlineProgression.run({kind:'skillSlot',index:1,skill:1055});o.rot=false;o.potOff=true;$();},
+        skillDetails:id=>R8(id),
+        equipmentOpen:()=>equipmentTrader.open(),
+        horseOpen:()=>horseTrader.open(),
+        equipmentState:()=>({eq:structuredClone(o.eq),inv:structuredClone(o.inv),uid:o.uid,knb:o.knb,mounted:l.mounted,localSpeed:150*Ra(),serverSpeed:onlineWorld.state?.movement.speed}),
+        equip:async uid=>{J1(o.inv.find(item=>item.uid===uid));await OnlineProgression.flush();},
+        mount:async enabled=>{l.rideCd=0;Ka(enabled);await OnlineProgression.flush();},
+        closeModal:()=>n0(true),
+        staleProgressionSave:async()=>{o.lvl=150;o.stage=700;o.maxStage=700;o.autoMap=true;$();await window.localGameStorage?.flush();},
+        progression:()=>({lvl:o.lvl,xp:o.xp,fac:o.fac,attr:structuredClone(o.attr),attrPts:o.attrPts,sk:structuredClone(o.sk),skPts:o.skPts,stage:o.stage,map:Z0.key,mapLevel:AA(o.stage).lo}),
         state:()=>({x:v.x,y:v.y,map:Z0.key,pve:onlineWorld.state,status:document.getElementById("multiplayerStatus")?.textContent,remote:gameMultiplayer.entities().filter(e=>e.remotePlayer).map(e=>e.remotePlayer),draws:window.__onlineDraws,
           target:Y.target,blocked:i0.blocked,hidden:document.hidden,modal:document.getElementById('modal').className}),
+        mapPresentation:()=>({map:Z0.key,bg:l.bgImg?.src,ready:!!l.bgImg?.complete&&!!l.bgImg?.naturalWidth,scene:mapScene.hasMap()}),
+        battlefieldStart:()=>arenaSimulator.battlefield.start('song'),battlefieldExit:()=>arenaSimulator.battlefield.reset(),
         town:()=>nc(true),field:()=>en(AA(1)),travelReady:()=>!(l.tpCd>0),
         travel:id=>{const index=k0.findIndex(z=>z.id===id);if(index<0)throw Error('Unknown map');return On(index,'Travel test',false,true);},
         screen:(x,y)=>{const r=lA.getBoundingClientRect();return {x:r.left+(x-B0.x)*$8(),y:r.top+(y-B0.y)*$8()};},
@@ -142,9 +162,12 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
           const children=[...new Set([T[id]?.child,...F5(F2(l.P,T[id],25)).map(e=>e.sid)].flatMap(files))].filter(url=>!primary.has(url));
           for(const url of children)delete of[url];return children;
         },
+        cameraAway:()=>{rf=()=>[-10000,-10000];},
         follow:id=>{rf=()=>{const p=onlineWorld.state?.actors.find(a=>a.id===id)||v;return [E(p.x-M0.w/2,0,Math.max(0,O0.w-M0.w)),E(p.y-M0.h*.55,0,Math.max(0,O0.h-M0.h))];};},
         farm:()=>onlineWorld.farm(true),
         stop:()=>onlineWorld.farm(false),
+        deathWallet:async()=>{await OnlineProgression.run({kind:'gm',action:'gold'});return o.gold;},initialPosition:{x:v.x,y:v.y,map:Z0.key},
+        moveProbe:()=>{const [x,y]=X0(v.x+90,v.y+35);onlineWorld.move(x,y);return {x,y};},
         controls:()=>({ctrl:o.ctrl,main:o.main,locked:o.mainLock,effective:l.P.main?.id,slots:o.slots}),
         fxState:()=>({self:onlineWorld.state?.actors.find(a=>a.id===onlineWorld.state.self),draws:window.__skillDraws,attempts:window.__skillAttempts,town:l.town,zone:l.zoneShown,fx:l.fx.map(e=>({kind:e.k,id:e.combat?.skill?.id,age:e.age,life:e.life,frame:e.t,sprite:e.s?.f||e.m?.fly?.f,zone:e.combat?.zone}))}),
         stats:()=>({stats:j0(),profile:structuredClone(o)}),
@@ -183,8 +206,9 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
         preparedSkill=true;
         // Import one learned level-zero-requirement attack with the original save,
         // so Rust's canonical profile and the browser have the same skill catalog.
-        await page.evaluate(value=>window.__onlineTest.prepareSkill(value),advanced);
+        if(process.env.PROGRESSION_TEST!=='1')await page.evaluate(value=>window.__onlineTest.prepareSkill(value),advanced);
       }
+      if(process.env.LIFECYCLE_TEST==='1')await new Promise(resolve=>setTimeout(resolve,1500));
       await route.continue();
     });
     await page.goto(base);
@@ -205,12 +229,219 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
       assert.ok(server,'same learned skill eligibility '+skill.id);
       assert.deepEqual(skill.parts,server.parts,'browser/server damage parts '+skill.id);
     }
-    return {page,context};
+    return {page,context,account:(await register.json()).user.id};
   }
-  const a=await player('online_a','Kiếm Khách'),b=await player('online_b','Nữ Hiệp');
+  const a=await player('online_a','Kiếm Khách'),b=await player('online_b','Nữ Hiệp',process.env.PARTY_TEST==='1'?'cuiyan':false);
   await a.page.waitForTimeout(1700);
   for(const {page} of [a,b]) await page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   assert.ok((await a.page.evaluate(()=>window.__onlineTest.state())).draws>0);
+  if(process.env.PRIMARY_SKILL_TEST==='1'){
+    const page=a.page;
+    await page.evaluate(()=>window.__onlineTest.primarySetup());
+    await page.locator('#pad .sk[data-i="1"]').click();
+    await page.waitForFunction(()=>{const c=window.__onlineTest.controls();return c.main===1055&&c.locked&&c.effective===1055;});
+    await page.evaluate(()=>window.__onlineTest.field());
+    await page.waitForFunction(()=>window.__onlineTest.state().pve?.map===140);
+    await page.evaluate(()=>window.__onlineTest.farm());
+    await page.waitForFunction(()=>{const s=window.__onlineTest.state().pve;return s.events.filter(e=>e.kind===1&&e.source===s.self&&e.skill===1055).length>=2;},null,{timeout:30000});
+    await page.evaluate(()=>window.__onlineTest.stop());
+    const selected=await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json();assert.equal(selected.profile.main,1055);assert.equal(selected.profile.mainLock,true);
+    assert.equal((await page.evaluate(()=>window.__onlineTest.controls())).main,1055);
+    await page.locator('#pad .sk[data-i="0"]').click();
+    await page.waitForFunction(()=>window.__onlineTest.controls().main===10);
+    await page.evaluate(()=>window.__onlineTest.skillDetails(1055));await page.locator('#skMain').click();
+    await page.waitForFunction(()=>window.__onlineTest.controls().main===1055);await page.locator('#mClose').click();
+    await page.reload();await page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    const restored=await page.evaluate(()=>window.__onlineTest.controls());assert.equal(restored.main,1055);assert.equal(restored.locked,true);assert.equal(restored.slots[1],1055);
+    await page.screenshot({path:path.join(root,'output/multiplayer/primary-skill-restored.png')});
+    assert.deepEqual(errors,[]);console.log('Primary skill: real F-slot and detail clicks, repeated level-150 casts, rewards and reload retain canonical main and slots.');return;
+  }
+  if(process.env.LIFECYCLE_TEST==='1'){
+    for(const {page}of[a,b])await page.evaluate(()=>window.__onlineTest.field());
+    await a.page.waitForFunction(()=>{const s=window.__onlineTest.state();return s.pve&&s.pve.map!==37&&s.pve.map===s.map;});
+    for(const {page}of[a,b]){
+      await page.waitForFunction(()=>window.__onlineTest.travelReady());await page.evaluate(()=>window.__onlineTest.travel(340));
+      try{await page.waitForFunction(()=>window.__onlineTest.state().pve?.map===340,{},{timeout:12000});}catch(error){console.error('Travel state',await page.evaluate(()=>window.__onlineTest.state()));throw error;}
+    }
+    const origin=await a.page.evaluate(()=>window.__onlineTest.state());
+    await a.page.evaluate(()=>window.__onlineTest.moveProbe());
+    await a.page.waitForFunction(({x,y})=>{const s=window.__onlineTest.state(),me=s.pve?.actors.find(a=>a.id===s.pve.self);return me&&Math.hypot(me.x-x,me.y-y)>20&&s.pve.movement.motion===2;},origin);
+    const saved=await a.page.evaluate(()=>{const s=window.__onlineTest.state().pve;return {map:s.map,...s.actors.find(a=>a.id===s.self)};});
+    await a.page.reload();await a.page.waitForFunction(()=>window.__onlineTest);
+    const preview=await a.page.evaluate(()=>({initial:window.__onlineTest.initialPosition,pve:window.__onlineTest.state().pve}));
+    assert.equal(preview.pve,null,'local preview appears before server session');assert.equal(preview.initial.map,saved.map);assert.ok(Math.hypot(preview.initial.x-saved.x,preview.initial.y-saved.y)<.2,'first frame restores local position');
+    await a.page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    const restored=await a.page.evaluate(()=>{const s=window.__onlineTest.state();return {map:s.pve.map,x:s.x,y:s.y};});
+    assert.equal(restored.map,saved.map);assert.ok(Math.hypot(restored.x-saved.x,restored.y-saved.y)<.2,'reload keeps exact server position');
+    const balance=await b.page.evaluate(()=>window.__onlineTest.deathWallet());
+    for(const [p,victim]of[[a,false],[b,true]]){
+      const savedProfile=await (await p.context.request.get(base+'/api/multiplayer/character?slot=0')).json();
+      const native=require('../definitions/catalog.cjs').character(savedProfile.profile);
+      native.support=null;native.regen=0;native.alignment=victim?1:0;
+      if(victim)native.hp=1;else for(const skill of native.skills){skill.parts=[10000,0,0,0,0];skill.cost=0;skill.cooldown=100;skill.range=1;}
+      const response=await fetch(`http://127.0.0.1:${control}/refresh`,{method:'POST',headers:{'content-type':'application/json','x-multiplayer-secret':secret},body:JSON.stringify({account:p.account,slot:0,revision:9999,nonce:'',profile:native})});assert.ok(response.ok);
+    }
+    await b.page.waitForFunction(()=>{const s=window.__onlineTest.state().pve;return s.actors.find(a=>a.id===s.self)?.maxHp===1;});
+    await a.page.locator('#mswBtn').click();await a.page.locator('[data-msw="slaughter"]').click();
+    const victim=await b.page.evaluate(()=>window.__onlineTest.state().pve.self);
+    await a.page.waitForFunction(id=>window.__onlineTest.state().remote.some(p=>p.id===id),victim);
+    await a.page.evaluate(id=>window.__onlineTest.follow(id),victim);await a.page.waitForTimeout(150);
+    const target=await a.page.evaluate(id=>{const p=window.__onlineTest.state().remote.find(p=>p.id===id);return window.__onlineTest.screen(p.x,p.y-22);},victim);
+    await a.page.mouse.click(target.x,target.y);
+    await b.page.waitForSelector('#onlineDeath');assert.ok((await b.page.locator('#onlineDeath').innerText()).includes('Kiếm Khách'));
+    await a.page.waitForFunction(id=>!window.__onlineTest.state().remote.some(p=>p.id===id),victim);
+    assert.equal(await b.page.locator('#onlineDeath .online-death-killer').innerText(),'Kiếm Khách');
+    await b.page.evaluate(()=>document.fonts.ready);
+    assert.ok(await b.page.locator('#onlineDeathTitle').evaluate(el=>getComputedStyle(el).fontFamily.includes('OnlineDeathCharm')));
+    const loss=Math.min(1000000,Math.floor(balance/5));
+    await a.page.waitForFunction(amount=>window.__onlineTest.state().pve.loot.filter(d=>d.gold).reduce((n,d)=>n+d.gold,0)===amount,loss);
+    await fs.mkdir(path.join(root,'output/multiplayer'),{recursive:true});
+    await b.page.screenshot({path:path.join(root,'output/multiplayer/death-recovery.png')});
+    await b.page.setViewportSize({width:390,height:844});
+    await b.page.screenshot({path:path.join(root,'output/multiplayer/death-recovery-mobile.png')});
+    const card=await b.page.locator('#onlineDeath .online-death-card').boundingBox();assert.ok(card.x>=0&&card.x+card.width<=390);
+    assert.ok(await b.page.getByRole('button',{name:'Về thành',exact:true}).evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),'chat must not cover the return button');
+    await b.page.setViewportSize({width:1280,height:850});
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/death-gold-piles.png')});
+    await b.page.reload();await b.page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});await b.page.waitForSelector('#onlineDeath');
+    assert.ok((await b.page.locator('#onlineDeath').innerText()).includes('Kiếm Khách'));
+    assert.equal((await (await b.context.request.get(base+'/api/multiplayer/character?slot=0')).json()).profile.gold,balance-loss);
+    await b.page.getByRole('button',{name:'Về thành',exact:true}).click();
+    await b.page.waitForFunction(()=>{const s=window.__onlineTest.state().pve;return s?.map===37&&s.actors.find(a=>a.id===s.self)?.hp>0;});
+    assert.equal(await b.page.locator('#onlineDeath').count(),0);
+    const pile=await a.page.evaluate(()=>window.__onlineTest.state().pve.loot.find(d=>d.gold));assert.ok(pile.mine);
+    const oldBalance=(await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json()).profile.gold||0;
+    const loot=await a.page.evaluate(d=>window.__onlineTest.screen(d.x,d.y),pile);await a.page.mouse.click(loot.x,loot.y);
+    await a.page.waitForFunction(id=>!window.__onlineTest.state().pve.loot.some(d=>d.id===id),pile.id);
+    await a.page.waitForFunction(async expected=>{const r=await fetch('/api/multiplayer/character?slot=0');return (await r.json()).profile.gold===expected;},oldBalance+pile.gold);
+    await b.page.reload();await b.page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await b.page.waitForFunction(()=>{const p=window.__onlineTest.mapPresentation();return p.map==='town'&&p.ready&&p.scene&&p.bg.includes('/37/assets/ground.jpg');});
+    await b.page.screenshot({path:path.join(root,'output/multiplayer/town-restored.png')});
+    await b.page.evaluate(()=>window.__onlineTest.battlefieldStart());
+    await b.page.waitForFunction(()=>{const p=window.__onlineTest.mapPresentation();return p.map===9003&&p.ready&&p.scene&&p.bg.includes('/9003/assets/ground.jpg');});
+    await b.page.screenshot({path:path.join(root,'output/multiplayer/tong-kim-restored.png')});
+    await b.page.evaluate(()=>window.__onlineTest.battlefieldExit());
+    await b.page.waitForFunction(()=>{const p=window.__onlineTest.mapPresentation();return p.map==='town'&&p.ready&&p.scene;});
+    assert.deepEqual(errors,[]);console.log('Lifecycle browser: exact map/position reload, named PvP death, 20% public silver piles, corpse reload, town button and real pickup passed.');return;
+  }
+  if(process.env.EQUIPMENT_TEST==='1'){
+    const page=a.page;
+    await page.evaluate(()=>window.__onlineTest.equipmentSetup());
+    await page.evaluate(()=>window.__onlineTest.equipmentOpen());
+    await page.locator('[data-trader-choice="slot"][data-value="5"]').click();
+    await page.locator('[data-trader-receive]').click();
+    await page.waitForFunction(()=>window.__onlineTest.equipmentState().inv.some(item=>item.d===5));
+    let saved=await page.evaluate(()=>window.__onlineTest.equipmentState());
+    await page.evaluate(uid=>window.__onlineTest.equip(uid),saved.inv.find(item=>item.d===5).uid);
+    assert.ok((await page.evaluate(()=>window.__onlineTest.equipmentState())).eq.boot,'boots are actually equipped');
+    await page.evaluate(()=>{window.__onlineTest.closeModal();window.__onlineTest.horseOpen();});
+    // Use the actual Mã Phu buy button and authenticated canonical response.
+    await page.locator('[data-horse-buy]').first().click();
+    await page.waitForFunction(()=>window.__onlineTest.equipmentState().inv.some(item=>item.d===10));
+    saved=await page.evaluate(()=>window.__onlineTest.equipmentState());
+    await page.evaluate(uid=>window.__onlineTest.equip(uid),saved.inv.find(item=>item.d===10).uid);
+    await page.evaluate(()=>window.__onlineTest.mount(true));
+    await page.waitForFunction(()=>{const s=window.__onlineTest.equipmentState();return s.mounted&&Math.abs(s.serverSpeed-s.localSpeed)<.01;});
+    const expected=await page.evaluate(()=>window.__onlineTest.equipmentState());
+    assert.ok(expected.serverSpeed>172.5,'horse increases physical movement speed');
+    await page.reload();await page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await page.waitForFunction(()=>{const s=window.__onlineTest.equipmentState();return s.serverSpeed>172.5&&s.mounted;});
+    const actual=await page.evaluate(()=>window.__onlineTest.equipmentState());
+    for(const key of ['eq','inv','uid','knb'])assert.deepEqual(actual[key],expected[key],key+' survives reload');
+    assert.ok(Math.abs(actual.serverSpeed-actual.localSpeed)<.01);
+    await page.screenshot({path:path.join(root,'output/multiplayer/equipment-reload.png')});
+    assert.deepEqual(errors,[]);console.log('Equipment browser: native NPC purchases, equip, mounted speed and canonical reload passed.',JSON.stringify(actual));return;
+  }
+  if(process.env.PROGRESSION_TEST==='1'){
+    const page=a.page;
+    // Reproduce the old split-brain save: legacy level 150, canonical level 1.
+    await page.evaluate(()=>window.__onlineTest.staleProgressionSave());
+    await page.reload();await page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await page.waitForFunction(()=>window.__onlineTest.state().pve?.actors.some(a=>a.id===window.__onlineTest.state().pve.self));
+    const repaired=await page.evaluate(()=>window.__onlineTest.progression());
+    assert.equal(repaired.lvl,1);assert.ok(repaired.mapLevel<=1,'canonical level is applied before selecting a map');
+    await page.locator('#gm-toggle').click();
+    await page.locator('[data-gm="level150"]').click();
+    await page.waitForFunction(()=>window.__onlineTest.progression().lvl===150);
+    await page.locator('#u20menu [data-u="skill"]').click();
+    await page.locator('#bJoin').click();await page.locator('[data-j="shaolin"]').click();
+    await page.waitForFunction(()=>window.__onlineTest.progression().fac==='shaolin');
+    await page.locator('#gm-toggle').click();
+    await page.locator('#u20menu [data-u="char"]').click();
+    await page.locator('#t-char .plus[data-a="vit"]').click();
+    await page.locator('#apN').fill('12');await page.locator('#apOk').click();
+    await page.waitForFunction(()=>window.__onlineTest.progression().attr.vit===12);
+    await page.locator('#u20menu [data-u="skill"]').click();
+    await page.locator('#t-skill .plus[data-id="10"]').click();
+    await page.waitForFunction(()=>window.__onlineTest.progression().sk[10]===2);
+    // Same-level allocation must update Rust immediately, not only after a level-up.
+    await page.waitForFunction(()=>{const s=window.__onlineTest.state().pve,profile=window.__onlineTest.stats().stats;return Math.abs(s.actors.find(a=>a.id===s.self).maxHp-profile.life)<.1;});
+    await page.locator('#gm-toggle').click();
+    await page.locator('[data-gm="learn90"]').click();await page.waitForFunction(()=>window.__onlineTest.progression().sk[319]>=1);
+    await page.locator('[data-gm="learn150"]').click();await page.waitForFunction(()=>window.__onlineTest.progression().sk[1056]>=1);
+    await page.locator('[data-gm="xp"]').click();await page.waitForFunction(()=>window.__onlineTest.progression().xp>0);
+    const expected=await page.evaluate(()=>window.__onlineTest.progression());
+    await page.reload();
+    await page.waitForSelector('#multiplayerStatus[data-online="true"]',{timeout:30000});
+    await page.waitForFunction(()=>window.__onlineTest.state().pve?.actors.some(a=>a.id===window.__onlineTest.state().pve.self));
+    const actual=await page.evaluate(()=>window.__onlineTest.progression());
+    for(const key of ['lvl','xp','fac','attr','attrPts','sk','skPts'])assert.deepEqual(actual[key],expected[key],'canonical '+key+' survives reload');
+    assert.ok(actual.mapLevel<=actual.lvl,'map selection uses canonical level on startup');
+    await page.screenshot({path:path.join(root,'output/multiplayer/progression-reload.png')});
+    assert.deepEqual(errors,[]);console.log('Progression browser: real GM, faction join, potential and skill buttons, same-level Rust refresh and reload passed.',JSON.stringify(actual));
+    return;
+  }
+  if(process.env.PARTY_TEST==='1'){
+    const pages=[a.page,b.page];
+    const initial=await a.page.evaluate(()=>window.__onlineTest.state().pve);
+    assert.notEqual(initial.actors[0].alignment,initial.actors[1].alignment);
+    for(const page of pages)await page.waitForSelector('#online-party-toggle');
+    const positions=await a.page.evaluate(()=>({party:document.getElementById('online-party-toggle').getBoundingClientRect().toJSON(),prior:document.getElementById('u20tt').getBoundingClientRect().toJSON()}));
+    assert.ok(positions.party.top>=positions.prior.bottom,'party icon sits below the assistant icon');
+    await a.page.locator('#online-party-toggle').click();
+    await a.page.getByRole('button',{name:'Nữ Hiệp',exact:true}).click();
+    await a.page.locator('#online-party-send').click();
+    await b.page.locator('#online-party-decline').click();
+    await b.page.waitForFunction(()=>!window.__onlineTest.state().pve.party.invitations.length);
+    assert.equal((await a.page.evaluate(()=>window.__onlineTest.state().pve.party.members)).length,0);
+    await a.page.locator('#online-party-send').click();
+    await b.page.locator('#online-party-accept').click();
+    for(const page of pages)await page.waitForFunction(()=>window.__onlineTest.state().pve.party.members.length===2);
+    const joined=await a.page.evaluate(()=>window.__onlineTest.state().pve);
+    assert.equal(joined.party.leader,joined.self);assert.equal(joined.actors[0].alignment,joined.actors[1].alignment);
+    await a.page.getByRole('button',{name:'Đóng tổ đội',exact:true}).click();
+    await b.page.locator('#mswBtn').click();await b.page.locator('[data-msw="slaughter"]').click();
+    for(const page of pages)await page.waitForFunction(()=>Object.values(window.__onlineHealth).includes('#ff79b0'));
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/party-pink-hp.png')});
+    await a.page.locator('#online-party-toggle').click();
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/party-dialog.png')});
+    await b.page.locator('#online-party-toggle').click();await b.page.locator('#online-party-leave').click();
+    for(const page of pages)await page.waitForFunction(()=>window.__onlineTest.state().pve.party.members.length===0);
+    await a.page.waitForFunction(()=>window.__onlineHealth['Nữ Hiệp']==='#ef4242');
+    await b.page.waitForFunction(()=>window.__onlineColors['Nữ Hiệp']==='#7ee07e');
+    // Reproduce a camera pan away from actors while staying in the same map.
+    await a.page.evaluate(()=>window.__onlineTest.cameraAway());
+    await a.page.waitForFunction(()=>!document.querySelector('#online-party-nearby [data-party-player]'));
+    await a.page.evaluate(()=>window.__onlineTest.follow(window.__onlineTest.state().pve.self));
+    await a.page.waitForSelector('#online-party-nearby [data-party-player]');
+    await a.page.getByRole('button',{name:'Đóng tổ đội',exact:true}).click();
+    await b.page.getByRole('button',{name:'Đóng tổ đội',exact:true}).click();
+    // Membership persists across maps and disconnect cleans it on the surviving client.
+    await a.page.locator('#online-party-toggle').click();
+    await a.page.getByRole('button',{name:'Nữ Hiệp',exact:true}).click();await a.page.locator('#online-party-send').click();
+    await b.page.locator('#online-party-accept').click();
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve.party.members.length===2);
+    await a.page.getByRole('button',{name:'Đóng tổ đội',exact:true}).click();
+    await b.page.evaluate(()=>window.__onlineTest.field());
+    await a.page.waitForFunction(()=>{const s=window.__onlineTest.state().pve;return s.party.members.some(m=>m.map!==s.map);});
+    await a.page.locator('#online-party-toggle').click();
+    await a.page.waitForFunction(()=>!document.querySelector('#online-party-nearby [data-party-player]'));
+    await b.context.close();
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve.party.members.length===0);
+    assert.deepEqual(errors,[]);console.log('Party browser: invite, decline, accept, roster, leader color, pink/red HP, leave, map travel and disconnect passed.');
+    return;
+  }
+
   await a.page.evaluate(()=>window.__onlineTest.faction('shaolin'));
   await b.page.waitForFunction(()=>window.__onlineColors['Kiếm Khách']==='#ffb347');
   const effects=await a.page.evaluate(()=>window.__onlineTest.support(true));

@@ -1,7 +1,7 @@
-# Multiplayer trong game — WebTransport + Rust, protocol v7
+# Multiplayer trong game — WebTransport + Rust, protocol v8
 
 Chạy `pnpm dev:online` để bật Node + Rust. `pnpm dev` vẫn chỉ bật Node.
-**Restart cả hai server và tải lại client sau khi nâng v6 → v7.**
+**Restart cả hai server và tải lại client sau khi nâng v7 → v8.**
 Demo tham khảo tại `src/{client,server}/multiplayer-demo/` giữ nguyên; commit `6d6a72f`.
 
 ## Phạm vi hiện có
@@ -12,12 +12,14 @@ Demo tham khảo tại `src/{client,server}/multiplayer-demo/` giữ nguyên; co
 | Di chuyển, đường đi, va chạm địa hình | Có | Rust; client dự đoán và nội suy hình ảnh |
 | Spawn quái dùng chung ID, HP, truy đuổi, về vị trí, hồi sinh | Có | Rust, mặc định 24 quái/map, hồi sinh sau 20 giây |
 | Chọn mục tiêu, đánh thường, chọn chiêu từ hotbar | Có, cơ chế combat cơ bản | Rust kiểm tra MP, hồi chiêu, khoảng cách, tầm nhìn |
-| Thời điểm phát đòn, đạn bay, sát thương và chí mạng | Có, công thức cơ bản | Rust; client chỉ vẽ sự kiện |
+| Thời điểm phát đòn, đạn bay, sát thương và chí mạng | Có, công thức cơ bản | Rust duyệt CAST; client báo va chạm sau frame FX; Rust xác minh rồi cập nhật HP |
 | Animation skill, số tia, hướng và FX va chạm | Pipeline gốc của client | CAST mang cấp chiêu và tọa độ lúc phát; kết quả combat vẫn do Rust |
 | Chiêu xuyên dạng đường thẳng có độ rộng | Có | Rust quét từng đoạn bay, trúng từng thân quái; giữ hướng lúc tung đòn |
 | Băng làm chậm, độc theo tick, choáng trên quái | Có | Rust; các client cùng nhận thời gian còn lại |
 | Luyện công tự động | Có | Nút **Auto** / phím **F** hoặc **Luyện công online**; Rust dùng chiêu chính đã chọn, tìm quái và nhặt tiền thuộc nhân vật |
-| HP/MP người thật, quái đánh người, chết/hồi sinh | Có | Rust; hồi sinh sau 6 giây |
+| HP/MP người thật, quái đánh người, chết/hồi sinh | Có | Giữ trạng thái chết; nút “Về thành” hồi sinh tại Biện Kinh, hiển thị người/quái đã hạ gục |
+| Vị trí khi reload/reconnect | Có | Checkpoint tọa độ server theo account + slot; khôi phục bản đồ và tọa độ, không gửi lệnh vào lại cổng map khi kết nối |
+| Ngân lượng rơi khi nhân vật chết | Có | SQLite trừ 20%, tối đa 1.000.000 lượng/lần; tối đa 8 đống công khai, ai cũng nhặt được |
 | XP, lên cấp và ngân lượng | Có | Rust ghi grant → Node commit SQLite, retry cùng ID |
 | Tiền rơi, quyền nhặt và reconnect | Có | Quyền theo account + slot; mất sau 120 giây, tối đa 64 đống/map |
 | Trang bị rơi, affix, vật phẩm và giao dịch | Chưa | Cần port generator và inventory commands |
@@ -26,8 +28,12 @@ Demo tham khảo tại `src/{client,server}/multiplayer-demo/` giữ nguyên; co
 | Buff có lợi tự động/thủ công, bật/tắt aura | Có, áp lên bản thân | Rust kiểm tra cost/cooldown/thời hạn; cập nhật chỉ số và gửi trạng thái cho mọi client |
 | Curse, chia sẻ aura/buff cho đồng đội | Chưa | Không suy ra tác dụng cho party từ FX đang hiển thị |
 | Chuỗi chiêu, nhiều nhịp sát thương, hình học/trigger riêng từng skill | Chưa tương đương bản offline | Cần port và kiểm chứng từng họ chiêu |
-| Phân điểm, học chiêu, thay trang bị trong phiên online | Chưa | Profile online nhập một lần từ save; chưa có command cập nhật hợp lệ |
-| Dungeon, tower, Tống Kim/PvP, party và chia thưởng | Chưa | Không nằm trong bản PvE thế giới chung này |
+| Cộng/rút tiềm năng, học/nâng/rút chiêu, gợi ý và tẩy tủy | Có | Intent → kiểm tra công thức gốc → transaction SQLite → revision Rust/client |
+| Gia nhập/đổi môn phái | Có | Server kiểm tra cấp/hệ/giới tính/vật phẩm đổi phái, tạo đồ nhập môn |
+| GM cấp/EXP/điểm/chiêu | Có trong development | API kiểm tra môi trường phía server; không nhận profile tải lên |
+| Thay trang bị trong phiên online | Chưa | Chưa có inventory/equipment commands đầy đủ |
+| Đồ Sát và tổ đội | Có | Luật màu tên/đội ở Rust, không chia thưởng/buff đội tự động |
+| Dungeon, tower, Tống Kim và chia thưởng | Chưa | Không nằm trong bản PvE thế giới chung này |
 
 Đây là **bản PvE nền tảng để thử nghiệm**, chưa phải bản chuyển toàn bộ gameplay
 ngoại tuyến lên server. Stats đầu vào dùng công thức game hiện tại, nhưng công thức
@@ -36,6 +42,17 @@ Tuning XP/ngân lượng thử nghiệm nằm trong `src/shared/multiplayer/rule
 không mặc định bằng phần thưởng của game offline.
 
 ## Tổ chức dữ liệu để bảo trì
+
+Va chạm đòn đánh online theo thứ tự `CAST → client va chạm/hiện FX → CONTACT → Rust xác minh → HP/HIT`.
+Command `16` gửi target, skill và ID sự kiện CAST (16 bit thấp trong `x`, 16 bit cao trong `y`, giữ nguyên packet 25 byte).
+Client người xuất chiêu báo CONTACT; với PvP, client người trúng đòn cũng phải xác nhận đã hiện va chạm. Người xem không được xác nhận thay họ; server không nhận lượng sát thương từ client.
+Rust cần cả va chạm mô phỏng và CONTACT hợp lệ, xử lý một lần cho mỗi CAST/mục tiêu.
+Không có CONTACT thì không gây sát thương đòn đó; báo cáo hết hạn sau 100 tick và bị hủy phía client khi đổi map/reset.
+Sau cập nhật này phải restart Rust và tải lại client cùng phiên bản.
+
+Checkpoint online nằm cạnh reward journal: `database/multiplayer-outbox.state.json` (hoặc đường dẫn tương ứng với `PVE_OUTBOX_FILE`). Lưu mỗi giây và ngay khi ngắt kết nối, chết, hồi thành, tạo/nhặt ngân lượng. File này giữ cả trạng thái chết và các đống tiền qua restart; không xóa file khi triển khai.
+
+Mất ngân lượng dùng death grant có ID riêng: Node trừ tiền và lưu biên nhận trong cùng transaction SQLite, rồi `/deaths/ack` mới tạo đống ngân lượng. Retry không trừ lại; nhặt dùng ID ổn định của từng đống, cộng ngân lượng, không thay đổi KNB. Các đống hết hạn theo `lootSeconds` hiện có (120 giây).
 
 ```text
 src/shared/multiplayer/
@@ -110,7 +127,7 @@ bởi `targets` của đòn đơn. Quái nằm ngoài bề rộng hoặc ngoài 
 HIT vẫn dùng binary event cũ, damage/status/thưởng dùng cùng pipeline với đòn trực tiếp.
 Phần này chưa port toàn bộ fan/ring, splash phụ và nhịp hit đặc thù của mọi chiêu.
 
-## Binary v7
+## Binary v8
 
 Số nhiều byte đều little endian; tọa độ/HP/status là float32, ID/seq là u32.
 QUIC không dùng JSON. HTTP bootstrap/control và đồng bộ profile thưa dùng JSON.
@@ -125,7 +142,7 @@ khi thay đổi, không tải lại toàn bộ inventory mỗi lần polling.
 | SNAPSHOT (4) | Server datagram, 20 Hz | 16 + 26 × người; 32 người = 848 byte |
 | ROSTER (5) | Server uni stream khi đổi | Identity/appearance; tối đa 32 người/map |
 | COMMAND (16) | Client uni stream có thứ tự | 25 byte, giới hạn tốc độ; MOVE được gộp tối đa 10 Hz |
-| WORLD (17) | Server uni stream, 10 Hz | Header 43 + actors × 55 + monsters × 48 + loot × 17 + events (23 byte; HIT 24 byte; CAST 47 byte) + count u16 + support × 15 |
+| WORLD (17) | Server uni stream, 10 Hz | Header 43 + actors × 55 + monsters × 48 + loot × 17 + events (23 byte; HIT 24 byte; CAST 47 byte) + count u16 + support × 15 + party trailer |
 
 COMMAND: version/opcode u8, seq u32, kind u8, map u32, target u32,
 skill u16, x/y f32. Kind: JOIN=1, MOVE=2, TARGET=3, CAST=4, AUTO=5, PICKUP=6, POTION=7, SUPPORT=8, SUPPORT_AUTO=9, SLAUGHTER=10, PLAYER_TARGET=11.
@@ -171,8 +188,9 @@ Node có bảng `multiplayer_characters` theo account + slot và `multiplayer_re
 với grant ID duy nhất. Lần đầu online sao chép nhân vật đã lưu; các lần sau lấy profile
 online này, không nhận HP/damage/XP/gold từ lệnh game hay ghi đè bằng localStorage.
 Việc nhập save cũ chưa xác minh lịch sử của trang bị/chỉ số; chưa đủ để coi là nền
-kinh tế production chống gian lận hoàn chỉnh. Chưa có đường cập nhật trang bị/điểm/chiêu
-online hợp lệ, nên dùng tài khoản test hoặc database riêng cho giai đoạn này.
+kinh tế production chống gian lận hoàn chỉnh. Các thay đổi tiến triển đã đi qua API intent
+hợp lệ; giao dịch/trang bị tổng quát vẫn chưa được port đầy đủ. Dùng tài khoản test hoặc
+database riêng cho giai đoạn này.
 
 Journal mặc định `database/multiplayer-outbox.jsonl`. `pnpm dev:online` đặt journal
 cạnh `DB_PATH` qua `PVE_OUTBOX_FILE` để các database thử nghiệm không trộn thưởng.
@@ -211,7 +229,7 @@ MULTIPLAYER_WT_CONTROL_URL=http://127.0.0.1:3104 pnpm dev
 
 HTTP Rust mặc định 3104, QUIC UDP 4434. Các biến: `WT_BIND`, `WT_HTTP_BIND`,
 `WT_PUBLIC_URL`, `WT_CERT_HOST`, `WT_ORIGINS`, `MULTIPLAYER_SECRET`, `PVE_OUTBOX_FILE`.
-Vé HMAC v1 độc lập với wire v7: expires u32 + accountUUID 16 byte + nonce 16 byte,
+Vé HMAC v1 độc lập với wire v8: expires u32 + accountUUID 16 byte + nonce 16 byte,
 HMAC-SHA256; toàn vé 69 byte gồm version. Hạn 30 giây, chỉ dùng một lần, ràng buộc
 admission account/slot. Control catalog/admit/refresh/rewards yêu cầu secret nội bộ.
 Cert P-256 tự ký 14 ngày, pin SHA-256 do Node cung cấp; cần restart Rust trước khi hết hạn.
@@ -319,8 +337,10 @@ HP/MP tối đa; DOT độc không phát sinh thêm hút.
 Thuốc dùng số lượng đã lưu trong hồ sơ online, cấp tối thiểu và lượng hồi từ
 catalog game. Nút HP/MP và tự bơm theo ngưỡng đều dùng cùng lệnh; thuốc hồi cả
 hai khóa cả hai cooldown. Không trừ thuốc khi đầy, chết, sai map, hết thuốc
-hoặc đang cooldown. Mua thuốc online chưa được port; không dùng ngân lượng
-hoặc stock gửi từ localStorage làm nguồn tin cậy.
+hoặc đang cooldown. Khi túi hết thuốc, phím 1/2 gửi intent `potionBuy` để Node
+kiểm tra cấp, giá và ngân lượng, commit một bình rồi cập nhật stock tới Rust trước
+lệnh dùng. Tự mua tuân theo tùy chọn và giới hạn 20% ngân lượng; không dùng giá,
+ngân lượng hoặc stock gửi từ localStorage làm nguồn tin cậy.
 
 Debit ghi journal trước hồi phục; `onlinePotionSpent[kind][tier]` là bộ đếm
 tích lũy để xử lý retry, delivery đảo thứ tự và reconnect trước ACK mà không
@@ -388,3 +408,51 @@ coldPower/hurt/poison f32). COMMAND kind 10 dùng target=0/1 tắt/bật Đồ s
 Đây là PvP nền tảng dùng mức balance hiện tại của Tống Kim; không mặc định đã
 port toàn bộ né/tránh, curse, chuỗi chiêu và hiệu ứng đặc thù của simulator.
 Log debug `pvp-hit` có scale, damage sau kháng/khiên, HP/MP trước/sau và phản đòn.
+
+
+## Tổ đội online — protocol v8
+
+Nút tổ đội nằm dưới Trợ Thủ. Dialog dùng khung `war-dialog` sẵn có, cột trái chỉ liệt kê
+người chơi trong camera hiện tại, cột phải cập nhật đội viên theo Rust. Mời/đồng ý/từ chối/rời
+đội dùng command 12–15; đội trưởng quyết định màu tên chung. Khi bật cừu sát, HP cùng màu tên
+hiển thị hồng, khác màu tên hiển thị đỏ. Luật miễn sát thương kiểm tra lại cả khi đạn chạm và
+khi độc tick. Xem [module tổ đội](../party/README.md) để biết layout binary và vòng đời đội.
+Client và Rust cần cập nhật cùng protocol v8.
+
+
+## Tiến triển nhân vật online
+
+- `definitions/progression.cjs`: reducer intent, dùng điều kiện/công thức gốc của game.
+- `persistence/characters.ts`: command ID/hash chống replay, transaction profile + revision,
+  bảng `multiplayer_profile_updates` giữ bản cập nhật chưa chuyển thành công tới Rust.
+- `domain/progression.rs`: nhận revision mới, giữ tỷ lệ HP/MP và timer buff, lọc buff/chiêu
+  đã bỏ, cập nhật màu tổ đội khi đổi phái; revision cũ không ghi đè revision mới.
+- `state/progression.js`: tuần tự hóa thao tác, retry cùng ID, không sửa profile trước ACK.
+- `bootstrap.js`: tải các profile online đã tồn tại trước khi chạy game/chọn map.
+- `shared/multiplayer/progression-fields.json`: danh sách trường tiến triển dùng chung.
+
+`POST /api/multiplayer/progression` nhận `{id,slot,action}` qua session cookie. Action gồm
+`potential`, `skill`, `unlearn`, `join`, `changeFaction`, `potentialRoute`, `skillRoute`,
+`autoPotential`, `autoSkill`, `equipmentPotential`, `bestPotential`, `reset`, `gm`,
+`mainSkill`, `skillSlot`, `potionBuy`, `equipmentTrader`, `shopBuy`, `horseBuy`,
+`equip`, `unequip`, `mount`.
+Client không gửi damage/HP/profile hoặc tự cấp EXP. EXP đánh quái vẫn đi qua reward journal.
+GM chỉ được server chấp nhận khi `development=true`; retry không cấp điểm hai lần.
+HTTP dùng JSON cho thao tác nhân vật thưa; combat/di chuyển vẫn binary WebTransport v8.
+
+Chiêu chính và F1–F4 là các lựa chọn riêng: `mainSkill` lưu `main/mainLock`,
+`skillSlot` chỉ đổi một ô và hoán đổi ô cũ nếu cần. Đồng bộ thưởng/thuốc và reload
+giữ nguyên lựa chọn canonical, tránh đổi về chiêu cũ sau lần đánh đầu.
+
+Kiểm thử trình duyệt trong `webtransport/browser.test.cjs` có các nhánh độc lập:
+`PRIMARY_SKILL_TEST=1` kiểm tra bấm chọn chiêu, đánh liên tiếp và reload;
+`LIFECYCLE_TEST=1` kiểm tra cache vị trí trước kết nối, chết PvP, tiền rơi, hồi thành
+và nền Biện Kinh/Tống Kim. Mỗi nhánh dùng tài khoản, SQLite và server tạm riêng;
+cần build Rust và client trước khi chạy, đặt `PLAYWRIGHT_MODULE` nếu Playwright
+được cài ngoài repository.
+
+Ví dụ: client hiển thị GM cấp 150 chỉ sau khi SQLite commit và Rust nhận revision mới.
+Khi reload, level/phái/điểm/chiêu được nạp trước logic chọn bãi, tránh cấp 1 ở map cấp cao.
+Không tự nhập lại các chỉnh sửa legacy đã bị ghi đè trước bản sửa này.
+
+Vị trí hiển thị được lưu tại client theo tài khoản và ô nhân vật (`__volam_position_v1:*`), mỗi 250 ms và khi rời trang. Client khôi phục bản đồ, tọa độ trước khung hình đầu tiên; session gửi vị trí này lên Rust sau đó. Rust chỉ chấp nhận vị trí hợp lệ gần checkpoint cùng map và vòng đời, không phục hồi HP hay bỏ qua trạng thái chết. Biên nhận KNB cũ giữ đúng loại tiền khi retry; các lần chết mới chỉ trừ ngân lượng.

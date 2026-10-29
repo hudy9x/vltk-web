@@ -282,7 +282,10 @@ Xem [hướng dẫn demo và kiểm thử](src/server/multiplayer-demo/README.md
 
 Demo tham khảo đã được lưu ở commit `6d6a72f`. Chạy `pnpm dev:online` để bật cả
 Node và Rust; `Ctrl+C` dừng cả hai. `pnpm dev` vẫn chỉ bật Node. Sau khi nâng giao
-thức, restart cả hai và tải lại client: bản này dùng **binary protocol v7**.
+thức, restart cả hai và tải lại client: bản này dùng **binary protocol v8**.
+Tổ đội có nút dưới Trợ Thủ: mời người trong tầm nhìn, đồng ý/rời đội và màu tên
+chung theo đội trưởng. Khi bật cừu sát, HP cùng màu tên là hồng, khác màu là đỏ.
+Xem [module tổ đội](src/client/multiplayer/party/README.md).
 
 Hai account cùng map thấy người thật, quái và HP dùng chung. Rust xử lý đường đi,
 va chạm, AI/respawn, combat cơ bản, MP/hồi chiêu, băng/độc/choáng, luyện công,
@@ -296,7 +299,7 @@ Code tách `src/shared/multiplayer/` (rules), `src/server/multiplayer/{definitio
 và `src/client/multiplayer/state/`; transport riêng trong `webtransport/` hai phía.
 Buff có lợi tự động, aura bản thân, thuốc HP/MP và hút tài nguyên đã do Rust xử lý.
 Trang bị rơi/affix, inventory commands, curse/party và cơ chế riêng của từng skill
-chưa chuyển đầy đủ lên Rust. Profile online nhập một lần từ save, nên dùng account
+chưa chuyển đầy đủ lên Rust. Profile online nhập một lần từ save; cộng điểm/học chiêu/gia nhập phái và GM dev được lưu qua API có kiểm tra. Nên dùng account
 hoặc `DB_PATH` thử nghiệm riêng khi kiểm tra giai đoạn này.
 
 Xem [bảng phạm vi, kiến trúc dữ liệu, binary và cách test](src/client/multiplayer/webtransport/README.md)

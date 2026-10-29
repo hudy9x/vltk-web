@@ -34,7 +34,7 @@ Rollback: bỏ `MULTIPLAYER_WT_CONTROL_URL` khỏi môi trường Node và resta
 API trả `enabled:false`, game ngừng tự kết nối; có thể stop Rust riêng.
 Chưa tự triển khai nhánh tích hợp này lên game production.
 
-## PvE protocol v7
+## PvE và tổ đội — protocol v8
 
 Node, Rust và client phải nâng cùng phiên bản. Unit dùng `StateDirectory` để journal
 thưởng tồn tại qua restart và ghi được dưới `DynamicUser`. Backup SQLite của Node
