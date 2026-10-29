@@ -2920,13 +2920,6 @@
       "symbols": []
     },
     {
-      "file": "status/index.ts",
-      "global": "statusInspector",
-      "symbols": [
-        "statusInspector"
-      ]
-    },
-    {
       "file": "multiplayer/webtransport/index.ts",
       "global": "GameWebTransport",
       "symbols": [
