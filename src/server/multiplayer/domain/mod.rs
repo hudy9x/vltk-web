@@ -12,6 +12,7 @@ mod combat;
 mod status;
 mod recovery;
 pub mod pvp;
+mod progression;
 pub mod support;
 #[path = "../persistence/outbox.rs"]
 pub mod outbox;
@@ -36,6 +37,7 @@ pub struct Rules {
     pub max_loot_per_map: usize,
 }
 pub struct Actor {
+    pub profile_revision: u64,
     pub account: String,
     pub slot: u8,
     pub profile: Profile,
@@ -285,6 +287,7 @@ impl Game {
         self.actors.insert(
             id,
             Actor {
+                profile_revision: 0,
                 account,
                 slot,
                 map: room.definition.id,

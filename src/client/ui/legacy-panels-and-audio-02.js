@@ -173,6 +173,7 @@ var R8 = function s(A) {
       const d = m("#skMain");
       (d &&
         (d.onclick = () => {
+          if(typeof OnlineProgression!=="undefined"&&OnlineProgression.dispatch({kind:'mainSkill',skill:n.id}))return;
           ((o.main = n.id),
             (o.mainLock = !0),
             (l.dirty = !0),
@@ -279,11 +280,13 @@ var Zn = function s() {
   const t = m("#bAutoMain");
   t &&
     (t.onclick = () => {
+      if(typeof OnlineProgression!=="undefined"&&OnlineProgression.dispatch({kind:'mainSkill',skill:null}))return;
       ((o.mainLock = !1), (l.dirty = !0), D0(), s());
     });
   const e = m("#bBasic");
   (e &&
     (e.onclick = (a) => {
+      if(typeof OnlineProgression!=="undefined"&&OnlineProgression.enabled()){a.stopPropagation();OnlineProgression.dispatch({kind:'mainSkill',skill:o.mainLock&&o.main==='basic'?null:'basic'});return;}
       (a.stopPropagation(),
         o.mainLock && o.main === "basic"
           ? (o.mainLock = !1)
@@ -299,6 +302,7 @@ var Zn = function s() {
       (a) =>
         (a.onclick = () => {
           const i = T[a.dataset.id];
+          if(UA(i)&&o.sk[i.id]&&typeof OnlineProgression!=="undefined"&&OnlineProgression.dispatch({kind:'mainSkill',skill:i.id}))return;
           UA(i) && o.sk[i.id]
             ? ((o.main = i.id),
               (o.mainLock = !0),

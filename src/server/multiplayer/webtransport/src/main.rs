@@ -253,6 +253,7 @@ async fn main() -> Result<()> {
                         state.leave(id);
                         return Err(error);
                     }
+                    state.game.actors.get_mut(&id).unwrap().profile_revision = admission.revision;
                     Ok(id)
                 }
                 .await;

@@ -686,6 +686,7 @@ var Ka = function (A, n) {
     !!l.mounted === A || (l.rideCd || 0) > 0
       ? !1
       : ((l.mounted = A),
+        typeof OnlineProgression!=="undefined"&&OnlineProgression.dispatch({kind:"mount",enabled:A}),
         (l.rideCd = aP),
         (l.dirty = !0),
         O3(),

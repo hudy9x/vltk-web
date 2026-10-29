@@ -363,6 +363,7 @@ var ch = function (A) {
 };
 
 var Vv = function (A) {
+  if(typeof OnlineProgression!=="undefined"&&OnlineProgression.dispatch({kind:"shopBuy",shop:Nt,offer:Object.fromEntries(["g","d","k","lvl","s"].map(key=>[key,A[key]??null]))}))return;
   const n = io(A) * (A.g === 1 ? At : 1);
   if (o.gold < n) {
     k("Không đủ ngân lượng");

@@ -1,5 +1,7 @@
 // gameplay/shop-and-books — shared IIFE scope; order is defined in modules.json.
 var N7 = function (A) {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'changeFaction',faction:A})){return;}
+
   const n = I[A],
     t = I[o.fac];
   if (!n || n.novice || A === o.fac || !hn(n, o.sex) || N("misc", "ldp") < 1) return;

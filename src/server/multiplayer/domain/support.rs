@@ -201,8 +201,32 @@ pub(super) fn receive_skill_hit(a: &mut Actor, damage: f32, series: i8) -> (f32,
 }
 
 pub fn replace_base(actor: &mut Actor, profile: Profile) {
+    let hp=actor.hp/actor.profile.hp;
+    let mp=if actor.profile.mp>0.0{actor.mp/actor.profile.mp}else{1.0};
+    let old_auras=actor.support.auras.clone();
+    let old_catalog=actor.base_profile.support.clone();
+    let mut profile=profile;
+    // Command 9 settings belong to this session; XP refreshes must not re-enable them.
+    if let (Some(old),Some(next))=(old_catalog.as_ref(),profile.support.as_mut()){
+        for skill in &mut next.skills {
+            if let Some(previous)=old.skills.iter().find(|s|s.id==skill.id){skill.enabled=previous.enabled;}
+        }
+    }
     actor.base_profile = profile;
-    resolve(actor);
+    if let Some(catalog)=actor.base_profile.support.as_ref(){
+        actor.support.active.retain(|id,_|catalog.skills.iter().any(|s|s.id==*id&&!s.aura));
+        actor.support.cooldowns.retain(|id,_|catalog.skills.iter().any(|s|s.id==*id));
+        actor.support.auras=catalog.skills.iter().filter(|s|s.aura&&s.enabled&&
+            (old_auras.contains(&s.id)||!old_catalog.as_ref().is_some_and(|old|old.skills.iter().any(|o|o.id==s.id))))
+            .map(|s|s.id).collect();
+        resolve(actor);
+    }else{
+        let potions=std::mem::take(&mut actor.profile.potions);
+        actor.profile=actor.base_profile.clone();actor.profile.potions=potions;
+        actor.support=SupportState::default();
+        actor.hp=(hp*actor.profile.hp).clamp(0.0,actor.profile.hp);
+        actor.mp=(mp*actor.profile.mp).clamp(0.0,actor.profile.mp);
+    }
 }
 
 pub(super) fn initialize(actor: &mut Actor) {

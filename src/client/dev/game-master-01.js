@@ -85,6 +85,8 @@ var gameMaster = (function () {
 
   const amounts = { gold: 1_000_000_000_000, knb: 100_000, xp: 100_000_000, chest: 100, level150: 150, learn90: 1, learn120: 1, learn150: 1, max90: 1, potential: 3000, warMerit: 10000 };
   function grant(action) {
+    if(typeof OnlineProgression!=='undefined'&&OnlineProgression.enabled())
+      return OnlineProgression.run({kind:'gm',action}).then(()=> 'Đã áp dụng GM và lưu nhân vật online.');
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
     if (!(action in amounts)) throw new Error("Lệnh GM không hợp lệ.");
     if (!development && (action === "potential" || action === "chest"))
@@ -239,7 +241,7 @@ var gameMaster = (function () {
     if (event.target.id === "gm-show-range") showSkillRange = event.target.checked;
     if (event.target.id === "gm-show-damage") showDamageAreas = event.target.checked;
   };
-  panel.onclick = (event) => {
+  panel.onclick = async (event) => {
     if (event.target.closest("[data-gm-close]")) {
       panel.hidden = true;
       toggle.setAttribute("aria-expanded", "false");
@@ -250,10 +252,12 @@ var gameMaster = (function () {
     if (!button) return;
     const status = panel.querySelector("#gm-status");
     try {
-      status.textContent = grant(button.dataset.gm);
+      button.disabled=true;
+      status.textContent = 'Đang lưu nhân vật…';
+      status.textContent = await grant(button.dataset.gm);
     } catch (error) {
       status.textContent = error.message;
-    }
+    } finally {button.disabled=false;}
   };
   if (typeof developerTools === "undefined") document.body.appendChild(toggle);
   document.body.appendChild(panel);

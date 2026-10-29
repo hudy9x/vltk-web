@@ -62,6 +62,8 @@ var planPotentialRoute = function (routeId) {
 };
 
 var applyPotentialRoute = function (routeId) {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'potentialRoute',route:routeId})){return 0;}
+
   const plan = planPotentialRoute(routeId);
   if (!plan.route) return 0;
   for (const row of plan.rows) o.attr[row.key] += row.add;

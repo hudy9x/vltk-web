@@ -190,6 +190,7 @@ var $B = function () {
       .querySelectorAll("#t-skill .u2k[data-id]")
       .forEach((g) => (g.onclick = () => R8(+g.dataset.id))),
     (m("#u2basic").onclick = () => {
+      if(typeof OnlineProgression!=="undefined"&&OnlineProgression.dispatch({kind:'mainSkill',skill:o.mainLock&&o.main==='basic'?null:'basic'}))return;
       (o.mainLock && o.main === "basic"
         ? (o.mainLock = !1)
         : ((o.main = "basic"), (o.mainLock = !0)),
@@ -203,6 +204,7 @@ var $B = function () {
   const h = m("#bAutoMain");
   (h &&
     (h.onclick = () => {
+      if(typeof OnlineProgression!=="undefined"&&OnlineProgression.dispatch({kind:'mainSkill',skill:null}))return;
       ((o.mainLock = !1), (l.dirty = !0), D0(), Zn());
     }),
     (m("#bSugSk").onclick = D2),

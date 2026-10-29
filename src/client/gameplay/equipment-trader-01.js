@@ -124,6 +124,7 @@ var equipmentTrader = (function () {
     return items;
   }
   function trade(selection) {
+    if(typeof OnlineProgression!=="undefined"&&OnlineProgression.enabled()){const count=templatesFor(selection).length;return OnlineProgression.run({kind:"equipmentTrader",operation:"item",selection:copy(selection)}).then(saved=>saved.profile.inv.slice(-count));}
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
     return receiveItems(templatesFor(selection), template => makeItem(template, selection, Math.random));
   }
@@ -169,11 +170,13 @@ var equipmentTrader = (function () {
     return compatibleSelections(selection).map(entry => ({ slot: entry.slot, item: preview(entry.selection)[0] }));
   }
   function tradeCompatible(selection) {
+    if(typeof OnlineProgression!=="undefined"&&OnlineProgression.enabled())return OnlineProgression.run({kind:"equipmentTrader",operation:"compatible",selection:copy(selection)}).then(saved=>saved.profile.inv.slice(-10));
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
     const entries = compatibleSelections(selection);
     return receiveItems(entries, entry => makeItem(blueSelection(entry.selection).template, entry.selection, Math.random));
   }
   function grantRings() {
+    if(typeof OnlineProgression!=="undefined"&&OnlineProgression.enabled())return OnlineProgression.run({kind:"equipmentTrader",operation:"rings"}).then(saved=>saved.profile.inv.slice(-2));
     const template = S.sets.gold.find(item => item.n === "Càn Khôn Giới Chỉ");
     if (!template) throw new Error("Không tìm thấy Càn Khôn Giới Chỉ trong dữ liệu game.");
     return receiveItems([template, template], item => makeItem(item, { kind: "gold" }, Math.random));
@@ -235,7 +238,7 @@ var equipmentTrader = (function () {
           else if (field) selection[field] = ["sex", "series", "level"].includes(field) ? +event.target.value : event.target.value;
           render();
         };
-        root.onclick = event => {
+        root.onclick = async event => {
           const button = event.target.closest("button");
           if (!button) return;
           if (button.dataset.traderChoice) {
@@ -252,15 +255,15 @@ var equipmentTrader = (function () {
           else if (button.dataset.traderKind) { selection.kind = button.dataset.traderKind; render(); }
           else if (button.dataset.traderInspect !== undefined) root.querySelector(".trader-details").innerHTML = details(items[+button.dataset.traderInspect]);
           else if (button.hasAttribute("data-trader-compatible")) {
-            try { const received = tradeCompatible(selection); render(`Đã nhận đủ ${received.length} món xanh tương thích ngũ hành vào Hành trang.`); }
+            try { const received = await tradeCompatible(selection); render(`Đã nhận đủ ${received.length} món xanh tương thích ngũ hành vào Hành trang.`); }
             catch (reason) { render(reason.message); }
           }
           else if (button.hasAttribute("data-trader-rings")) {
-            try { grantRings(); render("Đã nhận 2 nhẫn Càn Khôn Giới Chỉ vào Hành trang."); }
+            try { await grantRings(); render("Đã nhận 2 nhẫn Càn Khôn Giới Chỉ vào Hành trang."); }
             catch (reason) { render(reason.message); }
           }
           else if (button.hasAttribute("data-trader-receive")) {
-            try { const received = trade(selection); render(`Đã nhận ${received.length} món vào Hành trang.`); }
+            try { const received = await trade(selection); render(`Đã nhận ${received.length} món vào Hành trang.`); }
             catch (reason) { render(reason.message); }
           }
         };

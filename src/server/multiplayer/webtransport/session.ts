@@ -2,6 +2,7 @@ import { createHmac, randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import { createCharacters } from '../persistence/characters.ts';
+import progressionFields from '../../../shared/multiplayer/progression-fields.json' with { type: 'json' };
 import { parseJsonBody, sendJson } from '../../http.ts';
 
 /** Short-lived, binary HMAC ticket. The account ID always comes from the cookie session. */
@@ -25,6 +26,7 @@ export function registerMultiplayerWebTransport(
   app: FastifyInstance,
   requireUser: (request: FastifyRequest) => Record<string, unknown>,
   db?: DatabaseSync,
+  development = false,
 ): void {
   const characters = db ? createCharacters(db) : undefined;
   let polling: Promise<void> | undefined;
@@ -43,28 +45,25 @@ export function registerMultiplayerWebTransport(
       throw Object.assign(new Error('Máy chủ thế giới chưa sẵn sàng.'), { status: 503 });
     return response.json();
   }
+  async function refreshProfiles(selected?:{account:string;slot:number}){
+    if(!characters)return;
+    for(const row of selected?[selected]:characters.pendingProfiles()){
+      const account=String(row.account),slot=Number(row.slot),saved=characters.read(account,slot);
+      await controlCall('/refresh',{nonce:'',account,slot,revision:saved.revision,profile:characters.character(saved.profile)});
+      characters.ackProfile(account,slot,saved.revision);
+    }
+  }
   const timer = setInterval(() => {
     if (polling || !characters || !process.env.MULTIPLAYER_WT_CONTROL_URL) return;
     polling = (async () => {
       try {
         const grants = await controlCall('/rewards');
         const ids: string[] = [];
-        const refresh = new Set<string>();
         for (const grant of grants) {
           characters.apply(grant);
           ids.push(grant.id);
-          refresh.add(grant.account + ':' + grant.slot);
         }
-        for (const key of refresh) {
-          const [account, slot] = key.split(':');
-          const saved = characters.read(account, Number(slot));
-          await controlCall('/refresh', {
-            nonce: '',
-            account,
-            slot: Number(slot),
-            profile: characters.character(saved.profile),
-          });
-        }
+        await refreshProfiles();
         if (ids.length) await controlCall('/rewards/ack', ids);
       } catch (error) {
         if (!stopped.signal.aborted)
@@ -84,6 +83,9 @@ export function registerMultiplayerWebTransport(
     const user = requireUser(request);
     const slot = Number((request.query as { slot?: string }).slot);
     if (!characters) return sendJson(reply, 503, { error: 'Online storage unavailable' });
+    if(!Number.isInteger(slot)||slot<0||slot>2)return sendJson(reply,400,{error:'Ô nhân vật không hợp lệ.'});
+    const onlyExisting=(request.query as {existing?:string}).existing==='1';
+    if(onlyExisting&&!characters.exists(String(user.id),slot))return sendJson(reply,200,{exists:false});
     const previous = Number((request.query as { revision?: string }).revision);
     if (
       Number.isInteger(slot) &&
@@ -98,10 +100,21 @@ export function registerMultiplayerWebTransport(
     const profile =
       Number.isInteger(previous) && previous >= 0
         ? Object.fromEntries(
-            ['lvl', 'xp', 'gold', 'attrPts', 'skPts', 'potStock', 'potUsed', 'onlinePotionSpent'].map((key) => [key, saved.profile[key]]),
+            progressionFields.map((key) => [key, saved.profile[key]]),
           )
         : saved.profile;
-    return sendJson(reply, 200, { revision: saved.revision, profile });
+    return sendJson(reply, 200, { revision: saved.revision, profile, full:!(Number.isInteger(previous)&&previous>=0) });
+  });
+  app.post('/api/multiplayer/progression',async(request,reply)=>{
+    const user=requireUser(request),body=parseJsonBody(request.body) as {slot?:unknown;id?:unknown;action?:unknown};
+    if(!characters)return sendJson(reply,503,{error:'Online storage unavailable'});
+    if(!body||typeof body.slot!=='number'||!Number.isInteger(body.slot)||body.slot<0||body.slot>2||typeof body.id!=='string')
+      return sendJson(reply,400,{error:'Ô nhân vật hoặc thao tác không hợp lệ.'});
+    const action=body.action as {kind?:string}|undefined;
+    if(action?.kind==='gm'&&!development)return sendJson(reply,403,{error:'GM chỉ dùng trong development.'});
+    const saved=characters.mutate(String(user.id),body.slot,body.id,body.action,development);
+    if(process.env.MULTIPLAYER_WT_CONTROL_URL)await refreshProfiles({account:String(user.id),slot:body.slot});
+    return sendJson(reply,200,{...saved,full:true});
   });
   app.post('/api/multiplayer/webtransport/session', async (request, reply) => {
     const user = requireUser(request);
@@ -129,6 +142,7 @@ export function registerMultiplayerWebTransport(
         nonce: ticket.subarray(21, 37).toString('hex'),
         account: String(user.id),
         slot,
+        revision:saved.revision,
         profile: characters.character(saved.profile),
       });
     }

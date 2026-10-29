@@ -103,6 +103,7 @@ function createRuntime() {
   globals.S = globals.JX;
   vm.runInContext(compileTypeScriptEntry('maps/index.ts', 'MapsEngine').code, context);
   vm.runInContext(compileTypeScriptEntry('combat/index.ts', 'CombatEngine').code, context);
+  vm.runInContext(compileTypeScriptEntry('config/potential-allocation.ts', 'PotentialAllocation').code, context);
   // Follow the actual client manifest, including the standard-table reset before
   // skill-150 synergies. A hand-maintained second order can silently change stats.
   const modules=JSON.parse(fs.readFileSync(path.join(root,'src/client/modules.json'))).modules;
@@ -211,3 +212,17 @@ exports.potions = function(){
 };
 
 exports.alignment = function(faction){return ['chinh','trung','ta','tan'].indexOf(getRuntime().scope.Kh(faction));};
+
+// Run trusted native progression rules with rendering/storage effects muted.
+// Synchronous scope + cloned input prevents cross-account state leaks.
+exports.withProgression=function(input,reduce){
+  exports.buildCharacter(input);
+  const {scope,context}=getRuntime(),previous=new Map();
+  const mute=['C','k','o0','tn','qA','n0','V','$','Bs','Zn','_s','Bn','Gm','af','O3'];
+  for(const key of mute){previous.set(key,scope[key]);scope[key]=()=>{};}
+  previous.set('D0',scope.D0);scope.D0=()=>{scope.W5();scope.l.P=scope.j0();scope.l.dirty=false;};
+  scope.__progressionReduce=()=>reduce(scope);
+  try{return JSON.parse(JSON.stringify(vm.runInContext('__progressionReduce()',context,{timeout:5000})));}
+  catch(error){if(error.code==='ERR_SCRIPT_EXECUTION_TIMEOUT')throw Object.assign(new Error('Thao tác quá lớn, hãy chia nhỏ số điểm.'),{status:400});throw error;}
+  finally{delete scope.__progressionReduce;for(const [key,value]of previous)scope[key]=value;}
+};

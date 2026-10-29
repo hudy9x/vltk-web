@@ -2,8 +2,9 @@ import { applyPotionDebit } from './consumables.ts';
 import type { DatabaseSync } from 'node:sqlite';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const native = require('../definitions/runtime.cjs');
 const catalog = require('../definitions/catalog.cjs');
+const progression = require('../definitions/progression.cjs');
+import { createHash } from 'node:crypto';
 type Character = Record<string, any>;
 export interface Reward {
   id: string;
@@ -16,7 +17,9 @@ export interface Reward {
 /** The online profile is imported once. Legacy local-storage writes cannot replace it. */
 export function createCharacters(db: DatabaseSync) {
   db.exec(`CREATE TABLE IF NOT EXISTS multiplayer_characters(account TEXT NOT NULL,slot INTEGER NOT NULL,profile TEXT NOT NULL,revision INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(account,slot));
-    CREATE TABLE IF NOT EXISTS multiplayer_rewards(id TEXT PRIMARY KEY,account TEXT NOT NULL,slot INTEGER NOT NULL,xp INTEGER NOT NULL,gold INTEGER NOT NULL);`);
+    CREATE TABLE IF NOT EXISTS multiplayer_rewards(id TEXT PRIMARY KEY,account TEXT NOT NULL,slot INTEGER NOT NULL,xp INTEGER NOT NULL,gold INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS multiplayer_progression_commands(account TEXT NOT NULL,slot INTEGER NOT NULL,id TEXT NOT NULL,hash TEXT NOT NULL,PRIMARY KEY(account,slot,id));
+    CREATE TABLE IF NOT EXISTS multiplayer_profile_updates(account TEXT NOT NULL,slot INTEGER NOT NULL,revision INTEGER NOT NULL,PRIMARY KEY(account,slot));`);
   function read(account: string, slot: number): { profile: Character; revision: number } {
     if (!Number.isInteger(slot) || slot < 0 || slot > 2)
       throw Object.assign(new Error('Ô nhân vật không hợp lệ.'), { status: 400 });
@@ -45,7 +48,7 @@ export function createCharacters(db: DatabaseSync) {
   }
   function apply(grant: Reward) {
     if (
-      !/^[0-9]+(?:-[0-9]+){1,3}$/.test(grant.id) ||
+      !/^[0-9]+(?:-[0-9]+){1,4}$/.test(grant.id) ||
       grant.id.length > 100 ||
       !Number.isSafeInteger(grant.xp) ||
       !Number.isSafeInteger(grant.gold) ||
@@ -63,15 +66,8 @@ export function createCharacters(db: DatabaseSync) {
       }
       const { profile: p } = read(grant.account, grant.slot);
       if(grant.potion)applyPotionDebit(p,grant.potion);
-      p.xp = (p.xp || 0) + grant.xp;
+      progression.addExperience(p,grant.xp);
       p.gold = (p.gold || 0) + grant.gold;
-      const curve = native.catalog().exp;
-      while (p.lvl < 200 && Number(curve[p.lvl - 1]) > 0 && p.xp >= Number(curve[p.lvl - 1])) {
-        p.xp -= Number(curve[p.lvl - 1]);
-        p.lvl++;
-        p.attrPts = (p.attrPts || 0) + 5;
-        p.skPts = (p.skPts || 0) + 1;
-      }
       db.prepare('INSERT INTO multiplayer_rewards VALUES(?,?,?,?,?)').run(
         grant.id,
         grant.account,
@@ -82,15 +78,45 @@ export function createCharacters(db: DatabaseSync) {
       db.prepare(
         'UPDATE multiplayer_characters SET profile=?,revision=revision+1 WHERE account=? AND slot=?',
       ).run(JSON.stringify(p), grant.account, grant.slot);
+      queueProfile(grant.account,grant.slot);
       db.exec('COMMIT');
     } catch (error) {
       db.exec('ROLLBACK');
       throw error;
     }
   }
+  function queueProfile(account:string,slot:number){
+    db.prepare(`INSERT INTO multiplayer_profile_updates(account,slot,revision)
+      SELECT account,slot,revision FROM multiplayer_characters WHERE account=? AND slot=?
+      ON CONFLICT(account,slot) DO UPDATE SET revision=excluded.revision`).run(account,slot);
+  }
+  function mutate(account:string,slot:number,id:string,action:unknown,development:boolean){
+    if(typeof id!=='string'||!/^[-a-zA-Z0-9_]{8,80}$/.test(id))throw Object.assign(new Error('Mã thao tác không hợp lệ.'),{status:400});
+    if(!action||typeof action!=='object'||Array.isArray(action)||typeof (action as {kind?:unknown}).kind!=='string')throw Object.assign(new Error('Thao tác không hợp lệ.'),{status:400});
+    const hash=createHash('sha256').update(JSON.stringify(action)).digest('hex');
+    db.exec('BEGIN IMMEDIATE');
+    try{
+      const saved=read(account,slot);
+      const prior=db.prepare('SELECT hash FROM multiplayer_progression_commands WHERE account=? AND slot=? AND id=?').get(account,slot,id);
+      if(prior){
+        if(prior.hash!==hash)throw Object.assign(new Error('Mã thao tác đã được dùng.'),{status:409});
+        db.exec('COMMIT');return saved;
+      }
+      const profile=progression.apply(saved.profile,action,development);
+      catalog.character(profile); // Rebuild authoritative combat stats before committing anything.
+      db.prepare('UPDATE multiplayer_characters SET profile=?,revision=revision+1 WHERE account=? AND slot=?').run(JSON.stringify(profile),account,slot);
+      db.prepare('INSERT INTO multiplayer_progression_commands VALUES(?,?,?,?)').run(account,slot,id,hash);
+      queueProfile(account,slot);
+      db.exec('COMMIT');return read(account,slot);
+    }catch(error){db.exec('ROLLBACK');throw error;}
+  }
   return {
     read,
     apply,
+    mutate,
+    exists:(account:string,slot:number)=>!!db.prepare('SELECT 1 FROM multiplayer_characters WHERE account=? AND slot=?').get(account,slot),
+    pendingProfiles:()=>db.prepare('SELECT account,slot,revision FROM multiplayer_profile_updates LIMIT 32').all(),
+    ackProfile:(account:string,slot:number,revision:number)=>db.prepare('DELETE FROM multiplayer_profile_updates WHERE account=? AND slot=? AND revision<=?').run(account,slot,revision),
     character: catalog.character,
     world: catalog.world,
     revision: (account: string, slot: number) =>

@@ -873,6 +873,8 @@ var pg = function (A) {
 };
 
 var Dg = function () {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'bestPotential'}))return 0;
+
   let A = j5();
   for (; o.attrPts > 0;) {
     const n = G0(j0());

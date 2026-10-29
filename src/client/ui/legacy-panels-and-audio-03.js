@@ -141,6 +141,8 @@ var U8 = function () {
 };
 
 var $v = function (A) {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'join',faction:A})){return;}
+
   const n = I[A];
   if (!n || n.novice || !ht() || n.series !== F0() || !hn(n, o.sex)) return;
   ((o.fac = A),
@@ -549,6 +551,7 @@ var tn = function () {
 
 var th = function (A, n) {
   if (!Number.isInteger(A) || A < 0 || A >= 4 || (n !== -1 && !canSlotSkill(n))) return;
+  if(typeof OnlineProgression!=="undefined"&&OnlineProgression.dispatch({kind:'skillSlot',index:A,skill:n}))return;
   if ((tn(), n === -1)) {
     ((o.slots[A] = -1), qA(), $());
     return;

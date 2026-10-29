@@ -108,7 +108,7 @@
   }
   try {
     const config = await request('/api/config');
-    Object.defineProperty(window, 'localGameConfig', { value:Object.freeze({ development:config.development === true, combatSandbox:config.development === true && config.combatSandbox === true }), writable:false, configurable:false });
+    Object.defineProperty(window, 'localGameConfig', { value:Object.freeze({ development:config.development === true, onlineProgression:config.onlineProgression === true, progressionFields:Object.freeze(config.progressionFields||[]), combatSandbox:config.development === true && config.combatSandbox === true }), writable:false, configurable:false });
     // Start installation while loading account/storage/scripts, before the sprite burst.
     // A blocked/unsupported worker must never prevent the game from opening.
     if (window.navigator && 'serviceWorker' in window.navigator && location.protocol.startsWith('http')) {
@@ -128,6 +128,18 @@
     queue = []; persist(); state = await request('/api/storage');
     Object.keys(storage).filter(managed).forEach(key => native.remove.call(storage, key));
     Object.entries(state.entries).forEach(([key, value]) => native.set.call(storage, key, value));
+    // Resolve existing canonical progression BEFORE game initialization selects a map.
+    if(config.onlineProgression&&!config.combatSandbox&&new URLSearchParams(location.search).get('multiplayer')!=='off'){
+      await Promise.all([0,1,2].map(async slot=>{
+        const key=slot===0?'jxidle':`jxidle_${slot+1}`,raw=storage.getItem(key);
+        if(!raw)return;
+        const saved=await request('/api/multiplayer/character?slot='+slot+'&existing=1');
+        if(!saved.profile)return;
+        const wrapper=JSON.parse(raw),legacy=typeof wrapper.d==='string'?JSON.parse(wrapper.d):wrapper;
+        for(const field of config.progressionFields||[])if(saved.profile[field]!==undefined)legacy[field]=saved.profile[field];
+        native.set.call(storage,key,JSON.stringify(legacy));
+      }));
+    }
     function enqueue(key, value) {
       queue.push({ id:crypto.randomUUID(), generation, operations:[{ key, value }] });
       persist(); void flush();

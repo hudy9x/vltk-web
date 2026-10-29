@@ -30,7 +30,8 @@ declare function _A(
 declare function $(): void;
 declare function V(): void;
 
-const shop = createHorseShop({
+declare var OnlineProgression: { enabled():boolean; run(action:unknown):Promise<{profile:LegacyRecord}> } | undefined;
+const nativeShop = createHorseShop({
   catalog: () => S.items[10]?.list || [],
   quality: (template) => st({ ...template, d: 10 }),
   obsolete: (kind) => Mc[kind] != null,
@@ -46,6 +47,13 @@ const shop = createHorseShop({
     V();
   },
 });
+const shop = { ...nativeShop,
+  buy(key:string) {
+    if(typeof OnlineProgression!=="undefined"&&OnlineProgression.enabled())return OnlineProgression.run({kind:"horseBuy",offer:key}).then(saved=>saved.profile.inv[0] as LegacyRecord);
+    return nativeShop.buy(key);
+  },
+  get state(){return nativeShop.state;}
+};
 const view = mountHorseShop(shop, Ho, D);
 const idlePosition = { x: v.x + 250, y: v.y };
 const npcOptions = {

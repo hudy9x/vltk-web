@@ -1017,3 +1017,50 @@ fn native_baseline_attacks_repeat_every_sixteen_ticks_without_float_drift() {
     assert!((casts[0].1-0.8).abs()<0.000001);
     remove_fixture(g);
 }
+
+#[test]
+fn progression_refresh_same_level_uses_revision_preserves_resources_and_rejects_old_profiles(){
+    let mut g=game();
+    g.actors.get_mut(&1).unwrap().hp=100.0;
+    g.actors.get_mut(&1).unwrap().mp=15.0;
+    let mut p=g.actors[&1].base_profile.clone();p.hp=400.0;p.mp=60.0;p.skills[0].parts[0]=500.0;
+    g.refresh_profile(1,p.clone(),2);
+    assert_eq!(g.actors[&1].profile.level,1);assert_eq!(g.actors[&1].profile.hp,400.0);
+    assert_eq!((g.actors[&1].hp,g.actors[&1].mp),(200.0,30.0));assert_eq!(g.actors[&1].profile.skills[0].parts[0],500.0);
+    p.hp=100.0;g.refresh_profile(1,p,1);assert_eq!(g.actors[&1].profile.hp,400.0);assert_eq!(g.actors[&1].profile_revision,2);
+    remove_fixture(g);
+}
+
+#[test]
+fn progression_refresh_preserves_existing_buff_timers_and_does_not_revive_dead_players(){
+    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("kunlun")).unwrap();
+    let a=g.actors.get_mut(&1).unwrap();a.support.active.insert(171,9.0);a.support.cooldowns.insert(171,12.0);support::resolve(a);a.hp=0.0;
+    let p=a.base_profile.clone();g.refresh_profile(1,p,1);
+    assert_eq!(g.actors[&1].support.active[&171],9.0);assert_eq!(g.actors[&1].support.cooldowns[&171],12.0);assert_eq!(g.actors[&1].hp,0.0);
+    remove_fixture(g);
+}
+
+#[test]
+fn progression_refresh_does_not_reenable_supports_disabled_during_the_session(){
+    let mut g=game();g.actors.remove(&1);let original=support_fixture("kunlun");g.join(1,"account-a".into(),0,original.clone()).unwrap();
+    g.command(1,cmd(1,9,1,0,171,0.0,0.0)).unwrap();
+    g.refresh_profile(1,original,1);
+    let ability=g.actors[&1].base_profile.support.as_ref().unwrap().skills.iter().find(|s|s.id==171).unwrap();
+    assert!(!ability.enabled);remove_fixture(g);
+}
+
+#[test]
+fn equipment_refresh_changes_distance_and_snapshot_speed_without_reissuing_mouse_goal() {
+    let mut g=game();
+    g.command(1,cmd(1,2,1,0,0,900.0,100.0)).unwrap();
+    g.step();let before=g.actors[&1].x;
+    g.step();let foot=g.actors[&1].x-before;
+    let mut profile=g.actors[&1].base_profile.clone();profile.speed=300.0;
+    g.refresh_profile(1,profile,1);
+    let before=g.actors[&1].x;g.step();let ride=g.actors[&1].x-before;
+    assert!((ride-foot*2.0).abs()<0.01);
+    assert_eq!(g.actors[&1].move_goal,Some((900.0,100.0)));
+    let packet=crate::pve_protocol::snapshot(&g,1).unwrap();
+    assert_eq!(f32::from_le_bytes(packet[30..34].try_into().unwrap()),300.0);
+    remove_fixture(g);
+}

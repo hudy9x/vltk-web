@@ -152,6 +152,8 @@ var planSkillRoute = function (routeId) {
 };
 
 var applySkillRoute = function (routeId) {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'skillRoute',route:routeId})){return 0;}
+
   const plan = planSkillRoute(routeId);
   if (!plan.route) return 0;
   let spent = 0;

@@ -144,6 +144,8 @@ pub struct Definitions {
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct Admission {
+    #[serde(default)]
+    pub revision: u64,
     pub nonce: String,
     pub account: String,
     pub slot: u8,

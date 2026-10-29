@@ -2798,6 +2798,9 @@
       "lines": 412
     },
     {
+      "file": "multiplayer/state/progression.js"
+    },
+    {
       "file": "core/game-loop-01.js",
       "symbols": [
         "l_",

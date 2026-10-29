@@ -35,3 +35,44 @@ test('online potion input never mutates local HP/MP or consumes local inventory'
   assert.equal(scope.OnlineConsumables.use('life',()=>1),false,'local cooldown prevents spam');
   scope.OnlineConsumables.received({id:1,skill:1,value:1});assert.equal(scope.o.potStock.life[1],1);
 });
+
+test('empty online potion slots buy from canonical silver before using, without duplicate purchases',async()=>{
+  let complete;const sent=[],actions=[],messages=[];
+  const scope={m0:0,o:{lvl:1,gold:1000,potBuy:false,potStock:{}},l:{life:20,mana:30,P:{life:200,mana:100}},S:{potions:[{kind:'life',tier:1,price:50}]},be:{1:1},Ot:p=>p.price,k:m=>messages.push(m),
+    OnlineProgression:{enabled:()=>true,run:action=>{actions.push(action);return new Promise(resolve=>complete=()=>{scope.o.gold-=50;scope.o.potStock.life={1:1};resolve();});}}};
+  vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/consumables.js','utf8'),scope);
+  const send=(kind,data)=>(sent.push({kind,...data}),1);
+  assert.equal(scope.OnlineConsumables.use('life',send),true,'manual key may buy even when automatic buying is disabled');
+  scope.OnlineConsumables.use('life',send);assert.equal(actions.length,1);assert.equal(sent.length,0);
+  complete();await new Promise(setImmediate);
+  assert.deepEqual(sent,[{kind:7,skill:1}]);assert.equal(scope.o.gold,950);assert.equal(scope.l.life,20);assert.deepEqual(messages,[]);
+  scope.l.potCd.life=0;scope.o.potStock.life[1]=0;scope.o.gold=0;
+  assert.equal(scope.OnlineConsumables.use('life',send),false);assert.match(messages[0],/ngân lượng/);
+});
+
+test('server potion purchase validates level and native price, and debit preserves the currency and stock ledger',()=>{
+  const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE account_storage(account_id TEXT,key TEXT,value TEXT,PRIMARY KEY(account_id,key))');
+  db.prepare('INSERT INTO account_storage VALUES(?,?,?)').run('a','jxidle',JSON.stringify({fac:'vo0',lvl:1,gold:1000,knb:123}));
+  const store=createCharacters(db),action={kind:'potionBuy',potion:'life',tier:1,price:0,count:100000};
+  const bought=store.mutate('a',0,'potion-command-01',action,false).profile;
+  assert.equal(bought.potStock.life[1],1);assert.ok(bought.gold<1000&&bought.gold>=0);assert.equal(bought.knb,123);
+  assert.equal(store.mutate('a',0,'potion-command-01',action,false).profile.gold,bought.gold,'retries never charge twice');
+  store.apply({id:'123-1-2',account:'a',slot:0,xp:0,gold:0,potion:{id:1,spent:1}});
+  assert.equal(store.read('a',0).profile.potStock.life[1],0);
+  assert.throws(()=>store.mutate('a',0,'potion-command-02',{kind:'potionBuy',potion:'life',tier:20},false),/cấp|thuốc/);
+  assert.throws(()=>store.mutate('a',0,'potion-command-03',{kind:'potionBuy',potion:'bad',tier:1},false),/thuốc/);
+  db.close();
+});
+
+test('automatic buying respects its switch and budget; combined potion can replenish mana from the HP slot',async()=>{
+  const actions=[],sent=[],both={kind:'both',tier:1,price:80};
+  const scope={m0:0,o:{lvl:1,gold:1000,potStock:{},potBuy:false},l:{life:200,mana:10,P:{life:200,mana:100}},co:()=>both,
+    S:{potions:[both]},be:{1:1},Ot:p=>p.price,k(){},OnlineProgression:{enabled:()=>true,run:async action=>{actions.push(action);scope.o.potStock.both={1:1};}}};
+  vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/consumables.js','utf8'),scope);
+  const send=(kind,data)=>(sent.push({kind,...data}),1);
+  assert.equal(scope.OnlineConsumables.use('life',send,true),false);assert.equal(actions.length,0);
+  scope.o.potBuy=true;scope.o.gold=100;
+  assert.equal(scope.OnlineConsumables.use('life',send,true),false,'auto purchase stays within twenty percent');
+  assert.equal(scope.OnlineConsumables.use('life',send),true);
+  await new Promise(setImmediate);assert.deepEqual(sent,[{kind:7,skill:201}]);
+});

@@ -258,6 +258,8 @@ var Iw = function (A) {
 };
 
 var Pt = function () {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'autoSkill'})){return 0;}
+
   const A = I[o.fac];
   if (!A) return 0;
   if (!l.sim) return applySkillRoute(o.skillRoute);
@@ -440,6 +442,8 @@ var e4 = function (A = o.attrPts) {
 };
 
 var j5 = function () {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'equipmentPotential'}))return 0;
+
   let A = 0;
   for (const { d: n } of e4().list)
     for (const t in n) {
@@ -450,6 +454,8 @@ var j5 = function () {
 };
 
 var yt = function () {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'autoPotential'})){return 0;}
+
   if (!l.sim && selectSkillRoute()) return applyPotentialRoute(o.skillRoute);
   let A = j5();
   const n = Lw();

@@ -75,16 +75,8 @@ pub fn routes(world: Arc<Mutex<World>>, secret: String) -> Router {
                 |State(s): State<Control>, h: HeaderMap, Json(a): Json<Admission>| async move {
                     authorize(&h, &s)?;
                     let mut w = s.world.lock().unwrap();
-                    for player in w
-                        .game
-                        .actors
-                        .values_mut()
-                        .filter(|p| p.account == a.account && p.slot == a.slot)
-                    {
-                        if player.profile.level != a.profile.level {
-                            crate::domain::support::replace_base(player,a.profile.clone());
-                        }
-                    }
+                    let ids:Vec<_>=w.game.actors.iter().filter(|(_,p)|p.account==a.account&&p.slot==a.slot).map(|(&id,_)|id).collect();
+                    for id in ids { w.game.refresh_profile(id,a.profile.clone(),a.revision); }
                     Ok::<_, StatusCode>(Json(true))
                 },
             ),

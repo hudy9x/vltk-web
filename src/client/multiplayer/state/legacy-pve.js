@@ -21,7 +21,7 @@ var onlineWorld = (() => {
     !l.battlefield &&
     !l.dg &&
     !l.tower;
-  const mainSkill = () => o.mainLock ? Number(o.main) || 0 : Number(l.P?.main?.id) || 0;
+  const mainSkill = () => o.mainLock&&o.main!=='basic' ? Number(o.main) || 0 : Number(l.P?.main?.id) || 0;
   function displayMode(enabled) {
     const mode = enabled ? 'auto' : 'manual';
     if (o.ctrl !== mode) { o.ctrl = mode; qA(); }
@@ -192,18 +192,22 @@ var onlineWorld = (() => {
       lastRevision = -1;
       imported = false;
     }
-    if (saved.revision === lastRevision && imported) return;
+    if (saved.revision <= lastRevision && imported) return;
     lastRevision = saved.revision;
     const p = saved.profile;
     if (!p || !o) return;
-    // Canonical equipment/skill allocation is frozen at the initial online import in this stage.
-    const fields = imported
-      ? ['lvl', 'xp', 'gold', 'attrPts', 'skPts', 'potStock', 'potUsed', 'onlinePotionSpent']
-      : ['lvl', 'xp', 'gold', 'attrPts', 'skPts', 'attr', 'sk', 'eq', 'inv', 'fac', 'sex', 'name', 'skL', 'skillRoute', 'auraOff', 'autoBuff', 'supportAutoOff', 'potStock', 'potUsed', 'onlinePotionSpent'];
+    const previousLevel=o.lvl;
+    // Revision-based progression; initial/full commands also include canonical inventory.
+    const fields = imported&&!saved.full
+      ? (window.localGameConfig?.progressionFields||['lvl','xp','gold','attrPts','skPts','attr','sk','fac','skL','bkOk','main','mainLock','slots','skillRoute','potStock','potUsed','onlinePotionSpent'])
+      : ['lvl', 'xp', 'gold', 'knb', 'attrPts', 'skPts', 'attr', 'sk', 'eq', 'inv', 'fac', 'sex', 'name', 'skL', 'bkOk', 'sk150Training', 'mats', 'main', 'mainLock', 'slots', 'skillRoute', 'auraOff', 'autoBuff', 'supportAutoOff', 'potStock', 'potUsed', 'onlinePotionSpent', 'uid', 'onlineMounted'];
     for (const field of fields) if (p[field] !== undefined) o[field] = structuredClone(p[field]);
+    if(p.onlineMounted!==undefined)l.mounted=!!p.onlineMounted;
     imported = true;
     l.dirty = true;
     D0();
+    if(previousLevel!==o.lvl&&typeof Xe==='function')Xe();
+    if(o.lvl>previousLevel&&o.autoPts===true){if(typeof Pt==='function')Pt();if(typeof yt==='function')yt();}
   }
   return {
     support(id){return send(8,{skill:+id});},
@@ -254,10 +258,17 @@ var onlineWorld = (() => {
       Y.target = null;
       send(actor?.onlinePlayer?11:3, { target: actor?.id || 0, skill: skill ?? mainSkill() });
     },
-    cast(skill) {
+    cast(skill, persisted = false) {
       if(T[skill]&&!UA(T[skill])&&['buff','aura'].includes(wn(T[skill]))){this.support(skill);return;}
       if (!T[skill] || !UA(T[skill])) {
         k('Chiêu bùa hại chưa được mở trong bản online này.');
+        return;
+      }
+      if(!persisted&&typeof OnlineProgression!=='undefined'&&OnlineProgression.enabled()){
+        const slot=m0;
+        OnlineProgression.run({kind:'mainSkill',skill})
+          .then(()=>{if(m0===slot)this.cast(skill,true);})
+          .catch(error=>k(error.message));
         return;
       }
       o.main = skill;

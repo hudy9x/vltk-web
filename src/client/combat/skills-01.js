@@ -633,6 +633,8 @@ var Ri = function () {
 };
 
 var p4 = function (A, n) {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'reset',attributes:!!A,skills:!!n})){return;}
+
   if (A) for (const t in o.attr) ((o.attrPts += o.attr[t]), (o.attr[t] = 0));
   if (n) {
     const t = I[o.fac].starter,
@@ -659,6 +661,8 @@ var p4 = function (A, n) {
 };
 
 var Yi = function (A) {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'skill',skill:+A})){return false;}
+
   const n = T[A];
   if (!n || !Q1(n)) return !1;
   if (!l.sim && !unlockSkillBook(A)) return !1;

@@ -2,7 +2,7 @@ import { mountWarDialogStyle } from "../../simulator/dialog-style";
 import { HORSE_PRICE_KNB } from "./model";
 import type { HorseOffer, HorseShop } from "./model";
 export function mountHorseShop(
-  shop: HorseShop,
+  shop: Omit<HorseShop, "buy"> & { buy(key:string): ReturnType<HorseShop["buy"]> | Promise<ReturnType<HorseShop["buy"]>> },
   qualities: [string, string, number][],
   escape: (text: string) => string,
 ) {
@@ -83,9 +83,10 @@ export function mountHorseShop(
     });
     panel.querySelectorAll<HTMLButtonElement>("[data-horse-buy]").forEach(
       (button) =>
-        (button.onclick = () => {
+        (button.onclick = async () => {
           try {
-            const item = shop.buy(button.dataset.horseBuy!);
+            button.disabled = true;
+            const item = await shop.buy(button.dataset.horseBuy!);
             query("#horse-message").textContent =
               `Đã mua ${item.n} · −10 KNB · Ngựa nằm trong Hành trang.`;
           } catch (error) {

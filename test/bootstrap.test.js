@@ -184,3 +184,24 @@ test('bootstrap reports the failing API endpoint and bounds retries', async () =
     assert.match(status.textContent, kind === 'html' ? /JSON/ : kind === 'gateway' ? /503/ : /Failed to fetch/);
   }
 });
+
+test('canonical progression is loaded before game scripts so stale local levels cannot choose a high-level map',async()=>{
+  const previousControl=process.env.MULTIPLAYER_WT_CONTROL_URL,previousSecret=process.env.MULTIPLAYER_SECRET;
+  process.env.MULTIPLAYER_WT_CONTROL_URL='http://127.0.0.1:1';process.env.MULTIPLAYER_SECRET='test-progression-secret-0123456789';
+  const db=openDatabase(':memory:'),{app,server}=createServer({db,downloadAssets:false});
+  await app.ready();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${server.address().port}`;
+  try{
+    const registered=await fetch(base+'/api/auth/register',{method:'POST',body:JSON.stringify({username:'test_user',password:'secret123'})});
+    const account=(await registered.json()).user.id;
+    const stale={fac:'shaolin',lvl:150,attrPts:0,skPts:0,sk:{10:20},attr:{str:500},stage:700,maxStage:700};
+    db.prepare('INSERT INTO account_storage VALUES(?,?,?)').run(account,'jxidle',JSON.stringify(stale));
+    const {createCharacters}=require('../src/server/multiplayer/persistence/characters.ts');
+    createCharacters(db).read(account,0);
+    db.prepare('UPDATE multiplayer_characters SET profile=?,revision=1 WHERE account=?').run(JSON.stringify({...stale,lvl:1,fac:'vo0',sk:{},attr:{str:0},attrPts:0,skPts:1}),account);
+    const values=new Map(),client=await boot(base,values);
+    const loaded=JSON.parse(client.localStorage.getItem('jxidle'));
+    assert.equal(loaded.lvl,1);assert.equal(loaded.fac,'vo0');assert.deepEqual(loaded.sk,{});assert.equal(loaded.attr.str,0);
+    assert.ok(client.loadedScripts.includes('app/game.js?v=622'));
+  }finally{await app.close();db.close();if(previousControl===undefined)delete process.env.MULTIPLAYER_WT_CONTROL_URL;else process.env.MULTIPLAYER_WT_CONTROL_URL=previousControl;if(previousSecret===undefined)delete process.env.MULTIPLAYER_SECRET;else process.env.MULTIPLAYER_SECRET=previousSecret;}
+});

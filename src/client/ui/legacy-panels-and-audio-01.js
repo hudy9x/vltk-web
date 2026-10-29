@@ -387,6 +387,7 @@ var FA = function (A) {
 };
 
 var J1 = function (A, n) {
+  if(typeof OnlineProgression!=="undefined"&&OnlineProgression.dispatch({kind:"equip",uid:A?.uid}))return;
   if (!p0(A)) {
     n || k("Chưa mặc được: " + vt(A).join("; "));
     return;
@@ -403,6 +404,7 @@ var J1 = function (A, n) {
 };
 
 var Dv = function (A) {
+  if(typeof OnlineProgression!=="undefined"&&OnlineProgression.dispatch({kind:"unequip",slot:A}))return;
   const n = o.eq[A];
   if (n) {
     if (o.inv.length >= INV_MAX) {
@@ -742,6 +744,8 @@ var Bs = function () {
 };
 
 var qf = function (A) {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'unlearn',skill:+A})){return false;}
+
   const n = o.sk[A] || 0;
   if (!n) return !1;
   const t = m4(T[A]);
@@ -776,6 +780,7 @@ var jf = function (A) {
       const t = m("#apN"),
         e = () => {
           const a = E(Math.floor(+t.value || 0), 0, o.attrPts);
+          if(a>0&&typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'potential',key:A,amount:a})){n0(true);return;}
           (a > 0 &&
             ((o.attrPts -= a),
             (o.attr[A] += a),
@@ -805,6 +810,8 @@ var jf = function (A) {
 };
 
 var zf = function (A) {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'potential',key:A,amount:-1})){return false;}
+
   return o.attr[A] > 0 ? (o.attr[A]--, o.attrPts++, (l.dirty = !0), D0(), Bs(), _s(), $(), !0) : !1;
 };
 
