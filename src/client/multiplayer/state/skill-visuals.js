@@ -83,12 +83,15 @@ var OnlineSkillVisuals = function () {
         delete skill.rate;delete skill.rawRate;
         const cast=GameWebTransport.castSkillVisual(caster,target,skill,()=>token===generation,()=>targets,()=>1,action=>run(caster,action,info));
         if(cast&&info)cast.onlineTrace=info;
+        // Reuse the authoritative native cycle; cosmetic replay still releases immediately.
+        const duration=Number.isFinite(event.value)&&event.value>0?event.value:.4;
+        caster.castT=duration;caster.speedCastDuration=duration;caster.speedCastProgress=0;
       },info);}catch(error){diag?.log('visual-error',{...info,error:String(error)});throw error;}
       if(info)diag.release(info,l.fx.filter(effect=>!before.has(effect)));
       caster.dir=kn(meta.targetX-meta.x,meta.targetY-meta.y);
     },
     advance(dt){if(world&&frame){const actor=bodies.get(frame.self)||bodies.values().next().value;if(actor)run(actor,()=>advanceSkillContacts(dt));}},
-    pose(id){const actor=bodies.get(id);return actor&&actor.castT>0?{atT:actor.castT,atD:.4,dir:actor.dir}:null;},
+    pose(id){const actor=bodies.get(id);return actor&&actor.castT>0?{atT:actor.castT,atD:actor.speedCastDuration||.4,dir:actor.dir}:null;},
     cancelPose(id){const actor=bodies.get(id);if(actor){actor.castT=0;actor.actionRevision=(actor.actionRevision||0)+1;}},
     reset(){generation++;for(const timer of timers)clearTimeout(timer);timers.clear();for(const actor of bodies.values()){actor.castT=0;actor.actionRevision=(actor.actionRevision||0)+1;}bodies.clear();world=null;frame=null;},
   };

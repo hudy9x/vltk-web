@@ -35,10 +35,10 @@ test('client presents server buff durations, aura switches and sends settings on
   sync([]);assert.deepEqual(Object.keys(scope.l.sks.buff),[]);
   scope.OnlineSupport.reset();assert.equal(scope.l.stKey,null);
 });
-test('v7 binary support state validates ownership, lengths and finite durations',()=>{
+test('v8 binary support state validates ownership, lengths and finite durations',()=>{
   const scope={module:{exports:{}},exports:{},TextEncoder,TextDecoder,Uint8Array,DataView,Map,Set};
   vm.runInNewContext(esbuild.buildSync({entryPoints:['src/client/multiplayer/webtransport/protocol.ts'],bundle:true,format:'cjs',platform:'node',write:false}).outputFiles[0].text,scope);
-  const p=scope.module.exports,b=Buffer.alloc(45+55+15);b.set([7,17]);b.writeUInt32LE(1,10);b.writeUInt16LE(1,18);
+  const p=scope.module.exports,b=Buffer.alloc(56+55+15);b.set([8,17]);b.writeUInt32LE(1,10);b.writeUInt16LE(1,18);
   b.writeUInt32LE(1,43);b.writeFloatLE(100,43+12);b.writeFloatLE(100,43+20);
   b.writeUInt32LE(1,82);b.writeUInt16LE(1,98);b.writeUInt32LE(1,100);b.writeUInt16LE(100,104);b.writeFloatLE(12.5,106);b.writeFloatLE(2,110);b[114]=1;
   const s=p.decodePacket(b).actors[0].supports[0];assert.equal(s.skill,100);assert.equal(s.remaining,12.5);assert.equal(s.active,true);

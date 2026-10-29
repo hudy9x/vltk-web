@@ -10,7 +10,7 @@ impl Game {
             a.cold = (a.cold - dt).max(0.0);
             a.stun = (a.stun - dt).max(0.0);
             for cd in a.cooldowns.values_mut() {
-                *cd = (*cd - dt).max(0.0);
+                *cd = if *cd <= dt + 0.000001 { 0.0 } else { *cd - dt };
             }
             if a.hp <= 0.0 {
                 a.dead -= dt;
@@ -105,7 +105,8 @@ impl Game {
                                 && a.mp >= skill.cost
                             {
                                 a.mp -= skill.cost;
-                                a.cooldowns.insert(skill.id, skill.cooldown.max(0.15));
+                                let (cycle,interval)=speed::attack(a,skill);
+                                a.cooldowns.insert(skill.id, interval);
                                 if self.pending.len() < 4096 {
                                     self.pending.push(Pending {
                                         source: id,
@@ -122,7 +123,7 @@ impl Game {
                                         skill: skill.clone(),
                                     });
                                 }
-                                events.push((a.map, 1, id, target_id, skill.id, 0.0, 0));
+                                events.push((a.map, 1, id, target_id, skill.id, cycle, 0));
                             }
                         } else if self.tick.is_multiple_of(10) || a.path.is_empty() {
                             a.path = room.nav.path(a.x, a.y, target_x, target_y);
@@ -132,7 +133,7 @@ impl Game {
                     a.target = 0;
                 }
             }
-            let speed = a.profile.speed * pvp::movement_factor(a) * dt;
+            let speed = speed::movement(a) * dt;
             room.nav.step(&mut a.x, &mut a.y, &mut a.path, speed);
         }
     }

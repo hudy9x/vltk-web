@@ -26,7 +26,7 @@ pub fn snapshot(game: &Game, id: u32) -> Option<Vec<u8>> {
     let speed = if a.hp <= 0.0 || a.stun > 0.0 || a.pvp.hurt>0.0 {
         0.0
     } else {
-        a.profile.speed * crate::domain::pvp::movement_factor(a)
+        crate::domain::speed::movement(a)
     };
     b.extend(speed.to_le_bytes());
     let goal = a.move_goal.unwrap_or((a.x, a.y));

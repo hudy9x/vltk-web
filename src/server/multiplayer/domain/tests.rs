@@ -978,3 +978,42 @@ fn random_gold_is_rolled_at_death_and_pickup_journals_that_exact_amount_once() {
     drop(reopened);
     std::fs::remove_file(file).unwrap();
 }
+
+#[test]
+fn native_speed_phases_apply_status_before_quantizing_and_keep_skill_cooldowns() {
+    let mut g=game();
+    let config:speed::Configuration=serde_json::from_str(include_str!("../../../../test/fixtures/native-speed.json")).unwrap();
+    let a=g.actors.get_mut(&1).unwrap();
+    a.profile.timing=Some(speed::Timing{run_percent:150.0,config});
+    a.profile.skills[0].attack_percent=Some(100.0);a.profile.skills[0].cooldown=0.1;
+    assert!((speed::attack(a,&a.profile.skills[0]).0-0.8).abs()<0.00001);
+    a.profile.skills[0].attack_percent=Some(232.0);
+    assert!((speed::attack(a,&a.profile.skills[0]).0-0.4).abs()<0.00001);
+    assert!((speed::movement(a)-258.75).abs()<0.001);
+    a.cold=1.0;a.pvp.cold_power=0.3;
+    assert!((speed::movement(a)-172.5).abs()<0.001,"quantize 105%, not 70% of the 150% phase");
+    a.pvp.cold_power=0.5;
+    assert!((speed::attack(a,&a.profile.skills[0]).0-0.8).abs()<0.00001);
+    a.profile.skills[0].cooldown=2.0;
+    assert_eq!(speed::attack(a,&a.profile.skills[0]).1,2.0);
+    a.cold=0.0;a.profile.skills[0].attack_percent=Some(1000.0);
+    assert!((speed::attack(a,&a.profile.skills[0]).0-20.0/70.0).abs()<0.00001);
+    remove_fixture(g);
+}
+
+#[test]
+fn native_baseline_attacks_repeat_every_sixteen_ticks_without_float_drift() {
+    let mut g=game();field(&mut g);
+    let config:speed::Configuration=serde_json::from_str(include_str!("../../../../test/fixtures/native-speed.json")).unwrap();
+    let a=g.actors.get_mut(&1).unwrap();
+    a.profile.timing=Some(speed::Timing{run_percent:100.0,config});
+    let s=&mut a.profile.skills[0];s.attack_percent=Some(100.0);s.cooldown=0.8;s.cost=0.0;s.stun=0.0;
+    let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];m.hp=1000000.0;m.x=150.0;m.y=100.0;m.home=(150.0,100.0);let target=m.id;
+    g.command(1,cmd(2,3,2,target,1,0.0,0.0)).unwrap();
+    let mut casts=Vec::new();
+    for _ in 0..50 {g.step();for e in g.events.iter().filter(|e|e.source==1&&e.kind==1&&e.tick==g.tick){casts.push((e.tick,e.value));}}
+    assert!(casts.len()>=3);
+    for pair in casts.windows(2){assert_eq!(pair[1].0-pair[0].0,16);}
+    assert!((casts[0].1-0.8).abs()<0.000001);
+    remove_fixture(g);
+}

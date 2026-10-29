@@ -118,8 +118,16 @@ function createRuntime() {
   for (const node of parse(config, { ecmaVersion: 'latest' }).body)
     if (node.type !== 'VariableDeclaration')
       vm.runInContext(config.slice(node.start, node.end), context);
-  for(const entry of modules.slice(beforeHelpers+1))
+  for(const entry of modules.slice(beforeHelpers+1)){
     if(entry.file.startsWith('data/'))run('src/client/'+entry.file);
+    else if(entry.file==='combat/skills-01.js'){
+      const source=fs.readFileSync(path.join(root,'src/client',entry.file),'utf8');
+      for(const node of parse(source,{ecmaVersion:'latest'}).body)if(node.type==='ForOfStatement'||node.type==='ExpressionStatement'&&node.expression.type==='CallExpression'&&node.expression.callee.type==='FunctionExpression')
+        vm.runInContext(source.slice(node.start,node.end),context,{timeout:1000});
+    }
+  }
+  // Shop catalog normalizations also run in the browser after declarations.
+  run('src/client/gameplay/npc-shops-01.js');
   return { scope, context };
 }
 function getRuntime() {
@@ -136,7 +144,7 @@ exports.buildCharacter = function (input, activeBuffs = [], activeAuras = null) 
     buffAssume: false,
     clock: 0,
     sks: { buff: Object.fromEntries(activeBuffs.map(id=>[id,1e9])), cd: {} },
-    mounted: false,
+    mounted: !!scope.o.onlineMounted && scope.xe(),
   };
   const stats = vm.runInContext('j0()', context, { timeout: 2000 });
   scope.l.P = stats;
@@ -153,6 +161,8 @@ exports.buildCharacter = function (input, activeBuffs = [], activeAuras = null) 
           heal:heal?Math.max(0,(scope.b0(row,'lifereplenish_v',level)||[0])[0]*duration*2):0};
       }),
       skills,
+      attackTimings: skills.map(skill=>scope.actorAttackTiming(scope.v,skill)),
+      timing: { runPercent: 100 * (scope.l.mounted ? stats.speed : stats.speedFoot ?? stats.speed), config: scope.CombatEngine.SPEED_CONFIG },
       moveSpeed: vm.runInContext('150 * actorMovementSpeed(v)', context, { timeout: 1000 }),
     }),
   );

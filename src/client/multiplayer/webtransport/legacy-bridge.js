@@ -69,7 +69,11 @@ var gameMultiplayer = (() => {
         dir: p.dir, mv: p.moving, t: p.animationTime, hurtT:authoritative?.hurt||0,poison:authoritative?.poison||0,slowT:authoritative?.cold||0,slowPower:authoritative?.coldPower||0,stun:authoritative?.stun||0,dead:authoritative?.hp===0,act:authoritative?.hp===0?'die':undefined, hp: onlineWorld.state?.actors.find(a=>a.id===p.id)?.hp??1, hpMax: onlineWorld.state?.actors.find(a=>a.id===p.id)?.maxHp??1,
         J: look.armor >= 0 ? lB({ sx: look.bodySex ? "f" : "m", ride: look.ride,
           r: { helm: look.helm, armor: look.armor, weapon: look.weapon, horse: look.horse } }) : null };
-      const castPose=onlineWorld.pose?.(p.id);if(castPose)Object.assign(actor,castPose);
+      const castPose=onlineWorld.pose?.(p.id);
+      if(castPose){
+        const nativeDuration=ws(Jt(actor.f,actor.s)?.anim,'at')||.4;
+        Object.assign(actor,castPose,{atD:nativeDuration,atT:castPose.atT/castPose.atD*nativeDuration});
+      }
       const drawEffects = layer => {
         actor.animKey = actor.gk;
         const phase = p.effectTime || 0;

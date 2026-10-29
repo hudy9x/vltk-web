@@ -41,6 +41,7 @@ var onlineWorld = (() => {
     goal = null;
     motion.clear();
     visuals.reset();
+    if(v._onlineCast){v._onlineCast=false;v.castT=0;v.speedCastDuration=undefined;}
     if(typeof OnlineSupport!=='undefined')OnlineSupport.reset();
     if(typeof OnlinePvp!=='undefined')OnlinePvp.reset();
     monsters.clear();
@@ -179,6 +180,10 @@ var onlineWorld = (() => {
       m.hurtT = Math.max(0, (m.hurtT || 0) - dt);
     }
     visuals.advance(dt);
+    const pose=visuals.pose?.(state.self);
+    if(pose&&!motion.goal&&self.hp>0&&!self.stun&&!self.hurt){
+      v._onlineCast=true;v.castT=pose.atT;v.speedCastDuration=pose.atD;v.speedCastProgress=1-pose.atT/pose.atD;ps(v,'at');
+    }else if(v._onlineCast){v._onlineCast=false;v.castT=0;v.speedCastDuration=undefined;if(v.act==='at')ps(v,'st');}
     if(typeof onlineTrace!=='undefined')onlineTrace.advance();
   }
   function profile(saved) {

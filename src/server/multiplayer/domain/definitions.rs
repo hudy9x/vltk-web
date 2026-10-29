@@ -17,6 +17,8 @@ pub struct Skill {
     pub id: u16,
     pub cost: f32,
     pub cooldown: f32,
+    #[serde(default)]
+    pub attack_percent: Option<f32>,
     pub range: f32,
     pub radius: f32,
     pub shape: String,
@@ -61,6 +63,8 @@ pub struct LinearProjectile {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
+    #[serde(default)]
+    pub timing: Option<super::speed::Timing>,
     #[serde(default = "neutral_alignment")]
     pub alignment: u8,
     #[serde(default = "no_series")]

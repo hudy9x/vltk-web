@@ -3,6 +3,7 @@ pub mod definitions;
 mod loot;
 mod monsters;
 mod movement;
+pub(crate) mod speed;
 pub mod navigation;
 mod projectiles;
 type EventData = (u32, u8, u32, u32, u16, f32, u8);

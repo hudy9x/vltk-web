@@ -20,7 +20,7 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
       return result;
     }
   }
-  const { stats, skills, moveSpeed, supports } = native.buildCharacter(profile,activeBuffs,activeAuras);
+  const { stats, skills, moveSpeed, supports, attackTimings, timing } = native.buildCharacter(profile,activeBuffs,activeAuras);
   const result = {
     level: profile.lvl,
     alignment:native.alignment(profile.fac),
@@ -33,9 +33,10 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
     regen: stats.regen,
     manaRegen: stats.manaRegen,
     speed: moveSpeed,
+    timing,
     defense: stats.def,
     res: elements.map((k) => stats.res[k] || 0),
-    skills: skills.map((s) => ({
+    skills: skills.map((s,index) => ({
       id: s.id,
       level:s.L||1,missiles:Math.max(1,Math.min(16,s.nMis||1)),melee:s.melee!==false,phys:s.phys!==false,
       pve: {
@@ -48,7 +49,8 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
       leech: ((s.basic||s.wpn)?stats.leech||0:0)+(s.skLeech||0),
       manaLeech: ((s.basic||s.wpn)?stats.manaLeech||0:0)+(s.skMLeech||0),
       cost: s.cost || 0,
-      cooldown: Math.max(s.cd || 0, 1 / Math.max(0.1, s.rate || 1)),
+      cooldown: Math.max(s.cd || 0, attackTimings[index].cycleSeconds),
+      attackPercent: 100 * (s.rawRate ?? s.rate ?? 1),
       range: s.rad || 75,
       radius: s.geo?.r || 0,
       shape: s.geo?.k || 'single',
