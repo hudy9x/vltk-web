@@ -1,0 +1,949 @@
+use super::*;
+fn game() -> Game {
+    static NEXT_FILE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let file = std::env::temp_dir().join(format!(
+        "vltk-domain-{}-{}-{}.jsonl",
+        std::process::id(),
+        NEXT_FILE.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let mut g = Game::new(file).unwrap();
+    let map = |id, town| serde_json::json!({"id":id,"level":1,"town":town,"width":1000,"height":1000,"entry":{"x":100,"y":100},"grid":{"kind":"open"},"monsters":[{"id":34,"name":"fixture","level":1,"hp":20,"damage":1,"defense":0,"speed":20,"res":[0,0,0,0,0],"xp":5,"gold":2}]});
+    g.install(
+        serde_json::from_value(
+            serde_json::json!({"version":1,"town":1,"maps":[map(1,true),map(2,false)]}),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let profile:Profile=serde_json::from_value(serde_json::json!({"level":1,"hp":200,"mp":30,"regen":0,"manaRegen":0,"speed":150,"defense":0,"res":[0,0,0,0,0],"skills":[{"id":1,"cost":10,"cooldown":1,"range":200,"radius":0,"shape":"single","targets":1,"parts":[10,0,0,0,0],"crit":0,"stun":100,"cold":2,"poison":0,"travel":0}]})).unwrap();
+    g.join(1, "account-a".into(), 0, profile.clone()).unwrap();
+    g.join(2, "account-b".into(), 0, profile).unwrap();
+    g
+}
+fn cmd(seq: u32, kind: u8, map: u32, target: u32, skill: u16, x: f32, y: f32) -> Command {
+    Command {
+        seq,
+        kind,
+        map,
+        target,
+        skill,
+        x,
+        y,
+    }
+}
+fn field(g: &mut Game) {
+    g.command(1, cmd(1, 1, 2, 0, 0, 0.0, 0.0)).unwrap();
+    g.command(2, cmd(1, 1, 2, 0, 0, 0.0, 0.0)).unwrap();
+    let room = g.rooms.get_mut(&2).unwrap();
+    room.mobs.truncate(1);
+    room.mobs[0].x = 150.0;
+    room.mobs[0].y = 100.0;
+    room.mobs[0].home = (150.0, 100.0);
+}
+#[test]
+fn shared_hp_cooldown_mana_and_status() {
+    let mut g = game();
+    g.actors.get_mut(&1).unwrap().profile.skills[0].parts = [9.0, 0.0, 1.0, 0.0, 0.0];
+    field(&mut g);
+    let mob = g.rooms[&2].mobs[0].id;
+    g.command(1, cmd(2, 3, 2, mob, 1, 0.0, 0.0)).unwrap();
+    for _ in 0..3 {
+        g.step();
+    }
+    assert_eq!(g.rooms[&2].mobs[0].hp, 10.0);
+    assert_eq!(g.actors[&1].mp, 20.0);
+    assert!(g.rooms[&2].mobs[0].cold > 0.0);
+    assert!(g.rooms[&2].mobs[0].stun > 0.0);
+    g.command(1, cmd(3, 4, 2, mob, 1, 0.0, 0.0)).unwrap();
+    g.step();
+    assert_eq!(g.rooms[&2].mobs[0].hp, 10.0);
+    assert_eq!(g.actors[&1].mp, 20.0);
+    assert_eq!(
+        crate::pve_protocol::snapshot(&g, 1).unwrap()[43 + 55 * 2 + 16..43 + 55 * 2 + 20],
+        crate::pve_protocol::snapshot(&g, 2).unwrap()[43 + 55 * 2 + 16..43 + 55 * 2 + 20]
+    );
+    for _ in 0..25 {
+        g.step();
+    }
+    assert_eq!(g.outbox.pending.len(), 1);
+    assert_eq!(g.rooms[&2].loot.len(), 1);
+    let file = g.outbox.path_for_test();
+    drop(g);
+    std::fs::remove_file(file).unwrap();
+}
+#[test]
+fn ownership_replay_and_durable_rewards() {
+    let mut g = game();
+    field(&mut g);
+    let mob = g.rooms[&2].mobs[0].id;
+    g.command(1, cmd(2, 3, 2, mob, 1, 0.0, 0.0)).unwrap();
+    for _ in 0..25 {
+        g.step();
+    }
+    let loot = g.rooms[&2].loot[0].id;
+    g.command(2, cmd(2, 6, 2, loot, 0, 0.0, 0.0)).unwrap();
+    g.step();
+    assert_eq!(g.rooms[&2].loot.len(), 1);
+    g.command(1, cmd(3, 6, 2, loot, 0, 0.0, 0.0)).unwrap();
+    g.step();
+    assert!(g.rooms[&2].loot.is_empty());
+    let count = g.outbox.pending.len();
+    g.command(1, cmd(3, 6, 2, loot, 0, 0.0, 0.0)).unwrap();
+    g.step();
+    assert_eq!(g.outbox.pending.len(), count);
+    let file = g.outbox.path_for_test();
+    drop(g);
+    let o = Outbox::open(file.clone()).unwrap();
+    assert_eq!(o.pending.len(), 2);
+    drop(o);
+    std::fs::remove_file(file).unwrap();
+}
+#[test]
+fn commands_are_bounded_and_movement_is_simulated() {
+    let mut g = game();
+    g.command(1, cmd(1, 2, 1, 0, 0, 800.0, 100.0)).unwrap();
+    g.step();
+    assert!((g.actors[&1].x - 107.5).abs() < 0.01);
+    g.command(1, cmd(1, 2, 1, 0, 0, 100.0, 800.0)).unwrap();
+    g.step();
+    assert_eq!(g.actors[&1].y, 100.0);
+    assert!(crate::pve_protocol::command(&[3, 16]).is_err());
+    let mut bytes = vec![0; 25];
+    bytes[0] = crate::protocol::VERSION;
+    bytes[1] = 16;
+    bytes[6] = 2;
+    bytes[17..21].copy_from_slice(&f32::NAN.to_le_bytes());
+    assert!(crate::pve_protocol::command(&bytes).is_err());
+    let file = g.outbox.path_for_test();
+    drop(g);
+    std::fs::remove_file(file).unwrap();
+}
+
+#[test]
+fn movement_ack_retains_goal_after_arrival_and_reports_effective_speed() {
+    let mut g = game();
+    g.step();
+    let accepted = g.tick;
+    g.command(1, cmd(1, 2, 1, 0, 0, 115.0, 100.0)).unwrap();
+    g.step();
+    g.step();
+    let b = crate::pve_protocol::snapshot(&g, 1).unwrap();
+    assert_eq!(u32::from_le_bytes(b[26..30].try_into().unwrap()), accepted);
+    assert_eq!(f32::from_le_bytes(b[34..38].try_into().unwrap()), 115.0);
+    assert_eq!(b[42], 2, "arrival preserves the acknowledged mouse goal");
+    g.actors.get_mut(&1).unwrap().cold = 1.0;
+    let b = crate::pve_protocol::snapshot(&g, 1).unwrap();
+    assert_eq!(f32::from_le_bytes(b[30..34].try_into().unwrap()), 75.0);
+    let file = g.outbox.path_for_test();
+    drop(g);
+    std::fs::remove_file(file).unwrap();
+}
+
+#[test]
+fn approved_cast_carries_native_visual_metadata_and_fixed_origin() {
+    let mut g = game();
+    field(&mut g);
+    let skill = &mut g.actors.get_mut(&1).unwrap().profile.skills[0];
+    skill.level = 25;
+    skill.missiles = 7;
+    skill.phys = true;
+    let mob = g.rooms[&2].mobs[0].id;
+    g.command(1, cmd(2, 3, 2, mob, 1, 0.0, 0.0)).unwrap();
+    g.step();
+    let event = g.events.iter().find(|e| e.kind == 1).unwrap();
+    let cast = event.cast.as_ref().unwrap();
+    assert_eq!(cast.level, 25);
+    assert_eq!(cast.missiles, 7);
+    assert_eq!(cast.flags, 2);
+    assert_eq!((cast.x, cast.y), (100.0, 100.0));
+    let frozen_target = (cast.target_x, cast.target_y);
+    g.rooms.get_mut(&2).unwrap().mobs[0].x += 100.0;
+    let cast = g
+        .events
+        .iter()
+        .find(|e| e.kind == 1)
+        .unwrap()
+        .cast
+        .as_ref()
+        .unwrap();
+    assert_eq!((cast.target_x, cast.target_y), frozen_target);
+    let b = crate::pve_protocol::snapshot(&g, 1).unwrap();
+    let offset = 43 + 2 * 55 + g.rooms[&2].mobs.len() * 48;
+    assert_eq!(b[offset + 14], 1);
+    assert_eq!(
+        u16::from_le_bytes(b[offset + 23..offset + 25].try_into().unwrap()),
+        25
+    );
+    assert_eq!(b[offset + 25], 7);
+    assert_eq!(b[offset + 26], 2);
+    let file = g.outbox.path_for_test();
+    drop(g);
+    std::fs::remove_file(file).unwrap();
+}
+
+#[test]
+fn travel_uses_map_availability_not_monster_level() {
+    let mut g = game();
+    g.rooms.get_mut(&2).unwrap().definition.level = 170;
+    assert_eq!(g.actors[&1].profile.level, 1);
+    g.command(1, cmd(1, 1, 2, 0, 0, 0.0, 0.0)).unwrap();
+    assert_eq!(g.actors[&1].map, 2);
+    g.command(2, cmd(1, 1, 2, 0, 0, 0.0, 0.0)).unwrap();
+    assert_eq!(g.actors[&2].map, 2);
+    g.command(1, cmd(2, 2, 2, 0, 0, 180.0, 100.0)).unwrap();
+    g.step();
+    assert!(g.actors[&1].x > 100.0);
+    assert!(g.command(1, cmd(3, 1, 999, 0, 0, 0.0, 0.0)).is_err());
+    assert_eq!(g.actors[&1].map, 2);
+    let file = g.outbox.path_for_test();
+    drop(g);
+    std::fs::remove_file(file).unwrap();
+}
+
+#[test]
+fn auto_uses_selected_learned_skill_and_manual_stops_the_actor() {
+    let mut g = game();
+    field(&mut g);
+    let mut other = g.actors[&1].profile.skills[0].clone();
+    other.id = 2;
+    g.actors.get_mut(&1).unwrap().profile.skills.push(other);
+    g.command(1, cmd(2, 5, 2, 1, 2, 0.0, 0.0)).unwrap();
+    assert!(g.actors[&1].farming);
+    assert_eq!(g.actors[&1].skill, 2);
+    g.step();
+    assert!(
+        g.events
+            .iter()
+            .any(|e| e.source == 1 && e.kind == 1 && e.skill == 2)
+    );
+    g.command(1, cmd(3, 5, 2, 1, 999, 0.0, 0.0)).unwrap();
+    assert_eq!(g.actors[&1].skill, 2, "unlearned skills are never accepted");
+    g.command(1, cmd(4, 5, 2, 0, 2, 0.0, 0.0)).unwrap();
+    assert!(!g.actors[&1].farming);
+    assert_eq!(g.actors[&1].target, 0);
+    assert!(g.actors[&1].path.is_empty());
+    let file = g.outbox.path_for_test();
+    drop(g);
+    std::fs::remove_file(file).unwrap();
+}
+
+fn piercing_fixture(points: &[(f32, f32)], speed: f32) -> Game {
+    let mut g = game();
+    g.command(1, cmd(1, 1, 2, 0, 0, 0.0, 0.0)).unwrap();
+    let room = g.rooms.get_mut(&2).unwrap();
+    room.mobs.truncate(points.len());
+    for (mob, &(x, y)) in room.mobs.iter_mut().zip(points) {
+        mob.x = x;
+        mob.y = y;
+        mob.home = (x, y);
+        mob.hp = 100.0;
+        mob.def.hp = 100.0;
+        mob.stun = 1000.0;
+        mob.def.speed = 0.0;
+    }
+    let mut skill = g.actors[&1].profile.skills[0].clone();
+    skill.stun = 0.0;
+    skill.cold = 0.0;
+    skill.travel = 0.4;
+    skill.targets = 1;
+    skill.projectile = Some(LinearProjectile {
+        range: 300.0,
+        width: 24.0,
+        speed,
+        ignore_terrain: false,
+    });
+    let target = room.mobs[0].id;
+    g.pending.push(Pending {
+        source: 1,
+        map: 2,
+        target,
+        skill,
+        remaining: 0.52,
+        origin: (100.0, 100.0),
+        flight: Some(projectiles::Flight::new((100.0, 100.0), points[0])),
+    });
+    g
+}
+fn remove_fixture(g: Game) {
+    let file = g.outbox.path_for_test();
+    drop(g);
+    std::fs::remove_file(file).unwrap();
+}
+#[test]
+fn piercing_strip_hits_every_body_along_the_path_once_in_order() {
+    // Deliberately not sorted spatially; the old target cap is one.
+    let mut g = piercing_fixture(
+        &[
+            (250.0, 100.0),
+            (150.0, 100.0),
+            (350.0, 100.0),
+            (190.0, 100.0),
+            (220.0, 100.0),
+            (290.0, 100.0),
+            (320.0, 100.0),
+            (220.0, 114.4),
+            (220.0, 114.6),
+            (50.0, 100.0),
+            (450.0, 100.0),
+        ],
+        300.0,
+    );
+    for _ in 0..30 {
+        g.step();
+    }
+    let room = &g.rooms[&2];
+    for index in 0..8 {
+        assert_eq!(room.mobs[index].hp, 90.0, "in-strip body {index}");
+    }
+    for index in 8..11 {
+        assert_eq!(room.mobs[index].hp, 100.0, "outside strip {index}");
+    }
+    assert!(g.pending.is_empty());
+    remove_fixture(g);
+}
+#[test]
+fn piercing_hits_follow_flight_time_and_continue_after_primary_death_or_dodge() {
+    for dead in [false, true] {
+        let mut g = piercing_fixture(&[(150.0, 100.0), (300.0, 100.0)], 200.0);
+        // Move or kill the originally selected target after the release direction was fixed.
+        g.rooms.get_mut(&2).unwrap().mobs[0].y = 200.0;
+        if dead {
+            g.rooms.get_mut(&2).unwrap().mobs[0].hp = 0.0;
+        }
+        for _ in 0..6 {
+            g.step();
+        }
+        assert_eq!(
+            g.rooms[&2].mobs[1].hp, 100.0,
+            "far body cannot be hit before arrival"
+        );
+        for _ in 0..28 {
+            g.step();
+        }
+        assert_eq!(
+            g.rooms[&2].mobs[1].hp, 90.0,
+            "ray keeps its original direction"
+        );
+        remove_fixture(g);
+    }
+}
+#[test]
+fn piercing_sweeps_fast_diagonals_and_applies_status_to_each_contact() {
+    let mut g = piercing_fixture(
+        &[
+            (140.0, 120.0),
+            (200.0, 150.0),
+            (260.0, 180.0),
+            (220.0, 190.0),
+        ],
+        10000.0,
+    );
+    g.pending[0].skill.parts = [9.0, 0.0, 1.0, 0.0, 0.0];
+    g.pending[0].skill.cold = 2.0;
+    g.pending[0].skill.stun = 100.0;
+    for _ in 0..3 {
+        g.step();
+    }
+    for m in &g.rooms[&2].mobs[..3] {
+        assert_eq!(m.hp, 90.0);
+        assert!(m.cold > 0.0);
+    }
+    assert_eq!(g.rooms[&2].mobs[3].hp, 100.0);
+    let hits: Vec<_> = g
+        .events
+        .iter()
+        .filter(|e| e.kind == 2)
+        .map(|e| e.target)
+        .collect();
+    assert_eq!(
+        hits,
+        g.rooms[&2].mobs[..3]
+            .iter()
+            .map(|m| m.id)
+            .collect::<Vec<_>>()
+    );
+    remove_fixture(g);
+}
+#[test]
+fn moving_targets_are_hit_only_when_they_overlap_the_current_sweep() {
+    let mut g = piercing_fixture(&[(350.0, 100.0), (240.0, 160.0), (130.0, 160.0)], 200.0);
+    for _ in 0..10 {
+        g.step();
+    }
+    g.rooms.get_mut(&2).unwrap().mobs[1].y = 100.0;
+    g.rooms.get_mut(&2).unwrap().mobs[2].y = 100.0;
+    for _ in 0..30 {
+        g.step();
+    }
+    assert_eq!(g.rooms[&2].mobs[1].hp, 90.0, "enters ahead of projectile");
+    assert_eq!(g.rooms[&2].mobs[2].hp, 100.0, "enters behind projectile");
+    remove_fixture(g);
+}
+
+#[test]
+fn piercing_stops_at_walls_unless_the_native_skill_ignores_terrain() {
+    use base64::Engine;
+    for ignores in [false, true] {
+        let mut g = piercing_fixture(&[(150.0, 100.0), (350.0, 100.0)], 300.0);
+        let room = g.rooms.get_mut(&2).unwrap();
+        let mut bits = vec![0u8; 13];
+        // Connected around the southern end, but no straight path through the wall.
+        for row in 0..9 {
+            let cell = row * 10 + 2;
+            bits[cell / 8] |= 1 << (cell % 8);
+        }
+        room.definition.grid = Grid {
+            kind: "grid".into(),
+            columns: 10,
+            rows: 10,
+            cell_size: Some(Size {
+                width: 100.0,
+                height: 100.0,
+            }),
+            blocked_base64: base64::engine::general_purpose::STANDARD.encode(bits),
+        };
+        room.nav = Navigation::new(&room.definition).unwrap();
+        g.pending[0]
+            .skill
+            .projectile
+            .as_mut()
+            .unwrap()
+            .ignore_terrain = ignores;
+        for _ in 0..35 {
+            g.step();
+        }
+        assert_eq!(g.rooms[&2].mobs[0].hp, 90.0);
+        assert_eq!(g.rooms[&2].mobs[1].hp, if ignores { 90.0 } else { 100.0 });
+        assert!(g.pending.is_empty());
+        remove_fixture(g);
+    }
+}
+#[test]
+fn piercing_kills_grant_each_monster_reward_once_and_cannot_cross_rooms() {
+    let mut g = piercing_fixture(&[(150.0, 100.0), (250.0, 100.0), (350.0, 100.0)], 10000.0);
+    for m in &mut g.rooms.get_mut(&2).unwrap().mobs {
+        m.hp = 5.0;
+    }
+    for _ in 0..10 {
+        g.step();
+    }
+    assert_eq!(g.outbox.pending.len(), 3);
+    assert_eq!(g.rooms[&2].loot.len(), 3);
+    for _ in 0..10 {
+        g.step();
+    }
+    assert_eq!(
+        g.outbox.pending.len(),
+        3,
+        "old projectile cannot grant twice"
+    );
+    remove_fixture(g);
+    let mut g = piercing_fixture(&[(150.0, 100.0), (250.0, 100.0)], 300.0);
+    g.command(1, cmd(2, 1, 1, 0, 0, 0.0, 0.0)).unwrap();
+    for _ in 0..35 {
+        g.step();
+    }
+    assert!(g.rooms[&2].mobs.iter().all(|m| m.hp == 100.0));
+    assert!(g.pending.is_empty());
+    remove_fixture(g);
+}
+
+#[test]
+fn selecting_a_skill_preserves_movement_and_target_in_both_control_modes() {
+    let mut g = game();
+    let mut other = g.actors[&1].profile.skills[0].clone();
+    other.id = 2;
+    g.actors.get_mut(&1).unwrap().profile.skills.push(other);
+    g.command(1, cmd(1, 2, 1, 0, 0, 800.0, 100.0)).unwrap();
+    g.step();
+    let accepted = g.actors[&1].command_tick;
+    let path = g.actors[&1].path.clone();
+    g.command(1, cmd(2, 4, 1, 0, 2, 0.0, 0.0)).unwrap();
+    assert_eq!(g.actors[&1].skill, 2);
+    assert_eq!(g.actors[&1].path, path);
+    assert_eq!(g.actors[&1].move_goal, Some((800.0, 100.0)));
+    assert_eq!(g.actors[&1].command_tick, accepted);
+    assert_eq!(g.actors[&1].seq, 2);
+    g.command(1, cmd(3, 4, 1, 0, 999, 0.0, 0.0)).unwrap();
+    assert_eq!(g.actors[&1].skill, 2);
+    g.actors.get_mut(&1).unwrap().farming = true;
+    g.actors.get_mut(&1).unwrap().target = 1001;
+    g.command(1, cmd(4, 4, 1, 0, 1, 0.0, 0.0)).unwrap();
+    assert!(g.actors[&1].farming);
+    assert_eq!(g.actors[&1].target, 1001);
+    assert_eq!(g.actors[&1].skill, 1);
+    remove_fixture(g);
+}
+
+#[test]
+fn cold_requires_resolved_cold_damage_and_weaker_hits_cannot_extend_it() {
+    let mut g = game();
+    field(&mut g);
+    let mut skill = g.actors[&1].profile.skills[0].clone();
+    skill.stun = 0.0;
+    skill.parts = [1.0, 0.0, 0.0, 0.0, 0.0];
+    let m = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
+    m.hp = 10000.0;
+    m.def.hp = 10000.0;
+    status::apply_hit(&skill, m, 1, &mut g.rng);
+    assert_eq!(m.cold, 0.0);
+    skill.parts = [0.0, 0.0, 200.0, 0.0, 0.0];
+    status::apply_hit(&skill, m, 1, &mut g.rng);
+    assert!((m.cold_power - 0.375).abs() < 0.0001);
+    assert_eq!(m.cold, 2.0);
+    m.cold = 0.6;
+    skill.parts[2] = 10.0;
+    skill.cold = 10.0;
+    status::apply_hit(&skill, m, 1, &mut g.rng);
+    assert_eq!(m.cold, 0.6);
+    skill.parts[2] = 400.0;
+    skill.cold = 3.0;
+    status::apply_hit(&skill, m, 1, &mut g.rng);
+    assert_eq!(m.cold, 3.0);
+    assert_eq!(status::cold_factor(m), 0.5);
+    remove_fixture(g);
+}
+#[test]
+fn cold_slows_movement_and_attack_clock_and_expires() {
+    let mut normal = game();
+    field(&mut normal);
+    let mut cold = game();
+    field(&mut cold);
+    for g in [&mut normal, &mut cold] {
+        let m = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
+        m.x = 300.0;
+        m.home = (300.0, 100.0);
+        m.target = 1;
+        m.cd = 10.0;
+    }
+    {
+        let m = &mut cold.rooms.get_mut(&2).unwrap().mobs[0];
+        m.cold = 1.0;
+        m.cold_power = 0.5;
+    }
+    normal.step();
+    cold.step();
+    let a = &normal.rooms[&2].mobs[0];
+    let b = &cold.rooms[&2].mobs[0];
+    assert!((300.0 - a.x - 2.0 * (300.0 - b.x)).abs() < 0.001);
+    assert!((10.0 - a.cd - 2.0 * (10.0 - b.cd)).abs() < 0.001);
+    for _ in 0..25 {
+        cold.step();
+    }
+    assert_eq!(cold.rooms[&2].mobs[0].cold, 0.0);
+    assert_eq!(status::cold_factor(&cold.rooms[&2].mobs[0]), 1.0);
+    remove_fixture(normal);
+    remove_fixture(cold);
+}
+#[test]
+fn stun_blocks_monster_movement_and_attacks_then_recovers() {
+    let mut g = game();
+    field(&mut g);
+    {
+        let m = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
+        m.stun = 0.3;
+        m.target = 1;
+        m.x = 110.0;
+        m.cd = 0.0;
+    }
+    let hp = g.actors[&1].hp;
+    for _ in 0..4 {
+        g.step();
+    }
+    assert_eq!(g.actors[&1].hp, hp);
+    assert_eq!(g.rooms[&2].mobs[0].x, 110.0);
+    for _ in 0..4 {
+        g.step();
+    }
+    assert!(g.actors[&1].hp < hp);
+    remove_fixture(g);
+}
+#[test]
+fn poison_is_resisted_deferred_and_does_not_double_count_or_overrun_duration() {
+    let mut g = game();
+    field(&mut g);
+    let mut skill = g.actors[&1].profile.skills[0].clone();
+    skill.parts = [0.0, 40.0, 0.0, 0.0, 0.0];
+    skill.poison = 2.0;
+    skill.stun = 0.0;
+    let m = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
+    m.def.hp = 100.0;
+    m.hp = 100.0;
+    m.def.res[1] = 50.0;
+    let hit = status::apply_hit(&skill, m, 1, &mut g.rng);
+    assert_eq!(hit.amount, 0.0);
+    assert_eq!(m.hp, 100.0);
+    let mut shown = 0.0;
+    for _ in 0..40 {
+        shown += status::advance_poison(m, 0.05).unwrap_or(0.0);
+    }
+    assert!((m.hp - 80.0).abs() < 0.001);
+    assert!((shown - 20.0).abs() < 0.001);
+    assert!(status::advance_poison(m, 0.05).is_none());
+    m.poison = 0.07;
+    m.poison_damage = 10.0;
+    let before = m.hp;
+    status::advance_poison(m, 0.05);
+    status::advance_poison(m, 0.05);
+    assert!((before - m.hp - 0.7).abs() < 0.001);
+    remove_fixture(g);
+}
+#[test]
+fn physical_damage_uses_armor_crit_and_hurt_without_elemental_status() {
+    let mut g = game();
+    field(&mut g);
+    let mut skill = g.actors[&1].profile.skills[0].clone();
+    skill.parts = [200.0, 0.0, 0.0, 0.0, 0.0];
+    skill.crit = 100.0;
+    skill.stun = 0.0;
+    skill.poison = 3.0;
+    let m = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
+    m.hp = 1000.0;
+    m.def.hp = 1000.0;
+    m.def.defense = 100.0;
+    let hit = status::apply_hit(&skill, m, 1, &mut g.rng);
+    // Defense affects accuracy, never damage of a hit that already landed.
+    assert_eq!(hit.amount, 400.0);
+    assert_eq!(hit.flags, status::CRITICAL | status::HURT);
+    assert_eq!(m.hurt, 0.5);
+    assert_eq!(m.cold, 0.0);
+    assert_eq!(m.poison, 0.0);
+    remove_fixture(g);
+}
+#[test]
+fn respawn_increments_incarnation_and_clears_old_path_and_status() {
+    let mut g = game();
+    field(&mut g);
+    {
+        let m = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
+        m.hp = 0.0;
+        m.respawn = 0.01;
+        m.x = 700.0;
+        m.path = vec![(800.0, 800.0)];
+        m.poison = 3.0;
+        m.cold = 2.0;
+        m.stun = 1.0;
+        m.hurt = 0.5;
+    }
+    g.step();
+    let m = &g.rooms[&2].mobs[0];
+    assert_eq!(m.life, 1);
+    assert_eq!((m.x, m.y), m.home);
+    assert!(m.path.is_empty());
+    assert!(!m.moving);
+    assert_eq!((m.poison, m.cold, m.stun, m.hurt), (0.0, 0.0, 0.0, 0.0));
+    let packet = crate::pve_protocol::snapshot(&g, 1).unwrap();
+    let at = 43 + 55 * 2;
+    assert_eq!(
+        u32::from_le_bytes(packet[at + 40..at + 44].try_into().unwrap()),
+        1
+    );
+    remove_fixture(g);
+}
+
+#[test]
+fn poison_death_emits_typed_ticks_and_grants_one_shared_reward() {
+    let mut g = game();
+    field(&mut g);
+    let skill = &mut g.actors.get_mut(&1).unwrap().profile.skills[0];
+    skill.parts = [0.0, 40.0, 0.0, 0.0, 0.0];
+    skill.poison = 2.0;
+    skill.stun = 0.0;
+    skill.cooldown = 100.0;
+    let mob = g.rooms[&2].mobs[0].id;
+    g.command(1, cmd(2, 3, 2, mob, 1, 0.0, 0.0)).unwrap();
+    for _ in 0..26 {
+        g.step();
+    }
+    assert_eq!(g.rooms[&2].mobs[0].hp, 0.0);
+    assert_eq!(g.outbox.pending.len(), 1);
+    assert_eq!(g.rooms[&2].loot.len(), 1);
+    assert!(
+        g.events
+            .iter()
+            .any(|e| e.kind == 2 && e.hit == status::POISON_TICK)
+    );
+    let a = crate::pve_protocol::snapshot(&g, 1).unwrap();
+    let b = crate::pve_protocol::snapshot(&g, 2).unwrap();
+    let monsters = 43 + 55 * 2;
+    assert_eq!(&a[monsters..monsters + 48], &b[monsters..monsters + 48]);
+    for _ in 0..10 {
+        g.step();
+    }
+    assert_eq!(g.outbox.pending.len(), 1);
+    remove_fixture(g);
+}
+
+#[test]
+fn physical_critical_does_not_multiply_cold_damage_or_trigger_hurt_on_cold_hit() {
+    let mut g = game();
+    field(&mut g);
+    let mut skill = g.actors[&1].profile.skills[0].clone();
+    skill.parts = [200.0, 0.0, 100.0, 0.0, 0.0];
+    skill.crit = 100.0;
+    let m = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
+    m.def.defense = 100.0;
+    m.def.hp = 1000.0;
+    m.hp = 1000.0;
+    let hit = status::apply_hit(&skill, m, 1, &mut g.rng);
+    assert_eq!(hit.amount, 500.0);
+    assert_eq!(hit.flags & status::HURT, 0);
+    remove_fixture(g);
+}
+
+#[test]
+fn lethal_hit_displays_resolved_damage_independent_of_monster_remaining_hp() {
+    let mut g = game();
+    field(&mut g);
+    let mut skill = g.actors[&1].profile.skills[0].clone();
+    skill.parts = [20000.0, 0.0, 0.0, 0.0, 0.0];
+    skill.crit = 0.0;
+    let m = &mut g.rooms.get_mut(&2).unwrap().mobs[0];
+    m.hp = 1548.0;
+    m.def.hp = 1548.0;
+    m.def.res = [0.0; 5];
+    let hit = status::apply_hit(&skill, m, 1, &mut g.rng);
+    assert_eq!(hit.amount, 20000.0);
+    assert_eq!(m.hp, 0.0);
+    assert_eq!(m.killer, 1);
+    remove_fixture(g);
+}
+
+#[test]
+fn weapon_leech_recovers_on_real_hits_and_is_capped(){
+    let mut g=game();field(&mut g);
+    let a=g.actors.get_mut(&1).unwrap();
+    a.hp=100.0;a.mp=0.0;
+    let s=&mut a.profile.skills[0];s.cost=0.0;s.mana_leech=8.0;s.leech=10.0;
+    g.command(1,cmd(2,4,2,g.rooms[&2].mobs[0].id,1,0.0,0.0)).unwrap();
+    for _ in 0..5 {g.step();}
+    let damage=g.events.iter().find(|e|e.kind==2&&e.source==1).unwrap().value;
+    assert!((g.actors[&1].mp-damage*0.08).abs()<0.001);
+    let a=g.actors.get_mut(&1).unwrap();let s=a.profile.skills[0].clone();
+    recovery::leech(a,&s,100000.0);
+    assert_eq!(a.hp,a.profile.hp);assert_eq!(a.mp,a.profile.mp);
+    a.mp=1.0;recovery::leech(a,&s,0.0);assert_eq!(a.mp,1.0);
+}
+
+#[test]
+fn potions_are_durable_capped_and_do_not_cancel_movement(){
+    let mut g=game();
+    let potion:Potion=serde_json::from_value(serde_json::json!({"id":201,"kind":"both","tier":1,"level":1,"hp":100,"mp":60,"count":3,"spent":0})).unwrap();
+    let a=g.actors.get_mut(&1).unwrap();a.profile.potions=vec![potion];
+    let original=a.profile.clone();
+    a.hp=50.0;a.mp=0.0;a.move_goal=Some((300.0,100.0));a.farming=true;
+    g.command(1,cmd(2,7,1,0,201,0.0,0.0)).unwrap();
+    assert_eq!((g.actors[&1].hp,g.actors[&1].mp),(150.0,30.0));
+    assert_eq!(g.actors[&1].move_goal,Some((300.0,100.0)));
+    assert!(g.actors[&1].farming);assert_eq!(g.outbox.pending.len(),1);
+    g.command(1,cmd(2,7,1,0,201,0.0,0.0)).unwrap();
+    g.command(1,cmd(3,7,1,0,201,0.0,0.0)).unwrap();
+    assert_eq!(g.actors[&1].profile.potions[0].count,2);
+    let path=g.outbox.path_for_test();
+    let mut replay=original.clone();
+    drop(g);
+    let outbox=Outbox::open(path.clone()).unwrap();
+    recovery::reconcile(&mut replay,&outbox,"account-a",0);
+    assert_eq!((replay.potions[0].count,replay.potions[0].spent),(2,1));
+    recovery::reconcile(&mut replay,&outbox,"account-a",0);
+    assert_eq!(replay.potions[0].count,2,"committed debit awaiting ACK must not subtract twice");
+    let mut other=original;recovery::reconcile(&mut other,&outbox,"account-b",0);
+    assert_eq!(other.potions[0].count,3);
+    drop(outbox);let _=std::fs::remove_file(path);
+}
+
+#[test]
+fn rejected_potions_do_not_charge_stock(){
+    let mut g=game();
+    let a=g.actors.get_mut(&1).unwrap();
+    a.profile.potions=vec![serde_json::from_value(serde_json::json!({"id":1,"kind":"life","tier":1,"level":1,"hp":100,"mp":0,"count":1,"spent":0})).unwrap()];
+    g.command(1,cmd(2,7,1,0,1,0.0,0.0)).unwrap(); // full HP
+    g.actors.get_mut(&1).unwrap().hp=0.0;
+    g.command(1,cmd(3,7,1,0,1,0.0,0.0)).unwrap(); // dead
+    g.actors.get_mut(&1).unwrap().hp=50.0;
+    g.command(1,cmd(4,7,2,0,1,0.0,0.0)).unwrap(); // wrong map
+    g.command(1,cmd(5,7,1,0,999,0.0,0.0)).unwrap(); // unknown item
+    assert!(g.outbox.pending.is_empty());assert_eq!(g.actors[&1].hp,50.0);
+    assert_eq!(g.actors[&1].profile.potions[0].count,1);
+}
+
+#[test]
+fn piercing_leech_counts_each_contact_once(){
+    let mut g=piercing_fixture(&[(150.0,100.0),(200.0,100.0),(250.0,100.0)],1000.0);
+    g.actors.get_mut(&1).unwrap().mp=0.0;
+    g.pending[0].skill.mana_leech=8.0;
+    for _ in 0..20{g.step();}
+    let damage:f32=g.events.iter().filter(|e|e.kind==2&&e.source==1).map(|e|e.value).sum();
+    assert!(damage>0.0);
+    assert!((g.actors[&1].mp-damage*0.08).abs()<0.001);
+    remove_fixture(g);
+}
+
+fn support_fixture(name:&str)->Profile{
+    let rows:serde_json::Value=serde_json::from_str(include_str!("../../../../test/fixtures/multiplayer-support.json")).unwrap();
+    serde_json::from_value(rows.as_array().unwrap().iter().find(|r|r["name"]==name).unwrap()["resolved"].clone()).unwrap()
+}
+#[test]
+fn all_factions_auto_cast_native_buffs_and_resolve_exact_combinations(){
+    for name in ["cuiyan-blade","cuiyan-dual","wudang","kunlun","gaibang","shaolin","emei","tianwang","tianren"]{
+        let mut g=game();g.actors.remove(&1);
+        g.join(1,"account-a".into(),0,support_fixture(name)).unwrap();field(&mut g);
+        for _ in 0..80{g.step();}
+        let a=&g.actors[&1];let catalog=a.base_profile.support.as_ref().unwrap();
+        for s in catalog.skills.iter().filter(|s|s.enabled&&!s.aura&&s.duration>=5.0){
+            assert!(a.support.active.contains_key(&s.id),"{} skill {} not active, MP {}",name,s.id,a.mp);
+        }
+        let active:Vec<_>=a.support.active.keys().chain(a.support.auras.iter()).copied().collect::<std::collections::BTreeSet<_>>().into_iter().collect();
+        let expected=&catalog.variants.iter().find(|v|v.active==active).unwrap().profile;
+        assert_eq!(a.profile.hp,expected.hp,"{} HP",name);
+        assert_eq!(a.profile.speed,expected.speed,"{} speed",name);
+        assert_eq!(a.profile.res,expected.res,"{} resistance",name);
+        assert_eq!(a.profile.skills[0].parts,expected.skills[0].parts,"{} damage",name);
+        remove_fixture(g);
+    }
+}
+#[test]
+fn buffs_expire_without_stacking_and_clear_on_death(){
+    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("shaolin")).unwrap();field(&mut g);
+    for _ in 0..40{g.step();}
+    let a=g.actors.get_mut(&1).unwrap();assert!(a.profile.hp>a.base_profile.hp);
+    a.hp=a.profile.hp*0.5;
+    for s in &mut a.base_profile.support.as_mut().unwrap().skills{s.enabled=false;}
+    for t in a.support.active.values_mut(){*t=0.01;}
+    g.step();let a=g.actors.get_mut(&1).unwrap();assert!(a.support.active.is_empty());
+    assert_eq!(a.profile.hp,a.base_profile.hp);
+    assert!((a.hp/a.profile.hp-0.5).abs()<0.01);
+    a.support.active.insert(15,100.0);support::resolve(a);a.hp=0.0;
+    g.step();assert!(g.actors[&1].support.active.is_empty());
+    remove_fixture(g);
+}
+#[test]
+fn support_gates_movement_town_mana_settings_and_manual_cast(){
+    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("kunlun")).unwrap();
+    for _ in 0..20{g.step();}assert!(g.actors[&1].support.active.is_empty(),"town");
+    field(&mut g);g.actors.get_mut(&1).unwrap().mp=0.0;
+    for _ in 0..5{g.step();}assert!(g.actors[&1].support.active.is_empty(),"insufficient MP");
+    let a=g.actors.get_mut(&1).unwrap();a.mp=a.profile.mp;a.path=vec![(900.0,900.0)];
+    g.step();assert!(g.actors[&1].support.active.is_empty(),"moving");
+    g.actors.get_mut(&1).unwrap().path.clear();
+    g.command(1,cmd(2,9,2,0,171,0.0,0.0)).unwrap();g.command(1,cmd(3,9,2,0,173,0.0,0.0)).unwrap();
+    for _ in 0..20{g.step();}assert!(g.actors[&1].support.active.is_empty(),"auto disabled");
+    g.command(1,cmd(4,8,2,0,171,0.0,0.0)).unwrap();assert!(g.actors[&1].support.active.contains_key(&171));
+    let mp=g.actors[&1].mp;
+    g.command(1,cmd(5,8,2,0,171,0.0,0.0)).unwrap();assert_eq!(g.actors[&1].mp,mp,"no duplicate charge");
+    remove_fixture(g);
+}
+#[test]
+fn aura_toggle_and_native_mana_shield_reflection_are_authoritative(){
+    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("shaolin")).unwrap();field(&mut g);
+    assert!(g.actors[&1].support.auras.contains(&16));
+    g.command(1,cmd(2,8,2,0,16,0.0,0.0)).unwrap();assert!(!g.actors[&1].support.auras.contains(&16));
+    g.command(1,cmd(3,8,2,0,16,0.0,0.0)).unwrap();assert!(g.actors[&1].profile.protection.reflect_percent>0.0);
+    let a=g.actors.get_mut(&1).unwrap();a.hp=100.0;a.mp=30.0;
+    a.profile.protection.mana_shield=90.0;a.profile.protection.reflect_percent=20.0;
+    let (lost,reflected)=support::receive_hit(a,100.0);
+    assert_eq!((lost,reflected,a.mp,a.hp),(70.0,14.0,0.0,30.0));
+    remove_fixture(g);
+}
+
+#[test]
+fn native_healing_support_has_real_recovery_and_cooldown(){
+    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("cuiyan-dual")).unwrap();field(&mut g);
+    let a=g.actors.get_mut(&1).unwrap();a.hp=a.profile.hp*0.2;
+    for s in &mut a.base_profile.support.as_mut().unwrap().skills{if s.id!=269{s.enabled=false;}}
+    let before=(a.hp,a.mp);g.step();
+    let a=&g.actors[&1];assert!(a.hp>before.0);assert!(a.mp<before.1);
+    assert!(a.support.cooldowns[&269]>7.9);assert!(!a.support.active.contains_key(&269));
+    assert!(g.events.iter().any(|e|e.kind==6&&e.source==1&&e.skill==269&&e.value>0.0));
+    remove_fixture(g);
+}
+#[test]
+fn reflection_kills_reward_once_and_cannot_reflect_recursively(){
+    let mut g=game();field(&mut g);
+    let a=g.actors.get_mut(&1).unwrap();a.profile.protection.reflect_percent=100.0;
+    let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];m.x=110.0;m.y=100.0;m.target=1;m.hp=0.5;m.cd=0.0;
+    g.step();assert_eq!(g.rooms[&2].mobs[0].hp,0.0);
+    assert!(g.events.iter().any(|e|e.kind==2&&e.source==1&&e.target==g.rooms[&2].mobs[0].id));
+    let grants=g.outbox.pending.len();assert_eq!(grants,1);
+    for _ in 0..20{g.step();}assert_eq!(g.outbox.pending.len(),grants);
+    remove_fixture(g);
+}
+
+fn pvp_fixture()->Game{
+    let mut g=game();field(&mut g);g.rooms.get_mut(&2).unwrap().mobs.clear();
+    for (&id,a) in &mut g.actors{a.profile.alignment=if id==1{0}else{1};a.profile.series=-1;a.profile.skills[0].cost=0.0;a.profile.skills[0].stun=0.0;a.profile.skills[0].cold=0.0;}
+    g.actors.get_mut(&1).unwrap().pvp.enabled=true;g
+}
+#[test]
+fn slaughter_permissions_use_canonical_color_and_safe_maps(){
+    let mut g=pvp_fixture();assert!(pvp::can_hit(&g,1,2));assert!(pvp::can_hit(&g,2,1),"victim can fight back");
+    assert!(!pvp::can_hit(&g,1,1));g.actors.get_mut(&2).unwrap().profile.alignment=0;assert!(!pvp::can_hit(&g,1,2));
+    g.actors.get_mut(&2).unwrap().profile.alignment=1;g.actors.get_mut(&1).unwrap().pvp.enabled=false;assert!(!pvp::can_hit(&g,1,2));
+    g.actors.get_mut(&1).unwrap().pvp.enabled=true;g.actors.get_mut(&2).unwrap().map=1;assert!(!pvp::can_hit(&g,1,2));
+    g.actors.get_mut(&1).unwrap().map=1;assert!(!pvp::can_hit(&g,1,2),"town is safe even when mode is enabled");
+    remove_fixture(g);
+}
+#[test]
+fn slaughter_uses_tong_kim_twenty_percent_before_resistance_and_mana_shield(){
+    let mut g=pvp_fixture();let mut skill=g.actors[&1].profile.skills[0].clone();skill.parts=[100.0,0.0,0.0,0.0,0.0];
+    let b=g.actors.get_mut(&2).unwrap();b.profile.res[0]=50.0;b.profile.protection.mana_shield=50.0;
+    let mut events=vec![];pvp::hit(&mut g,1,2,&skill,&mut events);
+    assert_eq!(g.actors[&2].hp,195.0);assert_eq!(g.actors[&2].mp,25.0);
+    assert_eq!(events[0].5,5.0);assert_eq!(pvp::scale(),0.2);
+    remove_fixture(g);
+}
+#[test]
+fn slaughter_poison_is_scaled_once_and_respects_duration_reduction(){
+    let mut g=pvp_fixture();let mut skill=g.actors[&1].profile.skills[0].clone();skill.parts=[0.0,100.0,0.0,0.0,0.0];skill.poison=4.0;skill.mana_leech=8.0;
+    g.actors.get_mut(&1).unwrap().mp=0.0;g.actors.get_mut(&2).unwrap().profile.protection.poison_reduction=50.0;
+    let mut events=vec![];pvp::hit(&mut g,1,2,&skill,&mut events);assert!(events.is_empty());assert_eq!(g.actors[&2].pvp.poison,2.0);
+    for _ in 0..41{g.step();}
+    assert!((g.actors[&2].hp-190.0).abs()<0.001);assert_eq!(g.actors[&1].mp,0.0,"DOT does not leech again");
+    remove_fixture(g);
+}
+#[test]
+fn slaughter_piercing_hits_other_colors_once_and_never_same_color(){
+    let mut g=pvp_fixture();let profile=g.actors[&1].profile.clone();g.join(3,"account-c".into(),0,profile.clone()).unwrap();g.join(4,"account-d".into(),0,profile).unwrap();
+    for id in 1..=4{let a=g.actors.get_mut(&id).unwrap();a.map=2;a.x=100.0+(id-1)as f32*50.0;a.y=100.0;}
+    g.actors.get_mut(&4).unwrap().profile.alignment=2;
+    let mut skill=g.actors[&1].profile.skills[0].clone();skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.travel=0.4;skill.projectile=Some(LinearProjectile{range:300.0,width:24.0,speed:1000.0,ignore_terrain:false});
+    g.pending.push(Pending{source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),flight:Some(projectiles::Flight::new((100.0,100.0),(150.0,100.0)))});
+    for _ in 0..16{g.step();}
+    assert_eq!(g.actors[&2].hp,180.0);assert_eq!(g.actors[&3].hp,200.0);assert_eq!(g.actors[&4].hp,180.0);
+    assert_eq!(g.events.iter().filter(|e|e.kind==2&&e.source==1).count(),2);
+    remove_fixture(g);
+}
+#[test]
+fn slaughter_death_respawns_without_pve_reward_and_auto_selects_players(){
+    let mut g=pvp_fixture();g.command(1,cmd(2,5,2,1,1,0.0,0.0)).unwrap();g.step();assert_eq!(g.actors[&1].target,2);
+    let mut skill=g.actors[&1].profile.skills[0].clone();skill.parts=[10000.0,0.0,0.0,0.0,0.0];
+    pvp::hit(&mut g,1,2,&skill,&mut vec![]);assert_eq!(g.actors[&2].hp,0.0);assert!(g.outbox.pending.is_empty());
+    g.actors.get_mut(&1).unwrap().farming=false;
+    let life=g.actors[&2].life;for _ in 0..122{g.step();}
+    assert!(g.actors[&2].hp>0.0);assert_eq!(g.actors[&2].life,life+1);assert!(g.outbox.pending.is_empty());
+    remove_fixture(g);
+}
+
+#[test]
+fn slaughter_cancels_unapproved_targets_and_preserves_overkill_labels(){
+    let mut g=pvp_fixture();let mut s=g.actors[&1].profile.skills[0].clone();s.parts=[10000.0,0.0,0.0,0.0,0.0];
+    let mut events=vec![];g.actors.get_mut(&1).unwrap().pvp.enabled=false;
+    pvp::hit(&mut g,1,2,&s,&mut events);assert!(events.is_empty());assert_eq!(g.actors[&2].hp,200.0);
+    g.actors.get_mut(&1).unwrap().pvp.enabled=true;
+    pvp::hit(&mut g,1,2,&s,&mut events);assert_eq!(g.actors[&2].hp,0.0);assert_eq!(events[0].5,2000.0);
+    remove_fixture(g);
+}
+
+#[test]
+fn slaughter_auto_heal_support_recognizes_player_enemies_without_monsters(){
+    let mut g=pvp_fixture();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("cuiyan-dual")).unwrap();
+    let a=g.actors.get_mut(&1).unwrap();a.map=2;a.x=100.0;a.y=100.0;a.pvp.enabled=true;a.hp=a.profile.hp*0.2;
+    for s in &mut a.base_profile.support.as_mut().unwrap().skills{if s.id!=269{s.enabled=false;}}
+    g.actors.get_mut(&2).unwrap().profile.alignment=0;
+    let before=g.actors[&1].hp;g.step();assert!(g.actors[&1].hp>before);
+    assert!(g.events.iter().any(|e|e.kind==6&&e.source==1&&e.skill==269));remove_fixture(g);
+}

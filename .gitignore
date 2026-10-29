@@ -16,3 +16,7 @@ src/client/game.js.map
 
 # Unused cursor draft; runtime cursor assets remain tracked.
 /public/img/cursors/click.png
+
+# Durable online reward journals (account data).
+database/*outbox.jsonl
+database/*outbox.tmp

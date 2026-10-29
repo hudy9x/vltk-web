@@ -8,7 +8,7 @@ import type { ServerServices } from '../types.ts';
 export function registerApiRoutes(app: FastifyInstance, services: ServerServices): void {
   const { db, assets, development, combatSandbox } = services;
   const storage = registerAccounts(app, db);
-  registerMultiplayerWebTransport(app, storage.requireUser);
+  registerMultiplayerWebTransport(app, storage.requireUser, db);
   app.get('/api/config', (_request, reply) => sendJson(reply, 200,
     { development, ...(development && combatSandbox ? { combatSandbox: true } : {}) }));
   app.get('/api/health', (_request, reply) => sendJson(reply, 200, { ok: true, database: 'sqlite', mode: 'local' }));

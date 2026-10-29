@@ -1,4 +1,9 @@
+mod control;
+mod diagnostics;
+#[path = "../../domain/mod.rs"]
+mod domain;
 mod protocol;
+mod pve_protocol;
 mod world;
 use anyhow::{Result, ensure};
 use axum::{Json, Router, routing::get};
@@ -63,10 +68,10 @@ async fn play(
     mut ticks: watch::Receiver<u32>,
 ) -> Result<()> {
     let mut revision = None;
+    let mut debug_last_event=0u32;
     let mut last = Instant::now();
     let mut budget_start = Instant::now();
     let mut budget = 0;
-    let mut last_appearance = Instant::now() - Duration::from_secs(1);
     let control = read_uni(connection);
     tokio::pin!(control);
     loop {
@@ -86,14 +91,29 @@ async fn play(
                 if let Some((snapshot, roster)) = packet.1 {
                     if let Some(roster) = roster { reliable(connection, &roster).await?; revision = Some(packet.0); }
                     connection.send_datagram(snapshot)?;
+                    if tick.is_multiple_of(2) {
+                        let (state,events)={let w=world.lock().unwrap();
+                            let map=w.game.actors.get(&id).map(|a|a.map);
+                            let events=if diagnostics::enabled(){w.game.events.iter().filter(|e|Some(e.map)==map&&(e.id.wrapping_sub(debug_last_event) as i32)>0).map(|e|serde_json::json!({"event":e.id,"skill":e.skill,"kind":e.kind,"source":e.source,"target":e.target})).collect::<Vec<_>>()}else{vec![]};
+                            (pve_protocol::snapshot(&w.game,id),events)};
+                        if let Some(bytes)=state{reliable(connection,&bytes).await?;
+                            if !events.is_empty(){debug_last_event=events.last().and_then(|e|e["event"].as_u64()).unwrap_or(debug_last_event as u64) as u32;diagnostics::log("world-sent",serde_json::json!({"player":id,"tick":tick,"bytes":bytes.len(),"events":events}));}
+                        }
+                    }
                 }
             }
             packet = &mut control => {
-                ensure!(last_appearance.elapsed() >= Duration::from_millis(750), "appearance rate exceeded");
-                let bytes = packet?; let (appearance, _) = protocol::appearance(&bytes, false)?;
-                let mut state = world.lock().unwrap();
-                state.players.get_mut(&id).unwrap().appearance = appearance;
-                state.revision = state.revision.wrapping_add(1); last_appearance = Instant::now();
+                // Count bursts rather than spacing: QUIC can deliver delayed streams together.
+                if budget_start.elapsed() >= Duration::from_secs(1) { budget = 0; budget_start = Instant::now(); }
+                budget += 1; ensure!(budget <= 60, "input rate exceeded");
+                let bytes = packet?;
+                {let mut state = world.lock().unwrap();
+                if bytes.get(1)==Some(&16){let c=pve_protocol::command(&bytes)?;
+                    if diagnostics::enabled(){let actor=state.game.actors.get(&id);diagnostics::log("command",serde_json::json!({"player":id,"seq":c.seq,"kind":c.kind,"map":c.map,"skill":c.skill,"target":c.target,
+                        "slot":actor.map(|a|a.slot),"learned":actor.map(|a|a.profile.skills.iter().any(|s|s.id==c.skill))}));}
+                    state.game.command(id,c)?;}
+                else {let (appearance, _) = protocol::appearance(&bytes, false)?;state.players.get_mut(&id).unwrap().appearance=appearance;state.revision=state.revision.wrapping_add(1);}}
+
                 control.set(read_uni(connection));
             }
             stream = connection.accept_bi() => { stream?; anyhow::bail!("unexpected bidirectional stream"); }
@@ -125,8 +145,10 @@ async fn main() -> Result<()> {
     )?;
     let play_url =
         std::env::var("WT_PUBLIC_URL").unwrap_or_else(|_| "https://127.0.0.1:4434/play".into());
-    let config = serde_json::json!({"protocol":1,"playUrl":play_url,"certificateHash":hash});
+    let config = serde_json::json!({"protocol":crate::protocol::VERSION,"diagnostics":{"revision":diagnostics::REVISION,"enabled":diagnostics::enabled()},"playUrl":play_url,"certificateHash":hash});
+    let world = Arc::new(Mutex::new(World::default()));
     let app = Router::new()
+        .merge(control::routes(world.clone(), secret.clone()))
         .route(
             "/config",
             get(move || {
@@ -146,22 +168,24 @@ async fn main() -> Result<()> {
         std::env::var("WT_ORIGINS")
             .unwrap_or_else(|_| "http://localhost:3000,http://127.0.0.1:3000".into()),
     );
-    let world = Arc::new(Mutex::new(World::default()));
     let used = Arc::new(Mutex::new(HashMap::<[u8; 16], u32>::new()));
     let capacity = Arc::new(Semaphore::new(128));
     let (ticks, tick_rx) = watch::channel(0u32);
+    let simulation = world.clone();
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_millis(50));
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         let mut tick = 0u32;
         loop {
             interval.tick().await;
+            simulation.lock().unwrap().game.step();
             tick = tick.wrapping_add(1);
             if ticks.send(tick).is_err() {
                 break;
             }
         }
     });
+    diagnostics::log("boot",serde_json::json!({"protocol":protocol::VERSION,"http":http_bind.to_string(),"quic":quic_bind.to_string()}));
     println!("Game multiplayer WebTransport: control {http_bind}, QUIC {quic_bind}");
     loop {
         let incoming = tokio::select! {v=endpoint.accept()=>v, _=tokio::signal::ctrl_c()=>break};
@@ -205,7 +229,31 @@ async fn main() -> Result<()> {
                         );
                         used.insert(nonce, expiry);
                     }
-                    world.lock().unwrap().join(account, appearance)
+                    let mut state = world.lock().unwrap();
+                    let key = nonce.iter().map(|b| format!("{b:02x}")).collect::<String>();
+                    let (admission, at) = state
+                        .admissions
+                        .remove(&key)
+                        .ok_or_else(|| anyhow::anyhow!("missing character admission"))?;
+                    ensure!(
+                        at.elapsed().as_secs() < 30
+                            && admission.account.replace('-', "")
+                                == account
+                                    .iter()
+                                    .map(|b| format!("{b:02x}"))
+                                    .collect::<String>(),
+                        "admission mismatch"
+                    );
+                    let id = state.join(account, appearance)?;
+                    if let Err(error) =
+                        state
+                            .game
+                            .join(id, admission.account, admission.slot, admission.profile)
+                    {
+                        state.leave(id);
+                        return Err(error);
+                    }
+                    Ok(id)
                 }
                 .await;
                 let id = match join {

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "tickSeconds": 0.05,
+  "monstersPerMap": 24,
+  "respawnSeconds": 20,
+  "aggroRange": 400,
+  "leashRange": 700,
+  "pickupRange": 90,
+  "lootSeconds": 120,
+  "playerRespawnSeconds": 6,
+  "maxMaps": 48,
+  "maxPlayers": 128,
+  "maxLootPerMap": 64,
+  "rewards": {
+    "xpPerMonsterLevel": 5,
+    "goldPerMonsterLevel": 0.5
+  }
+}

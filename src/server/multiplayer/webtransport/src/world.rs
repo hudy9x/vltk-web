@@ -11,11 +11,33 @@ pub struct Player {
     pub position: Option<Position>,
     pub seen: Instant,
 }
-#[derive(Default)]
 pub struct World {
     pub players: BTreeMap<u32, Player>,
-    next: u32,
+    pub game: crate::domain::Game,
+    pub admissions: BTreeMap<String, (crate::domain::definitions::Admission, Instant)>,
     pub revision: u32,
+}
+impl Default for World {
+    fn default() -> Self {
+        Self {
+            players: BTreeMap::new(),
+            admissions: BTreeMap::new(),
+            revision: 0,
+            game: crate::domain::Game::new(
+                if cfg!(test) {
+                    std::env::temp_dir()
+                        .join(format!("vltk-world-{}.jsonl", std::process::id()))
+                        .to_string_lossy()
+                        .into_owned()
+                } else {
+                    std::env::var("PVE_OUTBOX_FILE")
+                        .unwrap_or_else(|_| "database/multiplayer-outbox.jsonl".into())
+                }
+                .into(),
+            )
+            .expect("open reward journal"),
+        }
+    }
 }
 impl World {
     pub fn join(&mut self, account: [u8; 16], appearance: Appearance) -> Result<u32> {
@@ -24,8 +46,7 @@ impl World {
             !self.players.values().any(|p| p.account == account),
             "account already connected"
         );
-        self.next = self.next.wrapping_add(1).max(1);
-        let id = self.next;
+        let id = self.game.id();
         self.players.insert(
             id,
             Player {
@@ -40,9 +61,16 @@ impl World {
     }
     pub fn leave(&mut self, id: u32) {
         self.players.remove(&id);
+        self.game.actors.remove(&id);
         self.revision = self.revision.wrapping_add(1);
     }
-    pub fn update(&mut self, id: u32, position: Position) -> Result<()> {
+    pub fn update(&mut self, id: u32, mut position: Position) -> Result<()> {
+        if let Some(actor) = self.game.actors.get(&id) {
+            position.x = actor.x;
+            position.y = actor.y;
+            position.map = actor.map;
+            position.moving = u8::from(!actor.path.is_empty());
+        }
         let player = self
             .players
             .get(&id)
@@ -119,12 +147,16 @@ mod tests {
             ride: 0,
             parts: [-1, 0, 0, -1],
             name: "Người chơi".into(),
+            rebirth: 0,
+            effects: vec![],
         }
     }
     fn pos(map: u32, seq: u32) -> Position {
         Position {
             seq,
             map,
+            timestamp: seq * 50,
+            effect_time: 0.0,
             x: 100.0,
             y: 200.0,
             dir: 0,
@@ -140,12 +172,15 @@ mod tests {
         world.update(a, pos(1, 2)).unwrap();
         world.update(a, pos(2, 1)).unwrap();
         world.update(b, pos(2, 1)).unwrap();
-        assert_eq!(world.packets(a, 1, false).unwrap().0.len(), 34);
+        assert_eq!(world.packets(a, 1, false).unwrap().0.len(), 42);
         assert!(world.packets(a, 1, false).unwrap().1.is_none());
         assert!(world.packets(a, 1, true).unwrap().1.is_some());
         world.update(b, pos(1, 2)).unwrap();
-        assert_eq!(world.packets(a, 2, false).unwrap().0.len(), 52);
+        assert_eq!(world.packets(a, 2, false).unwrap().0.len(), 68);
         world.leave(b);
-        assert_eq!(world.packets(a, 3, false).unwrap().0.len(), 34);
+        assert_eq!(world.packets(a, 3, false).unwrap().0.len(), 42);
+        let path = world.game.outbox.path_for_test();
+        drop(world);
+        std::fs::remove_file(path).unwrap();
     }
 }

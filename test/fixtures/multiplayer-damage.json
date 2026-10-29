@@ -1,0 +1,772 @@
+[
+  {
+    "name": "series-0-roll-0.85",
+    "skill": {
+      "id": 1063,
+      "parts": [
+        1000,
+        500,
+        2000,
+        0,
+        0
+      ],
+      "level": 25,
+      "cost": 0,
+      "cooldown": 1,
+      "range": 512,
+      "radius": 0,
+      "shape": "single",
+      "targets": 1,
+      "crit": 75,
+      "stun": 0,
+      "cold": 1.5,
+      "poison": 3,
+      "travel": 0,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 30,
+        "anti": [
+          10,
+          5,
+          20,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 100,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          20,
+          0
+        ],
+        "spread": 0.15
+      }
+    },
+    "resistance": [
+      50,
+      40,
+      60,
+      0,
+      0
+    ],
+    "targetSeries": 0,
+    "rolls": [
+      0.85,
+      0.85,
+      0.85,
+      0.85,
+      0.85
+    ],
+    "critical": false,
+    "fatal": false,
+    "expected": {
+      "parts": [
+        510,
+        276.25,
+        1020,
+        0,
+        0
+      ],
+      "direct": 1530
+    }
+  },
+  {
+    "name": "series-0-roll-1",
+    "skill": {
+      "id": 1063,
+      "parts": [
+        1000,
+        500,
+        2000,
+        0,
+        0
+      ],
+      "level": 25,
+      "cost": 0,
+      "cooldown": 1,
+      "range": 512,
+      "radius": 0,
+      "shape": "single",
+      "targets": 1,
+      "crit": 75,
+      "stun": 0,
+      "cold": 1.5,
+      "poison": 3,
+      "travel": 0,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 30,
+        "anti": [
+          10,
+          5,
+          20,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 100,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          20,
+          0
+        ],
+        "spread": 0.15
+      }
+    },
+    "resistance": [
+      50,
+      40,
+      60,
+      0,
+      0
+    ],
+    "targetSeries": 0,
+    "rolls": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "critical": true,
+    "fatal": false,
+    "expected": {
+      "parts": [
+        1200,
+        325,
+        1200,
+        0,
+        0
+      ],
+      "direct": 2400
+    }
+  },
+  {
+    "name": "series-0-roll-1.15",
+    "skill": {
+      "id": 1063,
+      "parts": [
+        1000,
+        500,
+        2000,
+        0,
+        0
+      ],
+      "level": 25,
+      "cost": 0,
+      "cooldown": 1,
+      "range": 512,
+      "radius": 0,
+      "shape": "single",
+      "targets": 1,
+      "crit": 75,
+      "stun": 0,
+      "cold": 1.5,
+      "poison": 3,
+      "travel": 0,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 30,
+        "anti": [
+          10,
+          5,
+          20,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 100,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          20,
+          0
+        ],
+        "spread": 0.15
+      }
+    },
+    "resistance": [
+      50,
+      40,
+      60,
+      0,
+      0
+    ],
+    "targetSeries": 0,
+    "rolls": [
+      1.15,
+      1.15,
+      1.15,
+      1.15,
+      1.15
+    ],
+    "critical": false,
+    "fatal": true,
+    "expected": {
+      "parts": [
+        690,
+        373.75,
+        1380,
+        0,
+        0
+      ],
+      "direct": 3105
+    }
+  },
+  {
+    "name": "series-3-roll-0.85",
+    "skill": {
+      "id": 1063,
+      "parts": [
+        1000,
+        500,
+        2000,
+        0,
+        0
+      ],
+      "level": 25,
+      "cost": 0,
+      "cooldown": 1,
+      "range": 512,
+      "radius": 0,
+      "shape": "single",
+      "targets": 1,
+      "crit": 75,
+      "stun": 0,
+      "cold": 1.5,
+      "poison": 3,
+      "travel": 0,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 30,
+        "anti": [
+          10,
+          5,
+          20,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 100,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          20,
+          0
+        ],
+        "spread": 0.15
+      }
+    },
+    "resistance": [
+      50,
+      40,
+      60,
+      0,
+      0
+    ],
+    "targetSeries": 3,
+    "rolls": [
+      0.85,
+      0.85,
+      0.85,
+      0.85,
+      0.85
+    ],
+    "critical": false,
+    "fatal": false,
+    "expected": {
+      "parts": [
+        765,
+        403.75,
+        1530,
+        0,
+        0
+      ],
+      "direct": 3161.4
+    }
+  },
+  {
+    "name": "series-3-roll-1",
+    "skill": {
+      "id": 1063,
+      "parts": [
+        1000,
+        500,
+        2000,
+        0,
+        0
+      ],
+      "level": 25,
+      "cost": 0,
+      "cooldown": 1,
+      "range": 512,
+      "radius": 0,
+      "shape": "single",
+      "targets": 1,
+      "crit": 75,
+      "stun": 0,
+      "cold": 1.5,
+      "poison": 3,
+      "travel": 0,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 30,
+        "anti": [
+          10,
+          5,
+          20,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 100,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          20,
+          0
+        ],
+        "spread": 0.15
+      }
+    },
+    "resistance": [
+      50,
+      40,
+      60,
+      0,
+      0
+    ],
+    "targetSeries": 3,
+    "rolls": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "critical": true,
+    "fatal": false,
+    "expected": {
+      "parts": [
+        1800,
+        475,
+        1800,
+        0,
+        0
+      ],
+      "direct": 4884
+    }
+  },
+  {
+    "name": "series-3-roll-1.15",
+    "skill": {
+      "id": 1063,
+      "parts": [
+        1000,
+        500,
+        2000,
+        0,
+        0
+      ],
+      "level": 25,
+      "cost": 0,
+      "cooldown": 1,
+      "range": 512,
+      "radius": 0,
+      "shape": "single",
+      "targets": 1,
+      "crit": 75,
+      "stun": 0,
+      "cold": 1.5,
+      "poison": 3,
+      "travel": 0,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 30,
+        "anti": [
+          10,
+          5,
+          20,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 100,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          20,
+          0
+        ],
+        "spread": 0.15
+      }
+    },
+    "resistance": [
+      50,
+      40,
+      60,
+      0,
+      0
+    ],
+    "targetSeries": 3,
+    "rolls": [
+      1.15,
+      1.15,
+      1.15,
+      1.15,
+      1.15
+    ],
+    "critical": false,
+    "fatal": true,
+    "expected": {
+      "parts": [
+        1035,
+        546.25,
+        2070,
+        0,
+        0
+      ],
+      "direct": 6345.9
+    }
+  },
+  {
+    "name": "series-4-roll-0.85",
+    "skill": {
+      "id": 1063,
+      "parts": [
+        1000,
+        500,
+        2000,
+        0,
+        0
+      ],
+      "level": 25,
+      "cost": 0,
+      "cooldown": 1,
+      "range": 512,
+      "radius": 0,
+      "shape": "single",
+      "targets": 1,
+      "crit": 75,
+      "stun": 0,
+      "cold": 1.5,
+      "poison": 3,
+      "travel": 0,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 30,
+        "anti": [
+          10,
+          5,
+          20,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 100,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          20,
+          0
+        ],
+        "spread": 0.15
+      }
+    },
+    "resistance": [
+      50,
+      40,
+      60,
+      0,
+      0
+    ],
+    "targetSeries": 4,
+    "rolls": [
+      0.85,
+      0.85,
+      0.85,
+      0.85,
+      0.85
+    ],
+    "critical": false,
+    "fatal": false,
+    "expected": {
+      "parts": [
+        255,
+        148.75,
+        510,
+        0,
+        0
+      ],
+      "direct": 688.5
+    }
+  },
+  {
+    "name": "series-4-roll-1",
+    "skill": {
+      "id": 1063,
+      "parts": [
+        1000,
+        500,
+        2000,
+        0,
+        0
+      ],
+      "level": 25,
+      "cost": 0,
+      "cooldown": 1,
+      "range": 512,
+      "radius": 0,
+      "shape": "single",
+      "targets": 1,
+      "crit": 75,
+      "stun": 0,
+      "cold": 1.5,
+      "poison": 3,
+      "travel": 0,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 30,
+        "anti": [
+          10,
+          5,
+          20,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 100,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          20,
+          0
+        ],
+        "spread": 0.15
+      }
+    },
+    "resistance": [
+      50,
+      40,
+      60,
+      0,
+      0
+    ],
+    "targetSeries": 4,
+    "rolls": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "critical": true,
+    "fatal": false,
+    "expected": {
+      "parts": [
+        600,
+        175,
+        600,
+        0,
+        0
+      ],
+      "direct": 1080
+    }
+  },
+  {
+    "name": "series-4-roll-1.15",
+    "skill": {
+      "id": 1063,
+      "parts": [
+        1000,
+        500,
+        2000,
+        0,
+        0
+      ],
+      "level": 25,
+      "cost": 0,
+      "cooldown": 1,
+      "range": 512,
+      "radius": 0,
+      "shape": "single",
+      "targets": 1,
+      "crit": 75,
+      "stun": 0,
+      "cold": 1.5,
+      "poison": 3,
+      "travel": 0,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 30,
+        "anti": [
+          10,
+          5,
+          20,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 100,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          20,
+          0
+        ],
+        "spread": 0.15
+      }
+    },
+    "resistance": [
+      50,
+      40,
+      60,
+      0,
+      0
+    ],
+    "targetSeries": 4,
+    "rolls": [
+      1.15,
+      1.15,
+      1.15,
+      1.15,
+      1.15
+    ],
+    "critical": false,
+    "fatal": true,
+    "expected": {
+      "parts": [
+        345,
+        201.25,
+        690,
+        0,
+        0
+      ],
+      "direct": 1397.25
+    }
+  },
+  {
+    "name": "resistance-cap-after-penetration",
+    "skill": {
+      "id": 1063,
+      "parts": [
+        1000,
+        500,
+        2000,
+        0,
+        0
+      ],
+      "level": 25,
+      "cost": 0,
+      "cooldown": 1,
+      "range": 512,
+      "radius": 0,
+      "shape": "single",
+      "targets": 1,
+      "crit": 75,
+      "stun": 0,
+      "cold": 1.5,
+      "poison": 3,
+      "travel": 0,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 30,
+        "anti": [
+          10,
+          5,
+          20,
+          0,
+          0
+        ],
+        "resistanceCap": 40,
+        "flatSeries": 100,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          20,
+          0
+        ],
+        "spread": 0.15
+      }
+    },
+    "resistance": [
+      150,
+      150,
+      150,
+      150,
+      150
+    ],
+    "targetSeries": 0,
+    "rolls": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "critical": false,
+    "fatal": false,
+    "expected": {
+      "parts": [
+        600,
+        300,
+        1200,
+        0,
+        0
+      ],
+      "direct": 1800
+    }
+  }
+]

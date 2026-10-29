@@ -29,47 +29,163 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   const directory=await fs.mkdtemp(path.join(os.tmpdir(),'vltk-online-'));
   const [http,control,udp]=await Promise.all([tcpPort(),tcpPort(),udpPort()]);
   const base=`http://127.0.0.1:${http}`,secret=randomBytes(32).toString('hex');
-  let logs='';
+  let logs='';const clientTraces=[];
   const rust=spawn(path.join(__dirname,'target/debug/vltk-multiplayer-webtransport'),[],{cwd:root,env:{...process.env,
-    MULTIPLAYER_SECRET:secret,WT_ORIGINS:base,WT_HTTP_BIND:`127.0.0.1:${control}`,WT_BIND:`127.0.0.1:${udp}`,
+    ONLINE_DEBUG:"1",PVE_OUTBOX_FILE:path.join(directory,"outbox.jsonl"),MULTIPLAYER_SECRET:secret,WT_ORIGINS:base,WT_HTTP_BIND:`127.0.0.1:${control}`,WT_BIND:`127.0.0.1:${udp}`,
     WT_PUBLIC_URL:`https://127.0.0.1:${udp}/play`},stdio:['ignore','pipe','pipe']});
   const node=spawn(process.execPath,['src/server/index.ts'],{cwd:root,env:{...process.env,NODE_ENV:'development',
     PORT:String(http),DB_PATH:path.join(directory,'game.sqlite'),MULTIPLAYER_SECRET:secret,
     MULTIPLAYER_WT_CONTROL_URL:`http://127.0.0.1:${control}`},stdio:['ignore','pipe','pipe']});
   for(const child of [rust,node]) for(const output of [child.stdout,child.stderr]) output.on('data',bytes=>{logs+=bytes;});
-  let browser;
+  let browser;const errors=[];
   t.after(async()=>{
+    await fs.mkdir(path.join(root,'output/multiplayer'),{recursive:true});
+    const server=logs.split('\n').filter(line=>line.startsWith('[online:server] ')).flatMap(line=>{try{return [JSON.parse(line.slice(16))];}catch{return [];}});
+    await fs.writeFile(path.join(root,'output/multiplayer/trace-'+(process.env.SKILL_FACTION||'kunlun')+'.json'),JSON.stringify({passed:t.passed!==false,server,client:clientTraces},null,2));
+    if(errors.length)console.error(errors);
+    if(t.passed===false)console.error(logs.slice(-6000));
     await browser?.close();
-    for(const child of [rust,node]) {child.kill('SIGTERM');await once(child,'exit').catch(()=>{});}
+    for(const child of [rust,node]) {if(child.exitCode===null&&child.signalCode===null){child.kill('SIGTERM');await once(child,'exit').catch(()=>{});}}
     await fs.rm(directory,{recursive:true,force:true});
   });
   await ready(`http://127.0.0.1:${control}/health`,rust,()=>logs);
   await ready(base+'/api/health',node,()=>logs);
   browser=await chromium.launch({headless:true,args:['--enable-quic']});
-  const errors=[];
-  async function player(username,name) {
-    const context=await browser.newContext({viewport:{width:1280,height:850},serviceWorkers:'block'});
+  async function player(username,name,advanced=false) {
+    const context=await browser.newContext({viewport:{width:1280,height:850},serviceWorkers:process.env.ONLINE_TEST_SW==='1'?'allow':'block'});
     const register=await context.request.post(base+'/api/auth/register',{data:{username,password:'test-secret-123'}});
     assert.equal(register.status(),200,await register.text());
     const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
+    page.on('console',message=>{const line=message.text();if(line.startsWith('[online:client] ')){try{clientTraces.push({client:username,...JSON.parse(line.slice(16))});}catch{}}});
     // Observe game state without shipping debug globals in the production bundle.
     await page.route('**/app/game.js?*',async route=>{
       const response=await route.fetch();let body=await response.text();
       const at=body.lastIndexOf('\n})();');assert.ok(at>0);
       body=body.slice(0,at)+`
       window.__onlineDraws=0;
+      window.__skillDraws={};window.__skillAttempts={};
+      let drawingSkill=0;
+      for(const kind of ['YP','CP']){
+        const original=kind==='YP'?YP:CP;
+        const draw=function(effect){const previous=drawingSkill;drawingSkill=effect.combat?.skill?.id||0;
+          if(drawingSkill)window.__skillAttempts[drawingSkill]=(window.__skillAttempts[drawingSkill]||0)+1;
+          try{return original(effect);}finally{drawingSkill=previous;}};
+        if(kind==='YP')YP=draw;else CP=draw;
+      }
+      const originalDrawImage=W.drawImage;
+      W.drawImage=function(...args){if(drawingSkill)window.__skillDraws[drawingSkill]=(window.__skillDraws[drawingSkill]||0)+1;return originalDrawImage.apply(this,args);};
+      window.__onlineColors={};window.__supportDraws={};
+      const originalNameplate=L3,originalSupport=F3;
+      L3=function(x,y,name,color,...rest){window.__onlineColors[name]=color;return originalNameplate(x,y,name,color,...rest);};
+      F3=function(...args){if(args[8]&&args[8]!==v)window.__supportDraws[args[1].f]=args[1].pos;return originalSupport(...args);};
       const originalOnlineDraw=gameMultiplayer.draw;
       gameMultiplayer.draw=function(...args){window.__onlineDraws++;return originalOnlineDraw(...args);};
+      window.__resolvedHits=[];const seenHits=new Set();
+      const realSnapshot=onlineWorld.snapshot;
+      onlineWorld.snapshot=function(state){
+        for(const event of state.events)if(event.kind===2&&!seenHits.has(event.id)){
+          seenHits.add(event.id);window.__resolvedHits.push({...event,maxHp:state.monsters.find(m=>m.id===event.target)?.maxHp});
+        }
+        if(window.__snapshotDelay)setTimeout(()=>realSnapshot(state),window.__snapshotDelay);else realSnapshot(state);};
       window.__onlineTest={
-        state:()=>({x:v.x,y:v.y,map:Z0.key,remote:gameMultiplayer.entities().map(e=>e.remotePlayer),draws:window.__onlineDraws,
+        visualProbe:async()=>{
+          const result=[],realWorld=l,realHero=v,realInput=Y,realProfile=o,realTown=l.town;
+          const saved=JSON.stringify({life:l.life,mana:l.mana,xp:o.xp,gold:o.gold,inv:o.inv,target:Y.target});
+          // The module namespace is immutable; observe native FX in the shared render queue.
+          const ids=Object.keys(T).filter(id=>UA(T[id])&&A0.f[id]);
+          l.town=false;
+          try { for(const id of ids)for(const level of [1,25]){
+            const probe=OnlineSkillVisuals(),native=F2(l.P,T[id],level),savedFX=l.fx.slice(),start=l.fx.length;
+            const event={id:1,source:100,target:200,skill:+id,kind:1,tick:1,value:0,
+              cast:{level,missiles:Math.max(1,Math.min(16,native.nMis||1)),flags:(native.melee?1:0)|(native.phys?2:0),range:native.rad||200,x:v.x,y:v.y,targetX:v.x+120,targetY:v.y+40}};
+            probe.sync({self:100,actors:[{id:100,x:v.x,y:v.y}],monsters:[{id:200,x:v.x+120,y:v.y+40,hp:100}]});
+            try{
+              await probe.play(event,{faction:T[id].f,sex:0});
+              const observed=new Set(l.fx.slice(start));
+              for(let i=0;i<100;i++){probe.advance(.04);for(const fx of l.fx)observed.add(fx);}
+              const fx=[...observed];
+              if(!fx.length)throw Error('No native FX');
+              for(const e of fx)for(const key of ['x','y','tx','ty'])if(e[key]!==undefined&&!Number.isFinite(e[key]))throw Error('Invalid FX coordinate '+key);
+              result.push({id:+id,level,effects:fx.length,kinds:[...new Set(fx.map(e=>e.k))]});
+            }catch(error){throw Error('Skill '+id+' level '+level+': '+error.message);}
+            finally{probe.reset();l.fx=savedFX;}
+            if(l!==realWorld||v!==realHero||Y!==realInput||o!==realProfile)throw Error('Visual context leaked');
+          }
+          } finally { l.town=realTown; }
+          if(JSON.stringify({life:l.life,mana:l.mana,xp:o.xp,gold:o.gold,inv:o.inv,target:Y.target})!==saved)throw Error('Cosmetic replay changed gameplay');
+          return result;
+        },
+        proximityProbe:async()=>{
+          const result=[],town=l.town,saved=l.fx; l.town=false;
+          try{for(const id of [1063,1080,1081]){
+            const probe=OnlineSkillVisuals(),native=F2(l.P,T[id],25);l.fx=[];
+            probe.sync({self:100,actors:[{id:100,x:v.x,y:v.y}],monsters:[{id:200,x:v.x+2,y:v.y,hp:100}]});
+            await probe.play({id:1,source:100,target:200,skill:id,cast:{level:25,missiles:native.nMis||1,flags:(native.melee?1:0)|(native.phys?2:0),range:native.rad||512,x:v.x,y:v.y,targetX:v.x+2,targetY:v.y}},{faction:T[id].f,sex:0});
+            const original=W.drawImage;let draws=0;
+            W.drawImage=function(...args){draws++;return original.apply(this,args);};
+            try{for(let frame=0;frame<20;frame++){probe.advance(1/60);for(const effect of l.fx){if(effect.k==='jm')YP(effect);else if(effect.k==='mis'||effect.k==='boom')CP(effect);}}}
+            finally{W.drawImage=original;probe.reset();}
+            result.push({id,draws});
+          }}finally{l.town=town;l.fx=saved;}
+          return result;
+        },
+        state:()=>({x:v.x,y:v.y,map:Z0.key,pve:onlineWorld.state,status:document.getElementById("multiplayerStatus")?.textContent,remote:gameMultiplayer.entities().filter(e=>e.remotePlayer).map(e=>e.remotePlayer),draws:window.__onlineDraws,
           target:Y.target,blocked:i0.blocked,hidden:document.hidden,modal:document.getElementById('modal').className}),
-        town:()=>nc(true),field:()=>en(AA(1)),
+        town:()=>nc(true),field:()=>en(AA(1)),travelReady:()=>!(l.tpCd>0),
+        travel:id=>{const index=k0.findIndex(z=>z.id===id);if(index<0)throw Error('Unknown map');return On(index,'Travel test',false,true);},
+        screen:(x,y)=>{const r=lA.getBoundingClientRect();return {x:r.left+(x-B0.x)*$8(),y:r.top+(y-B0.y)*$8()};},
+        monsterTarget:()=>{const m=l.enemies.filter(e=>!e.dead).sort((a,b)=>Math.hypot(a.x-v.x,a.y-v.y)-Math.hypot(b.x-v.x,b.y-v.y))[0];const r=lA.getBoundingClientRect();return {id:m.id,x:r.left+(m.x-B0.x)*$8(),y:r.top+(m.y-20-B0.y)*$8()};},
         tutorialDone:()=>{o.tut=999;},
+        coldChildAssets:id=>{
+          const files=skillId=>{const effect=A0.f?.[skillId],missile=A0.m?.[effect?.c||A0.s?.[skillId]];return Object.values(missile||{}).filter(s=>s&&typeof s==='object'&&s.f).map(s=>s.f);};
+          const primary=new Set(files(id));
+          const children=[...new Set([T[id]?.child,...F5(F2(l.P,T[id],25)).map(e=>e.sid)].flatMap(files))].filter(url=>!primary.has(url));
+          for(const url of children)delete of[url];return children;
+        },
+        follow:id=>{rf=()=>{const p=onlineWorld.state?.actors.find(a=>a.id===id)||v;return [E(p.x-M0.w/2,0,Math.max(0,O0.w-M0.w)),E(p.y-M0.h*.55,0,Math.max(0,O0.h-M0.h))];};},
+        farm:()=>onlineWorld.farm(true),
+        stop:()=>onlineWorld.farm(false),
+        controls:()=>({ctrl:o.ctrl,main:o.main,locked:o.mainLock,effective:l.P.main?.id,slots:o.slots}),
+        fxState:()=>({self:onlineWorld.state?.actors.find(a=>a.id===onlineWorld.state.self),draws:window.__skillDraws,attempts:window.__skillAttempts,town:l.town,zone:l.zoneShown,fx:l.fx.map(e=>({kind:e.k,id:e.combat?.skill?.id,age:e.age,life:e.life,frame:e.t,sprite:e.s?.f||e.m?.fly?.f,zone:e.combat?.zone}))}),
+        stats:()=>({stats:j0(),profile:structuredClone(o)}),
+        supportFiles:ids=>ids.map(id=>U1[id]?.f).filter(Boolean),
+        prepareSkill:async advanced=>{
+          o.potOff=true;o.potStock={life:{1:10},mana:{1:10},both:{1:3}};o.potSlot=['life:1','mana:1'];
+          o.ctrl='manual';o.fac=advanced==='cuiyan'?'cuiyan':advanced?'kunlun':'shaolin';
+          if(advanced){o.lvl=158;o.sk={171:20,173:20,372:20,375:20,1080:25,1081:25};o.slots=[1080,1081,375,-1];o.main=1081;
+            o.eq.weapon={d:0,k:1,lvl:10,g:0,n:'Fixture sword',nat:0,base:[],mods:[],magic:[]};}
+          if(advanced==='cuiyan'){o.sk={269:20,100:20,109:20,99:19,105:20,108:20,114:30,336:20,1063:25};o.slots=[1063,336,108,-1];o.main=1063;}
+          else if(!advanced){o.sk[216]=1;o.main=216;o.slots[0]=216;}
+          if(advanced)o.attr.vit=2000;
+          o.mainLock=true;l.dirty=true;D0();$();await window.localGameStorage?.flush();
+        },
+        unlockSkill:()=>{o.mainLock=false;l.dirty=true;D0();return o.slots.findIndex(id=>T[id]&&UA(T[id]));},
         outfit:()=>{o.sex=1;l.jx=null;},
+        faction:(f)=>{o.fac=f;},
+        support:(enabled)=>{
+          const picked={},ids=[];
+          for(const id of Object.keys(U1)){
+            const skill=T[id],sprite=U1[id];
+            if(!skill||UA(skill)||wn(skill)!=='passive'||picked[sprite.pos])continue;
+            picked[sprite.pos]=true;ids.push(+id);o.sk[id]=enabled?1:0;ba().buff[id]=enabled?ya()+60:0;
+          }
+          l.stKey=null;
+          return JP().map(sprite=>sprite.f);
+        },
         target:()=>{const [x,y]=X0(v.x+90,v.y+35);const rect=lA.getBoundingClientRect();
           return {x:rect.left+(x-B0.x)*$8(),y:rect.top+(y-B0.y)*$8()};}
       };`+body.slice(at);
       await route.fulfill({response,body});
+    });
+    let preparedSkill=false;
+    await page.route('**/api/multiplayer/webtransport/session',async route=>{
+      if(!preparedSkill){
+        preparedSkill=true;
+        // Import one learned level-zero-requirement attack with the original save,
+        // so Rust's canonical profile and the browser have the same skill catalog.
+        await page.evaluate(value=>window.__onlineTest.prepareSkill(value),advanced);
+      }
+      await route.continue();
     });
     await page.goto(base);
     await page.waitForSelector('#csNew, #ncName');
@@ -81,38 +197,245 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     await page.evaluate(()=>window.__onlineTest.tutorialDone());
     if(await page.locator('#mClose').isVisible())await page.locator('#mClose').click();
     await page.evaluate(()=>window.__onlineTest.town());
+    const parity=await page.evaluate(()=>window.__onlineTest.stats());
+    const nativeStats=require('../definitions/runtime.cjs').buildCharacter(parity.profile).stats;
+    assert.equal(parity.stats.life,nativeStats.life,'browser/server HP uses identical profile bonuses');
+    for(const skill of parity.stats.actives){
+      const server=nativeStats.actives.find(s=>s.id===skill.id);
+      assert.ok(server,'same learned skill eligibility '+skill.id);
+      assert.deepEqual(skill.parts,server.parts,'browser/server damage parts '+skill.id);
+    }
     return {page,context};
   }
   const a=await player('online_a','Kiếm Khách'),b=await player('online_b','Nữ Hiệp');
+  await a.page.waitForTimeout(1700);
   for(const {page} of [a,b]) await page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   assert.ok((await a.page.evaluate(()=>window.__onlineTest.state())).draws>0);
+  await a.page.evaluate(()=>window.__onlineTest.faction('shaolin'));
+  await b.page.waitForFunction(()=>window.__onlineColors['Kiếm Khách']==='#ffb347');
+  const effects=await a.page.evaluate(()=>window.__onlineTest.support(true));
+  assert.ok(effects.length>=2,'fixture has support effects from actual game catalog');
+  await b.page.waitForFunction(files=>files.every(file=>window.__supportDraws[file]),effects);
+  await a.page.evaluate(()=>window.__onlineTest.support(false));
+  await b.page.waitForFunction(()=>window.__onlineTest.state().remote[0]?.appearance.effects.length===0);
+  await a.page.evaluate(()=>window.__onlineTest.support(true));
+  const slot=await a.page.evaluate(()=>window.__onlineTest.unlockSkill());
+  assert.ok(slot>=0,'new character has a learned attack on the hotbar');
+  await a.page.locator('#pad .sk[data-i="'+slot+'"]').click({position:{x:12,y:12}});
+  await a.page.waitForFunction(slot=>{const c=window.__onlineTest.controls();return c.locked&&c.main===c.slots[slot]&&c.effective===c.main;},slot);
+  await a.page.locator('#ctrlBtn').click();
+  await a.page.waitForFunction(()=>{const s=window.__onlineTest.state();return window.__onlineTest.controls().ctrl==='auto'&&s.pve.actors.find(p=>p.id===s.pve.self)?.farming;});
+  await a.page.waitForTimeout(350);
+  assert.equal(await a.page.locator('#ctrlBtn').evaluate(e=>e.classList.contains('on')),true,'Auto stays on across render frames');
+  await a.page.keyboard.press('f');
+  await a.page.waitForFunction(()=>{const s=window.__onlineTest.state();return window.__onlineTest.controls().ctrl==='manual'&&!s.pve.actors.find(p=>p.id===s.pve.self)?.farming;});
+  await a.page.locator('#multiplayerFarm').click();
+  await a.page.waitForFunction(()=>window.__onlineTest.controls().ctrl==='auto');
+  await a.page.locator('#ctrlBtn').click();
+  await a.page.waitForFunction(()=>{const s=window.__onlineTest.state();return window.__onlineTest.controls().ctrl==='manual'&&!s.pve.actors.find(p=>p.id===s.pve.self)?.farming;});
   const initial=await a.page.evaluate(()=>window.__onlineTest.state());
   for(const key of ['ArrowRight','w','a','s','d']) {await a.page.keyboard.down(key);await a.page.waitForTimeout(200);await a.page.keyboard.up(key);}
   const afterKeys=await a.page.evaluate(()=>window.__onlineTest.state());
   assert.ok(Math.hypot(initial.x-afterKeys.x,initial.y-afterKeys.y)<1,'keyboard cannot move online player');
+  const visuals=await a.page.evaluate(()=>window.__onlineTest.visualProbe());
+  assert.ok(visuals.length>=50,'native offensive skills tested at levels 1 and 25');
+  for(const id of [336,337,339,365,1078,1081])assert.ok(visuals.some(v=>v.id===id),String(id));
+  console.log('Native online skill cases:',visuals.length);
+  const proximity=await a.page.evaluate(()=>window.__onlineTest.proximityProbe());console.log('Proximity FX',proximity);
+  for(const item of proximity)assert.ok(item.draws>0,'skill '+item.id+' draws even at point blank');
+  await a.page.evaluate(()=>{window.__snapshotDelay=175;});
   const target=await a.page.evaluate(()=>window.__onlineTest.target());
   await a.page.mouse.click(target.x,target.y,{button:'right'});await a.page.waitForTimeout(250);
   assert.ok(Math.hypot(initial.x-(await a.page.evaluate(()=>window.__onlineTest.state())).x,initial.y-(await a.page.evaluate(()=>window.__onlineTest.state())).y)<1);
+  const motion=b.page.evaluate(()=>new Promise(resolve=>{
+    const samples=[],start=performance.now();
+    function frame(time){const p=window.__onlineTest.state().remote[0];if(p)samples.push({time,x:p.x,y:p.y});
+      if(time-start<1500)requestAnimationFrame(frame);else resolve(samples);}
+    requestAnimationFrame(frame);
+  }));
+  const ownMotion=a.page.evaluate(()=>new Promise(resolve=>{
+    const samples=[],started=performance.now();
+    function frame(time){const p=window.__onlineTest.state();samples.push({x:p.x,y:p.y});
+      if(time-started<2300)requestAnimationFrame(frame);else resolve(samples);}
+    requestAnimationFrame(frame);
+  }));
   await a.page.mouse.click(target.x,target.y);
   await a.page.waitForFunction(({x,y})=>{const p=window.__onlineTest.state();return Math.hypot(p.x-x,p.y-y)>20;},{x:initial.x,y:initial.y});
-  await a.page.waitForTimeout(1500);
+  const frames=await motion;
+  const distances=frames.slice(1).map((p,i)=>Math.hypot(p.x-frames[i].x,p.y-frames[i].y));
+  const first=distances.findIndex(d=>d>0.1),last=distances.findLastIndex(d=>d>0.1);
+  assert.ok(last>first,'observer sees real movement');
+  const middle=distances.slice(first,last+1);
+  assert.ok(middle.filter(d=>d<0.02).length/middle.length<0.25,'observer movement has no repeated-snapshot stop-go cadence');
+  const ownFrames=await ownMotion;
+  const finish=ownFrames.at(-1),dx=finish.x-initial.x,dy=finish.y-initial.y,length=Math.hypot(dx,dy);
+  assert.ok(length>20,'local avatar moved');
+  const progress=ownFrames.map(p=>((p.x-initial.x)*dx+(p.y-initial.y)*dy)/length);
+  for(let i=1;i<progress.length;i++)assert.ok(progress[i]>=progress[i-1]-2,'no local rollback under delayed WORLD snapshots');
+  await a.page.evaluate(()=>{window.__snapshotDelay=0;});
+  await a.page.waitForTimeout(250);
   const local=await a.page.evaluate(()=>window.__onlineTest.state());
   await b.page.waitForFunction(({x,y})=>{const p=window.__onlineTest.state().remote[0];return p&&Math.hypot(p.x-x,p.y-y)<3;},{x:local.x,y:local.y});
   await a.page.evaluate(()=>window.__onlineTest.outfit());
   await b.page.waitForFunction(()=>window.__onlineTest.state().remote[0]?.appearance.sex===1);
   await a.page.evaluate(()=>window.__onlineTest.field());
+
   await b.page.waitForFunction(()=>window.__onlineTest.state().remote.length===0);
   await a.page.evaluate(()=>window.__onlineTest.town());
   await b.page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   await a.page.locator('#multiplayerStatus').click();
   await a.page.waitForSelector('#multiplayerStatus[data-online="true"]');
   await b.page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
+  // Shared PvE world: a real click starts the server attack, both clients see the same death.
+  for(const {page} of [a,b]){await page.waitForTimeout(700);await page.evaluate(()=>window.__onlineTest.field());}
+  for(const {page} of [a,b])await page.waitForFunction(()=>window.__onlineTest.state().pve?.monsters.length===24);
+  const mobsA=await a.page.evaluate(()=>window.__onlineTest.state().pve.monsters.map(m=>m.id));
+  assert.deepEqual(await b.page.evaluate(()=>window.__onlineTest.state().pve.monsters.map(m=>m.id)),mobsA);
+  await a.page.locator('#ctrlBtn').click();
+  await a.page.waitForFunction(()=>{const s=window.__onlineTest.state(),c=window.__onlineTest.controls();return s.pve.events.some(e=>e.kind===1&&e.source===s.pve.self&&e.skill===c.effective);});
+  await a.page.locator('#ctrlBtn').click();
+  await a.page.waitForFunction(()=>{const s=window.__onlineTest.state();return !s.pve.actors.find(p=>p.id===s.pve.self)?.farming;});
+  const victim=await a.page.evaluate(()=>window.__onlineTest.monsterTarget());
+  await a.page.mouse.click(victim.x,victim.y);
+  for(const {page} of [a,b])await page.waitForFunction(id=>{const m=window.__onlineTest.state().pve?.monsters.find(m=>m.id===id);return m&&m.hp<m.maxHp;},victim.id);
+  for(const {page} of [a,b])await page.waitForFunction(id=>window.__onlineTest.state().pve?.monsters.find(m=>m.id===id)?.hp===0,victim.id);
+  await a.page.waitForFunction(()=>window.__onlineTest.state().pve?.loot.some(d=>d.mine));
+  const drop=await a.page.evaluate(()=>window.__onlineTest.state().pve.loot.find(d=>d.mine));
+  assert.equal(await b.page.evaluate(id=>window.__onlineTest.state().pve.loot.find(d=>d.id===id)?.mine,drop.id),false);
+  // Ownership belongs to the authenticated account, so reconnect cannot lose the right to pick up.
+  await a.page.locator('#multiplayerStatus').click();
+  await a.page.waitForSelector('#multiplayerStatus[data-online="true"]');
+  await a.page.waitForFunction(id=>window.__onlineTest.state().pve?.loot.some(d=>d.id===id&&d.mine),drop.id);
+  const point=await a.page.evaluate(d=>window.__onlineTest.screen(d.x,d.y),drop);
+  await a.page.mouse.click(point.x,point.y);
+  for(const {page} of [a,b])await page.waitForFunction(id=>!window.__onlineTest.state().pve?.loot.some(d=>d.id===id),drop.id);
+  await a.page.waitForFunction(async()=>{const r=await fetch('/api/multiplayer/character?slot=0');const p=await r.json();return p.profile.gold>0&&p.profile.xp>0;});
   const secondTarget=await b.page.evaluate(()=>window.__onlineTest.target());
   await b.page.mouse.click(secondTarget.x,secondTarget.y);
   await b.page.waitForTimeout(1800);
   await fs.mkdir(path.join(root,'output/multiplayer'),{recursive:true});
   await b.page.screenshot({path:path.join(root,'output/multiplayer/game-webtransport.png')});
+  // Map level is monster strength, not a travel gate. Both level-one accounts
+  // can join the actual high-level map and receive each other's presence.
+  for(const {page} of [a,b])await page.evaluate(()=>window.__onlineTest.travel(140));
+  for(const {page} of [a,b])await page.waitForFunction(()=>window.__onlineTest.state().pve?.map===140);
+  for(const {page} of [a,b])await page.evaluate(()=>window.__onlineTest.travel(340));
+  for(const {page} of [a,b])await page.waitForFunction(()=>{
+    const s=window.__onlineTest.state();return s.map===340&&s.pve?.map===340&&s.remote.length===1;
+  },null,{timeout:8000});
+  const beforeTravelMove=await a.page.evaluate(()=>window.__onlineTest.state());
+  const travelTarget=await a.page.evaluate(()=>window.__onlineTest.target());
+  await a.page.mouse.click(travelTarget.x,travelTarget.y);
+  await a.page.waitForFunction(({x,y})=>{const p=window.__onlineTest.state();return Math.hypot(p.x-x,p.y-y)>10;},beforeTravelMove,{timeout:3000});
   await a.context.close();
   await b.page.waitForFunction(()=>window.__onlineTest.state().remote.length===0);
+  await b.page.evaluate(()=>window.__onlineTest.town());
+  // Real advanced skills: the prior low-level fixture could not catch a server
+  // staying on its default basic attack when a Manual player selects a hotbar slot.
+  await b.page.route('**/fx/**',async route=>{await new Promise(resolve=>setTimeout(resolve,2500));await route.continue().catch(()=>{});});
+  const cuiyan=process.env.SKILL_FACTION==='cuiyan';
+  const c=await player('online_advanced','Advanced',cuiyan?'cuiyan':true);
+  for(const slot of [0,1]){
+    await c.page.locator('#pad .sk[data-i="'+slot+'"]').click({position:{x:12,y:12}});
+    await c.page.waitForFunction(slot=>{
+      const selected=document.querySelector('#pad .sk[data-i="'+slot+'"]');
+      const controls=window.__onlineTest.controls();
+      return selected?.getAttribute('aria-pressed')==='true'&&selected.classList.contains('cur')&&getComputedStyle(selected,'::after').borderTopWidth==='2px'&&controls.main===controls.slots[slot];
+    },slot);
+  }
+  assert.match(await c.page.locator('#bMain').getAttribute('title'),cuiyan?/Băng Tung/:/Thiên Lôi Chấn Nhạc/);
+  await c.page.waitForFunction(()=>window.__onlineTest.travelReady());
+  await c.page.evaluate(map=>map?window.__onlineTest.travel(map):window.__onlineTest.field(),Number(process.env.SKILL_MAP)||0);
+  await c.page.waitForFunction(()=>window.__onlineTest.state().pve?.monsters.length===24);
+  await b.page.waitForFunction(()=>window.__onlineTest.travelReady());
+  await b.page.evaluate(map=>map?window.__onlineTest.travel(map):window.__onlineTest.field(),Number(process.env.SKILL_MAP)||0);
+  await b.page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
+  const optional=await c.page.evaluate(id=>window.__onlineTest.coldChildAssets(id),cuiyan?1063:1081);
+  assert.ok(optional.length>0,'real advanced skill has optional child sprites');
+  await c.page.route('**/fx/**',async route=>{
+    if(optional.some(url=>new URL(route.request().url()).pathname==='/'+url))await new Promise(resolve=>setTimeout(resolve,8000));
+    await route.continue().catch(()=>{});
+  });
+  for(const [slot,skill]of (cuiyan?[[0,1063],[1,336]]:[[0,1080],[1,1081],[2,375]])){
+    await c.page.locator('#pad .sk[data-i="'+slot+'"]').click({position:{x:12,y:12}});
+    await c.page.waitForFunction(skill=>{const s=window.__onlineTest.state();return s.pve.events.some(e=>e.kind===1&&e.source===s.pve.self&&e.skill===skill);},skill,{timeout:10000});
+    await c.page.evaluate(()=>window.__onlineTest.stop()).catch(()=>{});
+    try{
+      for(const {page}of [c,b])await page.waitForFunction(skill=>(window.__skillDraws[skill]||0)>2,skill,{timeout:page===c.page?4000:8000});
+    }catch(error){console.error('Local FX',await c.page.evaluate(()=>window.__onlineTest.fxState()));console.error('Remote FX',await b.page.evaluate(()=>window.__onlineTest.fxState()));throw error;}
+    assert.equal(await c.page.locator('#pad .sk[data-i="'+slot+'"]').getAttribute('aria-pressed'),'true');
+  }
+  // Each new Auto session must draw again; cumulative counters from a first
+  // successful Manual cast must never hide later missing animations.
+  await c.page.locator('#pad .sk[data-i="0"]').click({position:{x:12,y:12}});
+  const caster=await c.page.evaluate(()=>window.__onlineTest.state().pve.self);
+  await b.page.evaluate(id=>window.__onlineTest.follow(id),caster);
+  for(let round=0;round<2;round++){
+    await c.page.waitForTimeout(3500);
+    const before=await Promise.all([c,b].map(({page})=>page.evaluate(()=>({...window.__skillDraws}))));
+    await c.page.evaluate(()=>window.__onlineTest.farm());
+    const skill=cuiyan?1063:1080;
+    try{
+      for(const [index,{page}]of [c,b].entries())await page.waitForFunction(({skill,before})=>(window.__skillDraws[skill]||0)>before+2,{skill,before:before[index][skill]||0},{timeout:30000});
+    }catch(error){console.error('Auto local',await c.page.evaluate(()=>window.__onlineTest.fxState()));console.error('Auto remote',await b.page.evaluate(()=>window.__onlineTest.fxState()));throw error;}
+    await c.page.evaluate(()=>window.__onlineTest.stop());
+    await c.page.waitForTimeout(1000);
+  }
+  const buffIds=cuiyan?[100,109]:[171,173];
+  await c.page.waitForFunction(ids=>{const state=window.__onlineTest.state().pve;return ids.every(id=>state.actors.find(a=>a.id===state.self)?.supports?.some(s=>s.skill===id&&s.active));},buffIds);
+  const buffActor=await c.page.evaluate(()=>window.__onlineTest.state().pve.self);
+  await b.page.waitForFunction(({owner,ids})=>ids.every(id=>window.__onlineTest.state().pve.actors.find(a=>a.id===owner)?.supports?.some(s=>s.skill===id&&s.active)),{owner:buffActor,ids:buffIds});
+  const buffFiles=await c.page.evaluate(ids=>window.__onlineTest.supportFiles(ids),buffIds);
+  assert.ok(buffFiles.length>0,'buffs have native support sprites');
+  await b.page.waitForFunction(files=>files.every(file=>window.__supportDraws[file]),buffFiles);
+  console.log('Authoritative auto buffs and remote FX on both clients',buffIds,buffFiles);
+  const source=await c.page.evaluate(()=>window.__onlineTest.state().pve.self);
+  const firstDraw=clientTraces.find(e=>e.client==='online_advanced'&&e.stage==='canvas-draw'&&e.source===source);
+  assert.ok(firstDraw,'production diagnostics confirms actual Canvas drawing');
+  assert.ok(clientTraces.some(e=>e.client==='online_advanced'&&e.stage==='cast-received'&&e.event===firstDraw.event),'same CAST ID received and drawn');
+  const serverTrace=logs.split('\n').filter(line=>line.startsWith('[online:server] ')).flatMap(line=>{try{return [JSON.parse(line.slice(16))];}catch{return [];}});
+  assert.ok(serverTrace.some(e=>e.stage==='cast-generated'&&e.details.event===firstDraw.event),'same CAST ID originated on Rust');
+  assert.ok(serverTrace.some(e=>e.stage==='world-sent'&&e.details.events.some(event=>event.event===firstDraw.event)),'CAST written to QUIC');
+  console.log('Correlated CAST',JSON.stringify({event:firstDraw.event,skill:firstDraw.skill,stages:['cast-generated','world-sent','cast-received','visual-release','canvas-draw']}));
+  const dealt=await c.page.evaluate(()=>{const self=window.__onlineTest.state().pve.self;return window.__resolvedHits.find(e=>e.source===self&&e.maxHp&&e.value>e.maxHp);});
+  assert.ok(dealt,'resolved hit label exceeds low-level monster HP instead of being capped');
+  const observed=await b.page.evaluate(id=>window.__resolvedHits.find(e=>e.id===id),dealt.id);
+  assert.equal(observed?.value,dealt.value,'both players receive the same uncapped damage');
+  await c.page.screenshot({path:path.join(root,'output/multiplayer/advanced-skill-local.png')});
+  await b.page.screenshot({path:path.join(root,'output/multiplayer/advanced-skill-remote.png')});
+  // Use the real buttons; resources/stock must come back from Rust and persist.
+  await c.page.evaluate(()=>window.__onlineTest.farm());
+  await c.page.waitForFunction(()=>{const s=window.__onlineTest.state().pve,a=s?.actors.find(a=>a.id===s.self);return a&&a.mp<a.maxMp-5;},null,{timeout:15000});
+  await c.page.locator('#bMp').click({position:{x:12,y:12}});
+  await c.page.waitForFunction(()=>window.__onlineTest.state().pve.events.some(e=>e.kind===5&&e.source===window.__onlineTest.state().pve.self&&e.skill===101));
+  await c.page.waitForFunction(async()=>{const r=await fetch('/api/multiplayer/character?slot=0');const p=await r.json();return p.profile.potStock?.mana?.[1]===9;});
+  const hpAccount=cuiyan?c:b;
+  await hpAccount.page.waitForFunction(()=>{const s=window.__onlineTest.state().pve,a=s?.actors.find(a=>a.id===s.self);return a&&a.hp>0&&a.hp<a.maxHp-.1;},null,{timeout:15000});
+  await hpAccount.page.locator('#bHp').click({position:{x:12,y:12}});
+  await hpAccount.page.waitForFunction(()=>window.__onlineTest.state().pve.events.some(e=>e.kind===5&&e.source===window.__onlineTest.state().pve.self&&e.skill===1));
+  await hpAccount.page.waitForFunction(async()=>{const r=await fetch('/api/multiplayer/character?slot=0');const p=await r.json();return p.profile.potStock?.life?.[1]===9;});
+  await c.page.evaluate(()=>window.__onlineTest.stop());
+  console.log('Potion buttons: HP/MP accepted by Rust; both stocks persisted 10 → 9');
+  {
+  // Real mode menu and mouse click: canonical green vs orange, server PvP hit.
+  await c.page.locator('#mswBtn').click();
+  await c.page.locator('[data-msw="slaughter"]').click();
+  await c.page.waitForFunction(()=>{const s=window.__onlineTest.state().pve;return s.actors.find(a=>a.id===s.self)?.pk;});
+  const victim=await b.page.evaluate(()=>window.__onlineTest.state().pve.self);
+  await b.page.waitForFunction(()=>{const s=window.__onlineTest.state().pve;return s.actors.find(a=>a.id===s.self)?.hp>0;});
+  await c.page.evaluate(id=>window.__onlineTest.follow(id),victim);
+  await c.page.waitForTimeout(150);
+  const peer=await c.page.evaluate(id=>{const p=window.__onlineTest.state().remote.find(p=>p.id===id);return window.__onlineTest.screen(p.x,p.y-22);},victim);
+  await c.page.mouse.click(peer.x,peer.y);
+  await c.page.waitForFunction(id=>{const s=window.__onlineTest.state().pve;return s.events.some(e=>e.kind===2&&e.source===s.self&&e.target===id&&e.value>0);},victim,{timeout:20000});
+  const pvpHit=await c.page.evaluate(id=>{const s=window.__onlineTest.state().pve;return s.events.find(e=>e.kind===2&&e.source===s.self&&e.target===id);},victim);
+  await b.page.waitForFunction(id=>window.__resolvedHits.some(e=>e.id===id),pvpHit.id);
+  assert.ok(logs.split('\n').some(line=>line.startsWith('[online:server] ')&&line.includes('"stage":"pvp-hit"')&&line.includes('"scale":0.2')),'Rust records shared Tong Kim multiplier');
+  console.log('Slaughter menu + real mouse target:',JSON.stringify(pvpHit));
+  await c.page.screenshot({path:path.join(root,'output/multiplayer/slaughter-mode.png')});
+  await c.page.evaluate(()=>window.__onlineTest.stop());
+  }
+
+  await c.context.close();await b.context.close();
   assert.deepEqual(errors,[]);
 });
