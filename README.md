@@ -280,15 +280,27 @@ Xem [hướng dẫn demo và kiểm thử](src/server/multiplayer-demo/README.md
 
 ## Multiplayer trong game — WebTransport + Rust
 
-Demo tham khảo đã được lưu ở commit `6d6a72f`. Bản tích hợp dùng thư mục riêng:
-`src/client/multiplayer/webtransport/` và `src/server/multiplayer/webtransport/`.
-Hai account cùng map có thể thấy nhân vật và chuyển động của nhau; điều khiển
-di chuyển bằng chuột trái. Dữ liệu QUIC dùng binary little endian: gói vị trí
-20 byte, snapshot đủ 32 người 592 byte, roster ngoại hình đi qua stream tin cậy.
+Demo tham khảo đã được lưu ở commit `6d6a72f`. Chạy `pnpm dev:online` để bật cả
+Node và Rust; `Ctrl+C` dừng cả hai. `pnpm dev` vẫn chỉ bật Node. Sau khi nâng giao
+thức, restart cả hai và tải lại client: bản này dùng **binary protocol v7**.
 
-Đợt này đồng bộ presence và di chuyển, chưa đưa va chạm/chống gian lận hay chiến đấu
-lên Rust. Xem [phạm vi, giao thức và cách chạy local](src/client/multiplayer/webtransport/README.md)
-và [cấu hình VPS riêng cho bản tích hợp](deploy/multiplayer/README.md).
+Hai account cùng map thấy người thật, quái và HP dùng chung. Rust xử lý đường đi,
+va chạm, AI/respawn, combat cơ bản, MP/hồi chiêu, băng/độc/choáng, luyện công,
+XP/lên cấp và tiền rơi có quyền nhặt. Journal thưởng → transaction SQLite bảo đảm
+retry cùng grant ID không nhận hai lần. Điều khiển di chuyển chỉ bằng chuột trái.
+Màu tên theo hệ phái; FX phụ trợ và chuyển động người thật được nội suy.
+Chọn **Đồ Sát** để đánh người khác màu tên ngoài thành; cùng màu được miễn công.
+PvP dùng chung hệ số Tống Kim 20% trước kháng/khiên, lấy từ `src/shared/combat-balance.json`.
+
+Code tách `src/shared/multiplayer/` (rules), `src/server/multiplayer/{definitions,domain,persistence}/`
+và `src/client/multiplayer/state/`; transport riêng trong `webtransport/` hai phía.
+Buff có lợi tự động, aura bản thân, thuốc HP/MP và hút tài nguyên đã do Rust xử lý.
+Trang bị rơi/affix, inventory commands, curse/party và cơ chế riêng của từng skill
+chưa chuyển đầy đủ lên Rust. Profile online nhập một lần từ save, nên dùng account
+hoặc `DB_PATH` thử nghiệm riêng khi kiểm tra giai đoạn này.
+
+Xem [bảng phạm vi, kiến trúc dữ liệu, binary và cách test](src/client/multiplayer/webtransport/README.md)
+và [cấu hình VPS](deploy/multiplayer/README.md). Chưa deploy bản PvE này lên VPS.
 
 ## Kiến trúc
 

@@ -5,6 +5,8 @@ Wants=network-online.target
 
 [Service]
 DynamicUser=yes
+StateDirectory=vltk-multiplayer
+Environment=PVE_OUTBOX_FILE=/var/lib/vltk-multiplayer/rewards.jsonl
 EnvironmentFile=/etc/vltk-multiplayer.env
 ExecStart=/opt/vltk-multiplayer/bin/vltk-multiplayer-webtransport
 Restart=always

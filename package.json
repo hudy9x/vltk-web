@@ -9,6 +9,7 @@
   "scripts": {
     "build": "npm run typecheck && node tools/build-app.js",
     "dev": "NODE_ENV=development node --watch src/server/index.ts",
+    "dev:online": "node tools/dev-online.cjs",
     "dev:combat": "DB_PATH=database/combat-test.sqlite PORT=3001 NODE_ENV=development node --watch src/server/index.ts",
     "dev:arena": "DB_PATH=database/combat-arena.sqlite PORT=3002 COMBAT_SANDBOX=1 NODE_ENV=development node --watch src/server/index.ts",
     "start": "node src/server/index.ts",

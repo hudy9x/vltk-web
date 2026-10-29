@@ -23,6 +23,7 @@ WT_HTTP_BIND=127.0.0.1:3104
 WT_PUBLIC_URL=https://103.121.91.177:4434/play
 WT_CERT_HOST=103.121.91.177
 WT_ORIGINS=https://gamelab.hudy9x.com
+PVE_OUTBOX_FILE=/var/lib/vltk-multiplayer/rewards.jsonl
 ```
 
 API control HTTP chỉ bind loopback; Node cấp vé sau khi xác thực cookie, lấy fingerprint
@@ -32,3 +33,15 @@ Giới hạn hiện tại và wire format được ghi ở `src/client/multiplay
 Rollback: bỏ `MULTIPLAYER_WT_CONTROL_URL` khỏi môi trường Node và restart Node.
 API trả `enabled:false`, game ngừng tự kết nối; có thể stop Rust riêng.
 Chưa tự triển khai nhánh tích hợp này lên game production.
+
+## PvE protocol v7
+
+Node, Rust và client phải nâng cùng phiên bản. Unit dùng `StateDirectory` để journal
+thưởng tồn tại qua restart và ghi được dưới `DynamicUser`. Backup SQLite của Node
+và journal của Rust theo cặp; không xóa journal khi còn grant chưa ACK. Control
+`/catalog`, `/admit`, `/refresh`, `/rewards` và `/rewards/ack` yêu cầu secret; giữ
+HTTP 3104 ở loopback. Không chạy hai Rust instance cùng ghi một journal.
+
+Profile online nhập từ save một lần, tách khỏi ghi localStorage. Bản này mới có
+combat chung cơ bản và tiền rơi; trang bị/chiêu đặc thù chưa đầy đủ. Chưa triển khai
+bản này hoặc thay đổi dịch vụ đang chạy trên VPS.
