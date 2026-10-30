@@ -1,8 +1,8 @@
 import { CAMPS } from "./battlefield";
 import type { Team } from "./battlefield";
 export type PotionResource = "life" | "mana";
-export const WAR_POTION_LIMIT = 60;
-export const WAR_POTION_CAPACITY = { life: 30, mana: 30 };
+export const WAR_POTION_LIMIT = 80;
+export const WAR_POTION_CAPACITY = { life: 40, mana: 40 };
 export const SUPPLY_RADIUS = 180;
 export interface WarPotion {
   key: string;
@@ -92,19 +92,24 @@ export function createWarSupplies(host: SupplyHost) {
       quantity < 1
     )
       throw new Error("Chọn loại thuốc và số lượng hợp lệ.");
-    if (total() + quantity > WAR_POTION_LIMIT)
-      throw new Error(`Túi thuốc ${total()}/60 bình máu + mana. Chỉ còn ${WAR_POTION_LIMIT - total()} chỗ trống; hãy giảm số lượng mua.`);
+    quantity = Math.min(quantity, WAR_POTION_LIMIT - total(),
+      potion.kind !== "mana" ? WAR_POTION_CAPACITY.life - count("life") : Infinity,
+      potion.kind !== "life" ? WAR_POTION_CAPACITY.mana - count("mana") : Infinity);
+    if (quantity <= 0)
+      throw new Error("Mỗi ô tối đa 40 bình, tổng túi tối đa 80 bình.");
     if (host.pay && !host.pay(potion.price * quantity))
       throw new Error("Không đủ ngân lượng.");
     stock.set(key, (stock.get(key) || 0) + quantity);
+    if(potion.kind!=="mana")selected.life=key;if(potion.kind!=="life")selected.mana=key;
     host.changed();
+    return quantity;
   }
   function refill() {
     const orders = (["life", "mana"] as const).map((resource) => ({
       potion: eligible(resource)
         .filter((potion) => potion.kind === resource)
         .sort((a, b) => b.tier - a.tier)[0],
-      quantity: Math.max(0, 30 - count(resource)),
+      quantity: Math.max(0, 40 - count(resource)),
     }));
     if (orders.some((order) => !order.potion))
       throw new Error("Chưa có thuốc phù hợp cấp nhân vật.");

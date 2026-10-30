@@ -12,6 +12,23 @@
     return scope.Dashboard as Module;
   }
 
+  test("x20 purchases fill only available room and pay for actual bottles", () => {
+    const { createWarSupplies } = loadDashboardModule<typeof import("../src/client/simulator/supplies.ts")>("simulator/supplies.ts");
+    let gold=1000;
+    const supplies=createWarSupplies({running:()=>true,alive:()=>true,team:()=>"song",position:()=>({x:0,y:0}),recover:()=>true,changed(){},
+      catalog:()=>[
+        {key:"hp",kind:"life",tier:0,n:"HP",total:100,price:2},
+        {key:"mp",kind:"mana",tier:0,n:"MP",total:100,price:3},
+        {key:"both",kind:"both",tier:0,n:"Both",total:100,price:5}],
+      pay(amount){if(gold<amount)return false;gold-=amount;return true;}});
+    supplies.buy("mp",24);const before=gold;
+    assert.equal(supplies.buy("mp",20),16);assert.equal(supplies.state.mana,40);assert.equal(before-gold,16*3);
+    const full=gold;assert.throws(()=>supplies.buy("mp",20),/40|80/);assert.equal(gold,full);
+    supplies.reset();supplies.buy("hp",24);supplies.buy("mp",30);const beforeBoth=gold;
+    assert.equal(supplies.buy("both",20),10);assert.equal(beforeBoth-gold,10*5);
+    assert.equal(supplies.state.life,34);assert.equal(supplies.state.mana,40);
+  });
+
   test("SIM names provide 100 distinct names for each gender and remain unique beyond a pool", () => {
     const { createSimNames, SIM_NAME_POOLS } = loadDashboardModule<
       typeof import("../src/client/simulator/sim-names.ts")
@@ -125,7 +142,7 @@
     supplies.buy("both", 10);
     assert.equal(supplies.state.total, 50);
     assert.equal(gold, 400);
-    assert.equal(supplies.slot("life").n, 30);
+    assert.equal(supplies.slot("life").n, 10);
     supplies.select("life", "both");
     assert.equal(supplies.slot("life").n, 10);
     recoverable = false;
@@ -138,13 +155,13 @@
     supplies.buy("hp", 11);
     assert.equal(supplies.state.total, 60);
     const paid = gold;
-    assert.throws(() => supplies.buy("hp", 1), /60/);
+    assert.throws(() => supplies.buy("hp", 1), /40|80/);
     assert.equal(gold, paid);
     position.x = 1000;
-    assert.throws(() => supplies.buy("hp", 1), /60/);
+    assert.throws(() => supplies.buy("hp", 1), /40|80/);
     position.x = camp.x;
     supplies.reset();
-    assert.throws(() => supplies.buy("both", 60), /ngân lượng/);
+    assert.throws(() => supplies.buy("both", 40), /ngân lượng/);
     assert.equal(supplies.state.total, 0);
     assert.equal(gold, paid);
   });

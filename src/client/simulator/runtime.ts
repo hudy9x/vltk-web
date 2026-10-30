@@ -1256,7 +1256,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       document.getElementById('bBack')?.classList.add('hidden');
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = true;
       Object.assign(v, CAMPS[team]); l.life = l.P.life; l.mana = l.P.mana;
-      simNames.reset(); warEvents.length=0; warRewards.reset(); supplies.reset(true); roadMonsters.start(); updateWarNpcs();
+      simNames.reset(); warEvents.length=0; warRewards.reset(); supplies.reset(); roadMonsters.start(); updateWarNpcs();
       soldierCountdown.render(true, battlefield!.state.deployment.soldierAppearanceSeconds, roadMonsters.totalCount);
     },
     leave() {
