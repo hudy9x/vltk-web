@@ -2,6 +2,7 @@
 export interface SupportState {shared?:boolean;level?:number;skill:number;remaining:number;cooldown:number;active:boolean;aura:boolean}
 export interface CurseState {skill:number;level:number;remaining:number}
 export interface ActorState {
+  battlefieldTeam?:number; battlefieldKind?:number; battlefieldReady?:boolean;
   curses?:CurseState[];
   supports?:SupportState[];
   alignment?:number;pk?:boolean;life?:number;coldPower?:number;hurt?:number;poison?:number;
@@ -63,7 +64,10 @@ export interface WorldEvent {
 export interface PartyMember {id:number;map:number;hp:number;maxHp:number;alignment:number;name:string}
 export interface PartyInvitation {id:number;from:number;remaining:number;name:string}
 export interface PartyState {leader:number;reply:{seq:number;code:number};members:PartyMember[];invitations:PartyInvitation[]}
+export interface BattlefieldUnit {appearance?:{sx:'m'|'f';rows:{helm:number;armor:number;weapon:number;horse:number};ride:number;mg:boolean};id:number;name:string;faction:string;sex:number;skin:number;team:number;kind:number;tier:number;points:number;kills:number;playerKills?:number;online:boolean;moving:boolean;ready:boolean;level:number}
+export interface BattlefieldState {id:number;starts:number;ends:number;now:number;phase:'waiting'|'running'|'finished';score:number[];team:number;entryRemaining:number;respawnRemaining:number;deaths:number;potions:number[];selected?:number[];inventory?:{id:number;slot:number;count:number}[];units:BattlefieldUnit[]}
 export interface WorldState {
+  battlefield?:BattlefieldState;
   death?:{killer:number;name:string;player:boolean};
   party?:PartyState;
   type: 'world';
@@ -86,7 +90,7 @@ export interface Command {
   y?: number;
 }
 export function encodeCommand(version: number, seq: number, c: Command): Uint8Array {
-  if (!Number.isFinite(c.x ?? 0) || !Number.isFinite(c.y ?? 0) || c.kind < 1 || c.kind > 18)
+  if (!Number.isFinite(c.x ?? 0) || !Number.isFinite(c.y ?? 0) || c.kind < 1 || c.kind > 20)
     throw new Error('Invalid command');
   const b = new Uint8Array(25),
     v = new DataView(b.buffer);
@@ -105,7 +109,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
   if (bytes.length < 43) throw new Error('Truncated world');
   const counts = [18, 20, 22, 24].map((o) => v.getUint16(o, true));
   if (
-    counts[0] > 32 ||
+    counts[0] > 128 ||
     counts[1] > 64 ||
     counts[2] > 64 ||
     counts[3] > 128 ||
@@ -184,7 +188,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
   });
   if(at+2>bytes.length)throw new Error('Invalid world size');
   const supportCount=u16();
-  if(supportCount>512||at+supportCount*15+11>bytes.length)throw new Error('Invalid support size');
+  if(supportCount>2048||at+supportCount*15+11>bytes.length)throw new Error('Invalid support size');
   const supportKeys=new Set<string>();
   for(let i=0;i<supportCount;i++){
     const owner=u32(),skill=u16(),remaining=f32(),cooldown=f32(),flags=bytes[at++];
@@ -212,7 +216,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
   });
   if(at<bytes.length&&bytes[at]===0xb1){
     at++;if(at+2>bytes.length)throw new Error('Invalid shared support size');
-    const count=u16();if(count>192||at+count*8>bytes.length)throw new Error('Invalid shared support size');
+    const count=u16();if(count>2048||at+count*8>bytes.length)throw new Error('Invalid shared support size');
     for(let i=0;i<count;i++){
       const owner=u32(),skill=u16(),level=u16(),actor=actors.find(a=>a.id===owner) as ActorState|undefined;
       if(!actor||!level||actor.supports?.some(s=>s.skill===skill&&s.active))throw new Error('Invalid shared support state');
@@ -232,9 +236,24 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     }
   }
   let death:WorldState['death'];
-  if(at<bytes.length){
+  if(at<bytes.length&&bytes[at]===0xd1){
     if(at+7>bytes.length||bytes[at++]!==0xd1)throw new Error('Invalid death state');
     const killer=u32(),player=flag(),name=readName();death={killer,player,name};
+  }
+  let battlefield:BattlefieldState|undefined;
+  if(at<bytes.length&&bytes[at]===0xe1){
+    at++;if(at+4>bytes.length)throw new Error('Invalid battlefield size');
+    const size=u32();if(size>100000||at+size!==bytes.length)throw new Error('Invalid battlefield size');
+    battlefield=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes.subarray(at,at+size)));at+=size;
+    const s=battlefield;
+    if(!s||!Number.isSafeInteger(s.id)||s.id<1||!['waiting','running','finished'].includes(s.phase)||
+      ![s.starts,s.ends,s.now,s.entryRemaining,s.respawnRemaining].every(Number.isFinite)||s.ends<=s.starts||s.entryRemaining<0||s.respawnRemaining<0||
+      ![0,1].includes(s.team)||!Array.isArray(s.score)||s.score.length!==2||s.score.some(n=>!Number.isSafeInteger(n)||n<0)||
+      !Array.isArray(s.potions)||s.potions.length!==2||s.potions.some(n=>!Number.isSafeInteger(n)||n<0||n>40)||
+      !Array.isArray(s.units)||s.units.length>160||new Set(s.units.map(u=>u.id)).size!==s.units.length||
+      s.units.some(u=>!Number.isSafeInteger(u.id)||u.id<1||typeof u.name!=='string'||u.name.length>96||typeof u.faction!=='string'||
+        ![0,1].includes(u.team)||![0,1,2,3].includes(u.kind)||!Number.isSafeInteger(u.points)||u.points<0||typeof u.ready!=='boolean'))throw new Error('Invalid battlefield state');
+    for(const actor of actors){const u=s.units.find(u=>u.id===actor.id);if(u)Object.assign(actor,{battlefieldTeam:u.team,battlefieldKind:u.kind,battlefieldReady:u.ready});}
   }
   if(at!==bytes.length)throw new Error('Invalid world size');
   const self=v.getUint32(10,true);
@@ -251,6 +270,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     throw new Error('Invalid entity state');
   return {
     type: 'world',
+    ...(battlefield?{battlefield}:{}),
     ...(death?{death}:{}),
     party,
     movement,

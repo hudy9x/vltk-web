@@ -2,7 +2,7 @@
 
 Hướng dẫn tạo NPC, phong cách sprite, kích thước và công thức render: [Cách tạo NPC](../../../docs/how-to-create-npc.md).
 
-`catalog.json` là danh sách mẫu dùng chung giữa game và map-tool. `assets/` chứa sprite đứng của năm NPC: bán đồ, mua máu, Tống Kim, mua ngựa và Quan Quân Nhu. Không cần sao chép ảnh vào từng map.
+`catalog.json` là danh sách mẫu dùng chung giữa game và map-tool. `assets/` chứa sprite đứng dùng chung cho bán đồ, mua máu, Tống Kim, mua ngựa, Quan Quân Nhu và hai quan chiêu binh. Tống Quốc Chiêu Binh quan / Kim Quốc Chiêu Binh quan dùng sprite giáp xanh native, mở hộp gia nhập cố định phe tương ứng và luôn vào PvP chung. Hai NPC được đặt trong Biện Kinh; Chiêu Mộ Sứ vẫn giữ cấu hình trận riêng/chung. Không cần sao chép ảnh vào từng map.
 
 Mỗi mẫu khai báo kích thước khung, điểm neo chân, số khung, số hướng, thời gian mỗi khung và tỉ lệ hiển thị. Tắt animation dùng khung đầu tiên; bật animation chỉ chạy các khung đứng. Ảnh tĩnh riêng có thể khai báo `frames: 1`, `directions: 1`; vị trí hướng phải phù hợp với số hướng của mẫu.
 
@@ -18,7 +18,7 @@ Vị trí đặt nằm trong `maps/content/<id>/map.json`, trường `npcs`:
 
 `id` phân biệt từng lần đặt; `npcId` tham chiếu mẫu. Có thể đặt nhiều bản của cùng một mẫu. `team` có thể bỏ qua để cả hai phe cùng nhìn thấy. Bỏ trường `npcs` dùng bố trí mặc định trong `index.ts` cho Biện Kinh (37); Hoang Nguyên (9003) lưu vị trí NPC trực tiếp trong `map.json`; `npcs: []` giữ map không có NPC. Editor chỉ ghi danh sách riêng khi thêm, di chuyển, sửa hoặc xóa NPC.
 
-Game dùng cùng sprite, hướng và vị trí với editor. Tại Biện Kinh, Dược Điếm mở shop thuốc thường. Tại chiến trường, Dược Điếm mở shop tiếp tế. Có thể mua thuốc bất cứ lúc nào qua dialog, kể cả khi mở từ ô chọn thuốc; không khóa theo khoảng cách, trạng thái trận hoặc hồi sinh. Vẫn kiểm tra ngân lượng và tổng túi tối đa 60 bình. Trong phòng Tống Kim (`npm run dev:arena`), Chiêu Mộ Sứ mở mục **Tham gia chiến trường** với chiến trường mặc định Hoang Nguyên, chọn phe Tống/Kim rồi bấm **Tham gia chiến trường**. Các tab còn lại giữ cài đặt trận, quân và binh sĩ. Bản game thường cũng tham gia trực tiếp qua Chiêu Mộ Sứ.
+Game dùng cùng sprite, hướng và vị trí với editor. Tại Biện Kinh, Dược Điếm mở shop thuốc thường. Tại chiến trường, Dược Điếm mở shop tiếp tế. Có thể mua thuốc bất cứ lúc nào qua dialog, kể cả khi mở từ ô chọn thuốc; không khóa theo khoảng cách, trạng thái trận hoặc hồi sinh. Vẫn kiểm tra ngân lượng và tổng túi tối đa 80 bình, mỗi ô tối đa 40 bình. Trong phòng Tống Kim (`npm run dev:arena`), Chiêu Mộ Sứ mở mục **Tham gia chiến trường** với chiến trường mặc định Hoang Nguyên, chọn phe Tống/Kim rồi bấm **Tham gia chiến trường**. Các tab còn lại giữ cài đặt trận, quân và binh sĩ. Bản game thường cũng tham gia trực tiếp qua Chiêu Mộ Sứ.
 
 Thêm mẫu mới vào catalog cần nối hành vi tương tác tương ứng trong `equipment-trader-01.js`. Danh sách ảnh được native editor và server giới hạn theo catalog.
 

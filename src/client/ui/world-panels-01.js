@@ -830,7 +830,7 @@ var bm = function () {
   const A = m("#u20zn");
   if (!A || !o.fac) return;
   const n =
-    l.battlefield
+    l.battlefield || (typeof OnlineBattlefield!=="undefined" && OnlineBattlefield.state && [9003,9004].includes(Z0.key))
       ? MapsEngine.getMap(Z0.key)?.name || "Tống Kim"
       : l.tower && typeof Hn < "u"
       ? `${Hn.n} · tầng ${l.tower.floor}`

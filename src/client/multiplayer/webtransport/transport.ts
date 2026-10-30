@@ -70,7 +70,7 @@ export async function connect(config: ConnectionConfig, hello: Uint8Array,
         let bytes = new Uint8Array(0);
         while (!stopped) {
           const chunk = await reader.read(); if (chunk.done) break;
-          if (bytes.length + chunk.value.length > 16384) throw new Error('Gói dữ liệu thế giới quá lớn.');
+          if (bytes.length + chunk.value.length > 131072) throw new Error('Gói dữ liệu thế giới quá lớn.');
           const joined = new Uint8Array(bytes.length + chunk.value.length);
           joined.set(bytes); joined.set(chunk.value, bytes.length); bytes = joined;
         }

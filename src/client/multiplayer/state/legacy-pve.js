@@ -13,7 +13,7 @@ var onlineWorld = (() => {
   let selectedSkill, blockedSkill, pendingMode = null;
   const motion=new GameWebTransport.LocalMotion();
   const visuals=OnlineSkillVisuals((event,target)=>{
-    if(active())send(16,{target,skill:event.skill,x:event.id&65535,y:event.id>>>16});
+    if(active()&&!state?.battlefield)send(16,{target,skill:event.skill,x:event.id&65535,y:event.id>>>16});
   });
   const monsters = new Map();
   const mapId = () => (typeof Z0.key === 'number' ? Z0.key : E0.town.id);
@@ -48,6 +48,7 @@ var onlineWorld = (() => {
     if(typeof OnlineSupport!=='undefined')OnlineSupport.reset();
     if(typeof OnlinePvp!=='undefined')OnlinePvp.reset();
     monsters.clear();
+    if(typeof OnlineBattlefield!=='undefined')OnlineBattlefield.reset();
     lastEvent = 0;
     lastCommand = 0;
     selectedSkill = undefined;
@@ -68,6 +69,7 @@ var onlineWorld = (() => {
       if(typeof OnlineLifecycle==='undefined')return;
       motion.clear();visuals.reset();monsters.clear();goal=null;pendingMode=null;lastEvent=0;
     }
+    if(typeof OnlineBattlefield!=='undefined')OnlineBattlefield.sync(next,send);
     if(typeof OnlineLifecycle!=='undefined')OnlineLifecycle.sync(next,send);
     state = next;
     if(typeof OnlineSupport!=='undefined')OnlineSupport.sync(next);
@@ -137,13 +139,14 @@ var onlineWorld = (() => {
       const from = target(event.source),
         to = target(event.target);
       if (event.kind === 1 && event.cast) {
-        const look=event.source===next.self?{faction:o.fac,sex:o.sex}:client.players().find(p=>p.id===event.source)?.appearance;
+        const unit=next.battlefield?.units.find(u=>u.id===event.source);
+      const look=unit?.faction?{faction:unit.faction,sex:unit.sex}:event.source===next.self?{faction:o.fac,sex:o.sex}:client.players().find(p=>p.id===event.source)?.appearance;
         visuals.play(event,look?{faction:typeof look.faction==='number'?Object.keys(I)[look.faction]:look.faction,sex:look.sex}:null);
         if(from===v&&!motion.goal){ps(v,'at');v.dir=kn(event.cast.targetX-event.cast.x,event.cast.targetY-event.cast.y);}
       }
       if (event.kind === 2 && to) {
         const hit=event.hit||{element:'phys',critical:false,hurt:false,dot:false};
-        showDamageNumber(to, event.value, hit.element, hit.critical);
+        showDamageNumber(next.actors.some(a=>a.id===event.target&&(!next.battlefield||a.battlefieldKind<2))?{...to,playerDamage:true}:to, event.value, hit.element, hit.critical);
         if (to.onlineMonster && !hit.dot) {
           to.hitT = 0.15;
           if (hit.hurt && !to.dead) {to.hurtT=.5;ps(to,'hurt');}
@@ -223,6 +226,8 @@ var onlineWorld = (() => {
     if(o.lvl>previousLevel&&o.autoPts===true){if(typeof Pt==='function')Pt();if(typeof yt==='function')yt();}
   }
   return {
+    joinBattlefield(team){return OnlineBattlefield.join(team,send);},
+    leaveBattlefield(){return OnlineBattlefield.leave(send);},
     support(id,actor=l.manTgt||l.tgt){
       if(T[id]&&wn(T[id])==='curse'&&T[id].f!=='wudu'){k('Bùa hại của môn phái này chưa được mở trong bản online.');return 0;}
       if(T[id]&&wn(T[id])==='curse'&&!actor){k('Hãy chọn mục tiêu để thi triển bùa hại');return 0;}
@@ -247,8 +252,7 @@ var onlineWorld = (() => {
       goal = { x, y };
       motion.begin(x,y,performance.now());
       visuals.cancelPose(state?.self);
-      pendingMode = { enabled: false, seq: 0 };
-      displayMode(false);
+      pendingMode = { enabled: o.ctrl==='auto', seq: 0 };
       clearTimeout(moveTimer);
       const emit = () => {
         moveTimer = null;
@@ -256,7 +260,7 @@ var onlineWorld = (() => {
           lastMove = performance.now();
           const seq=send(2, { x: goal.x, y: goal.y });
           if(seq)motion.sent(seq);
-          if(seq)pendingMode = { enabled: false, seq };
+          if(seq)pendingMode = { enabled: o.ctrl==='auto', seq };
         }
       };
       const delay = Math.max(0, 100 - (performance.now() - lastMove));

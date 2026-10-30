@@ -37,6 +37,7 @@ var ic = function (A) {
 };
 
 var Za = function (A) {
+  if(typeof OnlineBattlefield!=="undefined" && OnlineBattlefield.state)return OnlineBattlefield.slot(A);
   if(typeof arenaSimulator!=="undefined" && arenaSimulator?.battlefield.active)return arenaSimulator.supplies.slot(A?"mana":"life");
   const n = co(A),
     t = rc[A];
@@ -56,6 +57,7 @@ var Za = function (A) {
 };
 
 var oo = function (A) {
+  if(typeof OnlineBattlefield!=="undefined"&&OnlineBattlefield.state){OnlineBattlefield.pharmacy(A);return;}
   if(typeof arenaSimulator!=="undefined" && arenaSimulator?.battlefield.active){arenaSimulator.openPharmacy(A?"mana":"life",true);return;}
   const n = rc[A],
     t = sc()[A],

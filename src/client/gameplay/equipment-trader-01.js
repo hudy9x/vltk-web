@@ -291,10 +291,13 @@ var equipmentTrader = (function () {
       equipment: open,
       quartermaster: () => { if (typeof quartermaster !== "undefined" && quartermaster) quartermaster.open(); },
       pharmacy: () => {
+        if(typeof OnlineBattlefield!=='undefined'&&OnlineBattlefield.state){OnlineBattlefield.pharmacy();return;}
         if (battle) arenaSimulator.openPharmacy();
         else { Nt = 'med'; lh(); }
       },
       horse: () => { if (typeof horseTrader !== 'undefined' && horseTrader) horseTrader.open(); },
+      'song-recruiter':()=>OnlineBattlefield.recruit(0),
+      'jin-recruiter':()=>OnlineBattlefield.recruit(1),
       tongkim: () => {
         if (typeof arenaSimulator !== 'undefined' && arenaSimulator) arenaSimulator.openSettings();
         else k('Mở phòng Tống Kim để cài đặt trận đấu.');

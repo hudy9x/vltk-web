@@ -17,7 +17,7 @@ var OnlineLifecycle=(()=>{
   }
   function hint(){const value=read();return value?{map:value.map,x:value.actor.x,y:value.actor.y,life:value.actor.life}:undefined;}
   function remember(force=false){
-    if(!latest||l.dg||l.tower||l.battlefield||Date.now()-lastSaved<250&&!force)return;
+    if(!latest||latest.battlefield||l.dg||l.tower||l.battlefield||Date.now()-lastSaved<250&&!force)return;
     const actor=latest.actors.find(a=>a.id===latest.self),key=cacheKey();
     const map=typeof Z0.key==='number'?Z0.key:E0.town.id;
     if(!key||!actor||map!==latest.map)return;
@@ -53,8 +53,10 @@ var OnlineLifecycle=(()=>{
           (o.zalt||(o.zalt={}))[index]=selected;o.stage=ol(index);zone=choices[selected];
         }
       }
-      l.bgImg=zone?.bg?bA(zone.bg):null;
-      l.banner={t:2.2,text:zone?.n||'Bản đồ',sub:town?'Biện Kinh · Về thành dưỡng sức':''};
+      const authored=typeof MapsEngine!=='undefined'?MapsEngine.getMap?.(state.map):null;
+      const background=typeof MapsEngine!=='undefined'?MapsEngine.getMapBackground?.(state.map):null;
+      l.bgImg=background?bA(background):zone?.bg?bA(zone.bg):null;
+      l.banner={t:2.2,text:authored?.name||zone?.n||'Bản đồ',sub:town?'Biện Kinh · Về thành dưỡng sức':''};
       if(typeof M1==='function')M1();
       if(typeof _e==='function')_e(state.map);
     }
@@ -62,7 +64,7 @@ var OnlineLifecycle=(()=>{
       Object.assign(v,{x:actor.x,y:actor.y,_px:actor.x,_py:actor.y,act:actor.hp<=0?'die':'st',actT:0});
       initialized=true;life=actor.life;
     }
-    if(actor.hp>0){panel?.remove();panel=detail=button=null;pending=0;return;}
+    if(actor.hp>0||state.battlefield){panel?.remove();panel=detail=button=null;pending=0;return;}
     const battle=document.getElementById('battle');if(!battle)return;
     if(!panel){
       if(!document.getElementById('onlineDeathStyle')){

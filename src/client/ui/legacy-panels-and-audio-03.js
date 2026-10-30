@@ -454,7 +454,7 @@ var zv = function () {
     t(12) && (a = -1),
     t(13) && (a = 1),
     (T1.v = [e, a]),
-    (e || a) && o.fac && !l.town && !$1() && Wa("manual", !0));
+    (e || a) && o.fac && !l.town && !$1() && Y.prioritizeMovement());
   const i = (r) => t(r) && !T1.prev[r];
   if (o.fac) {
     for (let r = 0; r < 4; r++) i(r) && Ac(r);

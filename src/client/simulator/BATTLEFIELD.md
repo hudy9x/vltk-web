@@ -75,3 +75,37 @@ Màu danh hiệu được tách khỏi vàng/tím phe: Phó tướng hồng nh�
 Các công cụ GM, SIM, Bán nhanh và Test room dùng sprite pixel sẵn có của UI (forge/team/inv/map), xếp dọc bên trái giữa màn hình. Tooltip và nhãn trợ năng giữ tên công cụ. Phòng test đóng mặc định. Hết hoặc thiếu mana có toast với giới hạn 2,5 giây/lần; bỏ qua context SIM, vẫn giữ đánh thường dự phòng. Toast nằm giữa phía dưới, trên cụm Chế độ/Xoay chiêu.
 
 Binh sĩ dùng chung bộ chọn mục tiêu theo phe trong game thường và Arena; đòn đánh kiểm tra lại quan hệ phe khi chạm đích. Trong Tống Kim, đòn phụ kế thừa hút sinh lực/nội lực của kỹ năng và tính trên sát thương riêng của từng hit, cộng với phần hút từ trang bị theo quy tắc đánh vũ khí hiện có. HP/MP hồi cho đúng người gây sát thương, giới hạn bởi mức tối đa; đánh cùng phe hoặc trượt không hồi.
+
+## Chiến trường chung qua PvP online
+
+Chiêu Mộ Sứ có lựa chọn **Chế độ → PvP · Chiến trường chung**. Chế độ riêng tiếp tục dùng bộ mô phỏng cũ. Cùng chọn phòng chung trên Hoang Nguyên mới gặp nhau; đi đến map 9003 bằng lệnh chuyển map thông thường không cấp quyền tham gia.
+
+Rust giữ một lượt đấu chung, có mã trận riêng. Đăng ký đầu tiên đặt giờ bắt đầu sau 5 giây và giờ kết thúc sau 20 phút giao chiến. Mỗi lần gia nhập chuyển ngay nhân vật sang map nhỏ **9004 · Tống Kim · Khu chờ**, đợi đủ 5 giây rồi chuyển sang map 9003 và nhận trạng thái hiện tại; không khởi tạo lại đồng hồ hoặc quân. Mất kết nối, đổi tab và người mở trận rời đi không dừng lượt đấu. Khi hết giờ server khóa combat, chốt điểm, hiển thị kết quả; rời bằng nút Rời chiến trường hoặc tự trở về sau 60 giây. Lượt tiếp theo mở khi người thật của lượt trước đã rời.
+
+Cấu hình phòng chung do server cấp, không dùng các thiết lập quân cá nhân:
+
+- Mỗi phe cố định 10 SIM cấp 200, một SIM cho mỗi môn phái. SIM đang chờ hồi sinh vẫn chiếm slot. Người thật không thay SIM; tối đa 16 người thật/phe, 32 người cùng lúc. Một lượt nhận tối đa 64 nhân vật khác nhau để giới hạn dữ liệu xếp hạng giữ lại.
+- SIM mặc bộ Hoàng Kim đúng môn phái và nhánh vũ khí, các ô không có trong bộ dùng đồ xanh cấp 10 theo catalog. Server gửi hàng sprite áo/mũ/vũ khí tương ứng với đồ đã mặc; client dùng sprite ghép native, không random ngoại hình hoặc chỉ vẽ sprite môn phái mặc định. SIM phân phối điểm bằng công thức native, không cưỡi ngựa. Học các nhóm 80 (code gọi tier 90) và 150; AI chọn các chiêu đã học tương thích vũ khí, có MP và cooldown riêng, thiếu MP đánh thường.
+- SIM tự dùng hỗ trợ môn phái; tất cả SIM sống nhận bộ hỗ trợ Nga Mi từ dữ liệu native. Hiệu ứng cùng kỹ năng chọn cấp mạnh nhất, không cộng trùng. Người thật nhận hỗ trợ từ nguồn cùng phe trong phạm vi native 410; hiệu ứng nhận được không phát lại cho người khác.
+- 70 binh sĩ theo `DEFAULT_SOLDIERS` xuất hiện cùng lúc khi hết 5 giây mở trận. Mỗi phe một Nguyên soái xuất hiện ở phút 10, 200.000 HP, không hồi sinh. Binh sĩ giữ slot/phe/HP và hồi sinh sau 20 giây. Không có nút thêm hoặc tái tạo quân giữa trận chung.
+- Người thật và SIM có thời gian hồi sinh tăng theo số lần chết: 5 → 7 → 10 → 13 → 15 → 17 → 20 → 23 → 25 → 27 → 30… giây. Binh sĩ chết được ẩn hoàn toàn (sprite, bóng và tên) trong lúc chờ hồi sinh; thời gian hồi sinh của binh sĩ vẫn theo cấu hình riêng. Phe, điểm, túi thuốc và số lần chết được giữ khi rời/vào lại hoặc reconnect trong cùng lượt. Không đổi phe trong lượt đó.
+- Người chơi và SIM vào trận với túi thuốc rỗng. Người chơi mua thủ công tại Dược Điếm (Mua / Mua ×20), tối đa 40 bình mỗi ô, tổng 80; mua tự chọn thuốc vào ô và lưu trừ ngân lượng tại server. Không tự mua thuốc. Thuốc dùng lượng hồi native theo cấp, cooldown 0,3 giây. Không tự mua thuốc và không dùng kho thuốc thường; hồi sinh không nạp lại túi. Các vật phẩm hoàn/bẫy của bộ mô phỏng riêng chưa tham gia trận chung.
+
+Trong phòng chung, phe Tống/Kim quyết định địch/đồng minh, độc, bùa và buff; màu Chính/Trung/Tà/Tàn, tổ đội và bật/tắt PK không thay luật phe. Server xử lý va chạm trận chung, bao gồm SIM không có client. PvP ngoài chiến trường giữ cơ chế xác nhận va chạm hiện có. Hệ số PvP chỉ áp khi người thật/SIM đánh nhau; binh sĩ và Nguyên soái dùng sát thương NPC.
+
+Snapshot bao gồm người, SIM, binh sĩ, buff, HP/MP, quân hàm, tổng điểm hai phe và giờ server. Client tải nền từ map đã biên soạn, nội suy tọa độ SIM/binh sĩ theo tick server và dùng sprite đứng/chạy/đánh/chết native; hồi sinh đặt lại bộ nội suy. Map chờ không sinh quân và không cho giao chiến; rời/reconnect trong lúc chờ không ghi đè HP/MP trận đã lưu. Màn hình chỉ giữ đồng hồ trận bằng WarCalligraphy cỡ 20px, đặt ngay dưới thanh HP. Trong trận ẩn chọn chế độ, cưỡi ngựa và xoay chiêu; chỉ giữ Auto và checkbox Đánh người (mặc định bật). Ưu tiên người/SIM do Rust chọn, thiếu mục tiêu đó vẫn đánh binh sĩ; bỏ chọn sẽ chọn địch gần nhất. Lỗi kết nối chiến đấu hoặc đồng bộ SQLite hiện hộp Mất kết nối máy chủ ở giữa màn hình với nút Tải lại. Hộp tự đóng khi tất cả kết nối phục hồi. Phím dấu huyền (`) bật/tắt bảng xếp hạng; Esc đóng bảng. Dialog dùng kiểu giao diện Tống Kim riêng, chứa trạng thái trận, thời gian chờ vào/hồi sinh, điểm hai phe, phe của bạn, thuốc còn lại và nút rời trận. Phím tắt không kích hoạt khi nhập chat. Bảng xếp hạng hiển thị top 10 cùng dòng của chính mình, giữ điểm người đã rời trận. Quân trạng người thật đi qua journal Rust và giao dịch SQLite chống nhận trùng, cộng vào `mats.misc.tk_merit`; SIM không nhận thưởng tài khoản. Chết trong trận không tạo yêu cầu rơi tài sản thường.
+
+Lượt đấu ở bộ nhớ server. **Server restart hủy lượt đang chạy**; checkpoint lưu vị trí và HP/MP trước khi vào để đưa nhân vật về an toàn, không phục hồi một chiến trường dở dang. Các khoản quân trạng đã ghi journal vẫn được giao lại sau restart.
+
+Kiểm tra bổ sung:
+
+```sh
+cargo test --manifest-path src/server/multiplayer/webtransport/Cargo.toml
+node --test test/multiplayer-battlefield.test.js
+# Dùng bản Rust đã build và một đường dẫn Playwright có Chromium:
+PUBLIC_WAR_TEST=1 PLAYWRIGHT_MODULE=/path/to/playwright node --test src/server/multiplayer/webtransport/browser.test.cjs
+```
+
+Auto được giữ khi click di chuyển; đến nơi tiếp tục tự đánh. Chỉ nút Auto hoặc F đổi Auto/Manual. Danh hiệu Binh sĩ và thăng quân hàm hiển thị realtime cho người/SIM. BXH tách số binh sĩ NPC và người chơi hạ gục. Tùy chọn hiển thị sát thương người/SIM mặc định tắt, lưu riêng trên trình duyệt, không đồng bộ tài khoản; quái vẫn hiển thị sát thương.
+
+Trong trận chung, SIM/NPC chết bị ẩn hoàn toàn; chỉ giữ xác người chơi tại nơi ngã xuống. Người chơi đang chờ hồi sinh thấy đếm ngược theo deadline server. Người chơi/SIM vào sân và hồi sinh ở vị trí ngẫu nhiên trong bán kính 1.000 quanh doanh trại phe mình, kiểm tra ô trống và đường nối về doanh trại. Binh sĩ NPC giữ điểm hồi sinh riêng.

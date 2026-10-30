@@ -535,7 +535,7 @@ var SP = function (A) {
           : l.dg.d.n
         : l.tower
           ? `Tháp · tầng ${l.tower.floor}`
-          : l.battlefield
+          : l.battlefield || (typeof OnlineBattlefield!=="undefined" && OnlineBattlefield.state && [9003,9004].includes(Z0.key))
             ? MapsEngine.getMap(Z0.key)?.name || "Tống Kim"
             : AA(Math.min(o.stage, d0)).n,
       t + n / 2,

@@ -245,8 +245,8 @@ var NP = function (A) {
         12,
         l.life / Math.max(1, l.P.life),
         typeof gameMultiplayer!=='undefined'&&gameMultiplayer.pve?OnlinePvp.healthColor(onlineWorld.state):"#4fd04f",
-        l.battlefield && typeof arenaSimulator!=="undefined" && arenaSimulator ? `<${arenaSimulator.warRewards.rank(v).name}>` : p ? `«${Ns(p)}»` : "",
-        l.battlefield && typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.battlefieldTitleColor(arenaSimulator.warRewards.rank(v).name) : p ? r2[p[3]].c : "",
+        typeof OnlineBattlefield!=="undefined"&&OnlineBattlefield.state?OnlineBattlefield.rankTitle(onlineWorld.state?.self):l.battlefield && typeof arenaSimulator!=="undefined" && arenaSimulator ? `<${arenaSimulator.warRewards.rank(v).name}>` : p ? `«${Ns(p)}»` : "",
+        typeof OnlineBattlefield!=="undefined"&&OnlineBattlefield.state?"#8de1cf":l.battlefield && typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.battlefieldTitleColor(arenaSimulator.warRewards.rank(v).name) : p ? r2[p[3]].c : "",
       ),
         !w &&
           !(f && M8(bA(f.img), f.sz, v.x, v.y, 0.9, v.face < 0, l.deadT > 0 ? 0.35 : 1)) &&

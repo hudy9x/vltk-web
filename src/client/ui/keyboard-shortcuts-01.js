@@ -2,6 +2,7 @@
 var dialogHotkeys = (()=>{
   const panels={escape:'more',q:'char',w:'inv',e:'skill',r:'forge',t:'quest',p:'party'};
   function handle(event){
+    if(typeof OnlineBattlefield!=='undefined'&&OnlineBattlefield.handleKey?.(event))return;
     const key=event.key?.toLowerCase(),panel=panels[key];
     if(!panel||event.ctrlKey||event.metaKey||event.altKey||typeof o==='undefined'||!o?.fac)return;
     const target=event.target,editing=/^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName)||target?.isContentEditable;

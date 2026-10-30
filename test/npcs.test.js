@@ -19,11 +19,11 @@ const readMap = id => JSON.parse(fs.readFileSync(path.join(root, `src/client/map
 const document = id => model.createDocument({ projects: {}, encounters: JSON.parse(fs.readFileSync(path.join(root, 'src/client/gameplay/encounters/catalog.json'))),
   progression: JSON.parse(fs.readFileSync(path.join(root, 'src/client/maps/progression.json'))) }, readMap(id));
 
-test('NPC catalog has five reusable sprites and placements cover town and Hoang Nguyên', () => {
-  assert.deepEqual(plain(npcs.npcCatalog.map(npc => npc.id)), ['equipment', 'pharmacy', 'tongkim', 'horse', 'quartermaster']);
+test('NPC catalog has reusable sprites and fixed-team recruiters and placements cover town and Hoang Nguyên', () => {
+  assert.deepEqual(plain(npcs.npcCatalog.map(npc => npc.id)), ['equipment', 'pharmacy', 'tongkim', 'horse', 'quartermaster', 'song-recruiter', 'jin-recruiter']);
   for (const npc of npcs.npcCatalog) {
     assert.ok(fs.statSync(path.join(root, 'src/client', npc.image.slice(4))).size > 0);
-    assert.equal(npc.directions, npc.id === 'quartermaster' ? 1 : 8);
+    assert.equal(npc.directions, npc.id === 'quartermaster'||npc.id.endsWith('-recruiter') ? 1 : 8);
   }
   for (const id of [37, 9003]) {
     const map = readMap(id);
@@ -147,7 +147,7 @@ test('server serves shared NPC sheets and keeps unlisted paths private', async (
     for (const npc of npcs.npcCatalog) {
       const result = await app.inject({ url: '/' + npc.image });
       assert.equal(result.statusCode, 200, npc.id);
-      assert.match(result.headers['content-type'], /image\/webp/);
+      assert.match(result.headers['content-type'], npc.image.endsWith('.png') ? /image\/png/ : /image\/webp/);
       assert.ok(result.rawPayload.length > 0);
     }
     assert.equal((await app.inject({ url: '/app/npcs/assets/missing.webp' })).statusCode, 404);

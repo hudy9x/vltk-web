@@ -72,7 +72,7 @@ var OnlineSkillVisuals = function (onContact = () => {}) {
       caster.profile={...o,fac:appearance?.faction||o.fac,sex:appearance?.sex??o.sex,sk:{...o.sk},eq:{...o.eq}};
       caster.stats=l.P;caster.animKey=Jt(caster.profile.fac,caster.profile.sex)?.anim;
       const source=frame.actors.find(a=>a.id===event.source);
-      const peers=frame.actors.filter(a=>a.id!==event.source&&(a.id===event.target||source&&source.alignment!==a.alignment&&(source.pk||a.pk)));
+      const peers=frame.actors.filter(a=>a.id!==event.source&&(a.id===event.target||source&&(frame.battlefield?source.battlefieldTeam!==a.battlefieldTeam&&a.battlefieldReady:source.alignment!==a.alignment&&(source.pk||a.pk))));
       const targets=frame.monsters.concat(peers).filter(m=>m.hp>0||m.id===event.target).map(m=>proxy(m.id));
       const token=generation;
       const before=new Set(l.fx);

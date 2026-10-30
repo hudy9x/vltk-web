@@ -33,9 +33,9 @@ test('skill changes in the skill panel propagate while Auto is running, without 
  assert.equal(f.commands.at(-1).skill,2);assert.equal(f.commands.at(-1).kind,4);assert.equal(f.commands.at(-1).target,undefined);const n=f.commands.length;
  for(let i=0;i<50;i++)f.s.onlineWorld.syncControls();assert.equal(f.commands.length,n);
 });
-test('a ground click turns off Auto and authoritative mode snapshots update both controls',()=>{
- const f=fixture();f.s.Wa('auto');f.snapshot(true);f.s.onlineWorld.move(200,100);assert.equal(f.s.o.ctrl,'manual');assert.equal(f.commands.at(-1).kind,2);
- f.snapshot(true,1);assert.equal(f.s.o.ctrl,'manual');f.snapshot(false);assert.equal(f.s.o.ctrl,'manual');
+test('a ground click preserves Auto and only explicit toggles turn it off',()=>{
+ const f=fixture();f.s.Wa('auto');f.snapshot(true);f.s.onlineWorld.move(200,100);assert.equal(f.s.o.ctrl,'auto');assert.equal(f.commands.at(-1).kind,2);
+ f.snapshot(true,1);assert.equal(f.s.o.ctrl,'auto');f.snapshot(true);assert.equal(f.s.o.ctrl,'auto');f.s.Wa('manual');f.snapshot(false);assert.equal(f.s.o.ctrl,'manual');
  f.snapshot(true);assert.equal(f.s.o.ctrl,'auto');
 });
 test('offline mode retains the existing local Auto control',()=>{

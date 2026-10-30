@@ -61,6 +61,22 @@
         "x": 1316,
         "y": 2282
       }
+    },
+    {
+      "id": "town-song-recruiter",
+      "npcId": "song-recruiter",
+      "position": {
+        "x": 1156,
+        "y": 2250
+      }
+    },
+    {
+      "id": "town-jin-recruiter",
+      "npcId": "jin-recruiter",
+      "position": {
+        "x": 1436,
+        "y": 2260
+      }
     }
   ]
 }

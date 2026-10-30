@@ -822,7 +822,7 @@ var Mv = function () {
     const html = `<div class="buffrow support-effects">${r}</div>${consumables ? `<div class="buffrow war-effects" aria-label="Hiệu ứng vật phẩm Tống Kim">${consumables}</div>` : ""}`;
     a.innerHTML !== html && (a.innerHTML = html);
   }
-  m("#stageLbl").textContent = l.battlefield
+  m("#stageLbl").textContent = l.battlefield || (typeof OnlineBattlefield!=="undefined" && OnlineBattlefield.state && [9003,9004].includes(Z0.key))
     ? MapsEngine.getMap(Z0.key)?.name || "Tống Kim"
     : l.dg
     ? l.dg.kind === "boat"

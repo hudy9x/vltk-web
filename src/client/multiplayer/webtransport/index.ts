@@ -18,6 +18,7 @@ interface Hooks {
   profile?: (value: any) => void;
   world?: (state: WorldState) => void;
   reset?: () => void;
+  disconnected?: (error: Error) => void;
 }
 
 /** Presentation only: remote players never enter enemy/ally/combat collections. */
@@ -49,7 +50,7 @@ export function createClient(hooks: Hooks) {
     waitingAt = 0,
     rosterRevision: number | undefined;
   let latestPosition: Position | undefined, latestLook: Appearance | undefined;
-  let initialWorld=true,returningTown=false;
+  let initialWorld=true,returningTown=false,publicMatch=false;
   let roster = new Map<number, Appearance>();
   const history = new Map<number, RemoteTimeline>();
   const lives=new Map<number,number>();
@@ -71,9 +72,10 @@ export function createClient(hooks: Hooks) {
     clear();
     retryAt = performance.now() + Math.min(30000, 1000 * 2 ** Math.min(5, failures++));
     hooks.status(`Online: ${error.message} · bấm để thử lại`, false);
+    hooks.disconnected?.(error);
   };
   async function start() {
-    initialWorld=true;returningTown=false;
+    initialWorld=true;returningTown=false;publicMatch=false;
     const attempt = ++generation;
     sessionSlot = hooks.slot?.() ?? 0;
     connecting = true;
@@ -84,7 +86,7 @@ export function createClient(hooks: Hooks) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ slot: hooks.slot?.() ?? 0, position:hooks.position?.() }),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(60000),
       });
       if (!response.ok) throw new Error('Không cấp được vé kết nối.');
       const config = (await response.json()) as ConnectionConfig & { enabled: boolean };
@@ -105,12 +107,13 @@ export function createClient(hooks: Hooks) {
         encodeAppearance(latestLook!, ticket),
         (packet) => {
           if (attempt !== generation) return;
+          if(packet.type==='world'&&worldTick!==undefined&&!newer(packet.tick,worldTick))return;
           if(packet.type==='roster'&&(initialWorld||returningTown)){
             rosterRevision=packet.revision;roster=packet.players;return;
           }
-          if(packet.type==='world'&&(initialWorld||returningTown&&packet.map!==map)){
+          if(packet.type==='world'&&(initialWorld||returningTown&&packet.map!==map||packet.battlefield||publicMatch)){
             if(packet.map!==map){map=packet.map;history.clear();lives.clear();tick=undefined;worldTick=undefined;}
-            initialWorld=false;returningTown=false;
+            initialWorld=false;if(packet.map!==latestPosition?.map)returningTown=false;publicMatch=!!packet.battlefield;
           }
           if(packet.map!==map)return;
           if (packet.type === 'world') {
@@ -184,7 +187,7 @@ export function createClient(hooks: Hooks) {
     },
     command(c: Command) {
       if (!connection || !online) return 0;
-      if(c.kind===17)returningTown=true;
+      if(c.kind===17||c.kind===19||c.kind===20)returningTown=true;
       const seq = ++commandSequence;
       const attempt = generation;
       void connection.reliable(encodeCommand(VERSION, seq, c)).catch((e) => {
@@ -311,3 +314,5 @@ export { LocalMotion } from "../state/local-motion";
 
 // Share the native actor-cast/secondary-FX resolver; this does not create simulator actors or AI.
 export { castSimulatorSkill as castSkillVisual } from "../../simulator/skill-cast";
+
+export { RemoteTimeline } from './interpolation';

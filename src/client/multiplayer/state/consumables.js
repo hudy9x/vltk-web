@@ -5,6 +5,7 @@ var OnlineConsumables = (()=>{
   const id=p=>({life:0,mana:100,both:200})[p.kind]+p.tier;
   const stock=p=>o.potStock?.[p.kind]?.[p.tier]||0;
   function use(kind,send,quiet=false){
+    if(typeof OnlineBattlefield!=='undefined'&&OnlineBattlefield.active)return OnlineBattlefield.potion(kind,send,quiet);
     if(l.deadT>0 || (l.potCd?.[kind]||0)>0)return false;
     const index=kind==='mana'?1:0,selected=typeof co==='function'?co(index):null;
     const potion=selected&&stock(selected)>0?selected:S.potions.filter(p=>p.kind===kind&&stock(p)>0&&o.lvl>=(be[p.tier]||1)).sort((a,b)=>b.tier-a.tier)[0];

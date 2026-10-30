@@ -6,7 +6,9 @@ var gameMultiplayer = (() => {
     position:()=>OnlineLifecycle.hint(),
     async prepare(){ $(); await window.localGameStorage?.flush(); },
     world:state=>onlineWorld.snapshot(state),profile:value=>onlineWorld.profile(value),reset:()=>{onlineWorld.reset();OnlineParty.reset();},
+    disconnected(error){window.localGameConnection?.set('combat',true);},
     status(text, online) {
+      if(online)window.localGameConnection?.set('combat',false);
       if(typeof onlineTrace!=='undefined')onlineTrace.once('status:'+text,'connection-status',{text,online});
   }});
   onlineWorld.bind(client);
@@ -15,6 +17,7 @@ var gameMultiplayer = (() => {
     get active() { return client.active || client.authoritative; },
     get pve(){return onlineWorld.active;},
     tick() {
+      if(typeof OnlineBattlefield!=='undefined')OnlineBattlefield.controls();
       OnlineParty.update(onlineWorld.state,client.players(),(kind,target)=>client.command({kind,map:typeof Z0.key==='number'?Z0.key:E0.town.id,target}),client.online&&onlineWorld.active);
       if(l.battlefield||l.dg||l.tower){client.suspend();return;}
       if (!o?.fac || !Z0.key || window.localGameConfig?.combatSandbox) return;
@@ -44,16 +47,24 @@ var gameMultiplayer = (() => {
       if (client.online) onlineWorld.syncControls?.();
       previous = { map, x, y };
     },
-    entities() { return onlineWorld.entities().concat(client.players().filter(player=>!(onlineWorld.state?.actors.find(a=>a.id===player.id)?.hp<=0)).map(player => ({ remotePlayer: player, x: player.x, y: player.y }))); },
+    entities() { return onlineWorld.entities().concat(typeof OnlineBattlefield!=='undefined'?OnlineBattlefield.entities(onlineWorld.state):[]).concat(client.players().filter(player=>onlineWorld.state?.battlefield||!(onlineWorld.state?.actors.find(a=>a.id===player.id)?.hp<=0)).map(player => ({ remotePlayer: player, x: player.x, y: player.y }))); },
     draw(ctx, entity) {
       if(entity.onlineLoot){onlineWorld.draw(ctx,entity);return;}
+      if(entity.remotePlayer?.battlefieldUnit){OnlineBattlefield.draw(ctx,entity.remotePlayer,onlineWorld.state);return;}
       const p = entity.remotePlayer, look = p.appearance;
       const authoritative=onlineWorld.state?.actors.find(a=>a.id===p.id);
-      if(authoritative?.hp<=0)return;
+      if(authoritative?.hp<=0&&!onlineWorld.state?.battlefield)return;
       const actor = { n: look.name, f: factions[look.faction] || factions[0], s: look.sex, x: p.x, y: p.y,
         dir: p.dir, mv: p.moving, t: p.animationTime, hurtT:authoritative?.hurt||0,poison:authoritative?.poison||0,slowT:authoritative?.cold||0,slowPower:authoritative?.coldPower||0,stun:authoritative?.stun||0,dead:authoritative?.hp===0,act:authoritative?.hp===0?'die':undefined, hp: onlineWorld.state?.actors.find(a=>a.id===p.id)?.hp??1, hpMax: onlineWorld.state?.actors.find(a=>a.id===p.id)?.maxHp??1,
         J: look.armor >= 0 ? lB({ sx: look.bodySex ? "f" : "m", ride: look.ride,
           r: { helm: look.helm, armor: look.armor, weapon: look.weapon, horse: look.horse } }) : null };
+      if(authoritative?.hp<=0){
+        const anim=Jt(actor.f,actor.s)?.anim;
+        ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(actor.x,actor.y,16,6,0,0,7);ctx.fill();
+        (actor.J&&It('die',actor.dir,2,actor.x,actor.y,Jn,1,anim,actor.J))||(anim&&Va(anim,'die',actor.dir,2,actor.x,actor.y,Jn));
+        L3(actor.x,actor.y-nameplateOffset(anim,Jn,.9,6,58),actor.n,OnlinePvp.nameColor(onlineWorld.state,authoritative),11,0,OnlinePvp.healthColor(onlineWorld.state,authoritative),OnlineBattlefield.rankTitle(p.id),'#8de1cf');
+        return;
+      }
       const castPose=onlineWorld.pose?.(p.id);
       if(castPose){
         const nativeDuration=ws(Jt(actor.f,actor.s)?.anim,'at')||.4;
@@ -73,7 +84,9 @@ var gameMultiplayer = (() => {
             F3(ctx, sprite, actor.x, actor.y, 0, phase, Jn, sprite.pos === "foot" ? 0.85 : 0.9, actor);
         }
       };
-      uB(ctx, actor, 0, { hpColor:OnlinePvp.healthColor(onlineWorld.state,authoritative), nameColor: authoritative?.alignment!==undefined&&typeof Gh!=='undefined'?Gh[['chinh','trung','ta','tan'][authoritative.alignment]].c:typeof Tb === "function" ? Tb(actor.f) : "#ececec",
+      const title=typeof OnlineBattlefield!=='undefined'?OnlineBattlefield.rankTitle(p.id):'';
+      if(title)L3(actor.x,actor.y-nameplateOffset(Jt(actor.f,actor.s)?.anim,Jn,.9,6,58)-27,title,'#8de1cf',11);
+      uB(ctx, actor, 0, { hpColor:OnlinePvp.healthColor(onlineWorld.state,authoritative), nameColor:OnlinePvp.nameColor?.(onlineWorld.state,authoritative)||(authoritative?.alignment!==undefined&&typeof Gh!=='undefined'?Gh[['chinh','trung','ta','tan'][authoritative.alignment]].c:typeof Tb==='function'?Tb(actor.f):'#ececec'),
         under: () => drawEffects("under"), over: () => drawEffects("over") });
     },
   };

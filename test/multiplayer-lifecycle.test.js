@@ -118,3 +118,13 @@ test('initial online town snapshot loads its map and ground instead of treating 
   assert.deepEqual(loaded,['town']);assert.equal(game.l.bgImg.src,game.E0.town.bg);
   assert.equal(game.v.x,1112);assert.equal(game.v.y,2139);
 });
+
+
+test('server-selected special maps load authored ground and names without a progression zone',()=>{
+  const {game}=ui();game.MapsEngine={getMap:id=>({name:id===9004?'Tống Kim · Khu chờ':'Tống Kim · Hoang Nguyên'}),getMapBackground:id=>`app/maps/content/${id}/assets/ground.jpg`};
+  game.bA=src=>({src});
+  for(const map of [9004,9003]){
+    game.OnlineLifecycle.sync({self:1,map,actors:[{id:1,life:map,hp:100,x:100,y:200}],battlefield:{id:1}},()=>0);
+    assert.equal(game.l.bgImg.src,`app/maps/content/${map}/assets/ground.jpg`);assert.equal(game.l.banner.text,game.MapsEngine.getMap(map).name);
+  }
+});

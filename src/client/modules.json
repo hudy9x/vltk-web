@@ -2950,6 +2950,10 @@
       "symbols": ["OnlineParty"]
     },
     {
+      "file": "multiplayer/state/battlefield.js",
+      "symbols": ["OnlineBattlefield"]
+    },
+    {
       "file": "multiplayer/state/pvp.js"
     },
     {

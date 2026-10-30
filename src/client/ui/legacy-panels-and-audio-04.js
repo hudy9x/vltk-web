@@ -136,7 +136,7 @@ var Rv = function () {
       ((Y.keys[a] = !0),
         ["w", "a", "s", "d", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(a) &&
           !$1() &&
-          Wa("manual"),
+          Y.prioritizeMovement(),
         !e.repeat &&
           (/^F[1-4]$/.test(a) && (e.preventDefault(), Ac(+a[1] - 1)),
           a === "1" && Ms("life"),
@@ -233,7 +233,7 @@ var Y = {
   },
   selectTarget(target) {
     if(typeof gameMultiplayer!=="undefined"&&gameMultiplayer.pve){l.manTgt=target;Y.selected=true;onlineWorld.attack(target);return;}
-    if (!hA()) Wa("manual", !0);
+    if (!hA()) Y.prioritizeMovement();
     l.manTgt = target;
     l.clickedTarget = target;
     l.clickedUntil = (l.clock || 0) + 1;
