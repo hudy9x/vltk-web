@@ -6,7 +6,7 @@ Bản tích hợp dùng HTTP **3104**, UDP **4434**, dịch vụ riêng để d�
 
 1. Build binary trên máy tương thích VPS:
    `cargo build --release --locked --jobs 1 --manifest-path src/server/multiplayer/webtransport/Cargo.toml`.
-2. Cài binary vào `/opt/vltk-multiplayer/bin/vltk-multiplayer-webtransport`.
+2. Cài binary vào `/opt/vltk-web/bin/vltk-multiplayer-webtransport`.
 3. Tạo `/etc/vltk-multiplayer.env` chỉ root đọc với các biến dưới.
 4. Cài unit kèm theo, `systemctl daemon-reload` và enable/start dịch vụ.
 5. Đặt cùng `MULTIPLAYER_SECRET` và `MULTIPLAYER_WT_CONTROL_URL=http://127.0.0.1:3104`
@@ -32,7 +32,7 @@ Giới hạn hiện tại và wire format được ghi ở `src/client/multiplay
 
 Rollback: bỏ `MULTIPLAYER_WT_CONTROL_URL` khỏi môi trường Node và restart Node.
 API trả `enabled:false`, game ngừng tự kết nối; có thể stop Rust riêng.
-Chưa tự triển khai nhánh tích hợp này lên game production.
+Production dùng workflow branch online và controller trong `deploy/README.md`.
 
 ## PvE và tổ đội — protocol v8
 
@@ -43,5 +43,4 @@ và journal của Rust theo cặp; không xóa journal khi còn grant chưa ACK.
 HTTP 3104 ở loopback. Không chạy hai Rust instance cùng ghi một journal.
 
 Profile online nhập từ save một lần, tách khỏi ghi localStorage. Bản này mới có
-combat chung cơ bản và tiền rơi; trang bị/chiêu đặc thù chưa đầy đủ. Chưa triển khai
-bản này hoặc thay đổi dịch vụ đang chạy trên VPS.
+combat chung cơ bản và tiền rơi; trang bị/chiêu đặc thù chưa đầy đủ. Triển khai Node và Rust cùng release; xem `deploy/README.md`.

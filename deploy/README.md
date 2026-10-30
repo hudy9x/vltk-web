@@ -1,10 +1,10 @@
 # Production deployment
 
-Every push/merge to `main` starts [Deploy game](https://github.com/hudy9x/vltk-web/actions/workflows/deploy.yml).
-It can also be run manually with **Run workflow**, selecting `main`.
+Every push to `codex/game-webtransport-rust` starts [Deploy game](https://github.com/hudy9x/vltk-web/actions/workflows/deploy.yml).
+It can also be run manually with **Run workflow**, selecting `codex/game-webtransport-rust`.
 
 ```text
-merge/push main
+push codex/game-webtransport-rust
     -> GitHub Actions: install -> typecheck/build -> full test suite
     -> restricted SSH: deploy <verified SHA>
     -> VPS: prepare release -> build -> preview health check -> SQLite backup
@@ -50,7 +50,7 @@ restrict,command="/usr/local/sbin/vltk-deploy-dispatch" ssh-ed25519 <public key>
 
 This key permits only `deploy <40-character SHA>`; it cannot open a shell, forward
 ports, or transfer files. The root-owned controller fetches only this repository's
-`main` branch and refuses to deploy an outdated/different commit. Workflow actions
+`codex/game-webtransport-rust` branch and refuses to deploy an outdated/different commit. Workflow actions
 are pinned to immutable commit SHAs, with a read-only GitHub token. Concurrent
 runs are serialized in GitHub and by `flock` on the VPS; queued obsolete commits skip deployment.
 
@@ -76,8 +76,8 @@ systemctl status vltk-web nginx
 journalctl -u vltk-web -n 100 --no-pager
 cat /var/lib/vltk-deploy/current-sha
 curl --fail http://127.0.0.1:3000/api/health
-# Redeploy current main after its workflow tests have passed:
-/usr/local/sbin/vltk-deploy <main-SHA>
+# Redeploy current online branch after its workflow tests have passed:
+/usr/local/sbin/vltk-deploy <online-SHA>
 ```
 
 Failed activation rolls back **code**, without replacing the player database.
@@ -88,4 +88,25 @@ because it can discard writes made after that backup.
 For an emergency manual code rollback, acquire `/run/lock/vltk-deploy.lock`, point
 `/opt/vltk-web` to the recorded previous release using an atomic symlink rename,
 and restart `vltk-web`. Update `current-sha` to that release's recorded SHA.
-The next successful `main` workflow deploys its new commit again.
+The next successful online workflow deploys its new commit again.
+
+## Online production
+
+`main` is the offline branch. The controller accepts only the current tip of
+`codex/game-webtransport-rust`; an old workflow from `main` cannot replace the online game.
+
+Run `bash deploy/setup-online.sh` administratively once after reviewing the scripts.
+It creates matching secrets in root-only `/etc/vltk-online-web.env` and
+`/etc/vltk-multiplayer.env`, installs the Rust unit and the Node environment drop-in.
+It does not restart the existing game. Rust stable is installed for `vltk-build`
+at `/var/cache/vltk-build/.cargo/bin/cargo`.
+
+The controller builds Node and Rust into one immutable release and previews both on
+HTTP 3003/3105 and loopback UDP 4435. Live Rust uses loopback HTTP 3104 and public
+UDP 4434 at `https://103.121.91.177:4434/play`; HTTPS stays at
+`https://gamelab.hudy9x.com`. Allow UDP 4434 in the provider firewall.
+
+Node and Rust are stopped together for a consistent SQLite and reward-journal backup,
+then restarted from the same release. Failure restores the previous release and
+service state. Backups include `game-*.sqlite` and the matching `*-multiplayer` directory.
+Rust state stays in `/var/lib/vltk-multiplayer`; never run two instances against it.

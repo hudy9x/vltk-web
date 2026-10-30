@@ -8,11 +8,13 @@ DynamicUser=yes
 StateDirectory=vltk-multiplayer
 Environment=PVE_OUTBOX_FILE=/var/lib/vltk-multiplayer/rewards.jsonl
 EnvironmentFile=/etc/vltk-multiplayer.env
-ExecStart=/opt/vltk-multiplayer/bin/vltk-multiplayer-webtransport
+ExecStart=/opt/vltk-web/bin/vltk-multiplayer-webtransport
 Restart=always
 RestartSec=3
+KillSignal=SIGINT
+TimeoutStopSec=30
 RuntimeMaxSec=7d
-MemoryMax=128M
+MemoryMax=256M
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
