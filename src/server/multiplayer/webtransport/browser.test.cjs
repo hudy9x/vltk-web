@@ -25,7 +25,7 @@ async function ready(url,child,logs) {
   }
   throw new Error(`Server did not start: ${logs()}`);
 }
-test('game WebTransport binary: two human accounts, movement, rooms, appearance and reconnect', {timeout:120000}, async t=>{
+test('game WebTransport binary: two human accounts, movement, rooms, appearance and reconnect', {timeout:180000}, async t=>{
   const directory=await fs.mkdtemp(path.join(os.tmpdir(),'vltk-online-'));
   await fs.mkdir(path.join(root,'output/multiplayer'),{recursive:true});
   const [http,control,udp]=await Promise.all([tcpPort(),tcpPort(),udpPort()]);
@@ -85,6 +85,9 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
       }
       const originalDrawImage=W.drawImage;
       W.drawImage=function(...args){if(drawingSkill)window.__skillDraws[drawingSkill]=(window.__skillDraws[drawingSkill]||0)+1;return originalDrawImage.apply(this,args);};
+      window.__guardFrames={};let drawingGuard=null;
+      const originalSprite=Va;Va=function(...args){const previous=W.drawImage;if(drawingGuard&&args[1]==='run'){const id=drawingGuard.id;W.drawImage=function(...imageArgs){(window.__guardFrames[id]||=new Set()).add(imageArgs[1]);return previous.apply(this,imageArgs);};}try{return originalSprite(...args);}finally{W.drawImage=previous;}};
+      window.__simCompositeDraws=0;let drawingSIM=false;const originalWarDraw=OnlineBattlefield.draw;OnlineBattlefield.draw=function(...args){drawingSIM=args[1].kind===1;drawingGuard=args[1].kind===2?args[1]:null;try{return originalWarDraw(...args);}finally{drawingSIM=false;drawingGuard=null;}};const originalComposite=It;It=function(...args){const result=originalComposite(...args);if(drawingSIM&&args[8]&&result)window.__simCompositeDraws++;return result;};
       window.__onlineColors={};window.__onlineHealth={};window.__supportDraws={};window.__selfSupportDraws={};
       const originalNameplate=L3,originalSupport=F3;
       L3=function(x,y,name,color,...rest){window.__onlineColors[name]=color;window.__onlineHealth[name]=rest[2];return originalNameplate(x,y,name,color,...rest);};
@@ -165,7 +168,21 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
         state:()=>({x:v.x,y:v.y,map:Z0.key,pve:onlineWorld.state,status:window.__onlineClient?.online,remote:gameMultiplayer.entities().filter(e=>e.remotePlayer).map(e=>e.remotePlayer),draws:window.__onlineDraws,
           target:Y.target,blocked:i0.blocked,hidden:document.hidden,modal:document.getElementById('modal').className}),
         assistant:()=>Hr('basic'),automationState:()=>({used:o.potUsed,gold:o.gold,hp:l.life,mp:l.mana,auto:o.ctrl,potOff:o.potOff,potHp:o.potHp,potMp:o.potMp}),
+        minimapLabel:()=>{const labels=[],original=W.fillText;W.fillText=function(text,...args){labels.push(text);return original.call(this,text,...args);};try{SP(W);}finally{W.fillText=original;}return labels;},
         mapPresentation:()=>({map:Z0.key,bg:l.bgImg?.src,ready:!!l.bgImg?.complete&&!!l.bgImg?.naturalWidth,scene:mapScene.hasMap()}),
+        publicSprites:()=>gameMultiplayer.entities().filter(e=>e.remotePlayer?.battlefieldUnit).map(e=>{const a=e.remotePlayer,anim=(a.kind===1?Jt(a.f,a.s):r0[a.skin])?.anim;return {id:a.id,kind:a.kind,action:a.act,time:a.actT,run:!!E0.anim?.[anim]?.run,stand:!!E0.anim?.[anim]?.st};}),
+        simOutfitProbe:()=>{
+          let canvas=document.getElementById('sim-outfit-probe');if(!canvas){canvas=document.createElement('canvas');canvas.id='sim-outfit-probe';canvas.width=1100;canvas.height=400;canvas.style.cssText='position:fixed;left:0;top:0;z-index:250000';document.body.appendChild(canvas);}
+          const ctx=canvas.getContext('2d');ctx.fillStyle='#20251d';ctx.fillRect(0,0,1100,400);const previous=W;W=ctx;let loaded=0;
+          try{const units=onlineWorld.state.battlefield.units.filter(u=>u.kind===1&&u.team===0);units.forEach((u,i)=>{const look=lB({sx:u.appearance.sx,ride:0,r:u.appearance.rows});look.mg=u.appearance.mg;const x=110+i%5*220,y=165+Math.floor(i/5)*200;if(It('st',0,.2,x,y,2,1,Jt(u.faction,u.sex)?.anim,look))loaded++;ctx.fillStyle='#f3d88a';ctx.textAlign='center';ctx.font='14px monospace';ctx.fillText(u.name,x,25+Math.floor(i/5)*200);});}finally{W=previous;}return loaded;
+        },
+        recruitNPC:team=>equipmentTrader.entities().find(n=>n.mapNpc?.npcId===(team===0?'song-recruiter':'jin-recruiter')).onInteract(),
+        gm:action=>gameMaster.grant(action),purse:()=>({gold:o.gold,knb:o.knb,xp:o.xp,lvl:o.lvl}),
+        publicPharmacy:()=>equipmentTrader.entities().find(n=>n.mapNpc?.npcId==='pharmacy').onInteract(),
+        warStock:()=>[OnlineBattlefield.slot(0),OnlineBattlefield.slot(1)],warAuto:()=>o.ctrl,warWalk:()=>Y.moveTarget(v.x+40,v.y),warQuietPotions:()=>{o.potOff=true;},
+        respawnPreview:()=>{window.__snapshotDelay=2000;const next=structuredClone(onlineWorld.state);next.actors.find(a=>a.id===next.self).hp=0;next.battlefield.respawnRemaining=5;OnlineBattlefield.sync(next,()=>0);},
+        respawnPreviewEnd:()=>{window.__snapshotDelay=0;OnlineBattlefield.sync(onlineWorld.state,()=>0);},
+        publicPanel:()=>arenaSimulator.openSettings(),publicJoin:team=>onlineWorld.joinBattlefield(team),publicLeave:()=>onlineWorld.leaveBattlefield(),publicRanking:()=>OnlineBattlefield.ranking(),
         battlefieldStart:()=>arenaSimulator.battlefield.start('song'),battlefieldExit:()=>arenaSimulator.battlefield.reset(),
         town:()=>nc(true),field:()=>en(AA(1)),travelReady:()=>!(l.tpCd>0),
         travel:id=>{const index=k0.findIndex(z=>z.id===id);if(index<0)throw Error('Unknown map');return On(index,'Travel test',false,true);},
@@ -240,7 +257,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     await page.waitForSelector('#csNew, #ncName');
     if(await page.locator('#csNew').isVisible()) await page.locator('#csNew').click();
     await page.locator('#ncName').fill(name);await page.locator('#ncGo').click();
-    await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:60000});
     const understood=page.getByRole('button',{name:'Đã hiểu',exact:true});
     if(await understood.isVisible())await understood.click();
     await page.evaluate(()=>window.__onlineTest.tutorialDone());
@@ -260,6 +277,132 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   await a.page.waitForTimeout(1700);
   for(const {page} of [a,b]) await page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   assert.ok((await a.page.evaluate(()=>window.__onlineTest.state())).draws>0);
+  if(process.env.PUBLIC_WAR_TEST==='1'){
+    await b.page.evaluate(()=>window.__onlineTest.gm('knb'));
+    const gmBalance=await b.page.evaluate(()=>window.__onlineTest.purse());
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/recruiters.png')});
+    await a.page.evaluate(()=>window.__onlineTest.recruitNPC(0));
+    assert.ok((await a.page.locator('#public-war-recruitment').innerText()).includes('Tống Quốc Chiêu Binh quan'));
+    assert.equal(await a.page.locator('#public-war-recruitment select').count(),0);
+    await a.page.click('#public-war-recruit-join');
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve?.battlefield?.phase==='running'&&window.__onlineTest.state().map===9003,null,{timeout:15000});
+    await a.page.waitForFunction(()=>window.__onlineTest.mapPresentation().ready);
+    assert.match((await a.page.evaluate(()=>window.__onlineTest.mapPresentation())).bg,/9003\/assets\/ground/);
+    assert.ok((await a.page.evaluate(()=>window.__onlineTest.minimapLabel())).includes('Tống Kim · Hoang Nguyên'));
+    await a.page.waitForFunction(()=>document.querySelector('#u20zn')?.textContent==='Tống Kim · Hoang Nguyên');
+    const sprites=await a.page.evaluate(()=>window.__onlineTest.publicSprites());
+    assert.equal(sprites.length,90);assert.ok(sprites.every(s=>s.run&&s.stand),'all SIM and soldiers have native moving and standing sprites');
+    const first=await a.page.evaluate(()=>window.__onlineTest.state().pve);
+    assert.equal(first.battlefield.units.filter(u=>u.kind===1&&u.team===0).length,10);
+    assert.equal(first.battlefield.units.filter(u=>u.kind===1&&u.team===1).length,10);
+    assert.equal(first.battlefield.units.filter(u=>u.kind===2).length,70);
+    assert.deepEqual(first.battlefield.potions,[0,0]);
+    await a.page.evaluate(()=>window.__onlineTest.warQuietPotions());
+    await a.page.evaluate(()=>window.__onlineTest.gm('gold'));
+    await a.page.evaluate(()=>window.__onlineTest.publicPharmacy());
+    await a.page.locator('#public-war-pharmacy [data-quantity="20"]').first().click();
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve.battlefield.potions[0]===20);
+    await a.page.waitForFunction(()=>document.querySelector('#public-war-shop-message')?.textContent==='Đã mua thuốc và chọn vào ô.');
+    await a.page.locator('#public-war-pharmacy [data-quantity="20"]').first().click();
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve.battlefield.potions[0]===40);
+    await a.page.locator('#public-war-pharmacy [data-war-slot="1"]').click();
+    await a.page.waitForFunction(()=>document.querySelector('#public-war-shop-message')?.textContent==='Đã mua thuốc và chọn vào ô.');
+    await a.page.locator('#public-war-pharmacy [data-quantity="20"]').first().click();
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve.battlefield.potions[1]===20);
+    await a.page.waitForFunction(()=>document.querySelector('#public-war-shop-message')?.textContent==='Đã mua thuốc và chọn vào ô.');
+    const gold20=(await a.page.evaluate(()=>window.__onlineTest.purse())).gold;
+    for(let count=21;count<=24;count++){
+      await a.page.locator('#public-war-pharmacy [data-quantity="1"]').first().click();
+      await a.page.waitForFunction(n=>window.__onlineTest.state().pve.battlefield.potions[1]===n,count);
+      await a.page.waitForFunction(()=>document.querySelector('#public-war-shop-message')?.textContent==='Đã mua thuốc và chọn vào ô.');
+    }
+    const gold24=(await a.page.evaluate(()=>window.__onlineTest.purse())).gold;
+    assert.equal(await a.page.locator('#public-war-pharmacy [data-quantity="20"]').first().isEnabled(),true);
+    await a.page.locator('#public-war-pharmacy [data-quantity="20"]').first().click();
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve.battlefield.potions[1]===40);
+    await a.page.waitForFunction(()=>document.querySelector('#public-war-shop-message')?.textContent==='Đã mua thuốc và chọn vào ô.');
+    assert.equal(gold24-(await a.page.evaluate(()=>window.__onlineTest.purse())).gold,(gold20-gold24)/4*16);
+    assert.equal(await a.page.locator('#public-war-pharmacy [data-quantity="20"]').first().isDisabled(),true);
+    await a.page.waitForFunction(()=>document.querySelector('#bHp em')?.textContent==='40'&&document.querySelector('#bMp em')?.textContent==='40');
+    assert.ok((await a.page.evaluate(()=>window.__onlineTest.warStock())).every(s=>s.n===40&&s.ic));
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/public-pharmacy.png')});
+    await a.page.locator('#public-war-pharmacy .war-close').click();
+    if(await a.page.evaluate(()=>window.__onlineTest.warAuto())!=='auto')await a.page.locator('#ctrlBtn').click();
+    await a.page.evaluate(()=>window.__onlineTest.warWalk());await a.page.waitForTimeout(700);
+    assert.equal(await a.page.evaluate(()=>window.__onlineTest.warAuto()),'auto');
+    await a.page.keyboard.press('f');assert.equal(await a.page.evaluate(()=>window.__onlineTest.warAuto()),'manual');
+
+    assert.ok(first.battlefield.units.filter(u=>u.kind===1).every(u=>u.appearance&&u.appearance.rows.armor>=0&&u.appearance.rows.weapon>=0),'every SIM has authoritative equipment appearance');
+    await a.page.waitForFunction(()=>window.__onlineTest.simOutfitProbe()===10);
+    await a.page.locator('#sim-outfit-probe').screenshot({path:path.join(root,'output/multiplayer/sim-outfits.png')});
+    await a.page.locator('#sim-outfit-probe').evaluate(node=>node.remove());
+    assert.ok(first.actors.filter(a=>a.battlefieldKind===1).every(a=>a.supports?.some(s=>s.skill===332&&s.active)),'all SIM receive Emei support');
+    assert.equal((await b.page.evaluate(()=>window.__onlineTest.state().pve)).map,37,'not enrolled players cannot see the shared room');
+    await b.page.evaluate(()=>window.__onlineTest.recruitNPC(1));
+    assert.ok((await b.page.locator('#public-war-recruitment').innerText()).includes('Kim Quốc Chiêu Binh quan'));
+    await b.page.click('#public-war-recruit-join');
+    await b.page.waitForFunction(()=>window.__onlineTest.state().pve?.battlefield?.entryRemaining>0);
+    assert.equal((await b.page.evaluate(()=>window.__onlineTest.state().pve)).map,9004,'entry uses a separate waiting map');
+    await b.page.waitForFunction(()=>window.__onlineTest.mapPresentation().ready&&window.__onlineTest.mapPresentation().map===9004);
+    assert.ok((await b.page.evaluate(()=>window.__onlineTest.minimapLabel())).includes('Tống Kim · Khu chờ'));
+    await b.page.waitForFunction(()=>document.querySelector('#u20zn')?.textContent==='Tống Kim · Khu chờ');
+    await b.page.screenshot({path:path.join(root,'output/multiplayer/public-waiting.png')});
+    await b.page.waitForFunction(()=>window.__onlineTest.state().map===9003,null,{timeout:15000});
+    const second=await b.page.evaluate(()=>window.__onlineTest.state().pve);
+    assert.equal(second.battlefield.id,first.battlefield.id);assert.equal(second.battlefield.ends,first.battlefield.ends);
+    assert.ok(second.battlefield.now-first.battlefield.now>=4);
+    await a.page.keyboard.press('Backquote');
+    await a.page.waitForFunction(()=>!document.getElementById('public-war-ranking').hidden);
+    assert.equal(await a.page.locator('#public-war-ranking').getAttribute('class'),'war-dialog');
+    const timer=await a.page.locator('#public-war-hud').evaluate(node=>({text:node.textContent,font:getComputedStyle(node).fontFamily,size:getComputedStyle(node).fontSize,buttons:node.querySelectorAll('button').length}));
+    assert.match(timer.text,/^\d+:\d{2}$/);assert.equal(timer.size,'20px');assert.ok(timer.font.includes('WarCalligraphy'));assert.equal(timer.buttons,0);
+    assert.equal(await a.page.locator('#modeSw').isVisible(),false);assert.equal(await a.page.locator('#rotBtn').isVisible(),false);assert.equal(await a.page.locator('#ctrlBtn').isVisible(),true);
+    assert.equal(await a.page.locator('#public-war-prefer input').isChecked(),true);
+    await a.page.locator('#public-war-prefer input').uncheck();assert.equal(await a.page.locator('#public-war-prefer input').isChecked(),false);
+    await a.page.locator('#public-war-prefer input').check();
+    assert.ok((await a.page.locator('#public-war-status').innerText()).includes('Phe của bạn: Tống'));
+    assert.ok((await a.page.locator('#public-war-teams').innerText()).includes('quân trạng'));
+    assert.ok((await a.page.locator('#public-war-potions').innerText()).includes('HP /'));
+    assert.equal(await a.page.locator('#public-war-leave').innerText(),'Rời chiến trường');
+    await a.page.keyboard.press('Backquote');
+    assert.equal(await a.page.locator('#public-war-ranking').isVisible(),false);
+    await a.page.locator('#u20txt').focus();await a.page.keyboard.press('Backquote');
+    assert.equal(await a.page.locator('#public-war-ranking').isVisible(),false,'typing in chat does not open rankings');
+    await a.page.locator('#u20txt').fill('');await a.page.locator('#u20txt').blur();
+    await a.page.keyboard.press('Backquote');await a.page.keyboard.press('Escape');
+    assert.equal(await a.page.locator('#public-war-ranking').isVisible(),false,'Escape closes rankings before global menus');
+    await a.page.keyboard.press('Backquote');
+    assert.ok((await a.page.locator('#public-war-ranking').innerText()).includes('Kiếm Khách'));
+    await b.page.evaluate(()=>window.__onlineTest.publicRanking());
+    assert.ok((await b.page.locator('#public-war-ranking').innerText()).includes('Nữ Hiệp'));
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/public-war.png')});
+    await a.page.click('#public-war-ranking .war-close');
+    await a.page.waitForFunction(()=>window.__simCompositeDraws>0);
+    await a.page.waitForFunction(()=>Object.values(window.__guardFrames).some(frames=>frames.size>=3),null,{timeout:15000});
+    const guardFrames=await a.page.evaluate(()=>Object.fromEntries(Object.entries(window.__guardFrames).map(([id,frames])=>[id,[...frames]])));
+    assert.ok(Object.values(guardFrames).some(frames=>frames.length>=3),'visible moving guards draw several different native footstep frames');
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/public-battlefield.png')});
+    await a.page.evaluate(()=>window.__onlineTest.respawnPreview());
+    await a.page.waitForSelector('#public-war-respawn',{state:'visible'});
+    assert.match(await a.page.locator('#public-war-respawn').innerText(),/Tái xuất chiến sau [1-5] giây/);
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/public-respawn.png')});
+    await a.page.evaluate(()=>window.__onlineTest.respawnPreviewEnd());
+    await a.page.keyboard.press('Backquote');
+    await a.page.click('#public-war-leave');
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve?.map===37&&!window.__onlineTest.state().pve?.battlefield);
+    assert.ok((await b.page.evaluate(()=>window.__onlineTest.state().pve)).battlefield,'creator leaving does not end the room');
+    await b.page.reload({waitUntil:'domcontentloaded',timeout:20000});
+    await b.page.waitForFunction(()=>window.__onlineTest?.state()?.map===9003&&window.__onlineTest.state().pve?.battlefield?.entryRemaining===0,null,{timeout:30000});
+    const rejoined=await b.page.evaluate(()=>window.__onlineTest.state().pve.battlefield);
+    assert.equal((await b.page.evaluate(()=>window.__onlineTest.purse())).knb,gmBalance.knb);
+    assert.equal(rejoined.id,first.battlefield.id);assert.equal(rejoined.team,1);assert.equal(rejoined.ends,first.battlefield.ends);
+    assert.deepEqual(errors,[]);
+    rust.kill('SIGTERM');await once(rust,'exit');
+    await a.page.waitForSelector('#serverDisconnect',{state:'visible',timeout:15000});
+    assert.equal(await a.page.locator('#serverDisconnect').getAttribute('role'),'alertdialog');
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/server-disconnect.png')});
+    await Promise.all([a.page.waitForEvent('request',{predicate:r=>r.isNavigationRequest()}),a.page.click('#serverDisconnectReload')]);return;
+  }
   if(process.env.CURSE_TEST==='1'){
     await a.page.evaluate(()=>window.__onlineTest.skillDetail(67));
     assert.equal(await a.page.locator('#skPlus').isEnabled(),true);
