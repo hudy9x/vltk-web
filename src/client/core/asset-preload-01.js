@@ -25,7 +25,7 @@ window.localGameAssets = {
     if (u0.on || !o.fac) {
       const characters = u0.on ? u0.st.filter(Boolean) : sectPortraits.map(fac => ({ fac, sex:0 }));
       for (const character of characters) {
-        add(`img/portraits/${character.fac}.webp`);
+        add(characterPortrait(character.fac));
         const hero = Jt(character.fac, character.sex);
         if (hero) add(hero.img);
       }

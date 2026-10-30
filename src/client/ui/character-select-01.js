@@ -136,6 +136,12 @@ var Sr = function s() {
 
 var sectPortraits = ["shaolin", "tianwang", "tangmen", "wudu", "emei", "cuiyan", "gaibang", "tianren", "wudang", "kunlun"];
 
+// Keep rendering and critical preloading on the same portrait catalog.
+var characterPortrait = function (faction) {
+  if (sectPortraits.includes(faction)) return `img/portraits/${faction}.webp`;
+  return /^vo[0-4]$/.test(faction) ? 'img/portraits/novice.webp' : null;
+};
+
 var e_ = function s(A) {
   if (!u0.on) return;
   let loading = !1;
@@ -150,7 +156,8 @@ var e_ = function s(A) {
       c = W;
     let d = !1;
     // Portraits retain sharp faces and sect costumes; sprites remain a loading fallback.
-    const portrait = sectPortraits.includes(a.fac) ? bA(`img/portraits/${a.fac}.webp`) : null;
+    const portraitUrl = characterPortrait(a.fac);
+    const portrait = portraitUrl ? bA(portraitUrl) : null;
     if (!portrait || !portrait.complete) loading = !0;
     if (portrait && portrait.complete && portrait.naturalWidth) {
       const scale = Math.max(t.width / portrait.naturalWidth, t.height / portrait.naturalHeight);
