@@ -23,15 +23,15 @@ async function boot(base, values, { failWrites = false, search = '' } = {}) {
   const storage = new Proxy(new Storage(), { ownKeys:() => [...values.keys()], getOwnPropertyDescriptor:() => ({ enumerable:true,configurable:true }) });
   const sandbox = {
     Storage, localStorage:storage, sessionStorage:new Storage(), crypto:{ randomUUID }, AbortSignal,
-    location:{ search }, URLSearchParams, loadedScripts:[],
+    location:{ search,reload(){sandbox.reloads++;} }, reloads:0, nodes:new Map(), URLSearchParams, loadedScripts:[],
     setInterval:() => {}, setTimeout, clearTimeout, console:{ error:() => {} }, addEventListener:() => {},
     fetch:(url,options) => {
       if (failWrites && url === '/api/storage' && options?.method === 'POST') return Promise.reject(new Error('Network disconnected'));
       return fetch(base+url,{ ...options, headers:{ ...options?.headers, cookie } });
     },
     document:{
-      createElement:() => ({ style:{}, hidden:false }),
-      body:{ appendChild:element => { if (element.src) { sandbox.loadedScripts.push(element.src); queueMicrotask(() => element.onload()); } } },
+      createElement:() => ({style:{},hidden:false,children:[],setAttribute(){},focus(){},append(...items){this.children.push(...items);},appendChild(item){this.children.push(item);},remove(){sandbox.nodes.delete(this.id);}}),
+      body:{ appendChild:element => { if(element.id)sandbox.nodes.set(element.id,element); if (element.src) { sandbox.loadedScripts.push(element.src); queueMicrotask(() => element.onload()); } } },
       addEventListener:() => {}
     }
   };
@@ -204,4 +204,16 @@ test('canonical progression is loaded before game scripts so stale local levels 
     assert.equal(loaded.lvl,1);assert.equal(loaded.fac,'vo0');assert.deepEqual(loaded.sk,{});assert.equal(loaded.attr.str,0);
     assert.ok(client.loadedScripts.includes('app/game.js?v=622'));
   }finally{await app.close();db.close();if(previousControl===undefined)delete process.env.MULTIPLAYER_WT_CONTROL_URL;else process.env.MULTIPLAYER_WT_CONTROL_URL=previousControl;if(previousSecret===undefined)delete process.env.MULTIPLAYER_SECRET;else process.env.MULTIPLAYER_SECRET=previousSecret;}
+});
+
+
+test('disconnect dialog waits for both storage and combat recovery and reload button reloads the browser',async()=>{
+  const db=openDatabase(':memory:'),{app,server}=createServer({db,downloadAssets:false});await app.ready();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  try{
+    const client=await boot(`http://127.0.0.1:${server.address().port}`,new Map());
+    client.localGameConnection.set('combat',true);client.localGameConnection.set('storage',true);
+    const panel=client.nodes.get('serverDisconnect');assert.ok(panel);const reload=panel.children[0].children[2];assert.equal(reload.textContent,'Tải lại');reload.onclick();assert.equal(client.reloads,1);
+    client.localGameConnection.set('combat',false);assert.ok(client.nodes.has('serverDisconnect'));
+    client.localGameConnection.set('storage',false);assert.equal(client.nodes.has('serverDisconnect'),false);
+  }finally{await app.close();db.close();}
 });

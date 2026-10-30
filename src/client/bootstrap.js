@@ -15,6 +15,31 @@
   status.id = 'sqliteStatus';
   status.style.cssText = 'position:fixed;top:4px;left:50%;transform:translateX(-50%);z-index:100001;background:#211b12;color:#efd394;padding:5px 10px;font:12px monospace;border-radius:4px';
   status.textContent = 'Đang kết nối máy chủ…'; document.body.appendChild(status);
+  // Both storage delivery and authoritative combat must recover before this closes.
+  window.localGameConnection=(()=>{
+    const failures=new Set();let panel=null,reloadButton=null;
+    function set(source,failed){
+      if(failed)failures.add(source);else failures.delete(source);
+      if(!failures.size){panel?.remove();panel=null;reloadButton=null;return;}
+      if(panel)return;
+      const style=document.createElement('style');style.textContent=`
+@font-face{font-family:DisconnectCharm;src:url('/fonts/charm-bold.ttf') format('truetype');font-weight:700;font-display:swap}
+#serverDisconnect{position:fixed;inset:0;z-index:200000;display:grid;place-items:center;padding:20px;box-sizing:border-box;background:radial-gradient(ellipse at center,#20060875 12%,#190204d9 72%,#080102f2)}
+#serverDisconnect .disconnect-card{box-sizing:border-box;width:min(480px,100%);padding:42px 28px 32px;text-align:center;border:1px solid #7c3332;border-radius:3px;background:linear-gradient(160deg,#271314f5,#140b0df7 70%);color:#d7bdb0;box-shadow:0 24px 80px #000c}
+#serverDisconnect h2{font:700 36px/1.4 DisconnectCharm,Georgia,serif;margin:0 0 18px;color:#e5b4a0;text-shadow:0 2px 16px #ba182e66}
+#serverDisconnect p{font:13px/1.9 'IBM Plex Mono',monospace;margin:0 0 25px}
+#serverDisconnect button{min-width:168px;min-height:46px;padding:9px 28px;border:1px solid #ab5651;border-radius:3px;background:linear-gradient(#64262b,#3e171e);color:#f0d4bf;font:700 23px/1.3 DisconnectCharm,Georgia,serif;cursor:pointer}
+`;document.head?.appendChild(style);
+      panel=document.createElement('section');panel.id='serverDisconnect';panel.setAttribute('role','alertdialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-labelledby','serverDisconnectTitle');
+      const card=document.createElement('div');card.className='disconnect-card';const title=document.createElement('h2');title.id='serverDisconnectTitle';title.textContent='Mất kết nối máy chủ';
+      const message=document.createElement('p');message.textContent='Kết nối đang bị gián đoạn. Dữ liệu chờ đồng bộ được giữ trên trình duyệt. Bạn có thể tải lại để kết nối lại.';
+      const reload=document.createElement('button');reloadButton=reload;reload.id='serverDisconnectReload';reload.textContent='Tải lại';reload.onclick=()=>window.location.reload();
+      card.append(title,message,reload);panel.appendChild(card);document.body.appendChild(panel);reload.focus?.();
+    }
+    window.addEventListener?.('offline',()=>set('network',true));window.addEventListener?.('online',()=>set('network',false));
+    window.addEventListener?.('keydown',event=>{if(!panel)return;event.stopImmediatePropagation();if(!['Enter',' '].includes(event.key)){event.preventDefault();reloadButton?.focus();}},true);
+    return {set};
+  })();
   async function request(url, options) {
     // Storage batches have stable IDs and server-side deduplication, so replay is safe.
     // Other POSTs (registration, initialization, login) must not be retried here.
@@ -100,8 +125,10 @@
           queue.shift(); persist();
         }
         status.hidden = true;
+        window.localGameConnection.set('storage',false);
       } catch (error) {
-        status.hidden = false; status.textContent = `Chưa đồng bộ với máy chủ: ${error.message}. Dữ liệu đang chờ trên trình duyệt; sẽ tự thử lại.`;
+        status.hidden = true;
+        window.localGameConnection.set('storage',true);
       }
     })().finally(() => { flushing = null; });
     return flushing;
