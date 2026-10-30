@@ -43,7 +43,7 @@ test('HTTP API persists changes and rejects invalid writes; private server/datab
   const fetch = (url, options) => nativeFetch(url, { ...options, headers:{ cookie, ...options?.headers } });
   const post = value => ({ method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(value) });
   try {
-    assert.deepEqual(await (await fetch(base+'/api/config?development=true')).json(), { development:false });
+    assert.equal((await (await fetch(base+'/api/config?development=true')).json()).development, false);
     const initial = await (await fetch(base+'/api/storage/init',post({ entries:{} }))).json();
     const batch = { id:'http-test', generation:initial.generation, operations:[{ key:'jxidle_2',value:'{"name":"Second","lvl":2,"fac":"vo1"}' }] };
     assert.equal((await fetch(base+'/api/storage',post(batch))).status,200);

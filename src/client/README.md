@@ -14,7 +14,7 @@ ui/         panel, nút bấm, màn hình nhân vật và thế giới
 systems/    hệ thống bổ trợ, âm thanh và điều khiển
 online/     tài khoản, chat, Chợ và tổ đội
 simulator/  SIM TypeScript: nhân vật, kỹ năng/PK, log công thức và nút cạnh GM
-dev/        bảng GM trong môi trường development, định nghĩa rương GM
+dev/        bảng GM, bán nhanh, định nghĩa rương GM và combat sandbox
     |
     v
 modules.json (thứ tự ghép) -> npm run build -> game.js + game.js.map

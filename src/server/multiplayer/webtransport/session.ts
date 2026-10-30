@@ -2,8 +2,10 @@ import { createHmac, randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import { createCharacters } from '../persistence/characters.ts';
+import gameMasterConfig from '../../../shared/game-master.json' with { type: 'json' };
 import progressionFields from '../../../shared/multiplayer/progression-fields.json' with { type: 'json' };
 import { parseJsonBody, sendJson } from '../../http.ts';
+import type { GameMasterMode } from '../../types.ts';
 
 /** Short-lived, binary HMAC ticket. The account ID always comes from the cookie session. */
 export function issueMultiplayerTicket(
@@ -27,6 +29,7 @@ export function registerMultiplayerWebTransport(
   requireUser: (request: FastifyRequest) => Record<string, unknown>,
   db?: DatabaseSync,
   development = false,
+  gameMasterMode: GameMasterMode = (process.env.GAME_MASTER_MODE ?? gameMasterConfig.mode) === 'development' ? 'development' : 'all',
 ): void {
   const characters = db ? createCharacters(db) : undefined;
   let polling: Promise<void> | undefined;
@@ -117,8 +120,9 @@ export function registerMultiplayerWebTransport(
       // Only trusted room metadata is forwarded to the transactional mutation.
       Object.assign(action,room);
     }
-    if(action?.kind==='gm'&&!development)return sendJson(reply,403,{error:'GM chỉ dùng trong development.'});
-    const saved=characters.mutate(String(user.id),body.slot,body.id,body.action,development);
+    const allowGm=gameMasterMode==='all'||development;
+    if(action?.kind==='gm'&&!allowGm)return sendJson(reply,403,{error:'GM chỉ dùng trong development.'});
+    const saved=characters.mutate(String(user.id),body.slot,body.id,body.action,development,gameMasterMode);
     if(process.env.MULTIPLAYER_WT_CONTROL_URL)await refreshProfiles({account:String(user.id),slot:body.slot});
     return sendJson(reply,200,{...saved,full:true});
   });

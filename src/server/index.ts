@@ -14,17 +14,26 @@ import { buildApp } from '../../tools/build-app.js';
 import { sendJson, toHttpError } from './http.ts';
 import { registerApiRoutes } from './routes/api.ts';
 import { registerStaticRoutes } from './routes/static.ts';
-import type { ServerOptions, ServerServices } from './types.ts';
+import gameMasterConfig from '../shared/game-master.json' with { type: 'json' };
+import type { GameMasterMode, ServerOptions, ServerServices } from './types.ts';
+
+function resolveGameMasterMode(value: unknown = process.env.GAME_MASTER_MODE ?? gameMasterConfig.mode): GameMasterMode {
+  if (value === 'development' || value === 'all') return value;
+  throw new Error('Cấu hình GameMaster (mode) chỉ nhận "development" hoặc "all".');
+}
 
 export function createServer({
   db = openDatabase(), downloadAssets = true,
   development = process.env.NODE_ENV === 'development',
   combatSandbox = process.env.COMBAT_SANDBOX === '1',
+  gameMasterMode = resolveGameMasterMode(),
 }: ServerOptions = {}) {
+  const resolvedGameMasterMode = resolveGameMasterMode(gameMasterMode);
   const bundle = buildApp();
   seedCatalog(db);
   const services: ServerServices = {
-    db, assets: createAssetCache({ root: PUBLIC_ROOT }), development, combatSandbox, downloadAssets,
+    db, assets: createAssetCache({ root: PUBLIC_ROOT }), development, combatSandbox,
+    gameMasterMode: resolvedGameMasterMode, downloadAssets,
     moduleFiles: new Set(bundle.map.sources.map(file => 'app/' + file)),
   };
   const app = Fastify({

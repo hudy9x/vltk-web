@@ -1,17 +1,21 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { AssetCache } from './assets.ts';
 
+export type GameMasterMode = 'development' | 'all';
+
 export interface ServerOptions {
   db?: DatabaseSync;
   downloadAssets?: boolean;
   development?: boolean;
   combatSandbox?: boolean;
+  gameMasterMode?: GameMasterMode;
 }
 export interface ServerServices {
   db: DatabaseSync;
   assets: AssetCache;
   development: boolean;
   combatSandbox: boolean;
+  gameMasterMode: GameMasterMode;
   downloadAssets: boolean;
   moduleFiles: Set<string>;
 }

@@ -1,8 +1,14 @@
 // Intents only. Reuse native learning/route rules; never accept client-computed profiles.
 const native=require('./runtime.cjs');
+const gmConfig=require('../../../shared/game-master.json');
 const fail=message=>{throw Object.assign(new Error(message),{status:400});};
-exports.apply=function(input,action,development=false){
+const resolveGmMode=(mode=process.env.GAME_MASTER_MODE||gmConfig.mode)=>{
+  if(mode==='development'||mode==='all')return mode;
+  throw new Error('Cấu hình GameMaster (mode) chỉ nhận "development" hoặc "all".');
+};
+exports.apply=function(input,action,development=false,gameMasterMode){
   if(!action||typeof action!=='object'||Array.isArray(action))fail('Thao tác không hợp lệ.');
+  const gmMode=resolveGmMode(gameMasterMode);
   return native.withProgression(input,s=>{
     const p=s.o,kind=action.kind,integer=(n,min,max)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
     const skill=()=>{const row=s.T[action.skill];if(!row||!s.I[p.fac]?.skills.includes(row.id))fail('Chiêu không thuộc môn phái.');return row;};
@@ -85,7 +91,7 @@ exports.apply=function(input,action,development=false){
       case 'autoSkill':s.Pt();break;
       case 'reset':if(typeof action.attributes!=='boolean'||typeof action.skills!=='boolean')fail('Lệnh tẩy tủy không hợp lệ.');s.p4(action.attributes,action.skills);break;
       case 'gm':{
-        if(!development)throw Object.assign(new Error('GM chỉ dùng trong development.'),{status:403});
+        if(gmMode!=='all'&&!development)throw Object.assign(new Error('GM chỉ dùng trong development.'),{status:403});
         const name=action.action;
         if(name==='level150'){
           const levels=Math.max(0,150-p.lvl);p.lvl+=levels;p.xp=levels?0:p.xp;p.attrPts+=levels*s.z2;p.skPts+=levels*s.x5;
@@ -102,9 +108,32 @@ exports.apply=function(input,action,development=false){
         else if(name==='knb')p.knb=(p.knb||0)+100000;
         else if(name==='warMerit'){p.mats||={};p.mats.misc||={};p.mats.misc.tk_merit=(p.mats.misc.tk_merit||0)+10000;}
         else if(name==='chest'){
+          if(!s.I[p.fac]||s.I[p.fac].novice)fail('Hãy gia nhập môn phái trước.');
           const key='gm_hk_'+p.fac;
           if(!s.J0.some(row=>row.k===key))s.J0.push({k:key,n:'Rương Hoàng Kim môn phái · '+s.I[p.fac].n,ic:'img/ep/box2.png',hide:1});
           if(!s.B4(key,100))fail('Hành trang không đủ chỗ.');
+        }else if(name==='openChest'){
+          const chest=p.inv.find(item=>item?.ktc?.k?.startsWith('gm_hk_')&&(action.uid===undefined||item.uid===action.uid));
+          const key=chest?.ktc?.k,faction=key&&s.I[key.slice(6)];
+          if(!chest||!(chest.ktc.c>0)||!faction||faction.novice)fail('Rương Hoàng Kim không hợp lệ.');
+          if(chest.ktc.c>1&&p.inv.length>=s.INV_MAX)fail('Hành trang đầy. Cần 1 ô trống để mở rương.');
+          const candidates=s.S.sets.gold.filter(item=>item.req.some(([k,v])=>k===39&&v===faction.id)&&s.k1(item.req)&&s.cA(item));
+          const near=candidates.filter(item=>(item.req.find(([k])=>k===36)||[36,0])[1]<=p.lvl+15&&s.c3(item,p.lvl));
+          const pool=near.length?near:candidates;
+          if(!pool.length)fail('Chưa có trang bị Hoàng Kim phù hợp của môn phái này.');
+          const item=s.Ta('gold',s.C0(pool),5);
+          if(!item)fail('Không tạo được trang bị Hoàng Kim.');
+          item.lock=true;chest.ktc.c--;
+          const entry=s.J0.find(row=>row.k===key)||{k:key,n:'Rương Hoàng Kim môn phái · '+faction.n,ic:'img/ep/box2.png',hide:1};
+          if(!chest.ktc.c)p.inv.splice(p.inv.indexOf(chest),1);
+          else chest.n=s.se(entry,chest.ktc.c);
+          p.inv.push(item);
+        }else if(name==='quickSale'){
+          const item=Number.isSafeInteger(action.uid)&&p.inv.find(row=>row.uid===action.uid);
+          if(!item)fail('Không tìm thấy vật phẩm để bán.');
+          delete item.lock;
+          if(!Number.isSafeInteger((p.gold||0)+s.x0(item)))fail('Số dư vượt giới hạn số nguyên an toàn.');
+          s.Ef(item);
         }else fail('Lệnh GM không hợp lệ.');
         break;
       }

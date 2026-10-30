@@ -16,12 +16,12 @@ function declaration(file, name) {
     .body.find((n) => n.type === "VariableDeclaration" && n.declarations[0].id.name === name);
   return code.slice(node.start, node.end);
 }
-function game(development = true) {
+function game(development = true, gameMasterMode = "all") {
   const nodes = [];
   const listeners = {};
   const element = () => ({ setAttribute() {}, hidden: false });
   const s = {
-    window: { localGameConfig: { development } },
+    window: { localGameConfig: { development, gameMasterMode } },
     document: {
       createElement: element,
       head: { appendChild() {} },
@@ -231,16 +231,15 @@ test("Can Khon ring grant moved out of GM into the equipment NPC", () => {
   assert.throws(() => s.gameMaster.grant("rings"), /không hợp lệ/);
   assert.equal(s.o.inv.length, 0);
 });
-test("production exposes GM controls but hides and rejects potential and chest grants", () => {
-  const s = game(false);
+test("production exposes and permits every GameMaster grant when gameMasterMode is all", () => {
+  const s = game(false, "all");
   const panel = s.nodes.find(node => node.id === "gm-panel");
   assert.ok(s.nodes.some(node => node.id === "gm-toggle"));
   assert.ok(s.nodes.some(node => node.id === "quick-sale-toggle"));
   for (const action of ["level150", "learn90", "max90", "gold", "knb", "xp"])
     assert.ok(panel.innerHTML.includes(`data-gm="${action}"`), action);
   for (const action of ["potential", "chest"]) {
-    assert.ok(!panel.innerHTML.includes(`data-gm="${action}"`), action);
-    assert.throws(() => s.gameMaster.grant(action), /chỉ dùng.*development/);
+    assert.ok(panel.innerHTML.includes(`data-gm="${action}"`), action);
   }
   assert.equal(s.o.attrPts, 0);
   assert.equal(s.o.inv.length, 0);
@@ -251,9 +250,24 @@ test("production exposes GM controls but hides and rejects potential and chest g
   assert.equal(s.o.gold, 1_000_000_000_007);
   assert.equal(s.o.knb, 100_003);
   assert.equal(s.o.lvl, 5);
-  s.B4("gm_hk_shaolin", 1);
+  const earnedPoints=s.o.attrPts;s.gameMaster.grant("potential");assert.equal(s.o.attrPts,earnedPoints+3000);
+  s.gameMaster.grant("chest");assert.equal(s.o.inv[0].ktc.c,100);
   assert.equal(s.c6(s.o.inv[0]), true);
-  assert.equal(s.o.inv[0].n, "Đồ Thiếu Lâm");
+  assert.equal(s.o.inv[0].ktc.c, 99);
+  assert.equal(s.o.inv[1].n, "Đồ Thiếu Lâm");
+});
+test("development-only mode disables GM and quick sale in production while keeping earned chests usable", () => {
+  const prod = game(false, "development");
+  assert.equal(prod.gameMaster, null);
+  assert.equal(prod.nodes.length, 0);
+  prod.B4("gm_hk_shaolin", 1);
+  assert.equal(prod.c6(prod.o.inv[0]), true);
+  assert.equal(prod.o.inv[0].n, "Đồ Thiếu Lâm");
+  const dev = game(true, "development");
+  const panel = dev.nodes.find(node => node.id === "gm-panel");
+  assert.ok(dev.gameMaster);
+  assert.match(panel.innerHTML, /data-gm="potential"/);
+  assert.match(panel.innerHTML, /data-gm="chest"/);
 });
 test("development retains potential and chest controls", () => {
   const s = game();

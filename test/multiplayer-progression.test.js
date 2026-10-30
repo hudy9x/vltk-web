@@ -40,7 +40,9 @@ test('native requirements, skill books, refunds and bulk allocation use the same
   p=progression.apply(p,{kind:'skillRoute',route:'staff'});assert.equal(p.skPts,0);
   p=progression.apply(p,{kind:'potentialRoute',route:'staff'});assert.equal(p.attrPts,0);assert.equal(Object.values(p.attr).reduce((a,b)=>a+b,0),745);
   p=progression.apply(p,{kind:'reset',attributes:true,skills:true});assert.equal(p.attrPts,745);assert.equal(p.skPts,150);
-  assert.throws(()=>progression.apply(p,{kind:'gm',action:'potential'},false),/development/);
+  assert.equal(progression.apply(p,{kind:'gm',action:'potential'},false,'all').attrPts,p.attrPts+3000);
+  assert.throws(()=>progression.apply(p,{kind:'gm',action:'potential'},false,'development'),{status:403});
+  assert.equal(progression.apply(p,{kind:'gm',action:'potential'},true,'development').attrPts,p.attrPts+3000);
 });
 test('real XP rewards preserve spent points and learned skills when the next level is committed',()=>{
   const {db,s}=store();try{
@@ -51,20 +53,32 @@ test('real XP rewards preserve spent points and learned skills when the next lev
     s.apply({id:'123-1',account:'one',slot:0,xp:105,gold:1});assert.equal(s.read('one',0).profile.attrPts,2995);
   }finally{db.close();}
 });
-test('authenticated API isolates accounts, rejects GM in production and replays one mutation only once',async()=>{
+test('authenticated production API respects gameMasterMode ("all" vs "development"), isolates accounts and replays mutations only once',async()=>{
   const {openDatabase}=require('../src/server/database.ts'),{createServer}=require('../src/server/index.ts');
-  const db=openDatabase(':memory:'),{app}=createServer({db,downloadAssets:false,development:false});
+  const db=openDatabase(':memory:'),{app}=createServer({db,downloadAssets:false,development:false,gameMasterMode:'all'});
   try{
     const registered=await app.inject({method:'POST',url:'/api/auth/register',payload:{username:'progress_user',password:'secret123'}}),account=registered.json().user.id,cookie=registered.headers['set-cookie'].split(';')[0];
     db.prepare('INSERT INTO account_storage VALUES(?,?,?)').run(account,'jxidle',JSON.stringify({fac:'vo0',lvl:1,xp:0,attrPts:10,skPts:1}));
     const body={slot:0,id:'api-command',action:{kind:'potential',key:'str',amount:3},account:'spoofed'};
     assert.equal((await app.inject({method:'POST',url:'/api/multiplayer/progression',payload:body})).statusCode,401);
     const call=payload=>app.inject({method:'POST',url:'/api/multiplayer/progression',headers:{cookie},payload});
-    assert.equal((await call({...body,id:'gm-command',action:{kind:'gm',action:'level150'}})).statusCode,403);
+    const gmCommand={...body,id:'gm-command',action:{kind:'gm',action:'gold'}};
+    const gm=await call(gmCommand);assert.equal(gm.statusCode,200);assert.equal(gm.json().profile.gold,1000000000000);
+    const gmReplay=await call(gmCommand);assert.equal(gmReplay.json().profile.gold,gm.json().profile.gold);assert.equal(gmReplay.json().revision,gm.json().revision);
+    assert.equal((await call({...body,id:'unknown-gm',action:{kind:'gm',action:'arbitrary'}})).statusCode,400);
     const first=await call(body),second=await call(body);assert.equal(first.statusCode,200);assert.equal(second.json().profile.attr.str,3);assert.equal(second.json().revision,first.json().revision);
     assert.equal((await call({...body,slot:-1})).statusCode,400);
-    const reload=await app.inject({url:'/api/multiplayer/character?slot=0',headers:{cookie}});assert.equal(reload.json().profile.attrPts,7);
+    const reload=await app.inject({url:'/api/multiplayer/character?slot=0',headers:{cookie}});assert.equal(reload.json().profile.attrPts,7);assert.equal(reload.json().profile.gold,1000000000000);
   }finally{await app.close();db.close();}
+  const restrictedDb=openDatabase(':memory:'),{app:restrictedApp}=createServer({db:restrictedDb,downloadAssets:false,development:false,gameMasterMode:'development'});
+  try{
+    const cfg=await restrictedApp.inject({url:'/api/config'});
+    assert.deepEqual(cfg.json(),{development:false,gameMasterMode:'development'});
+    const registered=await restrictedApp.inject({method:'POST',url:'/api/auth/register',payload:{username:'restricted_user',password:'secret123'}}),account=registered.json().user.id,cookie=registered.headers['set-cookie'].split(';')[0];
+    restrictedDb.prepare('INSERT INTO account_storage VALUES(?,?,?)').run(account,'jxidle',JSON.stringify({fac:'vo0',lvl:1,xp:0,attrPts:10,skPts:1}));
+    const gm=await restrictedApp.inject({method:'POST',url:'/api/multiplayer/progression',headers:{cookie},payload:{slot:0,id:'blocked-gm',action:{kind:'gm',action:'gold'}}});
+    assert.equal(gm.statusCode,403);
+  }finally{await restrictedApp.close();restrictedDb.close();}
 });
 test('90 skill metadata matches the browser: one canonical book, zero point cost, training state retained',()=>{
   let p=progression.apply({fac:'vo0',lvl:1},{kind:'gm',action:'level150'},true);p=progression.apply(p,{kind:'join',faction:'shaolin'});
@@ -162,6 +176,32 @@ test('war purchases select the slot, cap each slot at forty, charge once, and su
   const saved=createCharacters(db).read('one',0).profile;assert.equal(saved.warSupplies.bought[0][1],40);assert.equal(saved.warSupplies.bought[1][101],40);
   assert.equal(s.read('two',0).profile.warSupplies,undefined);
   const beforeRefill=s.read('one',0).profile;const refilled=s.mutate('one',0,'war-after-use',{...buy,spent:[1,0],quantity:20},true);assert.equal(refilled.profile.warSupplies.bought[0][1],41);assert.equal(beforeRefill.gold-refilled.profile.gold,(first.profile.gold-second.profile.gold)/20);
+ }finally{db.close();}
+});
+
+test('all production GM grants persist level, skills, points, currency, merit and chests when gameMasterMode is all',()=>{
+ const {db,s}=store();try{
+  assert.throws(()=>s.mutate('one',0,'dev-only-gm',{kind:'gm',action:'gold'},false,'development'),{status:403});
+  const grant=action=>s.mutate('one',0,'prod-gm-'+action,{kind:'gm',action},false,'all').profile;
+  assert.throws(()=>grant('chest'),/gia nhập môn phái/);
+  let p=grant('level150');assert.equal(p.lvl,150);
+  s.mutate('one',0,'prod-join-sect',{kind:'join',faction:'shaolin'},false,'all');
+  for(const action of ['learn90','learn120','learn150','max90'])p=grant(action);
+  assert.ok(Object.keys(p.sk).length>0);const points=p.attrPts;
+  p=grant('potential');assert.equal(p.attrPts,points+3000);
+  p=grant('gold');assert.equal(p.gold,1000000000000);
+  p=grant('knb');assert.equal(p.knb,100000);
+  p=grant('warMerit');assert.equal(p.mats.misc.tk_merit,10000);
+  p=grant('xp');p=grant('chest');
+  const chest=p.inv.find(i=>i.ktc?.k==='gm_hk_shaolin');assert.equal(chest?.ktc.c,100);
+  p=s.mutate('one',0,'prod-gm-open-chest',{kind:'gm',action:'openChest',uid:chest.uid},false,'all').profile;
+  assert.equal(p.inv.find(i=>i.uid===chest.uid)?.ktc.c,99);
+  const reward=p.inv.at(-1);assert.equal(reward?.lock,true);assert.equal(reward?.r,4);
+  const goldBeforeSale=p.gold;
+  p=s.mutate('one',0,'prod-gm-quick-sale',{kind:'gm',action:'quickSale',uid:reward.uid},false,'all').profile;
+  assert.ok(!p.inv.some(i=>i.uid===reward.uid));assert.ok(p.gold>goldBeforeSale);
+  const saved=createCharacters(db).read('one',0).profile;assert.deepEqual(saved,p);
+  assert.equal(s.read('two',0).profile.gold||0,0);
  }finally{db.close();}
 });
 

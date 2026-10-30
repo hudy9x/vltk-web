@@ -603,8 +603,12 @@ chưa được triển khai. Không kết nối tới Supabase production để 
 
 ## GameMaster (GM)
 
-Chạy `npm run dev`, vào nhân vật rồi bấm **GM** ở góc trên trái. `npm start`
-không hiển thị nút GM (trừ khi bạn chủ động đặt `NODE_ENV=development`).
+Cấu hình phạm vi cho phép GM tại `src/shared/game-master.json` (hoặc ghi đè bằng biến
+môi trường `GAME_MASTER_MODE`):
+
+- `"mode": "all"`: cho phép toàn bộ GM và Bán nhanh ở cả môi trường development lẫn production.
+- `"mode": "development"`: chỉ cho phép GM và Bán nhanh trong development (`NODE_ENV=development`);
+  ở production sẽ ẩn toàn bộ nút GM/Bán nhanh trên client và chặn API GM trên server (`403`).
 Môi trường được bootstrap đọc từ `GET /api/config`, không bật bằng query trên URL.
 
 - Vàng: +100 triệu vạn lượng = **1.000.000.000.000 lượng**.

@@ -30,7 +30,7 @@ Demo tham khảo tại `src/{client,server}/multiplayer-demo/` giữ nguyên; co
 | Chuỗi chiêu, nhiều nhịp sát thương, hình học/trigger riêng từng skill | Chưa tương đương bản offline | Cần port và kiểm chứng từng họ chiêu |
 | Cộng/rút tiềm năng, học/nâng/rút chiêu, gợi ý và tẩy tủy | Có | Intent → kiểm tra công thức gốc → transaction SQLite → revision Rust/client |
 | Gia nhập/đổi môn phái | Có | Server kiểm tra cấp/hệ/giới tính/vật phẩm đổi phái, tạo đồ nhập môn |
-| GM cấp/EXP/điểm/chiêu | Có trong development | API kiểm tra môi trường phía server; không nhận profile tải lên |
+| GM cấp/EXP/điểm/chiêu/rương | Có | Thực thi qua API progression phía server; không nhận profile tải lên |
 | Thay trang bị trong phiên online | Chưa | Chưa có inventory/equipment commands đầy đủ |
 | Đồ Sát và tổ đội | Có | Luật màu tên/đội ở Rust, không chia thưởng/buff đội tự động |
 | Dungeon, tower, Tống Kim và chia thưởng | Chưa | Không nằm trong bản PvE thế giới chung này |
@@ -442,7 +442,8 @@ thiếu điểm hoặc sai điều kiện khác thì không thay đổi nhân v�
 ở client trước khi gửi lệnh mặc. `EQUIP_POTENTIAL_TEST=1` kiểm tra nút thật và đồng bộ
 client/SQLite/Rust ngay sau thao tác, không reload.
 Client không gửi damage/HP/profile hoặc tự cấp EXP. EXP đánh quái vẫn đi qua reward journal.
-GM chỉ được server chấp nhận khi `development=true`; retry không cấp điểm hai lần.
+GM được kiểm tra tại server theo `src/shared/game-master.json` (`mode: "all" | "development"`,
+có thể ghi đè qua `GAME_MASTER_MODE`); retry không cấp điểm hai lần.
 HTTP dùng JSON cho thao tác nhân vật thưa; combat/di chuyển vẫn binary WebTransport v8.
 
 Ô chiêu phụ (R) nằm cạnh chiêu chính (L). Bấm ô R để chọn một chiêu đã học;

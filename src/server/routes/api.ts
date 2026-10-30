@@ -7,11 +7,11 @@ import type { ServerServices } from '../types.ts';
 
 /** Giữ nguyên URL/payload/status để client/bootstrap.js tiếp tục dùng API cũ. */
 export function registerApiRoutes(app: FastifyInstance, services: ServerServices): void {
-  const { db, assets, development, combatSandbox } = services;
+  const { db, assets, development, combatSandbox, gameMasterMode } = services;
   const storage = registerAccounts(app, db);
-  registerMultiplayerWebTransport(app, storage.requireUser, db, development);
+  registerMultiplayerWebTransport(app, storage.requireUser, db, development, gameMasterMode);
   app.get('/api/config', (_request, reply) => sendJson(reply, 200,
-    { development, ...(process.env.MULTIPLAYER_WT_CONTROL_URL&&(process.env.MULTIPLAYER_SECRET||'').length>=32&&!combatSandbox?{onlineProgression:true,progressionFields}:{}), ...(development && combatSandbox ? { combatSandbox: true } : {}) }));
+    { development, ...(!development && gameMasterMode === 'development' ? { gameMasterMode } : {}), ...(process.env.MULTIPLAYER_WT_CONTROL_URL&&(process.env.MULTIPLAYER_SECRET||'').length>=32&&!combatSandbox?{onlineProgression:true,progressionFields}:{}), ...(development && combatSandbox ? { combatSandbox: true } : {}) }));
   app.get('/api/health', (_request, reply) => sendJson(reply, 200, { ok: true, database: 'sqlite', mode: 'local' }));
   app.get('/api/assets', (_request, reply) => sendJson(reply, 200, assets.report()));
   app.get('/api/storage', (request, reply) => sendJson(reply, 200, storage.read(request)));

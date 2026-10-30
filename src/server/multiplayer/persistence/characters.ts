@@ -122,7 +122,7 @@ export function createCharacters(db: DatabaseSync) {
       SELECT account,slot,revision FROM multiplayer_characters WHERE account=? AND slot=?
       ON CONFLICT(account,slot) DO UPDATE SET revision=excluded.revision`).run(account,slot);
   }
-  function mutate(account:string,slot:number,id:string,action:unknown,development:boolean){
+  function mutate(account:string,slot:number,id:string,action:unknown,development=false,gameMasterMode?:'development'|'all'){
     if(typeof id!=='string'||!/^[-a-zA-Z0-9_]{8,80}$/.test(id))throw Object.assign(new Error('Mã thao tác không hợp lệ.'),{status:400});
     if(!action||typeof action!=='object'||Array.isArray(action)||typeof (action as {kind?:unknown}).kind!=='string')throw Object.assign(new Error('Thao tác không hợp lệ.'),{status:400});
     const hashAction={...(action as Record<string,unknown>)};if(hashAction.kind==='warPotionBuy'||hashAction.kind==='warPotionSelect')delete hashAction.spent;
@@ -135,7 +135,7 @@ export function createCharacters(db: DatabaseSync) {
         if(prior.hash!==hash)throw Object.assign(new Error('Mã thao tác đã được dùng.'),{status:409});
         db.exec('COMMIT');return saved;
       }
-      const profile=progression.apply(saved.profile,action,development);
+      const profile=progression.apply(saved.profile,action,development,gameMasterMode);
       catalog.character(profile); // Rebuild authoritative combat stats before committing anything.
       db.prepare('UPDATE multiplayer_characters SET profile=?,revision=revision+1 WHERE account=? AND slot=?').run(JSON.stringify(profile),account,slot);
       db.prepare('INSERT INTO multiplayer_progression_commands VALUES(?,?,?,?)').run(account,slot,id,hash);

@@ -7,7 +7,7 @@ var gameMaster = (function () {
     $();
     V();
   };
-  // Keep earned chests usable after restarting without development mode.
+  // Register faction Golden Equipment chests in the item catalog.
   for (const [faction, info] of Object.entries(I)) {
     J0.push({
       k: prefix + faction,
@@ -43,6 +43,15 @@ var gameMaster = (function () {
       k("Chưa có trang bị Hoàng Kim phù hợp của môn phái này.");
       return false;
     }
+    if(typeof OnlineProgression!=='undefined'&&window.localGameStorage){
+      OnlineProgression.run({kind:'gm',action:'openChest',uid:chest.uid}).then(async saved=>{
+        await window.localGameStorage.flush();
+        const item=saved.profile.inv.at(-1);if(item)C("GM: mở rương nhận " + D(item.n));
+        const next=o.inv.find(entry=>entry.uid===chest.uid&&entry.ktc?.k===key);
+        if(next&&typeof f6==='function'&&typeof m==='function'&&m('#kiUse'))f6(next);else if(typeof n0==='function')n0(true);
+      }).catch(error=>k(error.message));
+      return true;
+    }
     const item = Ta("gold", C0(pool), 5);
     if (!item) return false;
     item.lock = true;
@@ -58,7 +67,8 @@ var gameMaster = (function () {
     saveAndRefresh();
     return true;
   };
-  const development = !!window.localGameConfig?.development;
+  const mode = window.localGameConfig?.gameMasterMode === "development" ? "development" : "all";
+  if (mode === "development" && !window.localGameConfig?.development) return null;
 
   let showSkillRange = false;
   let showDamageAreas = false;
@@ -89,8 +99,6 @@ var gameMaster = (function () {
       return OnlineProgression.run({kind:'gm',action}).then(async()=>{await window.localGameStorage.flush();return 'Đã áp dụng GM và lưu trên máy chủ.';});
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
     if (!(action in amounts)) throw new Error("Lệnh GM không hợp lệ.");
-    if (!development && (action === "potential" || action === "chest"))
-      throw new Error("Lệnh GM này chỉ dùng trong môi trường development.");
     if (action === "warMerit") {
       o.mats ||= {};o.mats.misc ||= {};
       const current=o.mats.misc.tk_merit;
@@ -159,7 +167,7 @@ var gameMaster = (function () {
       d8(amounts.xp / factor);
     } else {
       const key = prefix + o.fac;
-      if (!I[o.fac]) throw new Error("Môn phái không hợp lệ.");
+      if (!I[o.fac] || I[o.fac].novice) throw new Error("Hãy gia nhập môn phái trước.");
       const stack = o.inv.find((item) => item.ktc && item.ktc.k === key && item.ktc.c < Wi);
       const capacity = (stack ? Wi - stack.ktc.c : 0) + Math.max(0, INV_MAX - o.inv.length) * Wi;
       if (capacity < amounts.chest) throw new Error("Hành trang không đủ chỗ cho 100 rương.");
@@ -227,12 +235,12 @@ var gameMaster = (function () {
     <button type="button" data-gm="learn120">Học tất cả chiêu cấp 120 của môn phái</button>
     <button type="button" data-gm="learn150">Học tất cả chiêu cấp 150 của môn phái</button>
     <button type="button" data-gm="max90">Nâng tối đa các chiêu cấp 90 và 150 đã học</button>
-    ${development ? '<button type="button" data-gm="potential">+3.000 điểm tiềm năng</button>' : ""}
+    <button type="button" data-gm="potential">+3.000 điểm tiềm năng</button>
     <button type="button" data-gm="gold">+100 triệu vạn lượng (1.000 tỷ lượng)</button>
     <button type="button" data-gm="knb"><img src="img/ep/knb.png" alt="">+10 vạn Kim Nguyên Bảo</button>
     <button type="button" data-gm="warMerit">+10.000 điểm Quân trạng / tích lũy</button>
     <button type="button" data-gm="xp">+100 triệu điểm kinh nghiệm</button>
-    ${development ? '<button type="button" data-gm="chest"><img src="img/ep/box2.png" alt="">+100 rương Hoàng Kim môn phái hiện tại</button>' : ""}
+    <button type="button" data-gm="chest"><img src="img/ep/box2.png" alt="">+100 rương Hoàng Kim môn phái hiện tại</button>
     <p id="gm-status" role="status" aria-live="polite">Phần thưởng được lưu vào save hiện tại.</p></div>`;
   toggle.onclick = () => {
     panel.hidden = !panel.hidden;
@@ -297,8 +305,15 @@ var gameMaster = (function () {
   const originalInspect = He;
   He = function (item, slot) {
     if (!quickSale || !o || !o.inv.includes(item)) return originalInspect(item, slot);
-    if (item.lock) delete item.lock;
     const price = x0(item);
+    if(typeof OnlineProgression!=='undefined'&&window.localGameStorage){
+      OnlineProgression.run({kind:'gm',action:'quickSale',uid:item.uid}).then(async()=>{
+        await window.localGameStorage.flush();
+        k("Đã bán " + item.n + " (+" + q(price) + " lượng)");
+      }).catch(error=>k(error.message));
+      return;
+    }
+    if (item.lock) delete item.lock;
     Ef(item);
     $();
     k("Đã bán " + item.n + " (+" + q(price) + " lượng)");
