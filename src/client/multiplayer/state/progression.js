@@ -19,12 +19,12 @@ var OnlineProgression=(()=>{
     const slot=m0,id=crypto.randomUUID();
     const task=chain.then(()=>request(action,slot,id));chain=task.catch(()=>{});return task;
   }
-  function dispatch(action){
+  function dispatch(action,onSaved){
     if(!enabled())return false;
     const key=action.kind==='autoPotential'||action.kind==='autoSkill'?action.kind:null;
     if(key&&queued.has(key))return true;
     if(key)queued.add(key);
-    run(action).then(()=>{if(['join','changeFaction','reset','equipWithPotential'].includes(action.kind))n0(true);k('Đã lưu nhân vật online.');}).catch(e=>k(e.message)).finally(()=>{if(key)queued.delete(key);});
+    run(action).then(()=>{if(['join','changeFaction','reset','equipWithPotential'].includes(action.kind))n0(true);k('Đã lưu nhân vật online.');onSaved?.();}).catch(e=>k(e.message)).finally(()=>{if(key)queued.delete(key);});
     return true;
   }
   return {enabled,dispatch,run,flush:()=>chain};

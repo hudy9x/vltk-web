@@ -40,6 +40,16 @@ exports.apply=function(input,action,development=false){
         const row=skill();if(!integer(action.amount??1,1,100))fail('Số điểm kỹ năng không hợp lệ.');
         for(let i=0;i<(action.amount??1);i++)if(!s.Yi(row.id))fail('Không đủ cấp, điểm kỹ năng hoặc bí kíp.');break;
       }
+      case 'skillMax':{
+        const row=skill();let count=0;
+        for(let i=0;i<row.max;i++){if(!s.Yi(row.id))break;count++;}
+        if(!count)fail('Không đủ cấp, điểm kỹ năng hoặc bí kíp.');break;
+      }
+      case 'unlearnAll':{
+        const row=skill();let count=0;
+        for(let i=0;i<row.max;i++){if(!s.qf(row.id))break;count++;}
+        if(!count)fail('Chiêu chưa được học.');break;
+      }
       case 'unlearn':skill();if(!s.qf(action.skill))fail('Chiêu chưa được học.');break;
       case 'join':{
         const f=s.I[action.faction];

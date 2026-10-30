@@ -124,3 +124,19 @@ test('main skill and F slots persist independently through rewards, potion chang
     assert.equal(act({kind:'skillSlot',index:1,skill:-1}).profile.slots[1],-1);
   }finally{db.close();}
 });
+test('Wudu curses allocate single/max points, refund and persist atomically without bypassing books',()=>{
+  const {db,s}=store();
+  try{
+    db.prepare('UPDATE account_storage SET value=? WHERE account_id=? AND key=?').run(JSON.stringify({fac:'wudu',lvl:150,skPts:100,sk:{},attrPts:0}),'one','jxidle');
+    let p=s.mutate('one',0,'curse-learn-67',{kind:'skill',skill:67}).profile;
+    assert.equal(p.sk[67],1);assert.equal(p.skPts,99);
+    const result=s.mutate('one',0,'curse-max-67',{kind:'skillMax',skill:67});
+    assert.equal(result.profile.sk[67],20);assert.equal(result.profile.skPts,80);
+    assert.equal(s.mutate('one',0,'curse-max-67',{kind:'skillMax',skill:67}).revision,result.revision);
+    p=createCharacters(db).read('one',0).profile;assert.equal(p.sk[67],20);
+    assert.throws(()=>s.mutate('one',0,'curse-no-book',{kind:'skillMax',skill:390}),/bí kíp/);
+    assert.throws(()=>s.mutate('one',0,'curse-other-class',{kind:'skillMax',skill:16}),/môn phái/);
+    p=s.mutate('one',0,'curse-clear-67',{kind:'unlearnAll',skill:67}).profile;
+    assert.equal(p.sk[67]||0,0);assert.equal(p.skPts,100);
+  }finally{db.close();}
+});

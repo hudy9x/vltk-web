@@ -123,13 +123,14 @@ var Kf = function (A, n, t, e, a, i) {
     <div class="sl jxsk">${g.map(([p, P]) => (p === "sep" ? '<div class="sep"></div>' : `<div class="${p}">${Ev(D(P))}</div>`)).join("")}</div>`;
 };
 
-var bulkSkillPoints = function (id, action) {
+var bulkSkillPoints = function (id, action, onSaved) {
   const skill = T[id];
   if (!skill || !I[o.fac] || !I[o.fac].skills.includes(+id)) return 0;
   if (typeof combatSandbox !== "undefined" && combatSandbox && skill.tier === 90 && !SA(id)) {
     k("Chiêu 90 trong phòng test luôn ở cấp tối đa.");
     return 0;
   }
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:action==='max'?'skillMax':'unlearnAll',skill:+id},onSaved))return 0;
   let count = 0;
   if (action === "max") {
     for (let step = 0; step < skill.max && Q1(skill); step++) {
@@ -168,6 +169,8 @@ var R8 = function s(A) {
     <div class="btnrow"><button class="btn" id="skMax" ${Q1(n) && !locked90 ? "" : "disabled"}>Cộng tối đa</button><button class="btn red" id="skClear" ${t && !locked90 ? "" : "disabled"}>Xóa hết điểm</button></div>`,
     () => {
       n6(m("#mBody"));
+      m('#skPlus').dataset.skill=String(A);
+      const refresh=()=>{if(m('#skPlus')?.dataset.skill===String(A))s(A);};
       const master = m("#skMaster");
       master && (master.onclick = () => { h6(A); s(A); });
       const d = m("#skMain");
@@ -183,16 +186,18 @@ var R8 = function s(A) {
             s(A));
         }),
         (m("#skPlus").onclick = () => {
+          if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'skill',skill:+A},refresh))return;
           Q1(n) && (Yi(A), o0("learn"), (l.dirty = !0), D0(), Zn(), $(), s(A));
         }),
         (m("#skMinus").onclick = () => {
+          if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'unlearn',skill:+A},refresh))return;
           qf(A) && s(A);
         }),
         (m("#skMax").onclick = () => {
-          bulkSkillPoints(A, "max"); s(A);
+          bulkSkillPoints(A, "max",refresh); s(A);
         }),
         (m("#skClear").onclick = () => {
-          bulkSkillPoints(A, "clear"); s(A);
+          bulkSkillPoints(A, "clear",refresh); s(A);
         }));
     },
   );
