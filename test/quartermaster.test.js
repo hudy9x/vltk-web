@@ -96,7 +96,7 @@ test('pharmacy exposes explicit purchase buttons from hotbar selection and permi
  const supplies=createWarSupplies({running:()=>false,alive:()=>false,team:()=> 'song',position:()=>({x:0,y:0}),pharmacyPositions:()=>[],recover:()=>false,changed(){},catalog:()=>[{key:'hp',kind:'life',tier:0,n:'Thuốc máu',total:100,price:2}],pay(amount){if(amount>gold)return false;gold-=amount;return true;}});
  const nodes={};for(const key of ['.war-close','#war-shop-stock','#war-shop-quantity','#war-shop-products','#war-shop-message'])nodes[key]={value:'5',innerHTML:'',textContent:''};
  const buy={dataset:{buy:'hp'}};
- const panel={hidden:true,setAttribute(){},querySelector:key=>nodes[key],querySelectorAll:key=>key==='[data-buy]'&&nodes['#war-shop-products'].innerHTML.includes('data-buy="hp"')?[buy]:[]};
+ const panel={hidden:true,setAttribute(){},addEventListener(){},querySelector:key=>nodes[key],querySelectorAll:key=>key==='[data-buy]'&&nodes['#war-shop-products'].innerHTML.includes('data-buy="hp"')?[buy]:[]};
  const document={getElementById:()=>({}),createElement:()=>panel,body:{appendChild(){}}};
  const {mountWarPharmacy}=load('simulator/pharmacy.ts','Pharmacy',{document});
  const dialog=mountWarPharmacy(supplies,text=>text);dialog.open('life',true);
@@ -110,14 +110,14 @@ test('pharmacy clamps the visible order to remaining physical slots instead of r
  const {createWarSupplies}=load('simulator/supplies.ts','Supplies');
  let gold=1000;
  const supplies=createWarSupplies({running:()=>true,alive:()=>true,team:()=> 'song',position:()=>({x:0,y:0}),recover:()=>false,changed(){},catalog:()=>[{key:'hp',kind:'life',tier:0,n:'Thuốc máu',total:100,price:2}],pay(amount){gold-=amount;return true;}});
- supplies.buy('hp',58);
+ supplies.buy('hp',38);
  const nodes={};for(const key of ['.war-close','#war-shop-stock','#war-shop-quantity','#war-shop-products','#war-shop-message'])nodes[key]={value:'5',innerHTML:'',textContent:''};
  const buy={dataset:{buy:'hp'}};
- const panel={hidden:true,setAttribute(){},querySelector:key=>nodes[key],querySelectorAll:key=>key==='[data-buy]'?[buy]:[]};
+ const panel={hidden:true,setAttribute(){},addEventListener(){},querySelector:key=>nodes[key],querySelectorAll:key=>key==='[data-buy]'?[buy]:[]};
  const {mountWarPharmacy}=load('simulator/pharmacy.ts','Pharmacy',{document:{getElementById:()=>({}),createElement:()=>panel,body:{appendChild(){}}}});
  mountWarPharmacy(supplies,text=>text).open();
  assert.equal(nodes['#war-shop-quantity'].value,'2');assert.equal(nodes['#war-shop-quantity'].max,'2');
- buy.onclick();assert.equal(supplies.state.total,60);assert.equal(gold,880);
+ buy.onclick();assert.equal(supplies.state.total,40);assert.equal(gold,920);
  assert.equal(nodes['#war-shop-quantity'].disabled,true);
 });
 
@@ -125,9 +125,9 @@ test('manual battlefield potion messages distinguish cooldown, full HP, empty se
  const {createHeadlessGame}=require('../tools/sim-balance/legacy-runtime.ts');
  const game=createHeadlessGame(process.cwd());let message='';game.k=text=>{message=text;};game.be={0:1,1:1};game.ao=1;
  game.S.potions=[{kind:'life',tier:0,total:100},{kind:'life',tier:1,total:200},{kind:'mana',tier:0,total:50}];
- game.arenaSimulator.battlefield.start('song');const supplies=game.arenaSimulator.supplies;
+ game.arenaSimulator.battlefield.start('song');const supplies=game.arenaSimulator.supplies;supplies.buy('life:0',1);
  game.l.life=1;game.l.potCd={life:1,mana:0};game.Ms('life');assert.match(message,/hồi chiêu/);assert.doesNotMatch(message,/Hết bình|hết thuốc/);
  game.l.potCd.life=0;game.l.life=game.l.P.life;game.Ms('life');assert.match(message,/đã đầy|đang được hồi phục/);
  supplies.reset();supplies.buy('life:0',1);supplies.select('life','life:1');game.l.life=1;game.Ms('life');assert.match(message,/loại thuốc đang chọn/);assert.match(message,/Vẫn còn 1/);
- supplies.reset();game.Ms('life');assert.match(message,/Đã hết thuốc máu/);assert.match(message,/0\/60/);
+ supplies.reset();game.Ms('life');assert.match(message,/Đã hết thuốc máu/);assert.match(message,/0\/80/);
 });

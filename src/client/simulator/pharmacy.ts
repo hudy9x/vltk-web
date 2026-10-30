@@ -26,7 +26,7 @@ export function mountWarPharmacy(
     if (panel.hidden) return;
     const state = supplies.state;
     const quantityInput = query<HTMLInputElement>("#war-shop-quantity");
-    const remaining = Math.max(0, state.capacity - state.total);
+    const remaining = Math.max(0, Math.min(state.capacity - state.total, 40 - state[resource]));
     quantityInput.max = String(Math.max(1, remaining));
     quantityInput.disabled = remaining === 0;
     const requested = Number(quantityInput.value);

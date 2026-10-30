@@ -27,7 +27,7 @@ test('Hoang Nguyen is selectable, owns its assets and separates ground, shadows 
   assert.ok(jin.x > 2688 && jin.y < 896, 'Jin camp is in the top-right quarter');
   assert.equal(map.entry.x, song.x);
   assert.equal(map.entry.y, song.y);
-  assert.deepEqual(Array.from(map.layers, layer => layer.type), ['ground', 'shadow', 'world']);
+  assert.deepEqual(Array.from(map.layers, layer => layer.type), ['ground', 'world']);
   const objects = map.layers.find(layer => layer.type === 'world').objects;
   assert.ok(objects.length >= 100);
   for (const image of [...map.layers.filter(layer => layer.image).map(layer => layer.image), ...objects.map(object => object.image)]) {

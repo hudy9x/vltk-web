@@ -66,7 +66,7 @@ function potentialBundle() {
         declarations.set(declaration.id.name, { node: declaration.init, source: source.slice(declaration.start, declaration.end), fullSource:source, file });
   }
   // These hooks observe a live world. Capture their values before crossing the worker boundary.
-  const boundaries = new Set(['o','l','S','I','T','window','arenaSimulator','Hb','Qb','Vi','nm','Lt','mo','a4','J1','ne','unlockSkillBook']);
+  const boundaries = new Set(['o','l','S','I','T','window','arenaSimulator','Hb','Qb','Vi','nm','Lt','mo','a4','J1','ne','unlockSkillBook','OnlineProgression']);
   const functions = new Map(), values = new Set(['S','I','T']), embedded = new Map();
   function storedFunctions(node, target, source, found = []) {
     if (!node) return found;

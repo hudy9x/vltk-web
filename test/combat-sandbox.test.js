@@ -567,6 +567,7 @@ test('poison adds remaining damage into the refreshed duration without immediate
 
 test('SIM poison loss uses green aggregated damage numbers, stops at expiry and never displays overkill HP',()=>{
  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');
+ s.pvpDamageDisplay.set(true);
  actor.farm=false;actor.pk=false;actor.hp=100;actor.poison=.1;actor.poisonDmg=10;s.l.txt=[];
  s.arenaSimulator.tick(.05);s.arenaSimulator.tick(.05);
  assert.equal(actor.hp,99);assert.equal(s.l.txt.length,1);assert.equal(s.l.txt[0].target,actor);

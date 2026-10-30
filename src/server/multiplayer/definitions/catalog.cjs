@@ -15,14 +15,14 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
     if(characterCache.has(cacheKey)){
       const result=structuredClone(characterCache.get(cacheKey));
       const potions=require('./consumables.cjs').potions(profile,native.potions());
-      result.potions=potions;result.warSupplies=profile.warSupplies||null;
-      for(const variant of result.support.variants)variant.profile.potions=structuredClone(potions);
+      result.potions=potions;if(profile.warSupplies)result.warSupplies=structuredClone(profile.warSupplies);else delete result.warSupplies;
+      for(const variant of result.support.variants){variant.profile.potions=structuredClone(potions);if(profile.warSupplies)variant.profile.warSupplies=structuredClone(profile.warSupplies);else delete variant.profile.warSupplies;}
       return result;
     }
   }
   const { stats, skills, moveSpeed, supports, attackTimings, timing, allyScaling } = native.buildCharacter(profile,activeBuffs,activeAuras,allies);
   const result = {
-    warSupplies:profile.warSupplies||null,
+    ...(profile.warSupplies?{warSupplies:structuredClone(profile.warSupplies)}:{}),
     allyScaling,
     level: profile.lvl,
     alignment:native.alignment(profile.fac),

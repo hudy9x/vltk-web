@@ -141,7 +141,7 @@ test('selection draws the sharp sect portrait without invoking sprite rendering'
   c.bA = url => { assert.equal(url, 'img/portraits/shaolin.webp'); return image; };
   c.It = () => assert.fail('Portrait should replace low-resolution sprite');
   c.requestAnimationFrame = () => assert.fail('Loaded portraits do not need continuous animation');
-  load(c, 'ui/character-select-01.js', ['sectPortraits', 'e_']);
+  load(c, 'ui/character-select-01.js', ['sectPortraits', 'characterPortrait', 'e_']);
   c.e_(1000);
   assert.equal(draws.length, 1);
   assert.equal(draws[0][0], image);

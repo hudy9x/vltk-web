@@ -35,7 +35,7 @@ function scene() {
     Va: (_anim, _act, _dir, _time, _x, y) => { events.push(`body:monster-${y}`); return 80; },
     hf: () => '', GP: actor => actor.n, r0: { 1: { anim: 'monster' } },
     Ps: { hero: '#0f0', normal: '#f00' }, w0: ['#fff'],
-    updateDamageLabels: noop, SP: noop, my: noop,
+    updateDamageLabels: noop, SP: noop, my: noop, goldLootVisuals:{frame:noop,draw:noop},
   };
   vm.createContext(s);
   s.mapScene = loadMapsEngine(s).createMapScene(() => null);

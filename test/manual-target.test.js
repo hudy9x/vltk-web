@@ -81,7 +81,7 @@ test('selecting a curse before clicking a monster casts that curse, never the ma
     pointer(s,'pointerdown',150,20,pointerType);pointer(s,'pointerup',150,20,pointerType);
     assert.equal(s.contacts.length,1);assert.equal(s.contacts[0].target,target);assert.equal(s.l.mana,90);
     s.contacts[0].hit(target);assert.ok(target.curse[4]>s.l.clock);
-    ticks(s,1);assert.equal(s.casts,0);assert.equal(s.o.main,10);assert.equal(s.Y.pendingSupport,0);
+    ticks(s,1);assert.equal(s.casts>0,mode==='auto','Auto resumes after the targeted curse');assert.equal(s.o.main,10);assert.equal(s.Y.pendingSupport,0);
   }
 });
 
@@ -181,10 +181,10 @@ test('manual idle consumes attack timer; selecting does not bypass a still-activ
   assert.equal(s.l.atkT,0);s.Y.selectTarget(e);ticks(s,.02);assert.equal(s.casts,1);
   s.Y.selectTarget(e);ticks(s,.1);assert.equal(s.casts,1);
 });
-test('monster click in auto takes manual control and wins over overlapping loot; hover agrees with head hit-testing', () => {
+test('monster click in auto preserves Auto and wins over overlapping loot; hover agrees with head hit-testing', () => {
   const s=game(),e=enemy(s);s.o.ctrl='auto';s.$6=()=>({x:150,y:100,it:{n:'Đồ'}});
   pointer(s,'pointermove',150,20);assert.equal(s.lA.style.cursor,'url("img/cursors/attack.png") 13 12, pointer');
-  pointer(s,'pointerdown',150,20);assert.equal(s.o.ctrl,'manual');assert.equal(s.l.manTgt,e);assert.equal(s.l.pickTarget,null);
+  pointer(s,'pointerdown',150,20);assert.equal(s.o.ctrl,'auto');assert.equal(s.l.manTgt,e);assert.equal(s.l.pickTarget,null);
   pointer(s,'pointerup',150,20);
   pointer(s,'pointermove',800,800);assert.equal(s.lA.style.cursor,'url("img/cursors/move.png") 12 10, default');
 });

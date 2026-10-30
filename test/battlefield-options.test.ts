@@ -9,7 +9,7 @@ function loadModule<Module>(entry: string, globalName: string): Module {
   return scope[globalName] as Module;
 }
 
-test('war supplies enforce a combined capacity of 60 potions, successful uses only, and purchases at any time', () => {
+test('war supplies enforce a combined capacity of 80 potions, successful uses only, and purchases at any time', () => {
   const { createWarSupplies } = loadModule<typeof import('../src/client/simulator/supplies.ts')>('simulator/supplies.ts', 'Supplies');
   let running = true, alive = true, canRecover = true;
   const camp = require('../src/client/maps/content/9003/layout.json').camps.song;
@@ -17,16 +17,16 @@ test('war supplies enforce a combined capacity of 60 potions, successful uses on
   const supplies = createWarSupplies({ running: () => running, alive: () => alive, team: () => 'song', position: () => position,
     recover: () => canRecover, changed() {} });
   supplies.reset(true);
-  assert.equal(supplies.state.life + supplies.state.mana, 60);
-  canRecover = false; assert.equal(supplies.use('life'), false); assert.equal(supplies.state.life, 30);
+  assert.equal(supplies.state.life + supplies.state.mana, 80);
+  canRecover = false; assert.equal(supplies.use('life'), false); assert.equal(supplies.state.life, 40);
   canRecover = true;
-  for (let index = 0; index < 30; index++) { assert.equal(supplies.use('life'), true); assert.equal(supplies.use('mana'), true); }
+  for (let index = 0; index < 40; index++) { assert.equal(supplies.use('life'), true); assert.equal(supplies.use('mana'), true); }
   assert.equal(supplies.use('life'), false); assert.equal(supplies.use('mana'), false);
   position.x = 3134; alive = false; running = false;
   supplies.buy('life', 1); assert.equal(supplies.state.life, 1);
   assert.equal(supplies.use('life'), false);
   supplies.reset();
-  supplies.refill(); assert.equal(supplies.state.life, 30); assert.equal(supplies.state.mana, 30);
+  supplies.refill(); assert.equal(supplies.state.life, 40); assert.equal(supplies.state.mana, 40);
   running = false; assert.equal(supplies.use('life'), false);
 });
 
@@ -60,18 +60,21 @@ test('manual and automatic battlefield potions share finite stock and preserve n
   const normalStock = JSON.stringify(game.o.potStock), goldBefore = game.o.gold;
   const match = game.arenaSimulator.battlefield;
   match.start('song');
+  assert.equal(game.arenaSimulator.supplies.state.total,0,'matches start without free potions');
+  game.arenaSimulator.supplies.buy('life:0',40);
+  const goldAfterBuying=game.o.gold;
   game.l.life = 1;
-  game.Ms('life'); assert.equal(game.l.life, 101); assert.equal(game.arenaSimulator.supplies.state.life, 29);
-  game.Ms('life'); assert.equal(game.arenaSimulator.supplies.state.life, 29, 'cooldown prevents a second spend');
-  for (let index = 0; index < 29; index++) { game.l.life = 1; game.l.potCd.life = 0; game.Ms('life'); }
+  game.Ms('life'); assert.equal(game.l.life, 101); assert.equal(game.arenaSimulator.supplies.state.life, 39);
+  game.Ms('life'); assert.equal(game.arenaSimulator.supplies.state.life, 39, 'cooldown prevents a second spend');
+  for (let index = 0; index < 39; index++) { game.l.life = 1; game.l.potCd.life = 0; game.Ms('life'); }
   game.l.life = 1; game.l.potCd.life = 0; game.X9(.1);
   assert.equal(game.l.life, 1, 'auto potion must not fall back to persistent stock or buying');
   assert.equal(game.arenaSimulator.supplies.state.life, 0);
-  assert.equal(JSON.stringify(game.o.potStock), normalStock); assert.equal(game.o.gold, goldBefore);
+  assert.equal(JSON.stringify(game.o.potStock), normalStock); assert.equal(game.o.gold, goldAfterBuying);
   game.v.x = 1700; assert.equal(game.arenaSimulator.supplies.state.nearCamp, false);
   game.l.life = 0; match.playerDied(); game.arenaSimulator.tick(30);
   assert.equal(game.arenaSimulator.supplies.state.life, 0, 'respawn does not give free potions');
-  game.arenaSimulator.supplies.refill(); assert.equal(game.arenaSimulator.supplies.state.life, 30);
+  game.arenaSimulator.supplies.refill(); assert.equal(game.arenaSimulator.supplies.state.life, 40);
   match.reset(); assert.equal(game.arenaSimulator.supplies.state.life, 0);
 });
 
