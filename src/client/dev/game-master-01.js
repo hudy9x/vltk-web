@@ -85,8 +85,8 @@ var gameMaster = (function () {
 
   const amounts = { gold: 1_000_000_000_000, knb: 100_000, xp: 100_000_000, chest: 100, level150: 150, learn90: 1, learn120: 1, learn150: 1, max90: 1, potential: 3000, warMerit: 10000 };
   function grant(action) {
-    if(typeof OnlineProgression!=='undefined'&&OnlineProgression.enabled())
-      return OnlineProgression.run({kind:'gm',action}).then(()=> 'Đã áp dụng GM và lưu nhân vật online.');
+    if(typeof OnlineProgression!=='undefined'&&window.localGameStorage)
+      return OnlineProgression.run({kind:'gm',action}).then(async()=>{await window.localGameStorage.flush();return 'Đã áp dụng GM và lưu trên máy chủ.';});
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
     if (!(action in amounts)) throw new Error("Lệnh GM không hợp lệ.");
     if (!development && (action === "potential" || action === "chest"))
