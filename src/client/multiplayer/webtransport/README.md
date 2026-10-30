@@ -145,7 +145,7 @@ khi thay đổi, không tải lại toàn bộ inventory mỗi lần polling.
 | WORLD (17) | Server uni stream, 10 Hz | Header 43 + actors × 55 + monsters × 48 + loot × 17 + events (23 byte; HIT 24 byte; CAST 47 byte) + count u16 + support × 15 + party trailer |
 
 COMMAND: version/opcode u8, seq u32, kind u8, map u32, target u32,
-skill u16, x/y f32. Kind: JOIN=1, MOVE=2, TARGET=3, CAST=4, AUTO=5, PICKUP=6, POTION=7, SUPPORT=8, SUPPORT_AUTO=9, SLAUGHTER=10, PLAYER_TARGET=11.
+skill u16, x/y f32. Kind: JOIN=1, MOVE=2, TARGET=3, CAST=4, AUTO=5, PICKUP=6, POTION=7, SUPPORT=8, SUPPORT_AUTO=9, SLAUGHTER=10, PLAYER_TARGET=11, SECONDARY_TARGET=18.
 CAST với target=0 chọn chiêu đã học, giữ nguyên đích di chuyển/mục tiêu/Auto.
 Client gửi lựa chọn ngay cả khi chưa có mục tiêu; hotbar và nút chiêu chính hiển thị
 chiêu đang khóa. Bấm chiêu trong Manual ngoài thành tìm quái sống gần nhất để đánh.
@@ -375,8 +375,7 @@ snapshot Rust thay vì tin danh sách FX do người chơi kia khai báo.
 Đã có fixture native cho Thúy Yên đơn đao/song đao, Võ Đang, Côn Lôn, Cái Bang,
 Thiếu Lâm, Nga Mi, Thiên Vương và Thiên Nhẫn. Tái sinh fixture bằng
 `node tools/generate-online-support-fixture.cjs` khi đổi công thức game. Aura gây
-độc Vô Hình Độc, curse và lan buff/aura sang đồng đội chưa nằm trong phần hỗ trợ
-có lợi lên bản thân này. Trạng thái buff theo phiên, không lưu qua restart.
+độc Vô Hình Độc chưa nằm trong phần hỗ trợ này. Bùa hại dùng luồng CAST/contact riêng bên dưới. Trạng thái buff theo phiên, không lưu qua restart.
 
 ## Đồ sát — PvP người thật
 
@@ -434,11 +433,24 @@ Client và Rust cần cập nhật cùng protocol v8.
 `POST /api/multiplayer/progression` nhận `{id,slot,action}` qua session cookie. Action gồm
 `potential`, `skill`, `unlearn`, `join`, `changeFaction`, `potentialRoute`, `skillRoute`,
 `autoPotential`, `autoSkill`, `equipmentPotential`, `bestPotential`, `reset`, `gm`,
-`mainSkill`, `skillSlot`, `potionBuy`, `equipmentTrader`, `shopBuy`, `horseBuy`,
-`equip`, `unequip`, `mount`.
+`mainSkill`, `secondarySkill`, `skillSlot`, `potionBuy`, `equipmentTrader`, `shopBuy`, `horseBuy`,
+`equip`, `equipWithPotential`, `unequip`, `mount`.
+
+Nút “Cộng điểm” trong chi tiết trang bị gửi `equipWithPotential` theo UID đang sở hữu.
+Server tự tính số điểm thiếu, trừ điểm và mặc trang bị trong cùng một giao dịch;
+thiếu điểm hoặc sai điều kiện khác thì không thay đổi nhân vật. Không cộng điểm tạm
+ở client trước khi gửi lệnh mặc. `EQUIP_POTENTIAL_TEST=1` kiểm tra nút thật và đồng bộ
+client/SQLite/Rust ngay sau thao tác, không reload.
 Client không gửi damage/HP/profile hoặc tự cấp EXP. EXP đánh quái vẫn đi qua reward journal.
 GM chỉ được server chấp nhận khi `development=true`; retry không cấp điểm hai lần.
 HTTP dùng JSON cho thao tác nhân vật thưa; combat/di chuyển vẫn binary WebTransport v8.
+
+Ô chiêu phụ (R) nằm cạnh chiêu chính (L). Bấm ô R để chọn một chiêu đã học;
+chuột phải lên mục tiêu dùng chiêu phụ đúng một lần. `secondarySkill` lưu lựa chọn
+riêng qua reload; không thay `main/mainLock` hoặc F1–F4. COMMAND kind 18 theo mục tiêu
+và áp dụng cùng tầm đánh, mana, hồi chiêu, quyền PK và xác nhận va chạm như chiêu chính.
+Chiêu buff/vòng sáng vẫn dùng SUPPORT=8 và giữ các thiết lập tự buff hiện tại.
+`SECONDARY_SKILL_TEST=1` kiểm tra chọn ô R, chuột phải, chuột trái và reload trong trình duyệt.
 
 Chiêu chính và F1–F4 là các lựa chọn riêng: `mainSkill` lưu `main/mainLock`,
 `skillSlot` chỉ đổi một ô và hoán đổi ô cũ nếu cần. Đồng bộ thưởng/thuốc và reload
@@ -456,3 +468,45 @@ Khi reload, level/phái/điểm/chiêu được nạp trước logic chọn bãi
 Không tự nhập lại các chỉnh sửa legacy đã bị ghi đè trước bản sửa này.
 
 Vị trí hiển thị được lưu tại client theo tài khoản và ô nhân vật (`__volam_position_v1:*`), mỗi 250 ms và khi rời trang. Client khôi phục bản đồ, tọa độ trước khung hình đầu tiên; session gửi vị trí này lên Rust sau đó. Rust chỉ chấp nhận vị trí hợp lệ gần checkpoint cùng map và vòng đời, không phục hồi HP hay bỏ qua trạng thái chết. Biên nhận KNB cũ giữ đúng loại tiền khi retry; các lần chết mới chỉ trừ ngân lượng.
+
+
+### Buff cùng phe trong phạm vi 410
+
+Server chọn người còn sống, cùng map và cùng alignment dùng để tô màu tên
+(kể cả màu theo trưởng đội). Năm aura Nga Mi 86, 89, 92, 282, 332 và La Hán
+Trận 16 lan trong bán kính 410 tọa độ thế giới. Như Lai Thiên Diệp 273 và
+Bất Động Minh Vương 15 chỉ áp dụng lên bản thân. Ra ngoài phạm vi, khác phe,
+tắt aura, chết hoặc mất kết nối sẽ ngừng nhận buff; buff nhận không phát tiếp.
+Mỗi skill chỉ nhận một lần từ nguồn có cấp cao nhất; buff đang tự dùng không
+cộng chồng với cùng buff nhận từ người khác.
+
+Node xuất thuộc tính buff và hệ số từ công thức native cho từng tổ hợp tự buff;
+Rust áp dụng lên chỉ số chiến đấu, bảo toàn tỷ lệ HP/MP và tồn thuốc. WORLD v8
+thêm extension 0xb1 sau party: count u16, mỗi record actor u32 + skill u16 +
+level u16. Client dùng đúng cấp từ server cho native stats, HUD và sprite trên
+cả người nhận lẫn connection khác, không thêm skill vào nhân vật nhận.
+
+Kiểm tra bằng `ALLIED_SUPPORT_TEST=1 ... browser.test.cjs`, Rust domain tests và
+`test/multiplayer-support.test.js`. Oracle nhận buff native được tạo cùng lệnh
+`node tools/generate-online-support-fixture.cjs`.
+
+
+### Bùa hại online và cộng điểm
+
+Bảy bùa hại Ngũ Độc đã học được lấy trực tiếp từ bảng native.
+SUPPORT=8 nhận thêm target; client chọn mục tiêu bằng click hoặc ô chuột phải.
+SUPPORT_AUTO=9 dùng `autoCurse` và `supportAutoOff`. Server kiểm tra chiêu đã học,
+HP/MP, choáng, đường đi, cooldown tối thiểu 5s, phạm vi 420 và quyền PvP; hiệu lực
+trong vùng 120 quanh mục tiêu, tối đa 60s. Chi phí chỉ trừ một lần khi phát chiêu.
+
+Bùa dùng CAST + CONTACT=16 như sát thương: phải có va chạm được client thể hiện
+(PvP cần cả hai client xác nhận). Không trừ HP khi chỉ áp bùa. Rust quản lý giảm
+kháng, tăng tác dụng độc, cấp bùa mạnh nhất, thời gian và xóa khi chết; quái giữ
+nguyên stats gốc để hết hạn trở về đúng chỉ số. WORLD v8 thêm extension 0xc1 sau
+0xb1/party: count u16; record owner u32, skill u16, level u16, remaining f32.
+Client đưa trạng thái vào sprite, HUD và native curse proxy, không tự quyết định hiệu lực.
+
+Dialog chi tiết kỹ năng cập nhật sau khi canonical intent được lưu. `skillMax`
+và `unlearnAll` chạy nhiều bước native trong một giao dịch có idempotency; vẫn
+giữ điều kiện cấp, điểm và bí kíp. Không còn gửi từng lần cộng điểm bất đồng bộ
+trong vòng lặp rồi hiển thị lại cấp cũ. Browser: `CURSE_TEST=1 ... browser.test.cjs`.

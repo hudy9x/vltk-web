@@ -85,15 +85,16 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
       }
       const originalDrawImage=W.drawImage;
       W.drawImage=function(...args){if(drawingSkill)window.__skillDraws[drawingSkill]=(window.__skillDraws[drawingSkill]||0)+1;return originalDrawImage.apply(this,args);};
-      window.__onlineColors={};window.__onlineHealth={};window.__supportDraws={};
+      window.__onlineColors={};window.__onlineHealth={};window.__supportDraws={};window.__selfSupportDraws={};
       const originalNameplate=L3,originalSupport=F3;
       L3=function(x,y,name,color,...rest){window.__onlineColors[name]=color;window.__onlineHealth[name]=rest[2];return originalNameplate(x,y,name,color,...rest);};
-      F3=function(...args){if(args[8]&&args[8]!==v)window.__supportDraws[args[1].f]=args[1].pos;return originalSupport(...args);};
+      F3=function(...args){if(args[8]&&args[8]!==v)window.__supportDraws[args[1].f]=args[1].pos;if(args[8]===v&&bA(args[1].f)?.naturalWidth)window.__selfSupportDraws[args[1].f]=args[1].pos;return originalSupport(...args);};
       const originalOnlineDraw=gameMultiplayer.draw;
       gameMultiplayer.draw=function(...args){window.__onlineDraws++;return originalOnlineDraw(...args);};
-      window.__resolvedHits=[];const seenHits=new Set();
+      window.__castEvents=[];window.__resolvedHits=[];const seenHits=new Set();
       const realSnapshot=onlineWorld.snapshot;
       onlineWorld.snapshot=function(state){
+        for(const event of state.events)if(event.kind===1&&!window.__castEvents.some(e=>e.id===event.id))window.__castEvents.push(event);
         for(const event of state.events)if(event.kind===2&&!seenHits.has(event.id)){
           seenHits.add(event.id);window.__resolvedHits.push({...event,maxHp:state.monsters.find(m=>m.id===event.target)?.maxHp});
         }
@@ -142,7 +143,17 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
         },
         equipmentSetup:async()=>{await OnlineProgression.run({kind:'gm',action:'level150'});await OnlineProgression.run({kind:'join',faction:'shaolin'});await OnlineProgression.run({kind:'gm',action:'knb'});await OnlineProgression.run({kind:'potential',key:'str',amount:200});o.autoRide=false;},
         primarySetup:async()=>{await OnlineProgression.run({kind:'gm',action:'level150'});if(I[o.fac]?.novice)await OnlineProgression.run({kind:'join',faction:'shaolin'});if(o.eq.weapon)await OnlineProgression.run({kind:'unequip',slot:'weapon'});await OnlineProgression.run({kind:'gm',action:'learn150'});if(!o.sk[10])await OnlineProgression.run({kind:'skill',skill:10});await OnlineProgression.run({kind:'skillSlot',index:0,skill:10});await OnlineProgression.run({kind:'skillSlot',index:1,skill:1055});o.rot=false;o.potOff=true;$();},
+        secondarySetup:async()=>{await OnlineProgression.run({kind:'skillSlot',index:2,skill:-1});await OnlineProgression.run({kind:'skillSlot',index:3,skill:-1});},
+        dialogState:()=>({current:C2,tab:PA,win:document.body.classList.contains('u20win'),bag:dn(),party:!!document.getElementById('online-party')&&!document.getElementById('online-party').hidden,pots:o.potUsed||0,rot:o.rot,map:Z0.key,ctrl:o.ctrl}),
+        secondaryChoice:()=>({skill:o.secondarySkill,main:o.main,slots:o.slots.slice(),mana:l.mana,cost:l.P.actives.find(s=>s.id===o.secondarySkill)?.cost,town:l.town}),
         skillDetails:id=>R8(id),
+        equipmentPotentialSetup:async()=>{
+          await OnlineProgression.run({kind:'gm',action:'level150'});
+          if(I[o.fac]?.novice)await OnlineProgression.run({kind:'join',faction:'shaolin'});
+          await OnlineProgression.run({kind:'equipmentTrader',operation:'item',selection:{kind:'blue',sex:o.sex||0,level:10,item:'5:0',series:0,lines:[111]}});
+          const item=o.inv.find(i=>i.d===5);return {uid:item.uid,need:bt(item),attr:structuredClone(o.attr),points:o.attrPts};
+        },
+        equipmentDetail:uid=>He(xs(uid)),
         equipmentOpen:()=>equipmentTrader.open(),
         horseOpen:()=>horseTrader.open(),
         equipmentState:()=>({eq:structuredClone(o.eq),inv:structuredClone(o.inv),uid:o.uid,knb:o.knb,mounted:l.mounted,localSpeed:150*Ra(),serverSpeed:onlineWorld.state?.movement.speed}),
@@ -175,7 +186,12 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
         moveProbe:()=>{const [x,y]=X0(v.x+90,v.y+35);onlineWorld.move(x,y);return {x,y};},
         controls:()=>({ctrl:o.ctrl,main:o.main,locked:o.mainLock,effective:l.P.main?.id,slots:o.slots}),
         fxState:()=>({self:onlineWorld.state?.actors.find(a=>a.id===onlineWorld.state.self),draws:window.__skillDraws,attempts:window.__skillAttempts,town:l.town,zone:l.zoneShown,fx:l.fx.map(e=>({kind:e.k,id:e.combat?.skill?.id,age:e.age,life:e.life,frame:e.t,sprite:e.s?.f||e.m?.fly?.f,zone:e.combat?.zone}))}),
-        stats:()=>({stats:j0(),profile:structuredClone(o)}),
+        stats:()=>({stats:j0(),profile:structuredClone(o),allies:nm()}),
+        skillDetail:id=>R8(id),
+        curseReady:async()=>{for(const id of [67,70,64,73,356,72])if((o.sk[id]||0)<20)await OnlineProgression.run({kind:'skillMax',skill:id});await OnlineProgression.run({kind:'gm',action:'learn90'});await OnlineProgression.run({kind:'secondarySkill',skill:72});},
+        curseAuto:enabled=>{o.autoCurse=enabled;},
+        curseView:()=>({self:v.curse,monsters:l.enemies.map(m=>({id:m.id,curse:m.curse,level:m.curseL})),hud:a6()}),
+        alliedBuffs:()=>({allies:nm(),hud:a6(),sprites:JP().map(s=>s.f),self:onlineWorld.state?.actors.find(a=>a.id===onlineWorld.state.self)}),
         supportFiles:ids=>ids.map(id=>U1[id]?.f).filter(Boolean),
         prepareSkill:async advanced=>{
           o.potOff=true;o.potStock={life:{1:10},mana:{1:10},both:{1:3}};o.potSlot=['life:1','mana:1'];
@@ -184,6 +200,9 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
             o.eq.weapon={d:0,k:1,lvl:10,g:0,n:'Fixture sword',nat:0,base:[],mods:[],magic:[]};}
           if(advanced==='cuiyan'){o.sk={269:20,100:20,109:20,99:19,105:20,108:20,114:30,336:20,1063:25};o.slots=[1063,336,108,-1];o.main=1063;}
           else if(!advanced){o.sk[216]=1;o.main=216;o.slots[0]=216;}
+          if(advanced==='emei'){o.fac='emei';o.sex=1;o.sk={252:20,93:20,86:20,89:20,92:20,282:20,332:20};o.main=252;o.slots=[252,-1,-1,-1];o.bkOk={332:1};o.skL={332:{lv:20,xp:0}};}
+          if(advanced==='shaolin-support'){o.fac='shaolin';o.sk={10:20,15:20,16:20,273:20};o.main=10;o.slots=[10,-1,-1,-1];}
+          if(advanced==='wudu'){o.fac='wudu';o.sk={63:20};o.main=63;o.slots=[63,-1,-1,-1];o.skPts=200;o.autoCurse=false;}
           if(advanced)o.attr.vit=2000;
           if(${process.env.AUTOMATION_TEST==='1'}){o.lvl=10;o.sk[10]=1;o.main=10;o.slots=[10,-1,-1,-1];o.gold=100000;o.potStock={};o.autoMap=false;}
           o.mainLock=true;l.dirty=true;D0();$();await window.localGameStorage?.flush();
@@ -228,7 +247,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     if(await page.locator('#mClose').isVisible())await page.locator('#mClose').click();
     await page.evaluate(()=>window.__onlineTest.town());
     const parity=await page.evaluate(()=>window.__onlineTest.stats());
-    const nativeStats=require('../definitions/runtime.cjs').buildCharacter(parity.profile).stats;
+    const nativeStats=require('../definitions/runtime.cjs').buildCharacter(parity.profile,[],null,parity.allies||[]).stats;
     assert.equal(parity.stats.life,nativeStats.life,'browser/server HP uses identical profile bonuses');
     for(const skill of parity.stats.actives){
       const server=nativeStats.actives.find(s=>s.id===skill.id);
@@ -237,10 +256,153 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     }
     return {page,context,account:(await register.json()).user.id};
   }
-  const a=await player('online_a','Kiếm Khách'),b=await player('online_b','Nữ Hiệp',process.env.PARTY_TEST==='1'?'cuiyan':false);
+  const a=await player('online_a','Kiếm Khách',process.env.CURSE_TEST==='1'?'wudu':false),b=await player('online_b','Nữ Hiệp',process.env.PARTY_TEST==='1'?'cuiyan':process.env.ALLIED_SUPPORT_TEST==='1'?'emei':false);
   await a.page.waitForTimeout(1700);
   for(const {page} of [a,b]) await page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   assert.ok((await a.page.evaluate(()=>window.__onlineTest.state())).draws>0);
+  if(process.env.CURSE_TEST==='1'){
+    await a.page.evaluate(()=>window.__onlineTest.skillDetail(67));
+    assert.equal(await a.page.locator('#skPlus').isEnabled(),true);
+    await a.page.locator('#skPlus').click();
+    await a.page.waitForFunction(()=>window.__onlineTest.progression().sk[67]===1);
+    assert.equal(await a.page.locator('#mBody h4').count(),1);
+    await a.page.waitForFunction(()=>document.querySelector('#mBody')?.innerText.includes('Cấp kỹ năng: 1/20'));
+    await a.page.locator('#skMax').click();
+    await a.page.waitForFunction(()=>document.querySelector('#mBody')?.innerText.includes('Cấp kỹ năng: 20/20'));
+    assert.equal((await a.page.evaluate(()=>window.__onlineTest.progression())).sk[67],20);
+    await a.page.locator('#mClose').click();
+    await a.page.evaluate(()=>window.__onlineTest.curseReady());
+    await a.page.evaluate(()=>window.__onlineTest.field());
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve?.monsters.some(m=>m.hp>0));
+    await a.page.waitForTimeout(800);
+    const target=await a.page.evaluate(()=>window.__onlineTest.monsterTarget());
+    await a.page.mouse.click(target.x,target.y,{button:'right'});
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve.monsters.some(m=>m.curses?.some(c=>c.skill===72)),null,{timeout:20000});
+    const affected=await a.page.evaluate(()=>window.__onlineTest.state().pve.monsters.filter(m=>m.curses?.length));
+    assert.ok(affected.every(m=>m.hp===m.maxHp),'curse reduces resistance without direct HP damage');
+    const view=await a.page.evaluate(()=>window.__onlineTest.curseView());
+    assert.ok(view.monsters.some(m=>m.curse?.[72]>0),'native monster FX receives the server debuff');
+    await a.page.evaluate(()=>window.__onlineTest.curseAuto(true));
+    await a.page.waitForFunction(()=>window.__onlineTest.state().pve.monsters.some(m=>(m.curses||[]).length>=3),null,{timeout:20000});
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/wudu-curses.png')});
+    const saved=(await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json()).profile;
+    assert.equal(saved.sk[67],20);assert.equal(saved.sk[72],20);
+    assert.deepEqual(errors,[]);console.log('Curse browser: canonical point allocation, current dialog, max points, right mouse curse contact, native monster FX, automatic curses and persistence passed.');return;
+  }
+  if(process.env.ALLIED_SUPPORT_TEST==='1'){
+    const ids=[86,89,92,282,332];
+    await a.page.waitForFunction(ids=>ids.every(id=>window.__onlineTest.alliedBuffs().allies.some(([skill])=>skill===id)),ids);
+    let received=await a.page.evaluate(()=>window.__onlineTest.alliedBuffs());
+    assert.deepEqual(received.allies.map(([id])=>id).sort((a,b)=>a-b),ids);
+    assert.equal(received.hud.filter(h=>h.n.includes('Đồng minh')).length,5);
+    const files=await a.page.evaluate(ids=>window.__onlineTest.supportFiles(ids),ids);
+    assert.ok(files.length>0);assert.ok(files.every(file=>received.sprites.includes(file)),'native self FX includes received buffs');
+    await a.page.waitForFunction(files=>files.every(file=>window.__selfSupportDraws[file]),files);
+    await b.page.waitForFunction(files=>files.every(file=>window.__supportDraws[file]),files);
+    let stats=await a.page.evaluate(()=>window.__onlineTest.stats());
+    assert.ok(Math.abs(stats.stats.life-received.self.maxHp)<.1,'client/server share exactly the same max HP');
+    // Another caster shares only La Han Tran; its self buffs must stay on itself.
+    const c=await player('online_c','Thiếu Lâm','shaolin-support');
+    await a.page.waitForFunction(()=>window.__onlineTest.alliedBuffs().allies.some(([id])=>id===16));
+    received=await a.page.evaluate(()=>window.__onlineTest.alliedBuffs());
+    assert.equal(received.allies.length,6);assert.ok(!received.allies.some(([id])=>id===15||id===273));
+    const defense=await a.page.evaluate(()=>window.__onlineTest.stats().stats.def);
+    assert.ok(defense>700,'La Han Tran grants defense to the recipient');
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/allied-support-active.png')});
+    // Same learned buff on multiple casters cannot stack; source disconnect removes only its buffs.
+    await c.context.close();
+    await a.page.waitForFunction(()=>!window.__onlineTest.alliedBuffs().allies.some(([id])=>id===16));
+    assert.equal((await a.page.evaluate(()=>window.__onlineTest.alliedBuffs())).allies.length,5);
+    await b.context.close();
+    await a.page.waitForFunction(()=>window.__onlineTest.alliedBuffs().allies.length===0);
+    const cleared=await a.page.evaluate(()=>window.__onlineTest.alliedBuffs());
+    assert.equal(cleared.hud.filter(h=>h.n.includes('Đồng minh')).length,0);
+    stats=await a.page.evaluate(()=>window.__onlineTest.stats());
+    assert.ok(Math.abs(stats.stats.life-cleared.self.maxHp)<.1);
+    await a.page.screenshot({path:path.join(root,'output/multiplayer/allied-support.png')});
+    assert.deepEqual(errors,[]);console.log('Allied support browser: five Emei buffs, La Han Tran, native stats/HUD/self FX and disconnect cleanup passed.');return;
+  }
+  if(process.env.EQUIP_POTENTIAL_TEST==='1'){
+    const page=a.page;
+    const before=await page.evaluate(()=>window.__onlineTest.equipmentPotentialSetup());
+    const cost=Object.values(before.need).reduce((sum,value)=>sum+value,0);assert.ok(cost>0);
+    const canonicalBefore=await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json();
+    await page.evaluate(uid=>window.__onlineTest.equipmentDetail(uid),before.uid);
+    assert.equal(await page.locator('#bEq').isDisabled(),true);
+    await page.locator('#bReqPts').click();
+    await page.waitForFunction(uid=>window.__onlineTest.equipmentState().eq.boot?.uid===uid,before.uid);
+    await page.waitForSelector('#modal.hidden',{state:'attached'});
+    const after=await page.evaluate(()=>window.__onlineTest.progression());
+    assert.equal(after.attrPts,before.points-cost);
+    for(const [key,points]of Object.entries(before.need))assert.equal(after.attr[key],before.attr[key]+points);
+    const saved=await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json();
+    assert.equal(saved.profile.eq.boot.uid,before.uid);assert.deepEqual(saved.profile.attr,after.attr);assert.equal(saved.profile.attrPts,after.attrPts);
+    assert.equal(saved.revision,canonicalBefore.revision+1,'allocation and equip commit as one revision');
+    await page.waitForFunction(()=>{const s=window.__onlineTest.equipmentState();return Math.abs(s.serverSpeed-s.localSpeed)<.01&&s.serverSpeed>150;});
+    await page.keyboard.press('q');
+    await page.screenshot({path:path.join(root,'output/multiplayer/equipment-potential-sync.png')});
+    assert.deepEqual(errors,[]);console.log('Equipment potential browser: actual Cộng điểm button allocates and equips immediately, SQLite/client/Rust agree without reload.');return;
+  }
+  if(process.env.HOTKEY_TEST==='1'){
+    const page=a.page;
+    await page.waitForSelector('#u20menu');await page.waitForSelector('#online-party-toggle');
+    const initial=await page.evaluate(()=>window.__onlineTest.dialogState());
+    const isOpen=type=>{const d=window.__onlineTest.dialogState();return type==='party'?d.party:type==='inv'?d.bag||d.win&&d.current==='inv':d.win&&d.current===type;};
+    for(const [key,type]of[['Escape','more'],['q','char'],['w','inv'],['e','skill'],['r','forge'],['t','quest'],['p','party']]){
+      await page.keyboard.press(key);await page.waitForFunction(isOpen,type);
+      await page.keyboard.press(key);await page.waitForFunction(type=>{const d=window.__onlineTest.dialogState();return type==='party'?!d.party:type==='inv'?!d.bag&&!(d.win&&d.current==='inv'):!(d.win&&d.current===type);},type);
+    }
+    const after=await page.evaluate(()=>window.__onlineTest.dialogState());
+    for(const key of ['pots','rot','map','ctrl'])assert.equal(after[key],initial[key],key+' is not changed by dialog keys');
+    await page.keyboard.down('Q');await page.keyboard.down('Q');await page.keyboard.up('Q');await page.waitForFunction(isOpen,'char');
+    await page.keyboard.press('q');await page.waitForFunction(()=>!window.__onlineTest.dialogState().win);
+    await page.locator('#u20txt').fill('');await page.locator('#u20txt').focus();await page.keyboard.type('qwertp');
+    assert.equal(await page.locator('#u20txt').inputValue(),'qwertp');assert.equal((await page.evaluate(()=>window.__onlineTest.dialogState())).win,false);
+    await page.locator('#u20txt').fill('');await page.locator('#u20txt').evaluate(e=>e.blur());
+    await page.keyboard.press('p');await page.waitForFunction(isOpen,'party');
+    await page.keyboard.press('Escape');await page.waitForFunction(isOpen,'more');
+    assert.equal((await page.evaluate(()=>window.__onlineTest.dialogState())).party,false);
+    assert.match(await page.locator('#u20wt').innerText(),/Hệ thống/);
+    await page.screenshot({path:path.join(root,'output/multiplayer/hotkeys-system.png')});
+    await page.keyboard.press('Escape');await page.waitForFunction(()=>!window.__onlineTest.dialogState().win);
+    assert.deepEqual(errors,[]);console.log('Hotkeys browser: all seven dialog toggles, repeat suppression, typing protection and unchanged potions/rotation/map/control passed.');return;
+  }
+  if(process.env.SECONDARY_SKILL_TEST==='1'){
+    const page=a.page;
+    await page.evaluate(()=>window.__onlineTest.primarySetup());
+    await page.evaluate(()=>window.__onlineTest.secondarySetup());
+    await page.locator('#pad .sk[data-i="0"]').click();
+    await page.waitForFunction(()=>window.__onlineTest.controls().main===10);
+    const before=await page.evaluate(()=>window.__onlineTest.secondaryChoice());
+    await page.locator('#bSecondary').click();
+    assert.match(await page.locator('#skPick .nm').innerText(),/Chiêu phụ · Chuột phải/);
+    await page.locator('#skPick [data-ss="1055"]').click();
+    await page.waitForFunction(()=>window.__onlineTest.secondaryChoice().skill===1055);
+    const selected=await page.evaluate(()=>window.__onlineTest.secondaryChoice());
+    assert.equal(selected.main,before.main);assert.deepEqual(selected.slots,before.slots);
+    await page.evaluate(()=>window.__onlineTest.stop());
+    await page.waitForFunction(()=>window.__onlineTest.controls().ctrl==='manual');
+    await page.evaluate(()=>window.__onlineTest.field());
+    await page.waitForFunction(()=>window.__onlineTest.state().pve?.map===140);
+    await page.waitForTimeout(700);
+    const victim=await page.evaluate(()=>window.__onlineTest.monsterTarget());
+    await page.mouse.click(victim.x,victim.y,{button:'right'});
+    await page.waitForFunction(()=>window.__castEvents.some(e=>e.skill===1055),null,{timeout:30000});
+    await page.waitForTimeout(1500);
+    assert.equal(await page.evaluate(()=>window.__castEvents.filter(e=>e.skill===1055).length),1,'one right click casts the secondary once');
+    const after=await page.evaluate(()=>window.__onlineTest.secondaryChoice());
+    assert.equal(after.main,10);assert.deepEqual(after.slots,before.slots);
+    const primaryTarget=await page.evaluate(()=>window.__onlineTest.monsterTarget());
+    await page.mouse.click(primaryTarget.x,primaryTarget.y);
+    await page.waitForFunction(()=>window.__castEvents.some(e=>e.skill===10),null,{timeout:30000});
+    await page.evaluate(()=>window.__onlineTest.stop());
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    const restored=await page.evaluate(()=>window.__onlineTest.secondaryChoice());
+    assert.equal(restored.skill,1055);assert.equal(restored.main,10);assert.deepEqual(restored.slots,before.slots);
+    assert.match(await page.locator('#bSecondary i').evaluate(e=>e.style.backgroundImage),/url\(/,'reload displays the saved secondary icon');
+    await page.screenshot({path:path.join(root,'output/multiplayer/secondary-skill.png')});
+    assert.deepEqual(errors,[]);console.log('Secondary browser: independent picker, right-click one-shot attack, left-click primary and reload persistence passed.');return;
+  }
   if(process.env.HUD_TEST==='1'){
     const page=a.page;
     for(const selector of ['#status-log-toggle','#status-log-panel','#multiplayerStatus','#multiplayerFarm','#townBar'])assert.equal(await page.locator(selector).count(),0,selector+' was removed');
