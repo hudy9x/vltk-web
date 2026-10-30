@@ -658,7 +658,7 @@ var NB = function () {
     <div class="u2h">Trang bị</div>${A("tEq", !!o.autoEquip, "Tự mặc đồ tốt hơn khi nhặt")}${A("tJunk", o.autoJunk !== !1, "Tự bán đồ thừa (yếu hơn đồ đang mặc, vũ khí sai loại; giữ 6 trang sức để hợp Huyền Tinh)")}${A("tWb", o.autoBuy !== !1, "Tự mua vũ khí đúng loại ở Biện Kinh khi mạnh hơn ≥ 25%")}
 `)
       : q1 === "skill"
-        ? (t = `<div class="u2h">Xoay chiêu</div>${A("tRot", o.rot !== !1, "Xoay chiêu tự động: luân phiên chiêu ở ô F1–F4 (phím R), luôn có 2 chiêu mạnh nhất, bỏ chiêu hết nội lực")}${t6()}
+        ? (t = `<div class="u2h">Xoay chiêu</div>${A("tRot", o.rot !== !1, "Xoay chiêu tự động: luân phiên chiêu ở ô F1–F4, luôn có 2 chiêu mạnh nhất, bỏ chiêu hết nội lực")}${t6()}
     <div class="u2h">Cộng điểm</div>${A("tPts", o.autoPts === !0, "Tự cộng điểm tiềm năng và võ công")}<div class="u2btns"><button class="btn sm" id="tSug">Gợi ý cộng điểm</button></div>`)
         : q1 === "other" &&
           (t = `<div class="u2h">Lò rèn</div>${A("fgFuse", o.autoFuse !== !1, `Tự hợp Huyền Tinh từ trang sức thừa (3 món → 1, ${q(d1())} lượng; mỗi 30 giây) · có ${Gt().length} món`)}

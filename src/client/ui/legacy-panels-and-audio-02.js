@@ -239,7 +239,7 @@ var Zn = function s() {
       .map((a) => `${Fi[a].replace("Bí Kíp ", "")} ×${N("misc", a)}`)
       .join(
         " · ",
-      )} <span class="dim">(hạ trùm cấp cao, Dã Tẩu, Sát Thủ, Kỳ Trân Các)</span> · Đại Thành Bí Kíp ×${N("misc", "dtbk")} · Kim Nguyên Bảo ${o.knb || 0}</div><div class="card"><label><input type="checkbox" id="cRot" ${o.rot === !1 ? "" : "checked"}> Xoay chiêu tự động khi farm: luân phiên các chiêu gán ở ô 1 đến 4 (phím R), luôn có 2 chiêu mạnh nhất, bỏ chiêu hết nội lực</label>${t6()}</div><p class="dim small">Chạm vào chiêu tấn công đã học để khóa làm chiêu chính${o.mainLock ? ' (<a id="bAutoMain">bỏ khóa</a>)' : " (đang tự chọn chiêu mạnh nhất)"}.</p>${n}`),
+      )} <span class="dim">(hạ trùm cấp cao, Dã Tẩu, Sát Thủ, Kỳ Trân Các)</span> · Đại Thành Bí Kíp ×${N("misc", "dtbk")} · Kim Nguyên Bảo ${o.knb || 0}</div><div class="card"><label><input type="checkbox" id="cRot" ${o.rot === !1 ? "" : "checked"}> Xoay chiêu tự động khi farm: luân phiên các chiêu gán ở ô 1 đến 4, luôn có 2 chiêu mạnh nhất, bỏ chiêu hết nội lực</label>${t6()}</div><p class="dim small">Chạm vào chiêu tấn công đã học để khóa làm chiêu chính${o.mainLock ? ' (<a id="bAutoMain">bỏ khóa</a>)' : " (đang tự chọn chiêu mạnh nhất)"}.</p>${n}`),
     document.querySelectorAll("#t-skill .plus").forEach(
       (a) =>
         (a.onclick = (i) => {

@@ -2962,6 +2962,10 @@
       ]
     },
     {
+      "file": "ui/keyboard-shortcuts-01.js",
+      "symbols": ["dialogHotkeys"]
+    },
+    {
       "file": "multiplayer/webtransport/legacy-bridge.js",
       "symbols": [
         "gameMultiplayer"

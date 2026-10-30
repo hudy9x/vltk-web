@@ -466,7 +466,7 @@ var OM = function () {
     n = typeof nA == "function" ? nA() : {};
   J(
     `<h3>Trợ Thủ Kiếm Hiệp</h3><div class="u20tt">
-    <h4>Chiến đấu</h4>${A("tAuto", !hA(), "Tự đánh (Auto) · phím F")}${A("tRot", o.rot !== !1, "Xoay chiêu ô F1–F4 · phím R")}${A("tClose", !!o.closeAtk, "Đánh tiếp cận (chạy sát quái rồi mới ra chiêu)")}${A("tBoss", !!o.bossFirst, "Ưu tiên đánh boss (trùm / trùm Hoàng Kim trên bản đồ: bỏ quái thường, chạy tới đánh trùm)")}${A("tRide", o.autoRide !== !1, "Tự lên ngựa khi di chuyển, xuống ngựa khi đánh chiêu không dùng trên ngựa · phím M")}${A("tMap", o.autoMap !== !1, "Tự đổi bãi luyện công theo cấp")}
+    <h4>Chiến đấu</h4>${A("tAuto", !hA(), "Tự đánh (Auto) · phím F")}${A("tRot", o.rot !== !1, "Xoay chiêu ô F1–F4")}${A("tClose", !!o.closeAtk, "Đánh tiếp cận (chạy sát quái rồi mới ra chiêu)")}${A("tBoss", !!o.bossFirst, "Ưu tiên đánh boss (trùm / trùm Hoàng Kim trên bản đồ: bỏ quái thường, chạy tới đánh trùm)")}${A("tRide", o.autoRide !== !1, "Tự lên ngựa khi di chuyển, xuống ngựa khi đánh chiêu không dùng trên ngựa · phím M")}${A("tMap", o.autoMap !== !1, "Tự đổi bãi luyện công theo cấp")}
     <h4>Thuốc</h4>${A("tPot", !o.potOff, "Dùng thuốc khi sinh lực / nội lực dưới 50%")}${A("tBuy", o.potBuy !== !1, "Tự mua thuốc khi hết (tối đa 20% ngân lượng)")}
     <h4>Đồ đạc</h4>${A("tEq", !!o.autoEquip, "Tự mặc đồ tốt hơn khi nhặt")}${A("tJunk", o.autoJunk !== !1, "Tự bán đồ thừa")}${A("tPts", o.autoPts === !0, "Tự cộng điểm tiềm năng và võ công")}
     <h4>Nhiệm vụ</h4>${A("tDt", n.auto !== !1, "Dã Tẩu tự trả / nhận")}${A("tLdt", o.autoLdt !== !1, "Tự dùng Lệnh Bài Dã Tẩu khi hết lượt")}</div>`,

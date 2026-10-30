@@ -122,7 +122,7 @@ var Rv = function () {
       e.pointerId === Y.id && ((Y.active = !1), (Y.id = null), (Y.moved = !1));
     }),
     window.addEventListener("keydown", (e) => {
-      if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.isContentEditable) return;
       const a = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (typeof gameMultiplayer !== "undefined" && gameMultiplayer.active &&
           ["w", "a", "s", "d", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(a)) {
@@ -134,11 +134,10 @@ var Rv = function () {
           Wa("manual"),
         !e.repeat &&
           (/^F[1-4]$/.test(a) && (e.preventDefault(), Ac(+a[1] - 1)),
-          (a === "1" || a === "q") && Ms("life"),
-          (a === "2" || a === "e") && Ms("mana"),
-          (a === "3" || a === "t") && (l.town ? en() : nc()),
+          a === "1" && Ms("life"),
+          a === "2" && Ms("mana"),
+          a === "3" && (l.town ? en() : nc()),
           a === "f" && Wa(hA() ? "auto" : "manual"),
-          a === "r" && J8(),
           a === "m" && D8(),
           a === " " && (e.preventDefault(), fp())));
     }),
