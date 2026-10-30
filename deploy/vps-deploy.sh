@@ -73,16 +73,31 @@ for directory in img fx snd music fonts ui; do
   if [[ -d $previous/public/$directory ]]; then cp -anP "$previous/public/$directory" "$release/public/"; fi
 done
 chown -R vltk-build:vltk-build "$release"
+reuse_rust=0
+if [[ -x $previous/bin/vltk-multiplayer-webtransport && -f $previous/.release-sha ]] && \
+  git --git-dir="$repository" diff --quiet "$(cat "$previous/.release-sha")" "$sha" -- \
+  ':(glob)src/server/multiplayer/**/*.rs' src/server/multiplayer/webtransport/Cargo.toml src/server/multiplayer/webtransport/Cargo.lock; then
+  reuse_rust=1
+fi
 install -d -o vltk-build -g vltk-build /var/cache/vltk-build/online-target
 (
   cd "$release"
   runuser -u vltk-build -- npm ci --include=dev
   runuser -u vltk-build -- npm run build
-  runuser -u vltk-build -- env CARGO_TARGET_DIR=/var/cache/vltk-build/online-target \
-    nice -n 10 "$cargo" build --release --locked --jobs 1 --manifest-path src/server/multiplayer/webtransport/Cargo.toml
+  install -d -o vltk-build -g vltk-build "$release/.battlefield-cache"
+  runuser -u vltk-build -- env "VLTK_BATTLEFIELD_CACHE_DIR=$release/.battlefield-cache" \
+    /usr/bin/node -e "require('./src/server/multiplayer/definitions/catalog.cjs').world()"
+  if (( ! reuse_rust )); then
+    runuser -u vltk-build -- env CARGO_TARGET_DIR=/var/cache/vltk-build/online-target \
+      nice -n 10 "$cargo" build --release --locked --jobs 1 --manifest-path src/server/multiplayer/webtransport/Cargo.toml
+  fi
 )
 install -d -o vltk-build -g vltk-build "$release/bin"
-install -o vltk-build -g vltk-build -m 0755 /var/cache/vltk-build/online-target/release/vltk-multiplayer-webtransport "$release/bin/"
+if (( reuse_rust )); then
+  install -o vltk-build -g vltk-build -m 0755 "$previous/bin/vltk-multiplayer-webtransport" "$release/bin/"
+else
+  install -o vltk-build -g vltk-build -m 0755 /var/cache/vltk-build/online-target/release/vltk-multiplayer-webtransport "$release/bin/"
+fi
 
 # Preview both processes with isolated ports, SQLite and reward journal.
 systemd-run --unit=vltk-multiplayer-preview --collect \
@@ -100,7 +115,7 @@ systemd-run --unit=vltk-web-preview --collect \
   --property=NoNewPrivileges=yes --property=PrivateTmp=yes \
   --property=EnvironmentFile=/etc/vltk-online-web.env \
   /usr/bin/env NODE_ENV=production PORT=3003 "DB_PATH=$release/.health.sqlite" \
-  MULTIPLAYER_WT_CONTROL_URL=http://127.0.0.1:3105 /usr/bin/node "$release/src/server/index.ts"
+  MULTIPLAYER_WT_CONTROL_URL=http://127.0.0.1:3105 "VLTK_BATTLEFIELD_CACHE_DIR=$release/.battlefield-cache" /usr/bin/node "$release/src/server/index.ts"
 wait_for_health http://127.0.0.1:3003/api/health
 systemctl stop vltk-web-preview.service vltk-multiplayer-preview.service
 rm -f "$release"/.health.sqlite* "$release"/.preview-rewards*
@@ -108,6 +123,11 @@ chown -hR root:root "$release"
 chown -hR vltk:vltk "$release/src/client" "$release/public"
 printf '%s\n' "$sha" > "$release/.release-sha"
 
+# Publish the content-addressed cache before activation; old releases use different keys.
+install -d -o vltk -g vltk -m 0750 /var/lib/vltk-web/battlefield-cache
+for cache in "$release"/.battlefield-cache/*.json; do
+  install -o vltk -g vltk -m 0640 "$cache" /var/lib/vltk-web/battlefield-cache/
+done
 # Freeze both writers before taking the paired SQLite/journal backup.
 services_stopped=1
 systemctl stop vltk-web

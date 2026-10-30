@@ -253,14 +253,14 @@ exports.alignment = function(faction){return ['chinh','trung','ta','tan'].indexO
 
 // Run trusted native progression rules with rendering/storage effects muted.
 // Synchronous scope + cloned input prevents cross-account state leaks.
-exports.withProgression=function(input,reduce){
+exports.withProgression=function(input,reduce,timeout=5000){
   exports.buildCharacter(input);
   const {scope,context}=getRuntime(),previous=new Map();
   const mute=['C','k','o0','tn','qA','n0','V','$','Bs','Zn','_s','Bn','Gm','af','O3'];
   for(const key of mute){previous.set(key,scope[key]);scope[key]=()=>{};}
   previous.set('D0',scope.D0);scope.D0=()=>{scope.W5();scope.l.P=scope.j0();scope.l.dirty=false;};
   scope.__progressionReduce=()=>reduce(scope);
-  try{return JSON.parse(JSON.stringify(vm.runInContext('__progressionReduce()',context,{timeout:5000})));}
+  try{return JSON.parse(JSON.stringify(vm.runInContext('__progressionReduce()',context,{timeout})));}
   catch(error){if(error.code==='ERR_SCRIPT_EXECUTION_TIMEOUT')throw Object.assign(new Error('Thao tác quá lớn, hãy chia nhỏ số điểm.'),{status:400});throw error;}
   finally{delete scope.__progressionReduce;for(const [key,value]of previous)scope[key]=value;}
 };

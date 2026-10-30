@@ -110,3 +110,8 @@ Node and Rust are stopped together for a consistent SQLite and reward-journal ba
 then restarted from the same release. Failure restores the previous release and
 service state. Backups include `game-*.sqlite` and the matching `*-multiplayer` directory.
 Rust state stays in `/var/lib/vltk-multiplayer`; never run two instances against it.
+
+SIM equipment and allocation are generated during release preparation, under a
+30-second budget per trusted template. User progression retains its five-second
+budget. The content-addressed cache is copied to `/var/lib/vltk-web/battlefield-cache`
+and used by production, so initial login never runs army optimization.

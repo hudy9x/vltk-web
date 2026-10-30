@@ -19,12 +19,14 @@ if rust.exists() or web.exists():
     assert secret and len(secret)>=32
     assert not (r.get('MULTIPLAYER_SECRET') and w.get('MULTIPLAYER_SECRET') and r['MULTIPLAYER_SECRET']!=w['MULTIPLAYER_SECRET']), 'Secrets do not match'
 else: secret=secrets.token_hex(32)
-configs={rust:f'MULTIPLAYER_SECRET={secret}\nWT_BIND=0.0.0.0:4434\nWT_HTTP_BIND=127.0.0.1:3104\nWT_PUBLIC_URL=https://103.121.91.177:4434/play\nWT_CERT_HOST=103.121.91.177\nWT_ORIGINS=https://gamelab.hudy9x.com\nPVE_OUTBOX_FILE=/var/lib/vltk-multiplayer/rewards.jsonl\n',web:f'MULTIPLAYER_SECRET={secret}\nMULTIPLAYER_WT_CONTROL_URL=http://127.0.0.1:3104\n'}
+configs={rust:f'MULTIPLAYER_SECRET={secret}\nWT_BIND=0.0.0.0:4434\nWT_HTTP_BIND=127.0.0.1:3104\nWT_PUBLIC_URL=https://103.121.91.177:4434/play\nWT_CERT_HOST=103.121.91.177\nWT_ORIGINS=https://gamelab.hudy9x.com\nPVE_OUTBOX_FILE=/var/lib/vltk-multiplayer/rewards.jsonl\n',web:f'MULTIPLAYER_SECRET={secret}\nMULTIPLAYER_WT_CONTROL_URL=http://127.0.0.1:3104\nVLTK_BATTLEFIELD_CACHE_DIR=/var/lib/vltk-web/battlefield-cache\n'}
 for path,content in configs.items():
     if not path.exists():
         fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
         with os.fdopen(fd,'w') as out:out.write(content)
     path.chmod(0o600)
+if 'VLTK_BATTLEFIELD_CACHE_DIR=' not in web.read_text():
+    with web.open('a') as out:out.write('VLTK_BATTLEFIELD_CACHE_DIR=/var/lib/vltk-web/battlefield-cache\n')
 PY
 install -o root -g root -m 0644 "$script_dir/multiplayer/vltk-multiplayer.service" /etc/systemd/system/vltk-multiplayer.service
 cat > /etc/systemd/system/vltk-web.service.d/online.conf <<'UNIT'

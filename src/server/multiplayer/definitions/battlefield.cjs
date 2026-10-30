@@ -15,7 +15,7 @@ function cachePath(){
   for(const folder of ['src/client','src/shared','src/server/multiplayer/definitions'])visit(folder);
   for(const file of ['tools/build-app.js','tools/potential-worker.js','tools/maps/catalog.ts']){hash.update(file);hash.update(fs.readFileSync(path.join(root,file)));}
   hash.update(fs.readFileSync(path.join(root,'public/data.js')));hash.update(fs.readFileSync(path.join(root,'public/jxlook.js')));
-  return path.join(os.tmpdir(),'vltk-public-war-'+hash.digest('hex')+'.json');
+  return path.join(process.env.VLTK_BATTLEFIELD_CACHE_DIR||os.tmpdir(),'vltk-public-war-'+hash.digest('hex')+'.json');
 }
 const native = require('./runtime.cjs');
 const { compileTypeScriptEntry } = require('../../../../tools/build-app.js');
@@ -70,7 +70,7 @@ exports.definition = function () {
       scope.P0=lookScope.JXLOOK;scope.l.mounted=false;scope.l.P=scope.j0();
       const look=scope.N8();
       return {profile:p,skills:p.slots,name:scope.I[faction].n,sex:p.sex||0,appearance:{sx:look.sx,rows:look.rows,ride:0,mg:scope.l.P.main.phys===false}};
-    });
+    },30000);
     return {faction,name:build.name,sex:build.sex,skills:build.skills,equipment:build.profile.eq,appearance:build.appearance,profile:catalog.character(build.profile)};
   });
   const base=native.monsterStats(120),monsters=native.catalog().monsters;
