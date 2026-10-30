@@ -73,6 +73,8 @@ fn default_pierce() -> bool { true }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
+    #[serde(default)]
+    pub war_supplies: Option<super::battlefield::Supplies>,
     #[serde(default,skip_serializing_if="Option::is_none")]
     pub ally_scaling: Option<AllyScaling>,
     #[serde(default)]
@@ -150,6 +152,8 @@ pub struct MapDefinition {
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct Definitions {
+    #[serde(default)]
+    pub battlefield: Option<super::battlefield::Definition>,
     pub version: u32,
     pub town: u32,
     pub maps: Vec<MapDefinition>,

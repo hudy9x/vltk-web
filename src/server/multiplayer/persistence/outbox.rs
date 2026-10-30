@@ -8,6 +8,8 @@ use std::{
 };
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Grant {
+    #[serde(default, skip_serializing_if="is_zero")]
+    pub merit: u32,
     #[serde(default, skip_serializing_if="Option::is_none")]
     pub death: Option<DeathRequest>,
     #[serde(default, skip_serializing_if="is_zero")]
@@ -95,6 +97,7 @@ impl Outbox {
         }
         ensure!(self.pending.len() < 4096, "reward delivery backlog full");
         let g = Grant {
+            merit: 0,
             death: None,
             knb: 0,
             potion: None,
@@ -109,10 +112,13 @@ impl Outbox {
         self.pending.insert(g.id.clone(), g);
         Ok(())
     }
+    pub fn credit_merit(&mut self,key:String,account:String,slot:u8,merit:u32)->Result<()> {
+        self.currency_grant(Grant{merit,id:format!("{}-{key}",self.epoch),account,slot,xp:0,gold:0,potion:None,death:None,knb:0})
+    }
     pub fn consume(&mut self, account:String, slot:u8, potion:PotionDebit) -> Result<()> {
         let id=format!("{}-{}-2",self.epoch,self.next_debit);
         ensure!(self.pending.len()<4096,"delivery backlog full");
-        let grant=Grant{id,account,slot,xp:0,gold:0,potion:Some(potion),death:None,knb:0};
+        let grant=Grant{merit:0,id,account,slot,xp:0,gold:0,potion:Some(potion),death:None,knb:0};
         self.append(format!("{}\n",serde_json::to_string(&grant)?).as_bytes())?;
         self.next_debit+=1;
         self.pending.insert(grant.id.clone(),grant);
@@ -120,14 +126,14 @@ impl Outbox {
     }
     pub fn death(&mut self,actor:u32,life:u32,account:String,slot:u8,death:DeathRequest)->Result<String>{
         let id=format!("{}-{actor}-{life}-3",self.epoch);
-        self.currency_grant(Grant{id:id.clone(),account,slot,xp:0,gold:0,potion:None,death:Some(death),knb:0})?;
+        self.currency_grant(Grant{merit:0,id:id.clone(),account,slot,xp:0,gold:0,potion:None,death:Some(death),knb:0})?;
         Ok(id)
     }
     pub fn credit_knb(&mut self,id:String,account:String,slot:u8,knb:u32)->Result<()> {
-        self.currency_grant(Grant{id,account,slot,xp:0,gold:0,potion:None,death:None,knb})
+        self.currency_grant(Grant{merit:0,id,account,slot,xp:0,gold:0,potion:None,death:None,knb})
     }
     pub fn credit_gold(&mut self,id:String,account:String,slot:u8,gold:u32)->Result<()> {
-        self.currency_grant(Grant{id,account,slot,xp:0,gold,potion:None,death:None,knb:0})
+        self.currency_grant(Grant{merit:0,id,account,slot,xp:0,gold,potion:None,death:None,knb:0})
     }
     fn currency_grant(&mut self,grant:Grant)->Result<()> {
         if self.pending.contains_key(&grant.id){return Ok(());}

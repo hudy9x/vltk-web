@@ -10,6 +10,7 @@ pub(super) struct ContactGate {
     applied: std::collections::BTreeSet<u32>,
 }
 impl ContactGate {
+    pub(super) fn map(&self)->u32 {self.map}
     pub(super) fn new(source: u32, map: u32, skill: Skill, tick: u32) -> Self {
         Self {
             source,

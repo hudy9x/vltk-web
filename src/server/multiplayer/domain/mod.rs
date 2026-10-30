@@ -1,3 +1,4 @@
+pub mod battlefield;
 mod attacks;
 pub mod lifecycle;
 pub mod definitions;
@@ -41,6 +42,7 @@ pub struct Rules {
     pub max_loot_per_map: usize,
 }
 pub struct Actor {
+    pub war: Option<battlefield::Membership>,
     pub death_notice: Option<lifecycle::DeathNotice>,
     pub last_attacker: u32,
     pub last_attacker_name: String,
@@ -73,6 +75,46 @@ pub struct Actor {
     cooldowns: BTreeMap<u16, f32>,
     dead: f32,
     pickup: u32,
+}
+impl Actor {
+    fn new(account:String,slot:u8,profile:Profile,map:u32,position:(f32,f32))->Self {
+        let (x,y)=position;let skill=profile.skills.first().map_or(0,|s|s.id);
+        Self {
+                death_notice: None,
+                last_attacker: 0,
+                last_attacker_name: String::new(),
+                last_attacker_player: false,
+                profile_revision: 0,
+                name: String::new(),
+                party_alignment: None,
+                account,
+                slot,
+                map: map,
+                x,
+                y,
+                war: None,
+                hp: profile.hp,
+                mp: profile.mp,
+                base_profile: profile.clone(),
+                support: support::SupportState::default(),
+                pvp:pvp::PvpState::default(),
+                life:1,
+                profile,
+                cold: 0.0,
+                stun: 0.0,
+                command_tick: 0,
+                move_goal: None,
+                seq: 0,
+                farming: false,
+                target: 0,
+                skill,
+                secondary: None,
+                path: vec![],
+                cooldowns: BTreeMap::new(),
+                dead: 0.0,
+                pickup: 0,
+            }
+    }
 }
 pub struct Mob {
     pub curses:BTreeMap<u16,curses::Active>,
@@ -157,6 +199,7 @@ struct Pending {
     flight: Option<projectiles::Flight>,
 }
 pub struct Game {
+    pub battlefield: battlefield::Battlefield,
     checkpoints: lifecycle::Checkpoints,
     contacts: BTreeMap<u32, attacks::ContactGate>,
     pub parties: party::Parties,
@@ -185,6 +228,7 @@ impl Game {
         let checkpoints=lifecycle::Checkpoints::open(path.with_extension("state.json"))?;
         let next=checkpoints.next();
         Ok(Self {
+            battlefield: Default::default(),
             checkpoints,
             contacts: BTreeMap::new(),
             parties: party::Parties::default(),
@@ -219,6 +263,7 @@ impl Game {
         if !self.rooms.is_empty() {
             return Ok(());
         }
+        self.battlefield.definition = definitions.battlefield;
         let mut rooms = BTreeMap::new();
         for map in definitions.maps {
             ensure!(map.level > 0, "invalid monster level band");
@@ -289,7 +334,7 @@ impl Game {
     pub fn join(&mut self, id: u32, account: String, slot: u8, mut profile: Profile) -> Result<()> {
         recovery::reconcile(&mut profile,&self.outbox,&account,slot);
         ensure!(
-            self.actors.len() < self.rules.max_players
+            self.actors.values().filter(|a|a.war.is_none_or(|w|w.kind==0)).count() < self.rules.max_players
                 && (1..=200).contains(&profile.level)
                 && profile.hp.is_finite()
                 && profile.hp > 0.0
@@ -305,7 +350,7 @@ impl Game {
         ensure!(
             self.actors
                 .values()
-                .filter(|a| a.map == room.definition.id)
+                .filter(|a| a.map == room.definition.id && a.war.is_none_or(|w|w.kind==0))
                 .count()
                 < 32,
             "town full"
@@ -313,43 +358,9 @@ impl Game {
         let (x, y) = room
             .nav
             .nearest(room.definition.entry.x, room.definition.entry.y);
-        let skill = profile.skills.first().map_or(0, |s| s.id);
         self.actors.insert(
             id,
-            Actor {
-                death_notice: None,
-                last_attacker: 0,
-                last_attacker_name: String::new(),
-                last_attacker_player: false,
-                profile_revision: 0,
-                name: String::new(),
-                party_alignment: None,
-                account,
-                slot,
-                map: room.definition.id,
-                x,
-                y,
-                hp: profile.hp,
-                mp: profile.mp,
-                base_profile: profile.clone(),
-                support: support::SupportState::default(),
-                pvp:pvp::PvpState::default(),
-                life:1,
-                profile,
-                cold: 0.0,
-                stun: 0.0,
-                command_tick: self.tick,
-                move_goal: None,
-                seq: 0,
-                farming: false,
-                target: 0,
-                skill,
-                secondary: None,
-                path: vec![],
-                cooldowns: BTreeMap::new(),
-                dead: 0.0,
-                pickup: 0,
-            },
+            Actor::new(account, slot, profile, room.definition.id, (x,y)),
         );
         support::initialize(self.actors.get_mut(&id).unwrap());
         self.restore_actor(id);
@@ -364,6 +375,12 @@ impl Game {
             return Ok(());
         }
         a.seq = c.seq;
+        if c.kind==19 { if c.target>1||c.map!=a.map{return Ok(());}if let Err(error)=self.battlefield_join(id,c.target as u8){eprintln!("battlefield admission: {error}");}return Ok(()); }
+        if c.kind==20 {self.battlefield_leave(id);return Ok(());}
+        if a.war.is_some() {
+            if c.kind==1||c.kind==17||c.kind==10||(12..=15).contains(&c.kind){return Ok(());}
+            if self.battlefield.finished||a.war.is_some_and(|w|!w.ready){return Ok(());}
+        }
         if c.kind==18 {
             if c.map!=a.map||a.hp<=0.0||!a.profile.skills.iter().any(|s|s.id==c.skill){return Ok(());}
             let room=self.rooms.get(&a.map).unwrap();
@@ -396,6 +413,11 @@ impl Game {
             return Ok(());
         }
         if c.kind==9 {
+            if c.map==a.map&&c.target<=1&&c.skill==0&&a.war.is_some(){
+                a.war.as_mut().unwrap().prefer_players=c.target==1;
+                if a.farming{a.target=0;a.secondary=None;a.path.clear();}
+                return Ok(());
+            }
             if c.map==a.map&&c.target<=1{
                 if let Some(catalog)=a.base_profile.support.as_mut(){
                     if let Some(s)=catalog.skills.iter_mut().find(|s|s.id==c.skill&&!s.aura){s.enabled=c.target==1;}
@@ -422,6 +444,7 @@ impl Game {
         a.command_tick = self.tick;
         a.move_goal = None;
         if c.kind == 1 {
+            if c.map==battlefield::MAP||c.map==battlefield::WAIT_MAP{return Ok(());}
             if a.hp<=0.0 {return Ok(());}
             let room = self
                 .rooms
@@ -465,7 +488,6 @@ impl Game {
                 }
                 a.target = 0;
                 a.pickup = 0;
-                a.farming = false;
             }
             3 | 4 => {
                 if c.kind==3{a.secondary=None;}
@@ -504,7 +526,7 @@ impl Game {
     }
     fn event(&mut self, map: u32, kind: u8, source: u32, target: u32, skill: u16, value: f32, hit: u8) {
         let id = self.id();
-        if kind == 1 {
+        if kind == 1 && map != battlefield::MAP {
             if let Some(p) = self.pending.iter_mut().rev().find(|p| p.cast_id == 0 && p.source == source && p.skill.id == skill && p.map == map) {
                 p.cast_id = id;
                 self.contacts.insert(id, attacks::ContactGate::new(source, map, p.skill.clone(), self.tick));
@@ -562,6 +584,7 @@ impl Game {
     pub fn step(&mut self) {
         self.tick = self.tick.wrapping_add(1);
         self.events.retain(|e| self.tick.wrapping_sub(e.tick) < 20);
+        self.advance_battlefield(battlefield::now());
         let mut events = vec![];
         self.advance_pvp_status(&mut events);
         self.advance_curses(&mut events);
@@ -575,6 +598,7 @@ impl Game {
         self.advance_attacks(&mut events);
         self.resolve_contacts(&mut events);
         let deaths = self.advance_monsters(&mut events);
+        self.battlefield_deaths();
         self.finalize_deaths();
         self.commit_rewards(&mut events, deaths);
         for (map, kind, source, target, skill, value, hit) in events {

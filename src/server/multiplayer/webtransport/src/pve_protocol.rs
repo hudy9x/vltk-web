@@ -124,6 +124,9 @@ pub fn snapshot(game: &Game, id: u32) -> Option<Vec<u8>> {
         let mut name=death.name.clone();while name.len()>96{name.pop();}
         b.push(name.len() as u8);b.extend(name.as_bytes());
     }
+    if let Some(state)=game.battlefield_snapshot(id){
+        let json=serde_json::to_vec(&state).ok()?;b.push(0xe1);b.extend((json.len() as u32).to_le_bytes());b.extend(json);
+    }
     Some(b)
 }
 pub fn command(bytes: &[u8]) -> Result<Command> {
@@ -141,7 +144,7 @@ pub fn command(bytes: &[u8]) -> Result<Command> {
         y: f32::from_le_bytes(bytes[21..25].try_into()?),
     };
     ensure!(
-        (1..=18).contains(&c.kind) && c.x.is_finite() && c.y.is_finite(),
+        (1..=20).contains(&c.kind) && c.x.is_finite() && c.y.is_finite(),
         "invalid command data"
     );
     Ok(c)

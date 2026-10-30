@@ -1277,7 +1277,7 @@ fn authoritative_position_survives_reconnect_restart_and_character_slot_isolatio
     let mut g=game();field(&mut g);
     let a=g.actors.get_mut(&1).unwrap();a.x=345.0;a.y=456.0;a.hp=123.0;
     let profile=a.profile.clone();
-    let definitions=Definitions{version:1,town:1,maps:g.rooms.values().map(|r|r.definition.clone()).collect()};
+    let definitions=Definitions{battlefield:None,version:1,town:1,maps:g.rooms.values().map(|r|r.definition.clone()).collect()};
     g.checkpoint().unwrap();
     let file=g.outbox.path_for_test();drop(g);
     let mut g=Game::new(file.clone()).unwrap();g.install(definitions).unwrap();
@@ -1330,7 +1330,7 @@ fn knb_piles_survive_restart_are_public_and_competing_pickups_credit_once() {
     assert!(g.accept_death_drop(&request,1_000_001,false).is_err());
     assert!(g.accept_death_drop(&request,1_000_000,false).unwrap());
     let profile=g.actors[&1].profile.clone();
-    let definitions=Definitions{version:1,town:1,maps:g.rooms.values().map(|r|r.definition.clone()).collect()};
+    let definitions=Definitions{battlefield:None,version:1,town:1,maps:g.rooms.values().map(|r|r.definition.clone()).collect()};
     let file=g.outbox.path_for_test();drop(g);
     let mut g=Game::new(file.clone()).unwrap();g.install(definitions).unwrap();
     assert_eq!(g.rooms[&2].loot.iter().map(|d|d.gold).sum::<u32>(),1_000_000);

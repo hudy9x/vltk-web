@@ -25,12 +25,13 @@ pub(super) fn resolve(actor: &mut Actor) {
         None=>actor.base_profile.clone(),
     };
     let hp = actor.hp / actor.profile.hp;
-    let mp = actor.mp / actor.profile.mp;
+    let mp = if actor.profile.mp>0.0 {actor.mp / actor.profile.mp}else{0.0};
     let potions = std::mem::take(&mut actor.profile.potions);
     actor.profile = profile;
     actor.profile.potions = potions;
     apply_shared(actor);
     curses::apply_profile(actor);
+    battlefield::apply_profile(actor);
     actor.hp = (hp * actor.profile.hp).clamp(0.0, actor.profile.hp);
     actor.mp = (mp * actor.profile.mp).clamp(0.0, actor.profile.mp);
 }
@@ -103,6 +104,7 @@ impl Game {
         let dt = self.rules.tick_seconds;
         let peers=pvp::peers(self);
         for (&id, a) in &mut self.actors {
+            if a.war.is_some_and(|w|!w.ready){continue;}
             a.support.lock = (a.support.lock - dt).max(0.0);
             for t in a.support.cooldowns.values_mut() {
                 *t = (*t - dt).max(0.0);
@@ -256,13 +258,21 @@ impl Game {
         let sources:Vec<_>=self.actors.iter().filter(|(_,a)|a.hp>0.0).flat_map(|(&id,a)|{
             a.base_profile.support.as_ref().into_iter().flat_map(move |c|c.skills.iter()
                 .filter(|s|s.shared.is_some()&&(a.support.auras.contains(&s.id)||a.support.active.contains_key(&s.id)))
-                .map(move |s|(id,a.map,a.x,a.y,a.party_alignment.unwrap_or(a.profile.alignment),s.clone())))
+                .map(move |s|(id,a.map,a.x,a.y,a.party_alignment.unwrap_or(a.profile.alignment),a.war,s.clone())))
         }).collect();
         for (&id,a) in &mut self.actors {
             let mut shared=BTreeMap::<u16,SupportSkill>::new();
-            if a.hp>0.0 {
-                for (source,map,x,y,alignment,skill) in &sources {
-                    if *source==id||*map!=a.map||*alignment!=a.party_alignment.unwrap_or(a.profile.alignment)
+            if a.hp>0.0&&a.war.is_none_or(|w|w.kind<2) {
+                if a.war.is_some_and(|w|w.kind==1&&w.ready) {
+                    if let Some(definition)=&self.battlefield.definition {
+                        for skill in &definition.sim_support {
+                            if !a.support.auras.contains(&skill.id)&&!a.support.active.contains_key(&skill.id){shared.insert(skill.id,skill.clone());}
+                        }
+                    }
+                }
+                for (source,map,x,y,alignment,war,skill) in &sources {
+                    let allied=if war.is_some()||a.war.is_some(){war.zip(a.war).is_some_and(|(x,y)|x.match_id==y.match_id&&x.team==y.team&&x.ready&&y.ready)}else{*alignment==a.party_alignment.unwrap_or(a.profile.alignment)};
+                    if *source==id||*map!=a.map||!allied
                         || navigation::distance(a.x,a.y,*x,*y)>410.0
                         || a.support.auras.contains(&skill.id)||a.support.active.contains_key(&skill.id) {continue;}
                     if shared.get(&skill.id).is_none_or(|previous|previous.level<skill.level){shared.insert(skill.id,skill.clone());}

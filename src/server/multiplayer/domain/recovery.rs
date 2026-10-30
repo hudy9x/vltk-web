@@ -24,6 +24,7 @@ pub(super) fn reconcile(profile:&mut Profile,outbox:&Outbox,account:&str,slot:u8
 }
 impl Game {
     pub(super) fn consume_potion(&mut self,id:u32,potion:u16)->Result<()>{
+        if self.actors.get(&id).is_some_and(|a|a.war.is_some()){self.battlefield_potion(id,usize::from(potion>=100));return Ok(());}
         let a=self.actors.get_mut(&id).unwrap();
         let Some(index)=a.profile.potions.iter().position(|p|p.id==potion)else{return Ok(());};
         let p=&a.profile.potions[index];

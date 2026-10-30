@@ -81,6 +81,13 @@ pub fn routes(world: Arc<Mutex<World>>, secret: String) -> Router {
                 },
             ),
         )
+        .route("/battlefield/shop",post(|State(s):State<Control>,h:HeaderMap,Json(a):Json<serde_json::Value>|async move{
+            authorize(&h,&s)?;let w=s.world.lock().unwrap();
+            let (id,_actor)=w.game.actors.iter().find(|(_,p)|p.account==a["account"].as_str().unwrap_or("")&&p.slot as u64==a["slot"].as_u64().unwrap_or(99)&&p.war.is_some()).ok_or(StatusCode::BAD_REQUEST)?;
+            let u=w.game.battlefield.units.get(id).ok_or(StatusCode::BAD_REQUEST)?;
+            if w.game.battlefield.finished{return Err(StatusCode::BAD_REQUEST);}
+            Ok::<_,StatusCode>(Json(serde_json::json!({"matchId":w.game.battlefield.id,"starts":w.game.battlefield.starts,"spent":u.spent.iter().map(|m|m.values().sum::<u32>()).collect::<Vec<_>>() })))
+        }))
         .route(
             "/rewards",
             get(|State(s): State<Control>, h: HeaderMap| async move {

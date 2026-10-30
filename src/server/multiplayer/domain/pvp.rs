@@ -22,6 +22,7 @@ pub(super) struct Peer {
     pub hp: f32,
     pub alignment: u8,
     pub enabled: bool,
+    pub war:Option<battlefield::Membership>,
 }
 pub(super) fn peers(game: &Game) -> Vec<Peer> {
     game.actors
@@ -34,10 +35,14 @@ pub(super) fn peers(game: &Game) -> Vec<Peer> {
             hp: a.hp,
             alignment: a.party_alignment.unwrap_or(a.profile.alignment),
             enabled: a.pvp.enabled,
+            war:a.war,
         })
         .collect()
 }
 pub(super) fn hostile(id: u32, a: &Actor, b: &Peer, town: bool) -> bool {
+    if a.war.is_some()||b.war.is_some(){
+        return a.war.zip(b.war).is_some_and(|(x,y)|x.ready&&y.ready&&x.match_id==y.match_id&&x.team!=y.team)&&id!=b.id&&a.hp>0.0&&b.hp>0.0&&a.map==b.map;
+    }
     !town
         && id != b.id
         && a.hp > 0.0
@@ -62,6 +67,7 @@ pub(super) fn can_hit(game: &Game, source: u32, target: u32) -> bool {
             hp: b.hp,
             alignment: b.party_alignment.unwrap_or(b.profile.alignment),
             enabled: b.pvp.enabled,
+            war:b.war,
         },
         town,
     )
@@ -110,7 +116,7 @@ pub(super) fn hit(
     let source_name=game.actors[&source].name.clone();
     let target_name=game.actors[&target].name.clone();
     let mut skill = input.clone();
-    let factor = scale();
+    let factor = if game.actors[&source].war.is_some_and(|w|w.kind>=2)||game.actors[&target].war.is_some_and(|w|w.kind>=2){1.0}else{scale()};
     for part in &mut skill.parts {
         *part *= factor;
     }
@@ -210,6 +216,7 @@ pub(super) fn hit(
             element as u8 | if critical || fatal { 8 } else { 0 } | if hurt { 16 } else { 0 },
         ));
     }
+    if amount>0.0 {if let Some(u)=game.battlefield.units.get_mut(&target){u.last_source=source;u.last_hit=game.battlefield.clock;}}
     death(defender, game.rules.player_respawn_seconds);
     let attacker = game.actors.get_mut(&source).unwrap();
     recovery::leech(attacker, input, amount);
@@ -222,6 +229,7 @@ pub(super) fn hit(
             attacker.support.lock = 0.0;
         }
         if lost > 0.0 {
+            if let Some(u)=game.battlefield.units.get_mut(&source){u.last_source=target;u.last_hit=game.battlefield.clock;}
             events.push((map, 2, target, source, 0, lost, 0));
         }
         death(attacker, game.rules.player_respawn_seconds);
@@ -232,9 +240,10 @@ impl Game {
         let dt = self.rules.tick_seconds;
         let friendly_poison: std::collections::BTreeSet<_> = self.actors.iter()
             .filter(|(_,a)| a.pvp.poison > 0.0 && self.actors.get(&a.pvp.poison_owner).is_some_and(|source|
-                source.party_alignment.unwrap_or(source.profile.alignment) == a.party_alignment.unwrap_or(a.profile.alignment)))
+                if source.war.is_some()||a.war.is_some(){source.war.zip(a.war).is_none_or(|(x,y)|x.match_id!=y.match_id||x.team==y.team)}else{source.party_alignment.unwrap_or(source.profile.alignment) == a.party_alignment.unwrap_or(a.profile.alignment)}))
             .map(|(&id,_)| id).collect();
         for (&id, a) in &mut self.actors {
+            if a.war.is_some_and(|w|!w.ready){continue;}
             a.pvp.hurt = (a.pvp.hurt - dt).max(0.0);
             if a.cold <= 0.0 {
                 a.pvp.cold_power = 0.0;
@@ -262,7 +271,7 @@ impl Game {
             let elapsed = dt.min(a.pvp.poison);
             let lost = (a.pvp.poison_damage * elapsed).min(a.hp);
             a.hp -= lost;
-            if lost>0.0 {a.last_attacker=a.pvp.poison_owner;a.last_attacker_name=a.pvp.poison_name.clone();a.last_attacker_player=true;}
+            if lost>0.0 {if let Some(u)=self.battlefield.units.get_mut(&id){u.last_source=a.pvp.poison_owner;u.last_hit=self.battlefield.clock;}a.last_attacker=a.pvp.poison_owner;a.last_attacker_name=a.pvp.poison_name.clone();a.last_attacker_player=true;}
             a.pvp.poison = (a.pvp.poison - elapsed).max(0.0);
             a.pvp.poison_pending += lost;
             a.pvp.poison_elapsed += elapsed;

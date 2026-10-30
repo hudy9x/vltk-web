@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": 9004,
+  "name": "Tống Kim · Khu chờ",
+  "status": "available",
+  "size": {
+    "width": 1024,
+    "height": 768
+  },
+  "entry": {
+    "x": 512,
+    "y": 460
+  },
+  "layers": [
+    {
+      "id": "ground",
+      "type": "ground",
+      "image": "./assets/ground.jpg"
+    },
+    {
+      "id": "world",
+      "type": "world",
+      "objects": [
+        {
+          "id": "waiting-tent",
+          "image": "./assets/camp-atlas-0-0.png",
+          "position": {
+            "x": 270,
+            "y": 375
+          },
+          "anchor": {
+            "x": 304,
+            "y": 585.6
+          },
+          "scale": 0.42,
+          "depthOffsetY": 0
+        },
+        {
+          "id": "waiting-platform",
+          "image": "./assets/song-platform.png",
+          "position": {
+            "x": 590,
+            "y": 435
+          },
+          "anchor": {
+            "x": 418.5,
+            "y": 517.08
+          },
+          "scale": 0.4,
+          "depthOffsetY": -130
+        }
+      ]
+    }
+  ],
+  "navigation": {
+    "kind": "open"
+  },
+  "spawnMode": "fixed",
+  "spawns": [],
+  "npcs": []
+}

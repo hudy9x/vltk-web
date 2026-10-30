@@ -22,6 +22,23 @@ exports.apply=function(input,action,development=false){
         if(action.skill!==-1&&previous>=0)slots[previous]=slots[action.index];
         slots[action.index]=action.skill;p.slots=slots;break;
       }
+      case 'warPotionBuy':case 'warPotionSelect':{
+        if(!integer(action.matchId,1,4294967295)||!Number.isFinite(action.starts)||![0,1].includes(action.slot))fail('Chưa gia nhập chiến trường.');
+        const potion=s.S.potions.find(row=>row.kind===action.potion&&row.tier===action.tier);
+        if(!potion||!s.ro(potion)||(potion.kind!=='both'&&potion.kind!==(action.slot===0?'life':'mana')))fail('Thuốc không phù hợp với ô chiến trường.');
+        const id=({life:0,mana:100,both:200})[potion.kind]+potion.tier;
+        if(!p.warSupplies||p.warSupplies.matchId!==action.matchId||p.warSupplies.starts!==action.starts)p.warSupplies={matchId:action.matchId,starts:action.starts,bought:[{},{}],selected:[0,0]};
+        const bag=p.warSupplies,slot=action.slot;
+        if(kind==='warPotionBuy'){
+          let quantity=action.quantity;if(!integer(quantity,1,20)||!Array.isArray(action.spent)||!integer(action.spent[slot],0,1000000))fail('Số lượng không hợp lệ.');
+          const total=Object.values(bag.bought[slot]).reduce((a,b)=>a+b,0)-action.spent[slot];
+          quantity=Math.min(quantity,Math.max(0,40-total));
+          if(!quantity)fail('Mỗi ô chỉ chứa tối đa 40 bình.');
+          const price=s.Ot(potion)*quantity;if(!Number.isSafeInteger(price)||price<=0||p.gold<price)fail('Không đủ ngân lượng mua thuốc.');
+          p.gold-=price;bag.bought[slot][id]=(bag.bought[slot][id]||0)+quantity;
+        }
+        bag.selected[slot]=id;break;
+      }
       case 'potionBuy':{
         const potion=s.S.potions.find(row=>row.kind===action.potion&&row.tier===action.tier);
         if(!potion||!s.ro(potion))fail('Chưa đủ cấp dùng loại thuốc này.');

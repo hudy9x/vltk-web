@@ -15,6 +15,7 @@ export interface Reward {
   potion?: {id:number;spent:number};
   death?: {map:number;x:number;y:number;life:number;notice:unknown};
   knb?: number;
+  merit?: number;
 }
 /** The online profile is imported once. Legacy local-storage writes cannot replace it. */
 export function createCharacters(db: DatabaseSync) {
@@ -62,8 +63,9 @@ export function createCharacters(db: DatabaseSync) {
       grant.xp > 1e8 ||
       grant.gold < 0 ||
       grant.gold > 1e8 ||
+      grant.merit !== undefined && (!Number.isSafeInteger(grant.merit)||grant.merit<0||grant.merit>1000) ||
       grant.knb !== undefined && (!Number.isSafeInteger(grant.knb)||grant.knb<0||grant.knb>1e6) ||
-      grant.death !== undefined && (grant.xp!==0||grant.gold!==0||!!grant.knb||!!grant.potion||!Number.isInteger(grant.death.map)||!Number.isInteger(grant.death.life)||!Number.isFinite(grant.death.x)||!Number.isFinite(grant.death.y))
+      grant.death !== undefined && (grant.xp!==0||grant.gold!==0||!!grant.knb||!!grant.potion||!!grant.merit||!Number.isInteger(grant.death.map)||!Number.isInteger(grant.death.life)||!Number.isFinite(grant.death.x)||!Number.isFinite(grant.death.y))
     )
       throw new Error('Invalid server reward');
     db.exec('BEGIN IMMEDIATE');
@@ -77,6 +79,13 @@ export function createCharacters(db: DatabaseSync) {
       if(grant.potion)applyPotionDebit(p,grant.potion);
       progression.addExperience(p,grant.xp);
       p.gold = (p.gold || 0) + grant.gold;
+      if(grant.merit){
+        p.mats ||= {};p.mats.misc ||= {};
+        const previous=p.mats.misc.tk_merit;
+        const total=(Number.isSafeInteger(previous)&&previous>0?previous:0)+grant.merit;
+        if(!Number.isSafeInteger(total))throw new Error('War merit overflow');
+        p.mats.misc.tk_merit=total;
+      }
       let deathDrop:{id:string;amount:number;currency:string}|undefined;
       if(grant.death){
         const balance=Number.isSafeInteger(p.gold)&&p.gold>0?p.gold:0;
@@ -116,7 +125,8 @@ export function createCharacters(db: DatabaseSync) {
   function mutate(account:string,slot:number,id:string,action:unknown,development:boolean){
     if(typeof id!=='string'||!/^[-a-zA-Z0-9_]{8,80}$/.test(id))throw Object.assign(new Error('Mã thao tác không hợp lệ.'),{status:400});
     if(!action||typeof action!=='object'||Array.isArray(action)||typeof (action as {kind?:unknown}).kind!=='string')throw Object.assign(new Error('Thao tác không hợp lệ.'),{status:400});
-    const hash=createHash('sha256').update(JSON.stringify(action)).digest('hex');
+    const hashAction={...(action as Record<string,unknown>)};if(hashAction.kind==='warPotionBuy'||hashAction.kind==='warPotionSelect')delete hashAction.spent;
+    const hash=createHash('sha256').update(JSON.stringify(hashAction)).digest('hex');
     db.exec('BEGIN IMMEDIATE');
     try{
       const saved=read(account,slot);

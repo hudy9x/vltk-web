@@ -140,3 +140,35 @@ test('Wudu curses allocate single/max points, refund and persist atomically with
     assert.equal(p.sk[67]||0,0);assert.equal(p.skPts,100);
   }finally{db.close();}
 });
+
+
+test('war purchases select the slot, cap each slot at forty, charge once, and survive profile reload',()=>{
+ const {db,s}=store();try{
+  s.mutate('one',0,'war-level-150',{kind:'gm',action:'level150'},true);s.mutate('one',0,'war-fund-gold',{kind:'gm',action:'gold'},true);
+  const buy={kind:'warPotionBuy',matchId:99,starts:100,spent:[0,0],slot:0,potion:'life',tier:1,quantity:20};
+  const first=s.mutate('one',0,'war-buy-first',buy,true);assert.equal(first.profile.warSupplies.bought[0][1],20);assert.equal(first.profile.warSupplies.selected[0],1);
+  assert.ok(first.profile.gold<1000000000000);const replay=s.mutate('one',0,'war-buy-first',{...buy,spent:[1,0]},true);assert.equal(replay.revision,first.revision);assert.equal(replay.profile.gold,first.profile.gold);
+  const second=s.mutate('one',0,'war-buy-second',buy,true);assert.throws(()=>s.mutate('one',0,'war-over-cap',buy,true),/40/);
+  const mana20=s.mutate('one',0,'war-buy-mana',{...buy,slot:1,potion:'mana'},true);
+  const mana24=s.mutate('one',0,'war-buy-mana-four',{...buy,slot:1,potion:'mana',quantity:4},true);
+  const unitPrice=(mana20.profile.gold-mana24.profile.gold)/4;
+  const mana40=s.mutate('one',0,'war-buy-mana-partial',{...buy,slot:1,potion:'mana'},true);
+  assert.equal(mana40.profile.warSupplies.bought[1][101],40);
+  assert.equal(mana24.profile.gold-mana40.profile.gold,16*unitPrice,'charge sixteen bottles when x20 fills 24 to 40');
+  const replayPartial=s.mutate('one',0,'war-buy-mana-partial',{...buy,slot:1,potion:'mana',spent:[0,1]},true);
+  assert.equal(replayPartial.profile.gold,mana40.profile.gold,'partial purchase is charged only once');
+  assert.throws(()=>s.mutate('one',0,'war-buy-mana-full',{...buy,slot:1,potion:'mana'},true),/40/);
+
+  const saved=createCharacters(db).read('one',0).profile;assert.equal(saved.warSupplies.bought[0][1],40);assert.equal(saved.warSupplies.bought[1][101],40);
+  assert.equal(s.read('two',0).profile.warSupplies,undefined);
+  const beforeRefill=s.read('one',0).profile;const refilled=s.mutate('one',0,'war-after-use',{...buy,spent:[1,0],quantity:20},true);assert.equal(refilled.profile.warSupplies.bought[0][1],41);assert.equal(beforeRefill.gold-refilled.profile.gold,(first.profile.gold-second.profile.gold)/20);
+ }finally{db.close();}
+});
+
+test('GM gold, KNB and XP survive canonical profile recreation and stale browser saves',()=>{
+ const {db,s}=store();try{
+  for(const action of ['gold','knb','xp'])s.mutate('one',0,'gm-money-'+action,{kind:'gm',action},true);
+  const before=s.read('one',0).profile;db.prepare('UPDATE account_storage SET value=? WHERE account_id=?').run(JSON.stringify({fac:'vo0',lvl:1,gold:0,knb:0,xp:0}),'one');
+  const after=createCharacters(db).read('one',0).profile;for(const key of ['gold','knb','lvl','xp'])assert.equal(after[key],before[key]);
+ }finally{db.close();}
+});

@@ -82,7 +82,7 @@ impl Game {
         }
     }
     pub fn checkpoint(&mut self) -> Result<()> {
-        for a in self.actors.values() {
+        for a in self.actors.values().filter(|a|a.war.is_none()) {
             self.checkpoints.data.actors.insert(
                 format!("{}:{}", a.account, a.slot),
                 SavedActor {
@@ -95,6 +95,11 @@ impl Game {
                     death: a.death_notice.clone(),
                 },
             );
+        }
+        for (&id,a) in self.actors.iter().filter(|(_,a)|a.war.is_some_and(|w|w.kind==0)) {
+            if let Some(back)=self.battlefield.units.get(&id).and_then(|u|u.return_to.as_ref()) {
+                self.checkpoints.data.actors.insert(format!("{}:{}",a.account,a.slot),SavedActor{map:back.map,x:back.x,y:back.y,hp:back.hp,mp:back.mp,life:a.life,death:None});
+            }
         }
         for (&map, room) in &self.rooms {
             self.checkpoints.data.drops.insert(
@@ -170,7 +175,7 @@ impl Game {
             .actors
             .iter()
             .filter(|(_, a)| {
-                a.hp <= 0.0 && a.death_notice.as_ref().is_none_or(|d| d.request.is_none())
+                a.war.is_none() && a.hp <= 0.0 && a.death_notice.as_ref().is_none_or(|d| d.request.is_none())
             })
             .map(|(&id, _)| id)
             .collect();

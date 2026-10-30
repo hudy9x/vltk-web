@@ -15,7 +15,7 @@ test('native stats reuse game formulas and isolate characters between requests',
 test('shared maps use available content and real monster definitions',()=>{
   const world=catalog.world();assert.equal(world.town,37);assert.ok(world.maps.length>10);assert.ok(world.maps.length<=48);
   assert.equal(new Set(world.maps.map(m=>m.id)).size,world.maps.length);
-  assert.ok(world.maps.find(m=>m.id===37).town);assert.ok(!world.maps.some(m=>m.id===9003));
+  assert.ok(world.maps.find(m=>m.id===37).town);assert.ok(world.maps.some(m=>m.id===9003&&m.monsters.length===0));
   assert.ok(world.maps.some(m=>m.monsters.some(d=>d.id===34)));
 });
 test('online canonical profile survives legacy writes; rewards are transactional and idempotent',()=>{

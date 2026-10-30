@@ -10,18 +10,19 @@ const characterCache=new Map();
 exports.character = function (profile, activeBuffs = [], includeSupport = true, activeAuras = null, allies = []) {
   let cacheKey;
   if(includeSupport){
-    const {xp,gold,potStock,potUsed,onlinePotionSpent,attrPts,skPts,...combatProfile}=profile;
+    const {xp,gold,warSupplies,potStock,potUsed,onlinePotionSpent,attrPts,skPts,...combatProfile}=profile;
     cacheKey=JSON.stringify([combatProfile,allies]);
     if(characterCache.has(cacheKey)){
       const result=structuredClone(characterCache.get(cacheKey));
       const potions=require('./consumables.cjs').potions(profile,native.potions());
-      result.potions=potions;
+      result.potions=potions;result.warSupplies=profile.warSupplies||null;
       for(const variant of result.support.variants)variant.profile.potions=structuredClone(potions);
       return result;
     }
   }
   const { stats, skills, moveSpeed, supports, attackTimings, timing, allyScaling } = native.buildCharacter(profile,activeBuffs,activeAuras,allies);
   const result = {
+    warSupplies:profile.warSupplies||null,
     allyScaling,
     level: profile.lvl,
     alignment:native.alignment(profile.fac),
@@ -125,5 +126,7 @@ exports.world = function () {
     for (const id of entry.alternateMapIds) add(id, zone);
   }
   if (!maps.some((m) => m.id === source.town)) add(source.town, null);
-  return (cachedWorld = { version: 1, town: source.town, maps });
+  add(9003,null);
+  add(9004,null);
+  return (cachedWorld = { version: 1, town: source.town, maps, battlefield: require("./battlefield.cjs").definition() });
 };

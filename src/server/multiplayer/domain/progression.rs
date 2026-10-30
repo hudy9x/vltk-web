@@ -7,6 +7,7 @@ impl Game {
         // Canonical purchases replenish stock; pending debits still take precedence.
         recovery::reconcile(&mut profile,&self.outbox,&a.account,a.slot);
         let potions=profile.potions.clone();
+        if a.war.is_some(){if let Some(back)=self.battlefield.units.get_mut(&id).and_then(|u|u.return_to.as_mut()){back.potions=potions.clone();}}
         support::replace_base(a,profile);
         a.profile.potions=potions;
         a.profile_revision=revision;

@@ -111,7 +111,12 @@ export function registerMultiplayerWebTransport(
     if(!characters)return sendJson(reply,503,{error:'Online storage unavailable'});
     if(!body||typeof body.slot!=='number'||!Number.isInteger(body.slot)||body.slot<0||body.slot>2||typeof body.id!=='string')
       return sendJson(reply,400,{error:'Ô nhân vật hoặc thao tác không hợp lệ.'});
-    const action=body.action as {kind?:string}|undefined;
+    const action=body.action as {kind?:string;matchId?:number;starts?:number;spent?:number[]}|undefined;
+    if(action?.kind==='warPotionBuy'||action?.kind==='warPotionSelect'){
+      const room=await controlCall('/battlefield/shop',{account:String(user.id),slot:body.slot});
+      // Only trusted room metadata is forwarded to the transactional mutation.
+      Object.assign(action,room);
+    }
     if(action?.kind==='gm'&&!development)return sendJson(reply,403,{error:'GM chỉ dùng trong development.'});
     const saved=characters.mutate(String(user.id),body.slot,body.id,body.action,development);
     if(process.env.MULTIPLAYER_WT_CONTROL_URL)await refreshProfiles({account:String(user.id),slot:body.slot});
@@ -128,7 +133,7 @@ export function registerMultiplayerWebTransport(
     if (!response.ok)
       throw Object.assign(new Error('Máy chủ multiplayer chưa sẵn sàng.'), { status: 503 });
     const config = (await response.json()) as Record<string, unknown>;
-    const ticket = issueMultiplayerTicket(String(user.id), secret);
+    let ticket:Buffer;
     // The shared Fastify parser deliberately returns a raw JSON string.
     const payload = parseJsonBody(request.body) as { slot?: unknown;position?:unknown } | null;
     const slot = payload && typeof payload === 'object' && !Array.isArray(payload)
@@ -139,6 +144,7 @@ export function registerMultiplayerWebTransport(
     if (characters) {
       const saved = characters.read(String(user.id), slot);
       await controlCall('/catalog', characters.world());
+      ticket = issueMultiplayerTicket(String(user.id), secret);
       await controlCall('/admit', {
         nonce: ticket.subarray(21, 37).toString('hex'),
         account: String(user.id),
@@ -148,6 +154,7 @@ export function registerMultiplayerWebTransport(
         profile: characters.character(saved.profile),
       });
     }
+    ticket ||= issueMultiplayerTicket(String(user.id), secret);
     return sendJson(reply, 200, { enabled: true, ...config, ticket: ticket.toString('base64') });
   });
 }

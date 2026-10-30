@@ -7,6 +7,7 @@ impl Game {
             let Some(room) = self.rooms.get_mut(&a.map) else {
                 continue;
             };
+            if a.war.is_some_and(|w|!w.ready){continue;}
             a.cold = (a.cold - dt).max(0.0);
             a.stun = (a.stun - dt).max(0.0);
             for cd in a.cooldowns.values_mut() {
@@ -18,6 +19,14 @@ impl Game {
             }
             a.hp = (a.hp + a.profile.regen * dt).min(a.profile.hp);
             a.mp = (a.mp + a.profile.mana_regen * dt).min(a.profile.mp);
+            if a.move_goal.is_some(){
+                if !a.path.is_empty(){
+                    let movement=speed::movement(a)*dt;room.nav.step(&mut a.x,&mut a.y,&mut a.path,movement);
+                    if a.path.is_empty()&&a.farming{a.move_goal=None;}
+                    continue;
+                }
+                if a.farming{a.move_goal=None;}
+            }
             if a.pickup != 0 && !room.loot.iter().any(|l| l.id == a.pickup) {
                 a.pickup = 0;
                 a.path.clear();
@@ -50,7 +59,8 @@ impl Game {
                             && distance(a.x, a.y, p.x, p.y) < self.rules.leash_range
                     })
                     .min_by(|x, y| {
-                        distance(a.x, a.y, x.x, x.y).total_cmp(&distance(a.x, a.y, y.x, y.y))
+                        let priority=|p:&pvp::Peer|u8::from(a.war.is_some_and(|w|w.prefer_players)&&p.war.is_some_and(|w|w.kind>=2));
+                        priority(x).cmp(&priority(y)).then_with(||distance(a.x,a.y,x.x,x.y).total_cmp(&distance(a.x,a.y,y.x,y.y)))
                     })
                     .map_or(0, |p| p.id);
             }

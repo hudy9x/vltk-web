@@ -57,7 +57,7 @@ impl Game {
             .support
             .as_ref()
             .and_then(|c| c.skills.iter().find(|s| s.id == skill_id));
-        if room.definition.town
+        if a.war.is_some_and(|w|!w.ready)||room.definition.town
             || a.hp <= 0.0
             || a.stun > 0.0
             || a.pvp.hurt > 0.0
@@ -123,6 +123,7 @@ impl Game {
     pub(super) fn advance_curses(&mut self, _events: &mut Vec<EventData>) {
         let dt = self.rules.tick_seconds;
         for a in self.actors.values_mut() {
+            if a.war.is_some_and(|w|!w.ready){continue;}
             let before = a.support.curses.len();
             a.support.curses.retain(|_, c| {
                 c.remaining -= dt;
