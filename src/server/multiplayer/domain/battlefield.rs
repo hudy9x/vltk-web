@@ -410,7 +410,10 @@ mod tests {
     }
     #[test]
     fn explicit_walk_preserves_auto_and_it_resumes_only_after_the_walk() {
-        let mut g=fixture();start(&mut g);{let a=g.actors.get_mut(&1).unwrap();a.x=100.0;a.y=100.0;a.farming=true;}
+        let mut g=fixture();start(&mut g);
+        // Isolate the intended opponent: randomly spawned SIMs may otherwise be closer.
+        g.actors.retain(|id,_|*id<=2);g.battlefield.units.retain(|id,_|*id<=2);
+        {let a=g.actors.get_mut(&1).unwrap();a.x=100.0;a.y=100.0;a.farming=true;}
         g.command(1,Command{seq:1,kind:2,map:MAP,target:0,skill:0,x:300.0,y:100.0}).unwrap();assert!(g.actors[&1].farming);
         g.advance_players(&mut vec![]);assert!(g.actors[&1].farming);assert_eq!(g.actors[&1].target,0);assert!(g.actors[&1].x>100.0);
         g.actors.get_mut(&2).unwrap().x=350.0;g.actors.get_mut(&2).unwrap().y=100.0;
