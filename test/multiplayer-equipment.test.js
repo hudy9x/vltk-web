@@ -5,7 +5,7 @@ const progression=require('../src/server/multiplayer/definitions/progression.cjs
 const native=require('../src/server/multiplayer/definitions/runtime.cjs');
 const catalog=require('../src/server/multiplayer/definitions/catalog.cjs');
 const base={fac:'shaolin',lvl:150,knb:100,gold:1000000000,attr:{str:1000,dex:1000,vit:1000,eng:1000}};
-function fixture(){const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE account_storage(account_id TEXT,key TEXT,value TEXT,PRIMARY KEY(account_id,key))');db.prepare('INSERT INTO account_storage VALUES(?,?,?)').run('one','jxidle',JSON.stringify(base));const store=createCharacters(db);let seq=0;return {db,store,act:action=>store.mutate('one',0,'equipment-'+ ++seq,action,false).profile};}
+function fixture(profile=base){const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE account_storage(account_id TEXT,key TEXT,value TEXT,PRIMARY KEY(account_id,key))');db.prepare('INSERT INTO account_storage VALUES(?,?,?)').run('one','jxidle',JSON.stringify(profile));const store=createCharacters(db);let seq=0;return {db,store,act:action=>store.mutate('one',0,'equipment-'+ ++seq,action,false).profile};}
 function selection(d=5){return native.withProgression(base,s=>{const item=s.equipmentTrader.blueCatalog(0,10).find(t=>t.d===d);return {kind:'blue',sex:0,level:10,item:item.key,series:0,lines:s.equipmentTrader.affixes(item,0,0).filter(a=>a.a===111).map(a=>a.a)};});}
 test('NPC equipment, horse, worn slots and UIDs survive reload; retries do not duplicate or charge twice',()=>{
  const {db,store,act}=fixture();try{
@@ -46,4 +46,26 @@ test('invalid purchase, forged item/UID, wrong faction and insufficient funds ar
  let offer=native.withProgression(base,s=>({shop:'weapon',offer:s.S.shops.weapon.items.find(t=>t.g!==1)}));
  let p=progression.apply(base,{kind:'shopBuy',...offer});assert.ok(p.inv.length);assert.ok(p.gold<base.gold);
  assert.throws(()=>progression.apply({...base,gold:0},{kind:'shopBuy',...offer}),/ngân lượng/);
+});
+
+test('adding the exact equipment requirements equips immediately, persists and charges points once',()=>{
+ const {db,store,act}=fixture({...base,attr:{str:0,dex:0,vit:0,eng:0},attrPts:745});
+ try{
+  const p=act({kind:'equipmentTrader',operation:'item',selection:selection()});
+  const item=p.inv.find(t=>t.d===5),need=native.withProgression(p,s=>s.bt(item));
+  const cost=Object.values(need).reduce((a,b)=>a+b,0);assert.ok(cost>0);
+  assert.throws(()=>act({kind:'equip',uid:item.uid}),/điều kiện/);
+  const action={kind:'equipWithPotential',uid:item.uid};
+  const saved=store.mutate('one',0,'allocate-and-equip',action,false).profile;
+  assert.equal(saved.eq.boot.uid,item.uid);assert.equal(saved.attrPts,p.attrPts-cost);
+  for(const [key,amount]of Object.entries(need))assert.equal(saved.attr[key],p.attr[key]+amount);
+  assert.deepEqual(store.mutate('one',0,'allocate-and-equip',action,false).profile,saved,'retry cannot spend points again');
+  assert.deepEqual(createCharacters(db).read('one',0).profile,saved);
+  const rejected={...p,attrPts:0};
+  assert.throws(()=>progression.apply(rejected,action),/điểm tiềm năng/);
+  assert.equal(rejected.attr.str,p.attr.str);assert.equal(rejected.inv[0].uid,p.inv[0].uid);
+  const wrongSex={...p,sex:1};
+  assert.throws(()=>progression.apply(wrongSex,action),/điều kiện/);
+  assert.equal(wrongSex.attrPts,p.attrPts,'non-attribute requirements cannot spend points');
+ }finally{db.close();}
 });

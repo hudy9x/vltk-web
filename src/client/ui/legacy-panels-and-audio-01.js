@@ -506,6 +506,7 @@ var Z1 = function (A) {
 };
 
 var bv = function (A) {
+  if(typeof OnlineProgression!=='undefined'&&OnlineProgression.dispatch({kind:'equipWithPotential',uid:A?.uid}))return false;
   const n = bt(A),
     t = Object.values(n).reduce((e, a) => e + a, 0);
   if (!t) return !1;

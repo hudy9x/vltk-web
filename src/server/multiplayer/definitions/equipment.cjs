@@ -28,10 +28,17 @@ exports.apply=function(s,action){
       else{space(1);const item=s._A(offer.d,offer.k,offer.lvl,0);if(!item)fail('Không tạo được trang bị.');item.s=s.ac(offer,item);p.inv.unshift(item);if(p.autoEquip&&s.FA(item))s.J1(item,true);}
       p.gold-=price;break;
     }
-    case 'equip':{
+    case 'equip':
+    case 'equipWithPotential':{
       if(!Number.isSafeInteger(action.uid))fail('Mã trang bị không hợp lệ.');
       const item=p.inv.find(t=>t.uid===action.uid);
-      if(!item||!s.p0(item)||item.pack||item.ktc)fail('Không sở hữu hoặc chưa đủ điều kiện mặc trang bị.');
+      if(!item||item.pack||item.ktc)fail('Không sở hữu hoặc chưa đủ điều kiện mặc trang bị.');
+      if(action.kind==='equipWithPotential'){
+        const cost=Object.values(s.bt(item)).reduce((total,points)=>total+points,0);
+        if(cost>p.attrPts)fail(`Cần ${cost} điểm tiềm năng, đang có ${p.attrPts}`);
+        if(cost>0)s.bv(item);
+      }
+      if(!s.p0(item))fail('Chưa đủ điều kiện mặc trang bị: '+s.vt(item).join('; '));
       s.J1(item,true);break;
     }
     case 'unequip':{
