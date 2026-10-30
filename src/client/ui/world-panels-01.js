@@ -633,7 +633,7 @@ var NB = function () {
   let t = "";
   if (
     (q1 === "basic"
-      ? (t = `<div class="u2h">Tự đánh</div>${A("tAuto", !hA(), "Tự đánh quái (Auto) · phím F")}${A("tMap", o.autoMap !== !1, "Tự đổi bãi luyện công theo cấp")}${A("tClose", !!o.closeAtk, "Đánh tiếp cận (chạy sát quái rồi mới ra chiêu, cả chiêu tầm xa)")}<label>Ưu tiên mục tiêu: <select id="tPri">${qD.map(([i, r]) => `<option value="${i}" ${jd() === i ? "selected" : ""}>${r}</option>`).join("")}</select></label>${A("tRide", o.autoRide !== !1, "Tự lên ngựa khi di chuyển, xuống ngựa khi đánh chiêu không dùng trên ngựa · phím M")}
+      ? (t = `<div class="u2h">Tự đánh</div>${A("tPvpDamage", typeof pvpDamageDisplay!=="undefined"&&pvpDamageDisplay.enabled, "Hiển thị sát thương người chơi / SIM (chỉ máy này)")}${A("tAuto", !hA(), "Tự đánh quái (Auto) · phím F")}${A("tMap", o.autoMap !== !1, "Tự đổi bãi luyện công theo cấp")}${A("tClose", !!o.closeAtk, "Đánh tiếp cận (chạy sát quái rồi mới ra chiêu, cả chiêu tầm xa)")}<label>Ưu tiên mục tiêu: <select id="tPri">${qD.map(([i, r]) => `<option value="${i}" ${jd() === i ? "selected" : ""}>${r}</option>`).join("")}</select></label>${A("tRide", o.autoRide !== !1, "Tự lên ngựa khi di chuyển, xuống ngựa khi đánh chiêu không dùng trên ngựa · phím M")}
     <div class="u2h">Dược phẩm</div>${A("tPot", !o.potOff, `Tự dùng thuốc · đã dùng ${F(o.potUsed || 0)}`)}<div class="u2pot">${[
       ["potHp", "Sinh lực dưới", 50],
       ["potMp", "Nội lực dưới", 50],
@@ -687,6 +687,7 @@ var NB = function () {
       });
   };
   (e("#tAuto", (i) => Wa(i ? "auto" : "manual")),
+    e("#tPvpDamage",value=>pvpDamageDisplay.set(value)),
     e("#tRot", (i) => {
       ((o.rot = i), eo(), (l.dirty = !0));
     }),

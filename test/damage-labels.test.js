@@ -104,7 +104,7 @@ test('frequent poison ticks sum raw fractional losses for half a second without 
 });
 
 test('player and monster poison numbers reflect HP actually lost, capped by remaining HP',()=>{
- const s=damageScene();Object.assign(s,{v:{x:0,y:0},Qa:.5,kn:()=>0,Rn:()=>null,
+ const s=damageScene();s.pvpDamageDisplay.set(true);Object.assign(s,{v:{x:0,y:0},Qa:.5,kn:()=>0,Rn:()=>null,
   $w(){},Sb(){},advanceSkillContacts(){},X9(){},nP(){},Ab(){},cb(){},Oy(){},Gv(){}});
  Object.assign(s.l,{P:{life:100,mana:100,regen:0,manaRegen:0},life:3,mana:100,hpDot:10,hpDotT:1,town:true});
  const source=fs.readFileSync('src/client/core/state-and-save-02.js','utf8');
@@ -120,7 +120,7 @@ test('player and monster poison numbers reflect HP actually lost, capped by rema
 });
 
 test('real outgoing and incoming damage keep individual HP/log events while only floating numbers are summed',()=>{
- const s=damageScene();Object.assign(s,{
+ const s=damageScene();s.pvpDamageDisplay.set(true);Object.assign(s,{
   Math:Object.assign(Object.create(Math),{random:()=>.5}),m0:0,T:{},r0:{1:{anim:{}}},
   Rn:()=>null,E8(){},Z:(lo,hi)=>(lo+hi)/2,y1:()=>false,ja:damage=>damage,ea:()=>1,
   W3(){},Dw:{},Yr:75,U9(){},$d(){},
@@ -166,4 +166,12 @@ test('a lone number rises immediately, and measured digits leave exactly 2px bet
  const gap=(newest.y-newest.ascent-1.5)-(old.y+old.descent+1.5);assert.equal(gap,2);
  s.updateDamageLabels(s.l.txt,.05,s.W);assert.equal(newest.y,68);assert.equal(old.y,50);
  assert.ok(newest.index>old.index);
+});
+
+test('player and SIM damage is hidden by default locally; monster damage stays visible',()=>{
+ const s=damageScene(),player={x:0,y:0,playerDamage:true},monster={x:50,y:50};
+ assert.equal(s.pvpDamageDisplay.enabled,false);s.showDamageNumber(player,10);assert.equal(s.l.txt.length,0);
+ s.showDamageNumber(monster,10);assert.equal(s.l.txt.length,1);
+ s.pvpDamageDisplay.set(true);s.showDamageNumber(player,20);assert.equal(s.l.txt.length,1);assert.equal(s.l.txt[0].target,player);
+ const other=damageScene();assert.equal(other.pvpDamageDisplay.enabled,false);
 });
