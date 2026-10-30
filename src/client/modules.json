@@ -2966,6 +2966,10 @@
       "symbols": ["dialogHotkeys"]
     },
     {
+      "file": "ui/secondary-skill-01.js",
+      "symbols": ["secondarySkill"]
+    },
+    {
       "file": "multiplayer/webtransport/legacy-bridge.js",
       "symbols": [
         "gameMultiplayer"

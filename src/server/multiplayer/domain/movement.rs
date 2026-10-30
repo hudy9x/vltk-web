@@ -13,6 +13,7 @@ impl Game {
                 *cd = if *cd <= dt + 0.000001 { 0.0 } else { *cd - dt };
             }
             if a.hp <= 0.0 {
+                a.secondary=None;
                 continue;
             }
             a.hp = (a.hp + a.profile.regen * dt).min(a.profile.hp);
@@ -21,7 +22,7 @@ impl Game {
                 a.pickup = 0;
                 a.path.clear();
             }
-            if a.farming
+            if a.farming && a.secondary.is_none()
                 && !a.pvp.enabled
                 && a.target == 0
                 && a.pickup == 0
@@ -41,7 +42,7 @@ impl Game {
                 a.pickup = drop.id;
                 a.path = room.nav.path(a.x, a.y, drop.x, drop.y);
             }
-            if a.farming && a.pvp.enabled && a.target == 0 {
+            if a.farming && a.secondary.is_none() && a.pvp.enabled && a.target == 0 {
                 a.target = peers
                     .iter()
                     .filter(|p| {
@@ -53,7 +54,7 @@ impl Game {
                     })
                     .map_or(0, |p| p.id);
             }
-            if a.farming && !a.pvp.enabled && a.target == 0 && a.pickup == 0 {
+            if a.farming && a.secondary.is_none() && !a.pvp.enabled && a.target == 0 && a.pickup == 0 {
                 a.target = room
                     .mobs
                     .iter()
@@ -66,22 +67,26 @@ impl Game {
             if a.stun > 0.0 || a.support.lock > 0.0 || a.pvp.hurt > 0.0 {
                 continue;
             }
-            if a.target != 0 {
+            if a.secondary.is_some_and(|(_,id)|a.profile.skills.iter().find(|s|s.id==id).is_none_or(|s|a.mp<s.cost)){
+                a.secondary=None;
+            }
+            let (selected_target,selected_skill)=a.secondary.unwrap_or((a.target,a.skill));
+            if selected_target != 0 {
                 let target = room
                     .mobs
                     .iter()
-                    .find(|m| m.id == a.target && m.hp > 0.0)
+                    .find(|m| m.id == selected_target && m.hp > 0.0)
                     .map(|m| (m.id, m.x, m.y))
                     .or_else(|| {
                         peers
                             .iter()
                             .find(|p| {
-                                p.id == a.target && pvp::hostile(id, a, p, room.definition.town)
+                                p.id == selected_target && pvp::hostile(id, a, p, room.definition.town)
                             })
                             .map(|p| (p.id, p.x, p.y))
                     });
                 if let Some((target_id, target_x, target_y)) = target {
-                    if let Some(skill) = a.profile.skills.iter().find(|s| s.id == a.skill) {
+                    if let Some(skill) = a.profile.skills.iter().find(|s| s.id == selected_skill) {
                         let reaches = skill.projectile.as_ref().is_none_or(|p| {
                             (target_x - a.x).hypot((target_y - a.y) * 2.0) <= p.range + 17.0
                         });
@@ -90,12 +95,15 @@ impl Game {
                             && room.nav.clear(a.x, a.y, target_x, target_y)
                         {
                             a.path.clear();
-                            if *a.cooldowns.get(&skill.id).unwrap_or(&0.0) <= 0.0
+                            if *a.cooldowns.get(&ATTACK_COOLDOWN).unwrap_or(&0.0) <= 0.0
+                                && *a.cooldowns.get(&skill.id).unwrap_or(&0.0) <= 0.0
                                 && a.mp >= skill.cost
                             {
                                 a.mp -= skill.cost;
                                 let (cycle,interval)=speed::attack(a,skill);
                                 a.cooldowns.insert(skill.id, interval);
+                                a.cooldowns.insert(ATTACK_COOLDOWN, interval);
+                                a.secondary=None;
                                 if self.pending.len() < 4096 {
                                     self.pending.push(Pending {
                                         cast_id: 0,
@@ -120,7 +128,7 @@ impl Game {
                         }
                     }
                 } else {
-                    a.target = 0;
+                    if a.secondary.take().is_none(){a.target = 0;}
                 }
             }
             let speed = speed::movement(a) * dt;

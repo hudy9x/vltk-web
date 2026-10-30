@@ -1388,3 +1388,43 @@ fn purchased_potions_refresh_live_stock_without_replaying_unacknowledged_debits(
     assert_eq!((g.actors[&1].profile.potions[0].count,g.actors[&1].profile.potions[0].spent),(1,1),"a genuinely replenished bottle is not charged twice");
     assert_eq!(g.outbox.pending.len(),1);remove_fixture(g);
 }
+
+#[test]
+fn secondary_attack_casts_once_without_changing_primary_and_obeys_recovery() {
+    let mut g=game();field(&mut g);
+    let target=g.rooms[&2].mobs[0].id;
+    let a=g.actors.get_mut(&1).unwrap();
+    let mut alternate=a.profile.skills[0].clone();alternate.id=2;alternate.cost=3.0;alternate.cooldown=2.0;
+    let mut third=alternate.clone();third.id=3;
+    a.profile.skills.push(alternate);a.profile.skills.push(third);a.x=100.0;a.y=100.0;
+    let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];m.x=110.0;m.y=100.0;m.hp=10000.0;
+    g.command(1,cmd(2,18,2,target,2,0.0,0.0)).unwrap();
+    g.step();
+    assert_eq!(g.actors[&1].skill,1);assert!(g.actors[&1].secondary.is_none());
+    assert_eq!(g.actors[&1].mp,27.0);
+    assert_eq!(g.events.iter().filter(|e|e.source==1&&e.kind==1&&e.skill==2).count(),1);
+    for _ in 0..10{g.step();}
+    assert_eq!(g.events.iter().filter(|e|e.source==1&&e.kind==1&&e.skill==2).count(),1);
+    let refreshed=g.actors[&1].profile.clone();g.refresh_profile(1,refreshed,1);
+    g.command(1,cmd(3,18,2,target,3,0.0,0.0)).unwrap();g.step();
+    assert_eq!(g.actors[&1].mp,27.0,"switching skills or refreshing a profile cannot bypass attack recovery");
+    g.command(1,cmd(4,2,2,0,0,150.0,150.0)).unwrap();
+    assert!(g.actors[&1].secondary.is_none(),"movement cancels the waiting secondary attack");
+    g.command(1,cmd(5,18,2,target,999,0.0,0.0)).unwrap();
+    assert!(g.actors[&1].secondary.is_none(),"unlearned skills cannot be cast");
+    remove_fixture(g);
+}
+
+#[test]
+fn secondary_pvp_attack_respects_hostility_and_preserves_primary() {
+    let mut g=pvp_fixture();
+    let a=g.actors.get_mut(&1).unwrap();let mut skill=a.profile.skills[0].clone();skill.id=2;a.profile.skills.push(skill);
+    g.actors.get_mut(&2).unwrap().x=110.0;
+    g.command(1,cmd(2,18,2,2,2,0.0,0.0)).unwrap();g.step();
+    assert_eq!(g.actors[&1].skill,1);
+    assert!(g.events.iter().any(|e|e.kind==1&&e.source==1&&e.target==2&&e.skill==2));
+    g.actors.get_mut(&1).unwrap().pvp.enabled=false;
+    g.command(1,cmd(3,18,2,2,2,0.0,0.0)).unwrap();
+    assert!(g.actors[&1].secondary.is_none(),"right click cannot bypass PK permission");
+    remove_fixture(g);
+}

@@ -361,7 +361,7 @@ var j0 = function (A, trace) {
     if (
       o.sk[K] &&
       UA(f0) &&
-      (!te(f0) || (o.mainLock && +o.main == +K) || (o.slots || []).some((gA) => +gA == +K))
+      (!te(f0) || (o.mainLock && +o.main == +K) || +o.secondarySkill == +K || (o.slots || []).some((gA) => +gA == +K))
     ) {
       const gA = F2(u, f0, w(K));
       ($0.push(gA), (Ci(f0, I0) || (l.ignoreEqt && l.ignoreEqt.has(j1(f0)))) && u.actives.push(gA));

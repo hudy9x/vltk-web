@@ -111,6 +111,7 @@ var I3 = function () {
     skPts: 1,
     sk: {},
     main: 0,
+    secondarySkill: 0,
     eq: {},
     inv: [],
     stage: 1,

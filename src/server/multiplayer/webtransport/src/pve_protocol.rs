@@ -130,7 +130,7 @@ pub fn command(bytes: &[u8]) -> Result<Command> {
         y: f32::from_le_bytes(bytes[21..25].try_into()?),
     };
     ensure!(
-        (1..=17).contains(&c.kind) && c.x.is_finite() && c.y.is_finite(),
+        (1..=18).contains(&c.kind) && c.x.is_finite() && c.y.is_finite(),
         "invalid command data"
     );
     Ok(c)

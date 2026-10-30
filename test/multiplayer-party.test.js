@@ -43,5 +43,6 @@ test('binary v8 carries private party roster, leader, invitation and command rep
   for(const kind of [12,13,14,15])assert.equal(command.encodeCommand(8,20,{kind,map:2,target:42})[6],kind);
   assert.equal(command.encodeCommand(8,20,{kind:16,map:2,target:42,skill:321,x:65535,y:65535})[6],16);
   assert.equal(command.encodeCommand(8,20,{kind:17,map:2})[6],17);
-  assert.throws(()=>command.encodeCommand(8,20,{kind:18,map:2}),/command/);
+  assert.equal(command.encodeCommand(8,20,{kind:18,map:2,target:3,skill:10})[6],18);
+  assert.throws(()=>command.encodeCommand(8,20,{kind:19,map:2}),/command/);
 });

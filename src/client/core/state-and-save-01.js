@@ -802,18 +802,22 @@ var oD = function () {
   const A = l.P,
     n = _1();
   if (!n.length) return 0.3;
-  const t = hA() && l.manTgt && n.includes(l.manTgt) ? l.manTgt : iD(n);
-  let e = Z9(A, !l.tower && (t.cls === "boss" || t.cls === "elite" || !!t.goldBoss));
+  if(l.secondaryCast&&!n.includes(l.secondaryCast.target))l.secondaryCast=null;
+  const secondary=l.secondaryCast;
+  const t = secondary ? secondary.target : hA() && l.manTgt && n.includes(l.manTgt) ? l.manTgt : iD(n);
+  let e = secondary ? A.actives.find(s=>s.id===secondary.skill) : Z9(A, !l.tower && (t.cls === "boss" || t.cls === "elite" || !!t.goldBoss));
+  if(secondary&&(!e||!ji(e))){l.secondaryCast=null;return .05;}
+  if(secondary&&((l.skCd||{})[e.id]||0)>(l.clock||0))return .05;
   if (!e) return 0.25;
-  e.id === gs && (e = A.basic);
+  e.id === gs && !secondary && (e = A.basic);
   {
     const h = typeof jm == "function" && jm(e, t);
     if (h) return h;
   }
   const a = skillCastDistance(v, t) - t.r / QA;
   {
-    const h = aD(A, t, q0(v, t) - t.r / QA);
-    if (h) return h;
+    const h = secondary ? (e.id === gs ? aD({...A,main:e}, t, q0(v,t)-t.r/QA) : 0) : aD(A, t, q0(v, t) - t.r / QA);
+    if (h) {if(secondary&&l.dash)l.secondaryCast=null;return h;}
   }
   if (a > e.rad + 300 && S3()) Ka(!0, !0);
   else if (a <= e.rad + 60) {
@@ -829,6 +833,7 @@ var oD = function () {
     (l.tgtHitT = l.clock || 0),
     (l.tgtD = 0),
     o4(e),
+    (l.secondaryCast=null),
     typeof Y !== "undefined" && Y.stopAfterCast(),
     e.cd && ((l.skCd = l.skCd || {})[e.id] = (l.clock || 0) + e.cd),
     l.rotNext != null && ((l.rotI = l.rotNext), (l.rotNext = null)));

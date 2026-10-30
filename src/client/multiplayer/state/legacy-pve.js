@@ -209,13 +209,14 @@ var onlineWorld = (() => {
     const previousLevel=o.lvl;
     // Revision-based progression; initial/full commands also include canonical inventory.
     const fields = imported&&!saved.full
-      ? (window.localGameConfig?.progressionFields||['lvl','xp','gold','attrPts','skPts','attr','sk','fac','skL','bkOk','main','mainLock','slots','skillRoute','potStock','potUsed','onlinePotionSpent'])
-      : ['lvl', 'xp', 'gold', 'knb', 'attrPts', 'skPts', 'attr', 'sk', 'eq', 'inv', 'fac', 'sex', 'name', 'skL', 'bkOk', 'sk150Training', 'mats', 'main', 'mainLock', 'slots', 'skillRoute', 'auraOff', 'autoBuff', 'supportAutoOff', 'potStock', 'potUsed', 'onlinePotionSpent', 'uid', 'onlineMounted'];
+      ? (window.localGameConfig?.progressionFields||['lvl','xp','gold','attrPts','skPts','attr','sk','fac','skL','bkOk','main','mainLock','secondarySkill','slots','skillRoute','potStock','potUsed','onlinePotionSpent'])
+      : ['lvl', 'xp', 'gold', 'knb', 'attrPts', 'skPts', 'attr', 'sk', 'eq', 'inv', 'fac', 'sex', 'name', 'skL', 'bkOk', 'sk150Training', 'mats', 'main', 'mainLock', 'secondarySkill', 'slots', 'skillRoute', 'auraOff', 'autoBuff', 'supportAutoOff', 'potStock', 'potUsed', 'onlinePotionSpent', 'uid', 'onlineMounted'];
     for (const field of fields) if (p[field] !== undefined) o[field] = structuredClone(p[field]);
     if(p.onlineMounted!==undefined)l.mounted=!!p.onlineMounted;
     imported = true;
     l.dirty = true;
     D0();
+    if(typeof secondarySkill!=='undefined')secondarySkill.render();
     if(previousLevel!==o.lvl&&typeof Xe==='function')Xe();
     if(o.lvl>previousLevel&&o.autoPts===true){if(typeof Pt==='function')Pt();if(typeof yt==='function')yt();}
   }
@@ -255,6 +256,17 @@ var onlineWorld = (() => {
       const delay = Math.max(0, 100 - (performance.now() - lastMove));
       if (delay) moveTimer = setTimeout(emit, delay);
       else emit();
+    },
+    secondary(actor,skill){
+      if(!client?.online||!active())return;
+      if(T[skill]&&!UA(T[skill])){
+        if(!['buff','aura'].includes(wn(T[skill]))){k('Chiêu bùa hại chưa được mở trong bản online này.');return;}
+        this.support(skill);return;
+      }
+      if(!l.P?.actives?.some(s=>s.id===skill)){k('Chiêu phụ chưa dùng được với trang bị hiện tại.');return;}
+      if(!actor)return;
+      clearTimeout(moveTimer);moveTimer=null;goal=null;motion.cancel();Y.target=null;
+      send(18,{target:actor.id,skill});
     },
     attack(actor, skill) {
       if ((skill ?? mainSkill()) !== (Number(l.P?.main?.id) || 0)) {

@@ -98,17 +98,23 @@ test('main skill and F slots persist independently through rewards, potion chang
   try{
     act({kind:'gm',action:'level150'});act({kind:'join',faction:'shaolin'});act({kind:'gm',action:'learn150'});
     let chosen=act({kind:'mainSkill',skill:1055}).profile;assert.equal(chosen.main,1055);assert.equal(chosen.mainLock,true);
+    const originalSlots=chosen.slots.slice();
+    chosen=act({kind:'secondarySkill',skill:1056}).profile;
+    assert.equal(chosen.secondarySkill,1056);assert.equal(chosen.main,1055);assert.deepEqual(chosen.slots,originalSlots);
     const before=chosen.slots.slice();chosen=act({kind:'skillSlot',index:2,skill:1056}).profile;
     assert.equal(chosen.slots[2],1056);assert.equal(chosen.main,1055,'rotation slots must not replace the primary');
     s.apply({id:'987-1-0',account:'one',slot:0,xp:50,gold:10000});
     act({kind:'potionBuy',potion:'life',tier:1});
     s.apply({id:'987-2-0',account:'one',slot:0,xp:50,gold:1});
     const reloaded=createCharacters(db).read('one',0).profile;
+    assert.equal(reloaded.secondarySkill,1056);
     assert.equal(reloaded.main,1055);assert.equal(reloaded.mainLock,true);assert.equal(reloaded.slots[2],1056);
     assert.equal(act({kind:'mainSkill',skill:1056}).profile.main,1056);
     assert.equal(act({kind:'mainSkill',skill:'basic'}).profile.main,'basic');
     assert.equal(act({kind:'mainSkill',skill:null}).profile.mainLock,false);
     assert.equal(s.read('two',0).profile.main,undefined);
+    assert.throws(()=>act({kind:'secondarySkill',skill:1081}),/đã học/);
+    assert.throws(()=>act({kind:'secondarySkill',skill:'1055'}),/đã học/);
     assert.throws(()=>act({kind:'mainSkill',skill:1081}),/đã học/);
     assert.throws(()=>act({kind:'mainSkill',skill:'1055'}),/đã học/);
     assert.throws(()=>act({kind:'skillSlot',index:4,skill:1055}),/không hợp lệ/);

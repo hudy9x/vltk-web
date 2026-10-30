@@ -83,7 +83,7 @@ export interface Command {
   y?: number;
 }
 export function encodeCommand(version: number, seq: number, c: Command): Uint8Array {
-  if (!Number.isFinite(c.x ?? 0) || !Number.isFinite(c.y ?? 0) || c.kind < 1 || c.kind > 17)
+  if (!Number.isFinite(c.x ?? 0) || !Number.isFinite(c.y ?? 0) || c.kind < 1 || c.kind > 18)
     throw new Error('Invalid command');
   const b = new Uint8Array(25),
     v = new DataView(b.buffer);

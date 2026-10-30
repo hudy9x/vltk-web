@@ -10,7 +10,7 @@ impl Game {
         support::replace_base(a,profile);
         a.profile.potions=potions;
         a.profile_revision=revision;
-        a.cooldowns.retain(|id,_|a.profile.skills.iter().any(|s|s.id==*id));
+        a.cooldowns.retain(|id,_|*id==ATTACK_COOLDOWN||a.profile.skills.iter().any(|s|s.id==*id));
         if !a.profile.skills.iter().any(|s|s.id==a.skill){a.skill=a.profile.skills.first().map_or(0,|s|s.id);a.target=0;}
         self.party_colors();
     }

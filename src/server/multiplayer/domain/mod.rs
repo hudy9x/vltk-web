@@ -8,6 +8,7 @@ pub(crate) mod speed;
 pub mod navigation;
 mod projectiles;
 type EventData = (u32, u8, u32, u32, u16, f32, u8);
+const ATTACK_COOLDOWN: u16 = 65002;
 type Death = (u32, u32, u32);
 mod combat;
 mod status;
@@ -66,6 +67,7 @@ pub struct Actor {
     pub farming: bool,
     pub target: u32,
     pub skill: u16,
+    pub secondary: Option<(u32,u16)>,
     pub path: Vec<(f32, f32)>,
     cooldowns: BTreeMap<u16, f32>,
     dead: f32,
@@ -339,6 +341,7 @@ impl Game {
                 farming: false,
                 target: 0,
                 skill,
+                secondary: None,
                 path: vec![],
                 cooldowns: BTreeMap::new(),
                 dead: 0.0,
@@ -358,6 +361,14 @@ impl Game {
             return Ok(());
         }
         a.seq = c.seq;
+        if c.kind==18 {
+            if c.map!=a.map||a.hp<=0.0||!a.profile.skills.iter().any(|s|s.id==c.skill){return Ok(());}
+            let room=self.rooms.get(&a.map).unwrap();
+            if room.definition.town{return Ok(());}
+            let valid=room.mobs.iter().any(|m|m.id==c.target&&m.hp>0.0)||pvp::can_hit(self,id,c.target);
+            if valid{let a=self.actors.get_mut(&id).unwrap();a.secondary=Some((c.target,c.skill));a.pickup=0;a.path.clear();a.move_goal=None;}
+            return Ok(());
+        }
         if c.kind == 17 { return self.return_to_town(id,c.map); }
         if c.kind == 16 {
             self.confirm_contact(id, &c);
@@ -375,6 +386,7 @@ impl Game {
             if c.map==a.map&&pvp::can_hit(self,id,c.target){
                 let a=self.actors.get_mut(&id).unwrap();
                 if !a.profile.skills.iter().any(|s|s.id==c.skill){return Ok(());}
+                a.secondary=None;
                 a.skill=c.skill;
                 a.target=c.target;a.pickup=0;a.path.clear();a.move_goal=None;
             }
@@ -424,6 +436,7 @@ impl Game {
                 return Ok(());
             }
             let a = self.actors.get_mut(&id).unwrap();
+            a.secondary=None;
             a.map = c.map;
             (a.x, a.y) = room
                 .nav
@@ -439,6 +452,7 @@ impl Game {
         let room = self.rooms.get(&a.map).unwrap();
         match c.kind {
             2 => {
+                a.secondary=None;
                 a.support.lock=0.0; // Mouse movement interrupts the support cast pose.
                 self.pending
                     .retain(|p| p.source != id || p.remaining <= p.skill.travel);
@@ -451,6 +465,7 @@ impl Game {
                 a.farming = false;
             }
             3 | 4 => {
+                if c.kind==3{a.secondary=None;}
                 if a.profile.skills.iter().any(|s| s.id == c.skill) {
                     a.skill = c.skill;
                 }
@@ -464,6 +479,7 @@ impl Game {
                 }
                 a.farming = c.target != 0;
                 if !a.farming {
+                    a.secondary=None;
                     a.target = 0;
                     a.path.clear();
                 }

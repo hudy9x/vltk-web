@@ -568,8 +568,9 @@ var Z8 = function (A) {
     return;
   }
   n && n.remove();
-  const t = o.slots[A],
-    e = nh().sort((u, w) => T[u].req - T[w].req),
+  const secondary = A === 'secondary', label = secondary ? 'Chiêu phụ · Chuột phải' : `F${A + 1}`;
+  const t = secondary ? (canSlotSkill(o.secondarySkill) ? o.secondarySkill : 0) : o.slots[A],
+    e = nh().filter(id => !secondary || typeof gameMultiplayer === 'undefined' || !gameMultiplayer.pve || wn(T[id]) !== 'curse').sort((u, w) => T[u].req - T[w].req),
     a = m("#battle");
   ((n = document.createElement("div")), (n.id = "skPick"), (n.dataset.i = A));
   const i = (u) => {
@@ -586,7 +587,7 @@ var Z8 = function (A) {
   };
   const kind = T[t] && wn(T[t]);
   ((n.innerHTML =
-    `<div class="nm">F${A + 1} · ${t > 0 ? i(t) : "<small>trống</small>"}</div>` +
+    `<div class="nm">${label} · ${t > 0 ? i(t) : "<small>trống</small>"}</div>` +
     (t > 0 ? '<button class="spk spk0" data-ss="-1" title="Bỏ chiêu khỏi ô này">✕</button>' : "") +
     (group(true, "Tấn công") + group(false, "Hỗ trợ") || '<small class="dim">Chưa học chiêu có thể gán</small>') +
     (["buff", "curse"].includes(kind) ? `<label class="skauto"><input type="checkbox" data-support-auto="${t}" ${o.supportAutoOff && o.supportAutoOff[t] ? "" : "checked"}> Tự dùng ${D(T[t].n)}</label><small class="skhint">Theo công tắc bùa lợi / bùa hại trong Võ công. Gán ô không đổi chế độ tự dùng.</small>` : "")),
@@ -599,7 +600,7 @@ var Z8 = function (A) {
   };
   const r = $8(),
     c = a.getBoundingClientRect(),
-    d = m(`#pad .sk[data-i="${A}"]`).getBoundingClientRect(),
+    d = m(secondary ? "#bSecondary" : `#pad .sk[data-i="${A}"]`).getBoundingClientRect(),
     f = m("#pad").getBoundingClientRect(),
     h = n.offsetWidth,
     g = E((d.left + d.width / 2 - c.left) / r - h / 2, 4, c.width / r - h - 4);
@@ -608,10 +609,10 @@ var Z8 = function (A) {
     n.querySelectorAll("[data-ss]").forEach((u) => {
       ((u.onpointerenter = () => {
         n.querySelector(".nm").innerHTML =
-          `F${A + 1} · ${+u.dataset.ss == -1 ? "<b>Bỏ trống ô này</b>" : i(+u.dataset.ss)}`;
+          `${label} · ${+u.dataset.ss == -1 ? "<b>Bỏ trống ô này</b>" : i(+u.dataset.ss)}`;
       }),
         (u.onclick = (w) => {
-          (w.stopPropagation(), th(A, +u.dataset.ss), n.remove(), PA === "skill" && V());
+          (w.stopPropagation(), secondary ? secondarySkill.select(+u.dataset.ss) : th(A, +u.dataset.ss), n.remove(), PA === "skill" && V());
         }));
     }),
     setTimeout(
@@ -770,6 +771,7 @@ var qA = function () {
     ((n.querySelector("i").style.backgroundImage = i ? `url('${i}')` : ""),
       (n.title = "Chiêu chính: " + (a ? "Đánh thường" : A && T[A.id] ? T[A.id].n : "—")));
   }
+  if(typeof secondarySkill!=="undefined")secondarySkill.render();
   const t = m("#ctrlBtn");
   ((t.innerHTML = 'Auto: <i class="ck"></i>'),
     t.classList.toggle("on", !hA()),

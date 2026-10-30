@@ -5,7 +5,12 @@ var Rv = function () {
       i = $8();
     return [(e.clientX - a.left) / i, (e.clientY - a.top) / i];
   };
+  lA.addEventListener("contextmenu", e => e.preventDefault());
   (lA.addEventListener("pointerdown", (e) => {
+    if(e.button===2){
+      e.preventDefault();e.stopPropagation();
+      const [x,y]=A(e);secondarySkill.use(eh(x+B0.x,y+B0.y));return;
+    }
     if (typeof gameMultiplayer !== "undefined" && gameMultiplayer.active &&
         (e.pointerType !== "mouse" || e.button !== 0)) return;
     if (typeof gameMultiplayer!=="undefined"&&gameMultiplayer.pve) {
@@ -173,6 +178,7 @@ var Rv = function () {
       }));
   }
   (t(m("#bTp"), () => (l.town ? en() : nc())),
+    (m("#bSecondary").onclick = () => Z8("secondary")),
     (m("#bMain").onclick = () => typeof fA == "function" && fA("skill")),
     (m("#ctrlBtn").onclick = () => Wa(hA() ? "auto" : "manual")),
     (m("#inBtn").onclick = () => {
@@ -250,6 +256,7 @@ var Y = {
     k("Tấn công: " + target.n);
   },
   releaseTarget() {
+    l.secondaryCast=null;
     Y.pendingSupport = 0;
     l.manTgt = null;
     l.moveTo = null;

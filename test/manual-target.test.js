@@ -203,3 +203,17 @@ test('cold intensity slows movement by phase while attack cooldown counts real s
  s.l.atkT=2;s.Td(.2);assert.equal(s.v.x,45);assert.equal(s.l.atkT,1.8);
  s.l.slowT=0;s.Ah(.2);s.Qv=()=>[1,0];s.Ah(.2);assert.equal(s.v.x,75,'normal movement after expiry');
 });
+
+test('right mouse casts the secondary once in native combat without changing the primary or rotation slots',()=>{
+  const s=game(),target=enemy(s),secondary={...s.skill,id:11,cost:10};
+  Object.assign(s,{T:{11:{id:11,n:'Secondary',attack:true}},canSlotSkill:id=>id===11,UA:skill=>!!skill.attack,ji:skill=>s.l.mana>=(skill.cost||0)});
+  s.o.main=10;s.o.mainLock=true;s.o.secondarySkill=11;s.o.slots=[10,11,-1,-1];
+  s.l.P.actives=[secondary];
+  s.o4=skill=>{s.l.mana-=skill.cost||0;};
+  const casts=[];s.queueSkillContact=(_actor,_target,skill)=>casts.push(skill.id);
+  vm.runInContext(fs.readFileSync(path.join(ROOT,'src/client/ui/secondary-skill-01.js'),'utf8'),s);
+  s.handlers.pointerdown({clientX:150,clientY:20,pointerId:1,pointerType:'mouse',button:2,preventDefault(){},stopPropagation(){}});
+  assert.equal(s.l.secondaryCast.target,target);assert.equal(s.Y.active,false);
+  s.oD();assert.deepEqual(casts,[11]);assert.equal(s.l.mana,90);assert.equal(s.l.secondaryCast,null);
+  assert.equal(s.o.main,10);assert.equal(s.o.mainLock,true);assert.deepEqual(s.o.slots,[10,11,-1,-1]);
+});

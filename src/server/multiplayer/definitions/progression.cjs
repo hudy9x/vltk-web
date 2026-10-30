@@ -12,6 +12,10 @@ exports.apply=function(input,action,development=false){
         if(action.skill!=='basic'&&(!integer(action.skill,1,65535)||!s.canSlotSkill(action.skill)||!s.UA(s.T[action.skill])))fail('Chiêu chính phải là chiêu tấn công đã học.');
         p.main=action.skill;p.mainLock=true;break;
       }
+      case 'secondarySkill':{
+        if(action.skill!==null&&(!integer(action.skill,1,65535)||!s.canSlotSkill(action.skill)))fail('Chiêu phụ phải là chiêu đã học có thể sử dụng.');
+        p.secondarySkill=action.skill??0;break;
+      }
       case 'skillSlot':{
         if(!integer(action.index,0,3)||(action.skill!==-1&&(!integer(action.skill,1,65535)||!s.canSlotSkill(action.skill))))fail('Ô kỹ năng không hợp lệ.');
         const slots=[0,1,2,3].map(i=>p.slots?.[i]??-1),previous=slots.indexOf(action.skill);
