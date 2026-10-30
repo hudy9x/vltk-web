@@ -368,6 +368,10 @@ var a6 = function () {
   const n = ya();
   for (const e in ba().buff)
     ba().buff[e] > n && T[e] && o.sk[e] && A.push({ ic: T[e].ic, t: ba().buff[e] - n, n: T[e].n });
+  if(typeof OnlineSupport!=='undefined')for(const [id,level] of OnlineSupport.shared())
+    if(T[id])A.push({ic:T[id].ic,t:-1,n:T[id].n+" · Đồng minh · cấp "+level});
+  if(typeof OnlineSupport!=='undefined')for(const c of OnlineSupport.harmful())
+    if(T[c.skill])A.push({ic:T[c.skill].ic,t:c.remaining,n:'Bùa hại: '+T[c.skill].n});
   const t = Date.now();
   for (const e in o.buf || {}) {
     const a = o.buf[e];

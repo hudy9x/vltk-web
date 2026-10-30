@@ -7,11 +7,11 @@ const rules = require('../../../shared/multiplayer/rules.json');
 const { goldDropRange } = require('../../../client/gameplay/gold-loot.ts');
 const { linearProjectile } = require('./projectiles.cjs');
 const characterCache=new Map();
-exports.character = function (profile, activeBuffs = [], includeSupport = true, activeAuras = null) {
+exports.character = function (profile, activeBuffs = [], includeSupport = true, activeAuras = null, allies = []) {
   let cacheKey;
   if(includeSupport){
     const {xp,gold,potStock,potUsed,onlinePotionSpent,attrPts,skPts,...combatProfile}=profile;
-    cacheKey=JSON.stringify(combatProfile);
+    cacheKey=JSON.stringify([combatProfile,allies]);
     if(characterCache.has(cacheKey)){
       const result=structuredClone(characterCache.get(cacheKey));
       const potions=require('./consumables.cjs').potions(profile,native.potions());
@@ -20,8 +20,9 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
       return result;
     }
   }
-  const { stats, skills, moveSpeed, supports, attackTimings, timing } = native.buildCharacter(profile,activeBuffs,activeAuras);
+  const { stats, skills, moveSpeed, supports, attackTimings, timing, allyScaling } = native.buildCharacter(profile,activeBuffs,activeAuras,allies);
   const result = {
+    allyScaling,
     level: profile.lvl,
     alignment:native.alignment(profile.fac),
     series:stats.series,
@@ -37,7 +38,7 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
     defense: stats.def,
     res: elements.map((k) => stats.res[k] || 0),
     skills: skills.map((s,index) => ({
-      id: s.id,
+      id: s.id,...(s.curse?{curse:s.curse}:{}),
       level:s.L||1,missiles:Math.max(1,Math.min(16,s.nMis||1)),melee:s.melee!==false,phys:s.phys!==false,
       pve: {
         ...native.damageRules(),series:s.series??stats.series,
@@ -55,7 +56,7 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
       radius: s.geo?.r || 0,
       shape: s.geo?.k || 'single',
       targets: Math.max(1, Math.min(32, s.targets || 1)),
-      projectile: linearProjectile(s),
+      projectile: s.curse?null:linearProjectile(s),
       parts: elements.map((k) => s.parts[k] || 0),
       crit: Math.max(0, Math.min(100, s.crit || 0)),
       stun: Math.max(0, Math.min(100, (s.stun || 0) + (stats.stunAdd || 0))),
@@ -66,11 +67,11 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
     })),
   };
   if(includeSupport){
-    const persistent=supports.filter(s=>s.aura||s.duration>=5);
+    const persistent=supports.filter(s=>!s.curse&&(s.aura||s.duration>=5));
     if(persistent.length>8)throw new Error('Too many simultaneous self buffs');
     result.support={skills:supports,variants:Array.from({length:1<<persistent.length},(_,mask)=>{
       const active=persistent.filter((_,i)=>mask&(1<<i)).map(s=>s.id);
-      return {active:active.slice().sort((a,b)=>a-b),profile:exports.character(profile,active.filter(id=>!supports.find(s=>s.id===id).aura),false,active.filter(id=>supports.find(s=>s.id===id).aura))};
+      return {active:active.slice().sort((a,b)=>a-b),profile:exports.character(profile,active.filter(id=>!supports.find(s=>s.id===id).aura),false,active.filter(id=>supports.find(s=>s.id===id).aura),allies)};
     })};
   }
   if(includeSupport){if(characterCache.size>=32)characterCache.delete(characterCache.keys().next().value);characterCache.set(cacheKey,structuredClone(result));}

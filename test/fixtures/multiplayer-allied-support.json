@@ -1,0 +1,5676 @@
+[
+  {
+    "name": "cuiyan-blade",
+    "allies": [
+      [
+        86,
+        20
+      ],
+      [
+        89,
+        20
+      ],
+      [
+        92,
+        20
+      ],
+      [
+        282,
+        20
+      ],
+      [
+        332,
+        20
+      ],
+      [
+        16,
+        20
+      ]
+    ],
+    "expected": {
+      "allyScaling": {
+        "lifePercent": 158,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.05999999999999872,
+          0.06000000000000938,
+          0.05999999999999517,
+          0.09000000000000341,
+          0.16800000000000637
+        ]
+      },
+      "level": 150,
+      "alignment": 1,
+      "series": 2,
+      "protection": {
+        "rangedReflect": 40,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 30,
+        "stunReduction": 30,
+        "poisonReduction": 30,
+        "manaShield": 0,
+        "reflect": 0,
+        "reflectPercent": 40,
+        "absorption": 0,
+        "damageShield": 0,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 1411.26,
+      "mp": 498,
+      "regen": 73,
+      "manaRegen": 69,
+      "speed": 345,
+      "timing": {
+        "runPercent": 221,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 806.25,
+      "res": [
+        60,
+        60,
+        60,
+        75,
+        35
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 75,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            27,
+            0,
+            190,
+            0,
+            0
+          ],
+          "crit": 66,
+          "stun": 0,
+          "cold": 4.555555555555555,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 99,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 10,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 10,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 384,
+          "radius": 0,
+          "shape": "line",
+          "targets": 1,
+          "projectile": {
+            "range": 311.04,
+            "width": 16,
+            "speed": 432,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            32.099999999999994,
+            0,
+            305,
+            0,
+            0
+          ],
+          "crit": 66,
+          "stun": 0,
+          "cold": 4.555555555555555,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.768
+        },
+        {
+          "id": 105,
+          "level": 20,
+          "missiles": 4,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 30,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 30,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 300,
+          "radius": 48,
+          "shape": "spot",
+          "targets": 3,
+          "projectile": null,
+          "parts": [
+            35.400000000000006,
+            0,
+            365,
+            0,
+            0
+          ],
+          "crit": 66,
+          "stun": 0,
+          "cold": 4.555555555555555,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.6
+        },
+        {
+          "id": 108,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 50,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 40,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 480,
+          "radius": 48,
+          "shape": "spot",
+          "targets": 2,
+          "projectile": null,
+          "parts": [
+            64.89,
+            0,
+            789,
+            0,
+            0
+          ],
+          "crit": 66,
+          "stun": 0,
+          "cold": 4.555555555555555,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.96
+        },
+        {
+          "id": 336,
+          "level": 20,
+          "missiles": 5,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 60,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 512,
+          "radius": 0,
+          "shape": "fan",
+          "targets": 3,
+          "projectile": {
+            "range": 576,
+            "width": 16,
+            "speed": 432,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            97.43999999999998,
+            0,
+            1036,
+            0,
+            0
+          ],
+          "crit": 66,
+          "stun": 0,
+          "cold": 4.555555555555555,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 1.024
+        }
+      ]
+    }
+  },
+  {
+    "name": "cuiyan-dual",
+    "allies": [
+      [
+        86,
+        20
+      ],
+      [
+        89,
+        20
+      ],
+      [
+        92,
+        20
+      ],
+      [
+        282,
+        20
+      ],
+      [
+        332,
+        20
+      ],
+      [
+        16,
+        20
+      ]
+    ],
+    "expected": {
+      "allyScaling": {
+        "lifePercent": 158,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.0600000000000005,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "level": 150,
+      "alignment": 1,
+      "series": 2,
+      "protection": {
+        "rangedReflect": 40,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 30,
+        "stunReduction": 30,
+        "poisonReduction": 30,
+        "manaShield": 0,
+        "reflect": 0,
+        "reflectPercent": 40,
+        "absorption": 0,
+        "damageShield": 0,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 1411.26,
+      "mp": 498,
+      "regen": 73,
+      "manaRegen": 69,
+      "speed": 345,
+      "timing": {
+        "runPercent": 221,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 806.25,
+      "res": [
+        60,
+        60,
+        60,
+        75,
+        35
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 75,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            14.100000000000001,
+            0,
+            190,
+            0,
+            0
+          ],
+          "crit": 31,
+          "stun": 0,
+          "cold": 4.555555555555555,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 102,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 10,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 20,
+          "cooldown": 0.5714285714285714,
+          "attackPercent": 148.5,
+          "range": 384,
+          "radius": 0,
+          "shape": "line",
+          "targets": 3,
+          "projectile": {
+            "range": 336.96000000000004,
+            "width": 16,
+            "speed": 432,
+            "ignoreTerrain": false,
+            "pierce": true,
+            "area": 38.88,
+            "homing": false
+          },
+          "parts": [
+            495,
+            0,
+            442,
+            0,
+            0
+          ],
+          "crit": 31,
+          "stun": 0,
+          "cold": 4.555555555555555,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.768
+        },
+        {
+          "id": 111,
+          "level": 20,
+          "missiles": 1,
+          "melee": true,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 50,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 65,
+          "cooldown": 0.5714285714285714,
+          "attackPercent": 148.5,
+          "range": 72,
+          "radius": 192,
+          "shape": "self",
+          "targets": 3,
+          "projectile": null,
+          "parts": [
+            1207.5,
+            0,
+            2451.75,
+            0,
+            0
+          ],
+          "crit": 31,
+          "stun": 0,
+          "cold": 4.555555555555555,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 113,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 30,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 50,
+          "cooldown": 0.5714285714285714,
+          "attackPercent": 148.5,
+          "range": 416,
+          "radius": 72,
+          "shape": "spot",
+          "targets": 3,
+          "projectile": null,
+          "parts": [
+            190,
+            0,
+            1117,
+            0,
+            0
+          ],
+          "crit": 31,
+          "stun": 0,
+          "cold": 4.555555555555555,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.832
+        },
+        {
+          "id": 337,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 60,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 75,
+          "cooldown": 0.5714285714285714,
+          "attackPercent": 148.5,
+          "range": 512,
+          "radius": 0,
+          "shape": "line",
+          "targets": 3,
+          "projectile": {
+            "range": 414.72,
+            "width": 16,
+            "speed": 576,
+            "ignoreTerrain": false,
+            "pierce": true,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            3562,
+            0,
+            6649.5,
+            0,
+            0
+          ],
+          "crit": 31,
+          "stun": 0,
+          "cold": 4.555555555555555,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 1.024
+        }
+      ]
+    }
+  },
+  {
+    "name": "wudang",
+    "allies": [
+      [
+        86,
+        20
+      ],
+      [
+        89,
+        20
+      ],
+      [
+        92,
+        20
+      ],
+      [
+        282,
+        20
+      ],
+      [
+        332,
+        20
+      ],
+      [
+        16,
+        20
+      ]
+    ],
+    "expected": {
+      "allyScaling": {
+        "lifePercent": 125,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.05000000000000071,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "level": 150,
+      "alignment": 0,
+      "series": 4,
+      "protection": {
+        "rangedReflect": 20,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 30,
+        "stunReduction": 30,
+        "poisonReduction": 30,
+        "manaShield": 74,
+        "reflect": 0,
+        "reflectPercent": 20,
+        "absorption": 0,
+        "damageShield": 0,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 506.25,
+      "mp": 2747.2,
+      "regen": 73,
+      "manaRegen": 141.3,
+      "speed": 345,
+      "timing": {
+        "runPercent": 225.99999999999997,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 1603.75,
+      "res": [
+        40,
+        15,
+        65,
+        40,
+        40
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 4,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.5714285714285714,
+          "attackPercent": 149,
+          "range": 75,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            11.75,
+            0,
+            0,
+            0,
+            300
+          ],
+          "crit": 18,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 153,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 4,
+            "seriesResistance": 10,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 20,
+          "cooldown": 0.5714285714285714,
+          "attackPercent": 134.1,
+          "range": 384,
+          "radius": 0,
+          "shape": "line",
+          "targets": 1,
+          "projectile": {
+            "range": 311.04,
+            "width": 16,
+            "speed": 432,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            1650.1499999999999
+          ],
+          "crit": 18,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.768
+        },
+        {
+          "id": 164,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 4,
+            "seriesResistance": 30,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 70,
+          "cooldown": 0.5714285714285714,
+          "attackPercent": 134.1,
+          "range": 416,
+          "radius": 96,
+          "shape": "spot",
+          "targets": 3,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            1812.6
+          ],
+          "crit": 18,
+          "stun": 10,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.832
+        },
+        {
+          "id": 165,
+          "level": 20,
+          "missiles": 8,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 4,
+            "seriesResistance": 50,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 130,
+          "cooldown": 0.5714285714285714,
+          "attackPercent": 134.1,
+          "range": 512,
+          "radius": 0,
+          "shape": "fan",
+          "targets": 3,
+          "projectile": {
+            "range": 414.72,
+            "width": 16,
+            "speed": 576,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            4055.2649999999994
+          ],
+          "crit": 18,
+          "stun": 20,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 1.024
+        },
+        {
+          "id": 365,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 4,
+            "seriesResistance": 60,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 150,
+          "cooldown": 0.5714285714285714,
+          "attackPercent": 134.1,
+          "range": 512,
+          "radius": 96,
+          "shape": "spot",
+          "targets": 3,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            8792.478
+          ],
+          "crit": 18,
+          "stun": 20,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 1.024
+        }
+      ]
+    }
+  },
+  {
+    "name": "kunlun",
+    "allies": [
+      [
+        86,
+        20
+      ],
+      [
+        89,
+        20
+      ],
+      [
+        92,
+        20
+      ],
+      [
+        282,
+        20
+      ],
+      [
+        332,
+        20
+      ],
+      [
+        16,
+        20
+      ]
+    ],
+    "expected": {
+      "allyScaling": {
+        "lifePercent": 145,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.04999999999999716,
+          0.04999999999999716,
+          0.06749999999999545,
+          0.11000000000001364
+        ]
+      },
+      "level": 150,
+      "alignment": 1,
+      "series": 4,
+      "protection": {
+        "rangedReflect": 20,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 30,
+        "stunReduction": 30,
+        "poisonReduction": 30,
+        "manaShield": 0,
+        "reflect": 0,
+        "reflectPercent": 20,
+        "absorption": 0,
+        "damageShield": 550,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 551.25,
+      "mp": 610,
+      "regen": 73,
+      "manaRegen": 69.3,
+      "speed": 345,
+      "timing": {
+        "runPercent": 225.99999999999997,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 803.75,
+      "res": [
+        68,
+        15,
+        75,
+        68,
+        72
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 4,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 75,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            35,
+            0,
+            0,
+            0,
+            146
+          ],
+          "crit": 60,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 169,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 4,
+            "seriesResistance": 10,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 15,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 384,
+          "radius": 0,
+          "shape": "line",
+          "targets": 1,
+          "projectile": {
+            "range": 311.04,
+            "width": 16,
+            "speed": 432,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            38.75,
+            0,
+            0,
+            0,
+            326
+          ],
+          "crit": 60,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.768
+        },
+        {
+          "id": 176,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 4,
+            "seriesResistance": 50,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 25,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 512,
+          "radius": 0,
+          "shape": "line",
+          "targets": 3,
+          "projectile": {
+            "range": 878.85,
+            "width": 16,
+            "speed": 576,
+            "ignoreTerrain": false,
+            "pierce": true,
+            "area": 38.88,
+            "homing": false
+          },
+          "parts": [
+            73.305,
+            0,
+            0,
+            0,
+            915.3000000000001
+          ],
+          "crit": 60,
+          "stun": 15,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 1.024
+        },
+        {
+          "id": 372,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 4,
+            "seriesResistance": 60,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 45,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 512,
+          "radius": 0,
+          "shape": "line",
+          "targets": 3,
+          "projectile": {
+            "range": 878.85,
+            "width": 16,
+            "speed": 576,
+            "ignoreTerrain": false,
+            "pierce": true,
+            "area": 77.76,
+            "homing": false
+          },
+          "parts": [
+            107.80000000000001,
+            0,
+            0,
+            0,
+            1801.8000000000002
+          ],
+          "crit": 60,
+          "stun": 25,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 1.024
+        }
+      ]
+    }
+  },
+  {
+    "name": "gaibang",
+    "allies": [
+      [
+        86,
+        20
+      ],
+      [
+        89,
+        20
+      ],
+      [
+        92,
+        20
+      ],
+      [
+        282,
+        20
+      ],
+      [
+        332,
+        20
+      ],
+      [
+        16,
+        20
+      ]
+    ],
+    "expected": {
+      "allyScaling": {
+        "lifePercent": 125,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.07000000000000739,
+          0.07000000000000028,
+          0.12600000000000477,
+          0.21000000000000796
+        ]
+      },
+      "level": 150,
+      "alignment": 0,
+      "series": 3,
+      "protection": {
+        "rangedReflect": 66,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 30,
+        "stunReduction": 30,
+        "poisonReduction": 30,
+        "manaShield": 0,
+        "reflect": 0,
+        "reflectPercent": 66,
+        "absorption": 0,
+        "damageShield": 0,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 1485,
+      "mp": 190,
+      "regen": 73,
+      "manaRegen": 68.9,
+      "speed": 345,
+      "timing": {
+        "runPercent": 232.00000000000003,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 1605,
+      "res": [
+        75,
+        60,
+        35,
+        60,
+        60
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 3,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 100,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            49.699999999999996,
+            0,
+            0,
+            118,
+            0
+          ],
+          "crit": 75,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 119,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 3,
+            "seriesResistance": 10,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 10,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 240,
+          "radius": 0,
+          "shape": "line",
+          "targets": 1,
+          "projectile": {
+            "range": 384,
+            "width": 16,
+            "speed": 432,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            53.550000000000004,
+            0,
+            0,
+            243,
+            0
+          ],
+          "crit": 75,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.48
+        },
+        {
+          "id": 125,
+          "level": 20,
+          "missiles": 16,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 3,
+            "seriesResistance": 50,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 48,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 512,
+          "radius": 0,
+          "shape": "ring",
+          "targets": 3,
+          "projectile": {
+            "range": 414.72,
+            "width": 16,
+            "speed": 576,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            112.01400000000001,
+            0,
+            0,
+            914.4,
+            0
+          ],
+          "crit": 75,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 1.024
+        },
+        {
+          "id": 359,
+          "level": 20,
+          "missiles": 3,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 3,
+            "seriesResistance": 60,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 50,
+          "cooldown": 0.5,
+          "attackPercent": 165,
+          "range": 512,
+          "radius": 0,
+          "shape": "wall",
+          "targets": 3,
+          "projectile": {
+            "range": 920,
+            "width": 16,
+            "speed": 414,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": true
+          },
+          "parts": [
+            186.9,
+            0,
+            0,
+            1429.5,
+            0
+          ],
+          "crit": 75,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 1.024
+        }
+      ]
+    }
+  },
+  {
+    "name": "wudu",
+    "allies": [
+      [
+        86,
+        20
+      ],
+      [
+        89,
+        20
+      ],
+      [
+        92,
+        20
+      ],
+      [
+        282,
+        20
+      ],
+      [
+        332,
+        20
+      ],
+      [
+        16,
+        20
+      ]
+    ],
+    "expected": {
+      "allyScaling": {
+        "lifePercent": 125,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.05000000000000071,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "level": 150,
+      "alignment": 2,
+      "series": 1,
+      "protection": {
+        "rangedReflect": 20,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 30,
+        "stunReduction": 30,
+        "poisonReduction": 30,
+        "manaShield": 0,
+        "reflect": 0,
+        "reflectPercent": 20,
+        "absorption": 0,
+        "damageShield": 0,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 1237.5,
+      "mp": 375,
+      "regen": 73,
+      "manaRegen": 69,
+      "speed": 258.75,
+      "timing": {
+        "runPercent": 166,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 808.75,
+      "res": [
+        25,
+        40,
+        40,
+        40,
+        65
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.8,
+          "attackPercent": 100,
+          "range": 75,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            11.75,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 63,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 10,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 10,
+          "cooldown": 1,
+          "attackPercent": 90,
+          "range": 384,
+          "radius": 0,
+          "shape": "line",
+          "targets": 1,
+          "projectile": {
+            "range": 311.04,
+            "width": 16,
+            "speed": 432,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            0,
+            480,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 3.3333333333333335,
+          "travel": 0.768
+        },
+        {
+          "id": 64,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "coldres_p": -49
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 67,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "lightingres_p": -49
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 70,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "fireres_p": -49
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 72,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "poisonres_p": -49
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 73,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "poisontimereduce_p": -300
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 40,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 356,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "physicsres_p": -49
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 390,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "allres_p": -40
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 120,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        }
+      ]
+    }
+  },
+  {
+    "name": "shaolin",
+    "allies": [
+      [
+        86,
+        20
+      ],
+      [
+        89,
+        20
+      ],
+      [
+        92,
+        20
+      ],
+      [
+        282,
+        20
+      ],
+      [
+        332,
+        20
+      ]
+    ],
+    "expected": {
+      "allyScaling": {
+        "lifePercent": 178,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.1799999999999926,
+          0.1799999999999926,
+          0.4499999999999318,
+          0,
+          0.5039999999999054
+        ]
+      },
+      "level": 150,
+      "alignment": 0,
+      "series": 0,
+      "protection": {
+        "rangedReflect": 40,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 30,
+        "stunReduction": 30,
+        "poisonReduction": 30,
+        "manaShield": 0,
+        "reflect": 0,
+        "reflectPercent": 40,
+        "absorption": 0,
+        "damageShield": 0,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 2224,
+      "mp": 165,
+      "regen": 73,
+      "manaRegen": 68.8,
+      "speed": 258.75,
+      "timing": {
+        "runPercent": 166,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 1056.25,
+      "res": [
+        60,
+        75,
+        60,
+        35,
+        60
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 0,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.5,
+          "attackPercent": 154,
+          "range": 100,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            107.64000000000001,
+            0,
+            144,
+            0,
+            0
+          ],
+          "crit": 56,
+          "stun": 0,
+          "cold": 1.5,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 10,
+          "level": 20,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 0,
+            "seriesResistance": 10,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 6,
+          "cooldown": 0.5,
+          "attackPercent": 154,
+          "range": 54,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": {
+            "range": 72,
+            "width": 16,
+            "speed": 324,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            117.54,
+            0,
+            144,
+            0,
+            0
+          ],
+          "crit": 56,
+          "stun": 0,
+          "cold": 1.5,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 11,
+          "level": 20,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 0,
+            "seriesResistance": 50,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 8,
+          "cooldown": 0.5,
+          "attackPercent": 154,
+          "range": 96,
+          "radius": 96,
+          "shape": "self",
+          "targets": 3,
+          "projectile": null,
+          "parts": [
+            456.75000000000006,
+            0,
+            500,
+            0,
+            0
+          ],
+          "crit": 86,
+          "stun": 0,
+          "cold": 1.5,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 20,
+          "level": 20,
+          "missiles": 1,
+          "melee": true,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 0,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 3,
+          "attackPercent": 90,
+          "range": 90,
+          "radius": 144,
+          "shape": "self",
+          "targets": 3,
+          "projectile": null,
+          "parts": [
+            150,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 56,
+          "stun": 70,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 319,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 0,
+            "seriesResistance": 60,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 20,
+          "cooldown": 0.5,
+          "attackPercent": 154,
+          "range": 128,
+          "radius": 144,
+          "shape": "self",
+          "targets": 3,
+          "projectile": null,
+          "parts": [
+            477.79200000000003,
+            0,
+            683.1999999999999,
+            0,
+            0
+          ],
+          "crit": 86,
+          "stun": 0,
+          "cold": 1.5,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.256
+        }
+      ]
+    }
+  },
+  {
+    "name": "emei",
+    "allies": [
+      [
+        16,
+        20
+      ]
+    ],
+    "expected": {
+      "allyScaling": {
+        "lifePercent": 125,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.0600000000000005
+        ]
+      },
+      "level": 150,
+      "alignment": 0,
+      "series": 2,
+      "protection": {
+        "rangedReflect": 20,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 30,
+        "stunReduction": 30,
+        "poisonReduction": 30,
+        "manaShield": 0,
+        "reflect": 0,
+        "reflectPercent": 20,
+        "absorption": 0,
+        "damageShield": 0,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 1230.75,
+      "mp": 498,
+      "regen": 73,
+      "manaRegen": 69,
+      "speed": 258.75,
+      "timing": {
+        "runPercent": 166,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 806.25,
+      "res": [
+        40,
+        40,
+        40,
+        65,
+        15
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 2,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.5714285714285714,
+          "attackPercent": 146,
+          "range": 75,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            14.100000000000001,
+            0,
+            230,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 3,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        }
+      ]
+    }
+  },
+  {
+    "name": "tianwang",
+    "allies": [
+      [
+        86,
+        20
+      ],
+      [
+        89,
+        20
+      ],
+      [
+        92,
+        20
+      ],
+      [
+        282,
+        20
+      ],
+      [
+        332,
+        20
+      ],
+      [
+        16,
+        20
+      ]
+    ],
+    "expected": {
+      "allyScaling": {
+        "lifePercent": 253,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.0799999999999983,
+          0.0799999999999983
+        ]
+      },
+      "level": 150,
+      "alignment": 1,
+      "series": 0,
+      "protection": {
+        "rangedReflect": 20,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 30,
+        "stunReduction": 30,
+        "poisonReduction": 30,
+        "manaShield": 0,
+        "reflect": 0,
+        "reflectPercent": 20,
+        "absorption": 0,
+        "damageShield": 0,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 2824,
+      "mp": 165,
+      "regen": 73,
+      "manaRegen": 68.8,
+      "speed": 258.75,
+      "timing": {
+        "runPercent": 186,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 856.25,
+      "res": [
+        75,
+        75,
+        75,
+        0,
+        40
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 0,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              10,
+              10,
+              10,
+              10,
+              10
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.8,
+          "attackPercent": 100,
+          "range": 75,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            18.880000000000003,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 31,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 40,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 0,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              10,
+              10,
+              10,
+              10,
+              10
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 20,
+          "cooldown": 1.5,
+          "attackPercent": 100,
+          "range": 960,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": {
+            "range": 450,
+            "width": 16,
+            "speed": 540,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": true
+          },
+          "parts": [
+            36.08,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 100,
+          "stun": 35,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 1.5
+        }
+      ]
+    }
+  },
+  {
+    "name": "tianren",
+    "allies": [
+      [
+        86,
+        20
+      ],
+      [
+        89,
+        20
+      ],
+      [
+        92,
+        20
+      ],
+      [
+        282,
+        20
+      ],
+      [
+        332,
+        20
+      ],
+      [
+        16,
+        20
+      ]
+    ],
+    "expected": {
+      "allyScaling": {
+        "lifePercent": 125,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.07000000000000384
+        ]
+      },
+      "level": 150,
+      "alignment": 2,
+      "series": 3,
+      "protection": {
+        "rangedReflect": 20,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 30,
+        "stunReduction": 30,
+        "poisonReduction": 30,
+        "manaShield": 0,
+        "reflect": 0,
+        "reflectPercent": 20,
+        "absorption": 0,
+        "damageShield": 0,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 1485,
+      "mp": 190,
+      "regen": 73,
+      "manaRegen": 68.9,
+      "speed": 258.75,
+      "timing": {
+        "runPercent": 166,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 1387,
+      "res": [
+        55,
+        40,
+        15,
+        40,
+        40
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 3,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.5,
+          "attackPercent": 175,
+          "range": 75,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            16.45,
+            0,
+            0,
+            213,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        }
+      ]
+    }
+  }
+]

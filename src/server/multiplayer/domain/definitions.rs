@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Skill {
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub curse:Option<Curse>,
     #[serde(default)]
     pub leech: f32,
     #[serde(default)]
@@ -70,6 +73,8 @@ fn default_pierce() -> bool { true }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub ally_scaling: Option<AllyScaling>,
     #[serde(default)]
     pub timing: Option<super::speed::Timing>,
     #[serde(default = "neutral_alignment")]
@@ -210,6 +215,10 @@ pub struct Protection {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SupportSkill {
+    #[serde(default,skip_serializing_if="std::ops::Not::not")]
+    pub curse:bool,
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub shared: Option<BTreeMap<String,f32>>,
     pub id: u16,
     pub level: u16,
     pub aura: bool,
@@ -234,3 +243,16 @@ pub struct SupportCatalog {
 fn neutral_alignment() -> u8 {
     3
 }
+
+#[derive(Clone,Debug,Deserialize,Serialize)]
+#[serde(rename_all="camelCase")]
+pub struct AllyScaling {
+    pub life_percent:f32,
+    pub regen_life:f32,
+    pub defense:f32,
+    pub res_max:[f32;5],
+    pub physical:Vec<f32>,
+}
+
+#[derive(Clone,Debug,Deserialize,Serialize)]
+pub struct Curse {pub duration:f32,pub effects:BTreeMap<String,f32>}

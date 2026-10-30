@@ -179,7 +179,7 @@ pub(super) fn hit(
         let multiplier = reduction(protection.poison_reduction);
         let duration = skill.poison * multiplier;
         if duration > 0.0 {
-            let pool = defender.pvp.poison_damage * defender.pvp.poison + parts[1] * multiplier;
+            let pool = defender.pvp.poison_damage * defender.pvp.poison + parts[1] * multiplier * curses::poison_multiplier(&defender.support.curses);
             defender.pvp.poison = defender.pvp.poison.max(duration);
             defender.pvp.poison_damage = pool / defender.pvp.poison;
             defender.pvp.poison_owner = source;

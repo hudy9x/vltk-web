@@ -1,6 +1,8 @@
 /** PvE wire records contain IDs and runtime state; never textures or computed damage from a client. */
-export interface SupportState {skill:number;remaining:number;cooldown:number;active:boolean;aura:boolean}
+export interface SupportState {shared?:boolean;level?:number;skill:number;remaining:number;cooldown:number;active:boolean;aura:boolean}
+export interface CurseState {skill:number;level:number;remaining:number}
 export interface ActorState {
+  curses?:CurseState[];
   supports?:SupportState[];
   alignment?:number;pk?:boolean;life?:number;coldPower?:number;hurt?:number;poison?:number;
   id: number;
@@ -15,6 +17,7 @@ export interface ActorState {
   farming: boolean;
 }
 export interface MonsterState {
+  curses?:CurseState[];
   life: number;
   coldPower: number;
   id: number;
@@ -207,6 +210,27 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     if(at+13>bytes.length)throw new Error('Invalid party size');
     return {id:u32(),from:u32(),remaining:f32(),name:readName()};
   });
+  if(at<bytes.length&&bytes[at]===0xb1){
+    at++;if(at+2>bytes.length)throw new Error('Invalid shared support size');
+    const count=u16();if(count>192||at+count*8>bytes.length)throw new Error('Invalid shared support size');
+    for(let i=0;i<count;i++){
+      const owner=u32(),skill=u16(),level=u16(),actor=actors.find(a=>a.id===owner) as ActorState|undefined;
+      if(!actor||!level||actor.supports?.some(s=>s.skill===skill&&s.active))throw new Error('Invalid shared support state');
+      if(actor.supports?.some(s=>s.skill===skill&&s.shared))throw new Error('Duplicate shared support state');
+      (actor.supports ||= []).push({skill,level,shared:true,active:true,aura:true,remaining:0,cooldown:0});
+    }
+  }
+  if(at<bytes.length&&bytes[at]===0xc1){
+    at++;if(at+2>bytes.length)throw new Error('Invalid curse size');
+    const count=u16();if(count>2048||at+count*12>bytes.length)throw new Error('Invalid curse size');
+    const keys=new Set<string>();
+    for(let i=0;i<count;i++){
+      const owner=u32(),skill=u16(),level=u16(),remaining=f32(),key=owner+':'+skill;
+      const actor=actors.find(a=>a.id===owner)||monsters.find(m=>m.id===owner);
+      if(!actor||!level||remaining<=0||remaining>60||keys.has(key))throw new Error('Invalid curse state');
+      keys.add(key);((actor as ActorState|MonsterState).curses ||= []).push({skill,level,remaining});
+    }
+  }
   let death:WorldState['death'];
   if(at<bytes.length){
     if(at+7>bytes.length||bytes[at++]!==0xd1)throw new Error('Invalid death state');

@@ -30,7 +30,7 @@ pub(super) fn apply_hit(skill: &Skill, m: &mut Mob, source: u32, rng: &mut u64) 
         chance(rng, 0.0);
         1.0 + ((*rng % 10000) as f32 / 10000.0 * 2.0 - 1.0) * spread
     });
-    let resolved = combat::skill_damage(skill, &m.def.res, m.def.series, rolls, critical, fatal);
+    let resolved = combat::skill_damage(skill, &curses::resistances(&m.def.res,&m.curses), m.def.series, rolls, critical, fatal);
     let parts = resolved.parts;
     let mut kind = 0;
     for i in [2, 3, 4] {
@@ -57,7 +57,7 @@ pub(super) fn apply_hit(skill: &Skill, m: &mut Mob, source: u32, rng: &mut u64) 
         m.stun = m.stun.max(skill.stun_seconds);
     }
     if parts[1] > 0.0 && skill.poison > 0.0 {
-        let budget = m.poison_damage * m.poison + parts[1];
+        let budget = m.poison_damage * m.poison + parts[1]*curses::poison_multiplier(&m.curses);
         m.poison = m.poison.max(skill.poison);
         m.poison_damage = budget / m.poison;
         m.poison_owner = source;

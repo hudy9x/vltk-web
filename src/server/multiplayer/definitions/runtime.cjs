@@ -134,7 +134,7 @@ function createRuntime() {
 function getRuntime() {
   return (runtime ||= createRuntime());
 }
-exports.buildCharacter = function (input, activeBuffs = [], activeAuras = null) {
+exports.buildCharacter = function (input, activeBuffs = [], activeAuras = null, allies = []) {
   const { scope, context } = getRuntime();
   scope.o = Object.assign(scope.I3(), structuredClone(input));
   if(activeAuras!==null){scope.o.auraOff={};for(const id of Object.keys(scope.o.sk||{}))
@@ -147,18 +147,38 @@ exports.buildCharacter = function (input, activeBuffs = [], activeAuras = null) 
     sks: { buff: Object.fromEntries(activeBuffs.map(id=>[id,1e9])), cd: {} },
     mounted: !!scope.o.onlineMounted && scope.xe(),
   };
+  scope.nm = () => allies;
   const stats = vm.runInContext('j0()', context, { timeout: 2000 });
   scope.l.P = stats;
-  const skills = [stats.basic, ...stats.actives];
+  const curses=Object.keys(scope.o.sk||{}).filter(id=>scope.o.sk[id]>0&&scope.T[id]&&scope.wn(scope.T[id])==='curse'&&scope.T[id].f==='wudu');
+  const skills = [stats.basic, ...stats.actives,...curses.map(id=>{
+    const level=scope.o.sk[id]+(stats.plusSkill||0)+(stats.skAdd?.[id]||0),row=scope.T[id];
+    const skill=scope.F2(stats,row,level);
+    return {...skill,parts:{},cost:scope.M7(row,level),cd:Math.max(5,skill.cd||0),rad:420,melee:false,phys:false,
+      targets:32,geo:{k:'spot',r:120},curse:{duration:Math.min(60,scope.ae(row,level)),effects:Object.fromEntries(Object.keys(row.attr).filter(key=>!scope.K5.test(key)).map(key=>[key,scope.b0(row,key,level)?.[0]||0]))}};
+  })];
   return JSON.parse(
     JSON.stringify({
       stats,
-      supports: Object.keys(scope.o.sk||{}).filter(id=>scope.o.sk[id]>0&&scope.T[id]&&['buff','aura'].includes(scope.wn(scope.T[id]))).map(id=>{
+      allyScaling: {
+        lifePercent: scope.z(stats.A,'lifemax_p'),
+        regenLife: scope.z(stats.A,'lifereplenish_p')/1e4+(stats.newbie?scope.kt.life:0),
+        defense: 1+scope.z(stats.A,'armordefenseenhance_p')/100,
+        resMax: Object.values(stats.resMaxE),
+        physical: skills.map(skill=>{
+          if(skill.curse)return 0;
+          const boosted={...stats,physPct:stats.physPct+1};
+          const next=skill.basic?scope.Ow(boosted):scope.F2(boosted,scope.T[skill.id],skill.L);
+          return (next.parts.phys||0)-(skill.parts.phys||0);
+        }),
+      },
+      supports: Object.keys(scope.o.sk||{}).filter(id=>scope.o.sk[id]>0&&scope.T[id]&&(['buff','aura'].includes(scope.wn(scope.T[id]))||scope.wn(scope.T[id])==='curse'&&scope.T[id].f==='wudu')).map(id=>{
         const row=scope.T[id], level=scope.o.sk[id]+(stats.plusSkill||0)+(stats.skAdd?.[id]||0);
         const kind=scope.wn(row),duration=scope.ae(row,level),heal=kind==='buff'&&duration<5;
         const cooldown=(scope.b0(row,'skill_mintimepercast_v',level)||[0])[0]/scope.k7;
-        return {id:+id,level,aura:kind==='aura',enabled:kind==='aura'?scope.o6(id):scope.o.autoBuff!==false&&!scope.o.supportAutoOff?.[id],
-          duration,cost:scope.M7(row,level),lifeCost:scope.i4(row),cooldown:Math.max(heal?8:0,cooldown),
+        const shared=[16,86,89,92,282,332].includes(+id)?Object.fromEntries(Object.keys(row.attr).filter(key=>!scope.K5.test(key)).map(key=>[key,scope.b0(row,key,level)?.[0]||0])):undefined;
+        return {id:+id,level,...(kind==='curse'?{curse:true}:{}),...(shared?{shared}:{}),aura:kind==='aura',enabled:kind==='aura'?scope.o6(id):(kind==='curse'?scope.o.autoCurse:scope.o.autoBuff)!==false&&!scope.o.supportAutoOff?.[id],
+          duration,cost:scope.M7(row,level),lifeCost:scope.i4(row),cooldown:Math.max(kind==='curse'?5:heal?8:0,cooldown),
           heal:heal?Math.max(0,(scope.b0(row,'lifereplenish_v',level)||[0])[0]*duration*2):0};
       }),
       skills,

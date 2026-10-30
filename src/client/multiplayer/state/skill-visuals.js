@@ -79,6 +79,7 @@ var OnlineSkillVisuals = function (onContact = () => {}) {
       try{run(caster,()=>{
         const skill=event.skill&&T[event.skill]?F2(l.P,T[event.skill],meta.level):{...l.P.basic};
         Object.assign(skill,{id:event.skill,L:meta.level,nMis:meta.missiles,rad:meta.range,melee:!!(meta.flags&1),phys:!!(meta.flags&2)});
+        if(typeof wn==='function'&&T[event.skill]&&wn(T[event.skill])==='curse')Object.assign(skill,{parts:{},rad:420,geo:{k:'spot',r:120,pierce:true},targets:32});
         // The server has already approved this release; never add another local windup.
         delete skill.rate;delete skill.rawRate;
         const reported=new Set();

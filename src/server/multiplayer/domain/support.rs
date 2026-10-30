@@ -6,11 +6,11 @@ pub struct SupportState {
     pub auras: std::collections::BTreeSet<u16>,
     pub cooldowns: BTreeMap<u16, f32>,
     pub lock: f32,
+    pub shared: BTreeMap<u16,SupportSkill>,
+    pub curses:BTreeMap<u16,curses::Active>,
 }
 pub(super) fn resolve(actor: &mut Actor) {
-    let Some(catalog) = actor.base_profile.support.as_ref() else {
-        return;
-    };
+    let catalog = actor.base_profile.support.as_ref();
     let active: Vec<_> = actor
         .support
         .active
@@ -20,14 +20,17 @@ pub(super) fn resolve(actor: &mut Actor) {
         .collect::<std::collections::BTreeSet<_>>()
         .into_iter()
         .collect();
-    let Some(variant) = catalog.variants.iter().find(|v| v.active == active) else {
-        return;
+    let profile=match catalog {
+        Some(catalog)=>{let Some(v)=catalog.variants.iter().find(|v|v.active==active) else{return;};v.profile.clone()},
+        None=>actor.base_profile.clone(),
     };
     let hp = actor.hp / actor.profile.hp;
     let mp = actor.mp / actor.profile.mp;
     let potions = std::mem::take(&mut actor.profile.potions);
-    actor.profile = variant.profile.clone();
+    actor.profile = profile;
     actor.profile.potions = potions;
+    apply_shared(actor);
+    curses::apply_profile(actor);
     actor.hp = (hp * actor.profile.hp).clamp(0.0, actor.profile.hp);
     actor.mp = (mp * actor.profile.mp).clamp(0.0, actor.profile.mp);
 }
@@ -37,7 +40,8 @@ pub(super) fn cast(
     automatic: bool,
     enemies: bool,
 ) -> bool {
-    if skill.aura
+    if skill.curse
+        || skill.aura
         || actor.hp <= 0.0
         || actor.stun > 0.0
         || actor.pvp.hurt > 0.0
@@ -127,7 +131,7 @@ impl Game {
                 .as_ref()
                 .map(|c| c.skills.clone())
                 .unwrap_or_default();
-            for skill in skills.iter().filter(|s| s.enabled && !s.aura) {
+            for skill in skills.iter().filter(|s| s.enabled && !s.aura && !s.curse) {
                 let enemies=room.mobs.iter().any(|m|m.hp>0.0)||peers.iter().any(|p|pvp::hostile(id,a,p,room.definition.town));
                 if cast(a, skill, true, enemies) {
                     events.push((a.map, 6, id, id, skill.id, skill.heal, 0));
@@ -141,6 +145,7 @@ impl Game {
                 }
             }
         }
+        self.refresh_shared_support();
     }
     pub(super) fn cast_support(&mut self, id: u32, skill: u16) {
         let Some(a) = self.actors.get_mut(&id) else {
@@ -243,4 +248,50 @@ pub(super) fn initialize(actor: &mut Actor) {
         })
         .unwrap_or_default();
     resolve(actor);
+}
+
+// Only source-owned, active support skills may radiate. Received buffs never radiate again.
+impl Game {
+    pub(super) fn refresh_shared_support(&mut self) {
+        let sources:Vec<_>=self.actors.iter().filter(|(_,a)|a.hp>0.0).flat_map(|(&id,a)|{
+            a.base_profile.support.as_ref().into_iter().flat_map(move |c|c.skills.iter()
+                .filter(|s|s.shared.is_some()&&(a.support.auras.contains(&s.id)||a.support.active.contains_key(&s.id)))
+                .map(move |s|(id,a.map,a.x,a.y,a.party_alignment.unwrap_or(a.profile.alignment),s.clone())))
+        }).collect();
+        for (&id,a) in &mut self.actors {
+            let mut shared=BTreeMap::<u16,SupportSkill>::new();
+            if a.hp>0.0 {
+                for (source,map,x,y,alignment,skill) in &sources {
+                    if *source==id||*map!=a.map||*alignment!=a.party_alignment.unwrap_or(a.profile.alignment)
+                        || navigation::distance(a.x,a.y,*x,*y)>410.0
+                        || a.support.auras.contains(&skill.id)||a.support.active.contains_key(&skill.id) {continue;}
+                    if shared.get(&skill.id).is_none_or(|previous|previous.level<skill.level){shared.insert(skill.id,skill.clone());}
+                }
+            }
+            let key=|m:&BTreeMap<u16,SupportSkill>|m.iter().map(|(&id,s)|(id,s.level)).collect::<Vec<_>>();
+            if key(&shared)!=key(&a.support.shared){a.support.shared=shared;resolve(a);}
+        }
+    }
+}
+fn apply_shared(actor:&mut Actor) {
+    let Some(scale)=actor.profile.ally_scaling.clone() else{return;};
+    let mut effects=BTreeMap::<String,f32>::new();
+    for skill in actor.support.shared.values(){
+        for (key,value) in skill.shared.as_ref().into_iter().flatten(){*effects.entry(key.clone()).or_default()+=value;}
+    }
+    let get=|key:&str|effects.get(key).copied().unwrap_or(0.0);
+    let p=&mut actor.profile;
+    let life=p.hp;
+    p.hp*=1.0+get("lifemax_p")/(100.0+scale.life_percent);
+    p.regen+=get("lifereplenish_v")+(p.hp-life)*scale.regen_life;
+    p.mana_regen+=get("manareplenish_v");
+    p.defense+=get("adddefense_v")*scale.defense;
+    for (i,r) in p.res.iter_mut().enumerate(){*r=(*r+get("allres_p")).min(scale.res_max[i]);}
+    if let Some(t)=p.timing.as_mut(){t.run_percent+=get("fastwalkrun_p");}
+    p.protection.reflect_percent+=get("meleedamagereturn_p");
+    p.protection.ranged_reflect+=get("rangedamagereturn_p");
+    p.protection.cold_reduction=(p.protection.cold_reduction+get("freezetimereduce_p")).min(80.0);
+    p.protection.stun_reduction=(p.protection.stun_reduction+get("stuntimereduce_p")).min(80.0);
+    p.protection.poison_reduction=(p.protection.poison_reduction+get("poisontimereduce_p")).min(80.0);
+    for (s,coefficient) in p.skills.iter_mut().zip(&scale.physical){s.parts[0]+=coefficient*get("addphysicsdamage_p");}
 }

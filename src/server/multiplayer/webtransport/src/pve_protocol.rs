@@ -39,7 +39,7 @@ pub fn snapshot(game: &Game, id: u32) -> Option<Vec<u8>> {
     } else {
         1
     });
-    for (&id, a) in actors {
+    for &(&id, a) in &actors {
         b.extend(id.to_le_bytes());
         for v in [
             a.x,
@@ -108,6 +108,17 @@ pub fn snapshot(game: &Game, id: u32) -> Option<Vec<u8>> {
         b.push(u8::from(active)|(u8::from(skill.aura)<<1));
     }
     crate::domain::party::encode(game, id, &mut b);
+    let shared:Vec<_>=actors.iter().flat_map(|(id,a)|a.support.shared.values().map(move |s|(**id,s))).collect();
+    if !shared.is_empty(){
+        b.push(0xb1);b.extend((shared.len() as u16).to_le_bytes());
+        for (id,s) in shared {b.extend(id.to_le_bytes());b.extend(s.id.to_le_bytes());b.extend(s.level.to_le_bytes());}
+    }
+    let mut curses:Vec<_>=actors.iter().flat_map(|(id,a)|a.support.curses.iter().map(move |(&skill,c)|(**id,skill,c))).collect();
+    curses.extend(room.mobs.iter().flat_map(|m|m.curses.iter().map(move |(&skill,c)|(m.id,skill,c))));
+    if !curses.is_empty(){
+        b.push(0xc1);b.extend((curses.len() as u16).to_le_bytes());
+        for (id,skill,c) in curses{b.extend(id.to_le_bytes());b.extend(skill.to_le_bytes());b.extend(c.level.to_le_bytes());b.extend(c.remaining.to_le_bytes());}
+    }
     if let Some(death)=&a.death_notice {
         b.push(0xd1);b.extend(death.killer.to_le_bytes());b.push(u8::from(death.player));
         let mut name=death.name.clone();while name.len()>96{name.pop();}

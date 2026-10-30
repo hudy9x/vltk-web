@@ -17,6 +17,7 @@ pub mod pvp;
 pub mod party;
 mod progression;
 pub mod support;
+pub mod curses;
 #[path = "../persistence/outbox.rs"]
 pub mod outbox;
 use anyhow::{Result, ensure};
@@ -74,6 +75,7 @@ pub struct Actor {
     pickup: u32,
 }
 pub struct Mob {
+    pub curses:BTreeMap<u16,curses::Active>,
     pub life: u32,
     pub id: u32,
     pub def: MonsterDefinition,
@@ -238,6 +240,7 @@ impl Game {
                     );
                     let def = map.monsters[i % map.monsters.len()].clone();
                     mobs.push(Mob {
+                        curses:Default::default(),
                         life: 0,
                         id: self.id(),
                         hp: def.hp,
@@ -401,7 +404,7 @@ impl Game {
             return Ok(());
         }
         if c.kind == 8 {
-            if c.map==a.map{self.cast_support(id,c.skill);}
+            if c.map==a.map{if a.profile.skills.iter().any(|s|s.id==c.skill&&s.curse.is_some()){self.cast_curse(id,c.skill,c.target,false);}else{self.cast_support(id,c.skill);}}
             return Ok(());
         }
         if c.kind == 7 {
@@ -561,6 +564,7 @@ impl Game {
         self.events.retain(|e| self.tick.wrapping_sub(e.tick) < 20);
         let mut events = vec![];
         self.advance_pvp_status(&mut events);
+        self.advance_curses(&mut events);
         self.advance_support(&mut events);
         self.advance_players(&mut events);
         // Freeze CAST anchors before monsters move; the renderer and server ray

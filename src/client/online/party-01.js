@@ -503,6 +503,7 @@ var fB = function (A, n, t) {
 };
 
 var nm = function () {
+  if(typeof onlineWorld!=='undefined'&&onlineWorld.active)return OnlineSupport.shared();
   if (!H2() || !l.allies) return [];
   const A = {};
   for (const n of l.allies)

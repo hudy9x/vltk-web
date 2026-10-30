@@ -47,3 +47,45 @@ test('v8 binary support state validates ownership, lengths and finite durations'
   assert.throws(()=>p.decodePacket(b.subarray(0,-1)),/support/);
   b[0]=5;assert.throws(()=>p.decodePacket(b),/Unsupported/);
 });
+
+test('shared support updates native stats and FX without learning skills or sending settings',()=>{
+  const scope={o:{sk:{},auraOff:{}},T:{16:{},92:{}},l:{clock:0,sks:{buff:{},cd:{}}},wn:()=>"aura"};
+  vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/support.js','utf8'),scope);
+  scope.OnlineSupport.sync({self:1,actors:[{id:1,supports:[{skill:92,level:20,shared:true,active:true,aura:true}]}]});
+  assert.equal(JSON.stringify(scope.OnlineSupport.shared()),'[[92,20]]');
+  assert.equal(JSON.stringify(scope.o.sk),'{}');assert.equal(JSON.stringify(scope.o.auraOff),'{}');
+  let sent=0;scope.OnlineSupport.settings(()=>{sent++;});assert.equal(sent,0);
+  scope.OnlineSupport.sync({self:1,actors:[{id:1,supports:[]}]});assert.equal(scope.OnlineSupport.shared().length,0);
+});
+test('only five Emei auras and La Han Tran are shared; self-only Shaolin buffs are excluded',()=>{
+  const ids=name=>catalog.character(fixtures.find(r=>r.name===name).profile).support.skills.filter(s=>s.shared).map(s=>s.id);
+  assert.deepEqual(ids('emei'),[86,89,92,282,332]);assert.deepEqual(ids('shaolin'),[16]);
+});
+test('shared aura wire extension preserves source level and rejects malformed/duplicate records',()=>{
+  const scope={module:{exports:{}},exports:{},TextEncoder,TextDecoder,Uint8Array,DataView,Map,Set};
+  vm.runInNewContext(esbuild.buildSync({entryPoints:['src/client/multiplayer/webtransport/protocol.ts'],bundle:true,format:'cjs',platform:'node',write:false}).outputFiles[0].text,scope);
+  const p=scope.module.exports,b=Buffer.alloc(111);b.set([8,17]);b.writeUInt32LE(1,10);b.writeUInt16LE(1,18);
+  b.writeUInt32LE(1,43);b.writeFloatLE(100,55);b.writeFloatLE(100,63);b.writeUInt32LE(1,82);
+  const extension=Buffer.alloc(11);extension[0]=0xb1;extension.writeUInt16LE(1,1);extension.writeUInt32LE(1,3);extension.writeUInt16LE(92,7);extension.writeUInt16LE(20,9);
+  const packet=Buffer.concat([b,extension]);
+  const record=p.decodePacket(packet).actors[0].supports[0];assert.equal(record.level,20);assert.equal(record.shared,true);
+  assert.throws(()=>p.decodePacket(packet.subarray(0,-1)),/shared support/);
+  const invalid=Buffer.from(packet);invalid.writeUInt32LE(999,114);assert.throws(()=>p.decodePacket(invalid),/shared support/);
+  invalid.writeUInt32LE(1,114);invalid.writeUInt16LE(0,120);assert.throws(()=>p.decodePacket(invalid),/shared support/);
+  const duplicate=Buffer.concat([packet,extension.subarray(3)]);duplicate.writeUInt16LE(2,112);assert.throws(()=>p.decodePacket(duplicate),/shared support/);
+});
+test('curse state wire extension and native HUD keep duration/level without granting learned skills',()=>{
+  const scope={module:{exports:{}},exports:{},TextEncoder,TextDecoder,Uint8Array,DataView,Map,Set};
+  vm.runInNewContext(esbuild.buildSync({entryPoints:['src/client/multiplayer/webtransport/protocol.ts'],bundle:true,format:'cjs',platform:'node',write:false}).outputFiles[0].text,scope);
+  const p=scope.module.exports,b=Buffer.alloc(111);b.set([8,17]);b.writeUInt32LE(1,10);b.writeUInt16LE(1,18);
+  b.writeUInt32LE(1,43);b.writeFloatLE(100,55);b.writeFloatLE(100,63);b.writeUInt32LE(1,82);
+  const extension=Buffer.alloc(15);extension[0]=0xc1;extension.writeUInt16LE(1,1);extension.writeUInt32LE(1,3);extension.writeUInt16LE(67,7);extension.writeUInt16LE(20,9);extension.writeFloatLE(20,11);
+  const packet=Buffer.concat([b,extension]),decoded=p.decodePacket(packet);assert.equal(decoded.actors[0].curses[0].skill,67);
+  const nativeScope={o:{sk:{},auraOff:{}},v:{},l:{clock:10},T:{}};
+  vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/support.js','utf8'),nativeScope);
+  nativeScope.OnlineSupport.sync(decoded);assert.equal(nativeScope.v.curse[67],30);assert.equal(nativeScope.v.curseL[67],20);
+  assert.equal(Object.keys(nativeScope.o.sk).length,0);
+  nativeScope.OnlineSupport.sync({self:1,actors:[{id:1}]});assert.equal(Object.keys(nativeScope.v.curse).length,0);
+  const invalid=Buffer.from(packet);invalid.writeFloatLE(61,122);assert.throws(()=>p.decodePacket(invalid),/curse/);
+  assert.throws(()=>p.decodePacket(packet.subarray(0,-1)),/curse/);
+});

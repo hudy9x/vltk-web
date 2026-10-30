@@ -863,7 +863,7 @@ fn all_factions_auto_cast_native_buffs_and_resolve_exact_combinations(){
         g.join(1,"account-a".into(),0,support_fixture(name)).unwrap();field(&mut g);
         for _ in 0..80{g.step();}
         let a=&g.actors[&1];let catalog=a.base_profile.support.as_ref().unwrap();
-        for s in catalog.skills.iter().filter(|s|s.enabled&&!s.aura&&s.duration>=5.0){
+        for s in catalog.skills.iter().filter(|s|s.enabled&&!s.aura&&!s.curse&&s.duration>=5.0){
             assert!(a.support.active.contains_key(&s.id),"{} skill {} not active, MP {}",name,s.id,a.mp);
         }
         let active:Vec<_>=a.support.active.keys().chain(a.support.auras.iter()).copied().collect::<std::collections::BTreeSet<_>>().into_iter().collect();
@@ -1426,5 +1426,103 @@ fn secondary_pvp_attack_respects_hostility_and_preserves_primary() {
     g.actors.get_mut(&1).unwrap().pvp.enabled=false;
     g.command(1,cmd(3,18,2,2,2,0.0,0.0)).unwrap();
     assert!(g.actors[&1].secondary.is_none(),"right click cannot bypass PK permission");
+    remove_fixture(g);
+}
+
+#[test]
+fn allied_support_matches_native_stats_for_every_faction_with_own_buffs_active(){
+    let rows:serde_json::Value=serde_json::from_str(include_str!("../../../../test/fixtures/multiplayer-allied-support.json")).unwrap();
+    for row in rows.as_array().unwrap(){
+        let name=row["name"].as_str().unwrap();
+        let mut g=game();g.actors.clear();
+        for (id,fixture) in [(1,name),(2,"emei"),(3,"shaolin")]{
+            g.join(id,format!("account-{id}"),0,support_fixture(fixture)).unwrap();
+            let a=g.actors.get_mut(&id).unwrap();a.party_alignment=Some(0);
+            let skills=a.base_profile.support.as_ref().unwrap().skills.clone();
+            for s in skills {if !s.aura&&!s.curse&&s.duration>=5.0{a.support.active.insert(s.id,s.duration);}}
+            support::resolve(a);
+        }
+        g.refresh_shared_support();
+        let a=&g.actors[&1];let expected:Profile=serde_json::from_value(row["expected"].clone()).unwrap();
+        let close=|a:f32,b:f32,field:&str|assert!((a-b).abs()<0.02,"{name} {field}: {a} != {b}");
+        close(a.profile.hp,expected.hp,"hp");close(a.profile.mp,expected.mp,"mp");
+        close(a.profile.regen,expected.regen,"regen");close(a.profile.mana_regen,expected.mana_regen,"mana regen");
+        close(a.profile.defense,expected.defense,"defense");
+        close(speed::movement(a),expected.speed,"speed");
+        close(a.profile.protection.reflect_percent,expected.protection.reflect_percent,"reflect");
+        close(a.profile.protection.cold_reduction,expected.protection.cold_reduction,"cold reduction");
+        for (a,b) in a.profile.res.iter().zip(expected.res){close(*a,b,"res");}
+        for (a,b) in a.profile.skills.iter().zip(expected.skills){for (a,b) in a.parts.iter().zip(b.parts){close(*a,b,"damage");}}
+        assert_eq!(a.support.shared.len(),row["allies"].as_array().unwrap().len());
+        remove_fixture(g);
+    }
+}
+#[test]
+fn allied_support_requires_same_alignment_alive_same_map_within_410_and_does_not_relay(){
+    let mut g=game();g.actors.clear();
+    for (id,name) in [(1,"tianwang"),(2,"emei"),(3,"emei")]{
+        g.join(id,format!("account-{id}"),0,support_fixture(name)).unwrap();
+        g.actors.get_mut(&id).unwrap().party_alignment=Some(0);
+    }
+    let base=g.actors[&1].profile.hp;
+    let x=g.actors[&1].x;let y=g.actors[&1].y;
+    g.actors.get_mut(&2).unwrap().x=x+410.0;
+    g.actors.get_mut(&3).unwrap().x=x+900.0;
+    g.refresh_shared_support();assert_eq!(g.actors[&1].support.shared.len(),5);
+    assert!(g.actors[&1].profile.hp>base);
+    let hp=g.actors[&1].profile.hp;
+    g.actors.get_mut(&3).unwrap().x=x+400.0;
+    g.refresh_shared_support();assert_eq!(g.actors[&1].profile.hp,hp,"same skill cannot stack");
+    g.actors.get_mut(&3).unwrap().hp=0.0;
+    g.actors.get_mut(&2).unwrap().x=x+410.1;
+    g.refresh_shared_support();assert!(g.actors[&1].support.shared.is_empty());assert_eq!(g.actors[&1].profile.hp,base);
+    g.actors.get_mut(&2).unwrap().x=x;g.actors.get_mut(&2).unwrap().party_alignment=Some(1);
+    g.refresh_shared_support();assert!(g.actors[&1].support.shared.is_empty());
+    g.actors.get_mut(&2).unwrap().party_alignment=Some(0);g.actors.get_mut(&2).unwrap().map=2;
+    g.refresh_shared_support();assert!(g.actors[&1].support.shared.is_empty());
+    g.actors.get_mut(&2).unwrap().map=1;g.actors.get_mut(&2).unwrap().hp=0.0;
+    g.refresh_shared_support();assert!(g.actors[&1].support.shared.is_empty());
+    g.actors.get_mut(&2).unwrap().hp=10.0;g.actors.get_mut(&2).unwrap().support.auras.clear();
+    g.refresh_shared_support();assert!(g.actors[&1].support.shared.is_empty());
+    g.actors.get_mut(&2).unwrap().support.auras.insert(92);
+    g.refresh_shared_support();assert_eq!(g.actors[&1].support.shared.len(),1);
+    g.actors.get_mut(&1).unwrap().hp=0.0;g.refresh_shared_support();assert!(g.actors[&1].support.shared.is_empty());
+    let _=y;remove_fixture(g);
+}
+
+#[test]
+fn curses_spend_resources_once_and_wait_for_client_contact_before_affecting_monsters(){
+    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("wudu")).unwrap();field(&mut g);
+    for s in &mut g.actors.get_mut(&1).unwrap().base_profile.support.as_mut().unwrap().skills{s.enabled=false;}
+    let mob=g.rooms[&2].mobs[0].id;let mp=g.actors[&1].mp;
+    let cost=g.actors[&1].profile.skills.iter().find(|s|s.id==356).unwrap().cost;
+    g.command(1,cmd(2,8,2,mob,356,0.0,0.0)).unwrap();
+    assert_eq!(g.actors[&1].mp,mp-cost);
+    g.command(1,cmd(3,8,2,mob,356,0.0,0.0)).unwrap();assert_eq!(g.actors[&1].mp,mp-cost);
+    let event=g.events.iter().find(|e|e.kind==1&&e.skill==356).unwrap().id;
+    for _ in 0..20{g.step();}
+    assert!(g.rooms[&2].mobs[0].curses.is_empty(),"no debuff before the client contact frame");
+    g.command(1,cmd(4,16,2,mob,356,(event&65535) as f32,(event>>16) as f32)).unwrap();g.step();
+    let m=&g.rooms[&2].mobs[0];assert!(m.curses.contains_key(&356));assert_eq!(m.hp,m.def.hp,"curse itself deals no damage");
+    let resistance=curses::resistances(&m.def.res,&m.curses);assert!(resistance[0]<m.def.res[0]);
+    g.rooms.get_mut(&2).unwrap().mobs[0].curses.get_mut(&356).unwrap().remaining=0.01;
+    g.step();assert!(g.rooms[&2].mobs[0].curses.is_empty());
+    assert_eq!(g.rooms[&2].mobs[0].def.res,[0.0;5],"expiry preserves canonical monster stats");remove_fixture(g);
+}
+#[test]
+fn pvp_curse_requires_enemy_permissions_and_contact_from_both_clients(){
+    let mut g=game();g.actors.remove(&1);g.join(1,"account-a".into(),0,support_fixture("wudu")).unwrap();field(&mut g);
+    for s in &mut g.actors.get_mut(&1).unwrap().base_profile.support.as_mut().unwrap().skills{s.enabled=false;}
+    g.actors.get_mut(&1).unwrap().pvp.enabled=true;
+    g.actors.get_mut(&2).unwrap().x=120.0;g.rooms.get_mut(&2).unwrap().mobs.clear();
+    g.command(1,cmd(2,8,2,2,67,0.0,0.0)).unwrap();
+    let event=g.events.iter().find(|e|e.kind==1&&e.skill==67).unwrap().id;
+    g.command(1,cmd(3,16,2,2,67,(event&65535) as f32,(event>>16) as f32)).unwrap();
+    for _ in 0..20{g.step();}assert!(g.actors[&2].support.curses.is_empty());
+    g.command(2,cmd(2,16,2,2,67,(event&65535) as f32,(event>>16) as f32)).unwrap();g.step();
+    assert!(g.actors[&2].support.curses.contains_key(&67));assert!(g.actors[&2].profile.res[4]<0.0);
+    g.actors.get_mut(&2).unwrap().support.curses.get_mut(&67).unwrap().remaining=0.01;g.step();assert_eq!(g.actors[&2].profile.res[4],0.0);
+    g.actors.get_mut(&2).unwrap().party_alignment=Some(g.actors[&1].profile.alignment);
+    let mp=g.actors[&1].mp;assert!(!g.cast_curse(1,70,2,false));assert_eq!(g.actors[&1].mp,mp);
     remove_fixture(g);
 }

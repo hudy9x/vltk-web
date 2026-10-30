@@ -204,6 +204,7 @@ impl Game {
         {
             return;
         }
+        if self.apply_curse(p,target){return;}
         if self.actors.contains_key(&target) {
             pvp::hit(self, p.source, target, &p.skill, events);
             return;

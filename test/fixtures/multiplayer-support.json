@@ -31,6 +31,25 @@
       }
     },
     "resolved": {
+      "allyScaling": {
+        "lifePercent": 33,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.060000000000002274,
+          0.05999999999999872,
+          0.060000000000005826,
+          0.0899999999999892,
+          0.16799999999997794
+        ]
+      },
       "level": 150,
       "alignment": 1,
       "series": 2,
@@ -641,6 +660,25 @@
           {
             "active": [],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 33,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.060000000000002274,
+                  0.05999999999999872,
+                  0.060000000000005826,
+                  0.0899999999999892,
+                  0.16799999999997794
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 2,
@@ -1218,6 +1256,25 @@
               100
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 33,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.060000000000002274,
+                  0.05999999999999872,
+                  0.060000000000005826,
+                  0.0899999999999892,
+                  0.16799999999997794
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 2,
@@ -1795,6 +1852,25 @@
               109
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 33,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.060000000000002274,
+                  0.05999999999999872,
+                  0.060000000000005826,
+                  0.0899999999999892,
+                  0.16799999999997794
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 2,
@@ -2373,6 +2449,25 @@
               109
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 33,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.060000000000002274,
+                  0.05999999999999872,
+                  0.060000000000005826,
+                  0.0899999999999892,
+                  0.16799999999997794
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 2,
@@ -2981,6 +3076,25 @@
       }
     },
     "resolved": {
+      "allyScaling": {
+        "lifePercent": 33,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.0600000000000005,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
       "level": 150,
       "alignment": 1,
       "series": 2,
@@ -3591,6 +3705,25 @@
           {
             "active": [],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 33,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 2,
@@ -4168,6 +4301,25 @@
               100
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 33,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 2,
@@ -4745,6 +4897,25 @@
               109
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 33,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 2,
@@ -5323,6 +5494,25 @@
               109
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 33,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 2,
@@ -5931,6 +6121,25 @@
       }
     },
     "resolved": {
+      "allyScaling": {
+        "lifePercent": 0,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.04999999999999982,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
       "level": 150,
       "alignment": 0,
       "series": 4,
@@ -6530,6 +6739,25 @@
           {
             "active": [],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.04999999999999982,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 4,
@@ -7107,6 +7335,25 @@
               157
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.04999999999999982,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 4,
@@ -7684,6 +7931,25 @@
               159
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.04999999999999982,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 4,
@@ -8262,6 +8528,25 @@
               159
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.04999999999999982,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 4,
@@ -8870,6 +9155,24 @@
       }
     },
     "resolved": {
+      "allyScaling": {
+        "lifePercent": 20,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.05000000000000071,
+          0.04999999999999716,
+          0.06749999999999545,
+          0.11000000000001364
+        ]
+      },
       "level": 150,
       "alignment": 1,
       "series": 4,
@@ -9422,6 +9725,24 @@
           {
             "active": [],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 20,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.05000000000000071,
+                  0.04999999999999716,
+                  0.06749999999999545,
+                  0.11000000000001364
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 4,
@@ -9952,6 +10273,24 @@
               171
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 20,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.05000000000000071,
+                  0.04999999999999716,
+                  0.06749999999999545,
+                  0.11000000000001364
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 4,
@@ -10482,6 +10821,24 @@
               173
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 20,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.05000000000000071,
+                  0.04999999999999716,
+                  0.06749999999999545,
+                  0.11000000000001364
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 4,
@@ -11013,6 +11370,24 @@
               173
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 20,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.05000000000000071,
+                  0.04999999999999716,
+                  0.06749999999999545,
+                  0.11000000000001364
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 4,
@@ -11574,6 +11949,24 @@
       }
     },
     "resolved": {
+      "allyScaling": {
+        "lifePercent": 0,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.07000000000000028,
+          0.06999999999999318,
+          0.12600000000000477,
+          0.20999999999997954
+        ]
+      },
       "level": 150,
       "alignment": 0,
       "series": 3,
@@ -12126,6 +12519,24 @@
           {
             "active": [],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.07000000000000028,
+                  0.06999999999999318,
+                  0.12600000000000477,
+                  0.20999999999997954
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 3,
@@ -12656,6 +13067,24 @@
               130
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.07000000000000028,
+                  0.06999999999999318,
+                  0.12600000000000477,
+                  0.20999999999997954
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 3,
@@ -13186,6 +13615,24 @@
               277
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.07000000000000028,
+                  0.06999999999999318,
+                  0.12600000000000477,
+                  0.20999999999997954
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 3,
@@ -13717,6 +14164,24 @@
               277
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.07000000000000028,
+                  0.06999999999999318,
+                  0.12600000000000477,
+                  0.20999999999997954
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 3,
@@ -14247,6 +14712,1828 @@
     }
   },
   {
+    "name": "wudu",
+    "profile": {
+      "fac": "wudu",
+      "lvl": 150,
+      "sk": {
+        "63": 20,
+        "64": 20,
+        "67": 20,
+        "70": 20,
+        "72": 20,
+        "73": 20,
+        "356": 20,
+        "390": 20
+      },
+      "slots": [
+        63
+      ],
+      "eq": {
+        "weapon": {
+          "d": 0,
+          "k": 0,
+          "lvl": 1,
+          "nat": 0,
+          "g": 0,
+          "base": [],
+          "mag": []
+        }
+      }
+    },
+    "resolved": {
+      "allyScaling": {
+        "lifePercent": 0,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.04999999999999982,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "level": 150,
+      "alignment": 2,
+      "series": 1,
+      "protection": {
+        "rangedReflect": 0,
+        "from": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "coldReduction": 0,
+        "stunReduction": 0,
+        "poisonReduction": 0,
+        "manaShield": 0,
+        "reflect": 0,
+        "reflectPercent": 0,
+        "absorption": 0,
+        "damageShield": 0,
+        "damageToMana": 0
+      },
+      "potions": [
+        {
+          "id": 1,
+          "kind": "life",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 2,
+          "kind": "life",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 3,
+          "kind": "life",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 4,
+          "kind": "life",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 5,
+          "kind": "life",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 0,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 101,
+          "kind": "mana",
+          "tier": 1,
+          "level": 1,
+          "hp": 0,
+          "mp": 100,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 102,
+          "kind": "mana",
+          "tier": 2,
+          "level": 1,
+          "hp": 0,
+          "mp": 200,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 103,
+          "kind": "mana",
+          "tier": 3,
+          "level": 1,
+          "hp": 0,
+          "mp": 500,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 104,
+          "kind": "mana",
+          "tier": 4,
+          "level": 1,
+          "hp": 0,
+          "mp": 1000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 105,
+          "kind": "mana",
+          "tier": 5,
+          "level": 1,
+          "hp": 0,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 201,
+          "kind": "both",
+          "tier": 1,
+          "level": 1,
+          "hp": 100,
+          "mp": 60,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 202,
+          "kind": "both",
+          "tier": 2,
+          "level": 1,
+          "hp": 250,
+          "mp": 150,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 203,
+          "kind": "both",
+          "tier": 3,
+          "level": 1,
+          "hp": 500,
+          "mp": 300,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 204,
+          "kind": "both",
+          "tier": 4,
+          "level": 1,
+          "hp": 1000,
+          "mp": 600,
+          "count": 0,
+          "spent": 0
+        },
+        {
+          "id": 205,
+          "kind": "both",
+          "tier": 5,
+          "level": 1,
+          "hp": 5000,
+          "mp": 5000,
+          "count": 0,
+          "spent": 0
+        }
+      ],
+      "hp": 550,
+      "mp": 375,
+      "regen": 13,
+      "manaRegen": 9,
+      "speed": 172.5,
+      "timing": {
+        "runPercent": 100,
+        "config": {
+          "minPercent": 25,
+          "maxPercent": 300,
+          "run": {
+            "distanceScale": 1.15,
+            "referenceFrames": 8,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 3
+              },
+              {
+                "minPercent": 50,
+                "fps": 6
+              },
+              {
+                "minPercent": 75,
+                "fps": 9
+              },
+              {
+                "minPercent": 100,
+                "fps": 12
+              },
+              {
+                "minPercent": 120,
+                "fps": 14.4
+              },
+              {
+                "minPercent": 150,
+                "fps": 18
+              },
+              {
+                "minPercent": 200,
+                "fps": 24
+              },
+              {
+                "minPercent": 250,
+                "fps": 30
+              },
+              {
+                "minPercent": 300,
+                "fps": 36
+              }
+            ]
+          },
+          "attack": {
+            "referenceFrames": 20,
+            "phases": [
+              {
+                "minPercent": 25,
+                "fps": 5
+              },
+              {
+                "minPercent": 50,
+                "fps": 15
+              },
+              {
+                "minPercent": 75,
+                "fps": 20
+              },
+              {
+                "minPercent": 100,
+                "fps": 25
+              },
+              {
+                "minPercent": 125,
+                "fps": 35
+              },
+              {
+                "minPercent": 150,
+                "fps": 40
+              },
+              {
+                "minPercent": 200,
+                "fps": 50
+              },
+              {
+                "minPercent": 250,
+                "fps": 60
+              },
+              {
+                "minPercent": 300,
+                "fps": 70
+              }
+            ]
+          }
+        }
+      },
+      "defense": 8.75,
+      "res": [
+        -15,
+        0,
+        0,
+        0,
+        25
+      ],
+      "skills": [
+        {
+          "id": 0,
+          "level": 1,
+          "missiles": 1,
+          "melee": true,
+          "phys": true,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 0,
+          "cooldown": 0.8,
+          "attackPercent": 100,
+          "range": 75,
+          "radius": 0,
+          "shape": "single",
+          "targets": 1,
+          "projectile": null,
+          "parts": [
+            5,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0
+        },
+        {
+          "id": 63,
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 10,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 10,
+          "cooldown": 1,
+          "attackPercent": 90,
+          "range": 384,
+          "radius": 0,
+          "shape": "line",
+          "targets": 1,
+          "projectile": {
+            "range": 311.04,
+            "width": 16,
+            "speed": 432,
+            "ignoreTerrain": false,
+            "pierce": false,
+            "area": 0,
+            "homing": false
+          },
+          "parts": [
+            0,
+            480,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 3.3333333333333335,
+          "travel": 0.768
+        },
+        {
+          "id": 64,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "coldres_p": -49
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 67,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "lightingres_p": -49
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 70,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "fireres_p": -49
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 72,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "poisonres_p": -49
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 73,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "poisontimereduce_p": -300
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 40,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 356,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "physicsres_p": -49
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 60,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        },
+        {
+          "id": 390,
+          "curse": {
+            "duration": 60,
+            "effects": {
+              "allres_p": -40
+            }
+          },
+          "level": 20,
+          "missiles": 1,
+          "melee": false,
+          "phys": false,
+          "pve": {
+            "criticalMultiplier": 2,
+            "advantageBonus": 0.1,
+            "maximumResistance": 95,
+            "series": 1,
+            "seriesResistance": 0,
+            "anti": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "resistanceCap": 75,
+            "flatSeries": 0,
+            "heavyChance": 0,
+            "versus": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "spread": 0.15
+          },
+          "leech": 0,
+          "manaLeech": 0,
+          "cost": 120,
+          "cooldown": 5,
+          "attackPercent": 90,
+          "range": 420,
+          "radius": 120,
+          "shape": "spot",
+          "targets": 32,
+          "projectile": null,
+          "parts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "crit": 0,
+          "stun": 0,
+          "cold": 0,
+          "stunSeconds": 0.8,
+          "poison": 0,
+          "travel": 0.84
+        }
+      ],
+      "support": {
+        "skills": [
+          {
+            "id": 64,
+            "level": 20,
+            "curse": true,
+            "aura": false,
+            "enabled": true,
+            "duration": 90,
+            "cost": 60,
+            "lifeCost": false,
+            "cooldown": 5,
+            "heal": 0
+          },
+          {
+            "id": 67,
+            "level": 20,
+            "curse": true,
+            "aura": false,
+            "enabled": true,
+            "duration": 90,
+            "cost": 60,
+            "lifeCost": false,
+            "cooldown": 5,
+            "heal": 0
+          },
+          {
+            "id": 70,
+            "level": 20,
+            "curse": true,
+            "aura": false,
+            "enabled": true,
+            "duration": 90,
+            "cost": 60,
+            "lifeCost": false,
+            "cooldown": 5,
+            "heal": 0
+          },
+          {
+            "id": 72,
+            "level": 20,
+            "curse": true,
+            "aura": false,
+            "enabled": true,
+            "duration": 90,
+            "cost": 60,
+            "lifeCost": false,
+            "cooldown": 5,
+            "heal": 0
+          },
+          {
+            "id": 73,
+            "level": 20,
+            "curse": true,
+            "aura": false,
+            "enabled": true,
+            "duration": 120,
+            "cost": 40,
+            "lifeCost": false,
+            "cooldown": 5,
+            "heal": 0
+          },
+          {
+            "id": 356,
+            "level": 20,
+            "curse": true,
+            "aura": false,
+            "enabled": true,
+            "duration": 90,
+            "cost": 60,
+            "lifeCost": false,
+            "cooldown": 5,
+            "heal": 0
+          },
+          {
+            "id": 390,
+            "level": 20,
+            "curse": true,
+            "aura": false,
+            "enabled": true,
+            "duration": 90,
+            "cost": 120,
+            "lifeCost": false,
+            "cooldown": 5,
+            "heal": 0
+          }
+        ],
+        "variants": [
+          {
+            "active": [],
+            "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.04999999999999982,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "level": 150,
+              "alignment": 2,
+              "series": 1,
+              "protection": {
+                "rangedReflect": 0,
+                "from": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "coldReduction": 0,
+                "stunReduction": 0,
+                "poisonReduction": 0,
+                "manaShield": 0,
+                "reflect": 0,
+                "reflectPercent": 0,
+                "absorption": 0,
+                "damageShield": 0,
+                "damageToMana": 0
+              },
+              "potions": [
+                {
+                  "id": 1,
+                  "kind": "life",
+                  "tier": 1,
+                  "level": 1,
+                  "hp": 100,
+                  "mp": 0,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 2,
+                  "kind": "life",
+                  "tier": 2,
+                  "level": 1,
+                  "hp": 250,
+                  "mp": 0,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 3,
+                  "kind": "life",
+                  "tier": 3,
+                  "level": 1,
+                  "hp": 500,
+                  "mp": 0,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 4,
+                  "kind": "life",
+                  "tier": 4,
+                  "level": 1,
+                  "hp": 1000,
+                  "mp": 0,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 5,
+                  "kind": "life",
+                  "tier": 5,
+                  "level": 1,
+                  "hp": 5000,
+                  "mp": 0,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 101,
+                  "kind": "mana",
+                  "tier": 1,
+                  "level": 1,
+                  "hp": 0,
+                  "mp": 100,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 102,
+                  "kind": "mana",
+                  "tier": 2,
+                  "level": 1,
+                  "hp": 0,
+                  "mp": 200,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 103,
+                  "kind": "mana",
+                  "tier": 3,
+                  "level": 1,
+                  "hp": 0,
+                  "mp": 500,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 104,
+                  "kind": "mana",
+                  "tier": 4,
+                  "level": 1,
+                  "hp": 0,
+                  "mp": 1000,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 105,
+                  "kind": "mana",
+                  "tier": 5,
+                  "level": 1,
+                  "hp": 0,
+                  "mp": 5000,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 201,
+                  "kind": "both",
+                  "tier": 1,
+                  "level": 1,
+                  "hp": 100,
+                  "mp": 60,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 202,
+                  "kind": "both",
+                  "tier": 2,
+                  "level": 1,
+                  "hp": 250,
+                  "mp": 150,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 203,
+                  "kind": "both",
+                  "tier": 3,
+                  "level": 1,
+                  "hp": 500,
+                  "mp": 300,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 204,
+                  "kind": "both",
+                  "tier": 4,
+                  "level": 1,
+                  "hp": 1000,
+                  "mp": 600,
+                  "count": 0,
+                  "spent": 0
+                },
+                {
+                  "id": 205,
+                  "kind": "both",
+                  "tier": 5,
+                  "level": 1,
+                  "hp": 5000,
+                  "mp": 5000,
+                  "count": 0,
+                  "spent": 0
+                }
+              ],
+              "hp": 550,
+              "mp": 375,
+              "regen": 13,
+              "manaRegen": 9,
+              "speed": 172.5,
+              "timing": {
+                "runPercent": 100,
+                "config": {
+                  "minPercent": 25,
+                  "maxPercent": 300,
+                  "run": {
+                    "distanceScale": 1.15,
+                    "referenceFrames": 8,
+                    "phases": [
+                      {
+                        "minPercent": 25,
+                        "fps": 3
+                      },
+                      {
+                        "minPercent": 50,
+                        "fps": 6
+                      },
+                      {
+                        "minPercent": 75,
+                        "fps": 9
+                      },
+                      {
+                        "minPercent": 100,
+                        "fps": 12
+                      },
+                      {
+                        "minPercent": 120,
+                        "fps": 14.4
+                      },
+                      {
+                        "minPercent": 150,
+                        "fps": 18
+                      },
+                      {
+                        "minPercent": 200,
+                        "fps": 24
+                      },
+                      {
+                        "minPercent": 250,
+                        "fps": 30
+                      },
+                      {
+                        "minPercent": 300,
+                        "fps": 36
+                      }
+                    ]
+                  },
+                  "attack": {
+                    "referenceFrames": 20,
+                    "phases": [
+                      {
+                        "minPercent": 25,
+                        "fps": 5
+                      },
+                      {
+                        "minPercent": 50,
+                        "fps": 15
+                      },
+                      {
+                        "minPercent": 75,
+                        "fps": 20
+                      },
+                      {
+                        "minPercent": 100,
+                        "fps": 25
+                      },
+                      {
+                        "minPercent": 125,
+                        "fps": 35
+                      },
+                      {
+                        "minPercent": 150,
+                        "fps": 40
+                      },
+                      {
+                        "minPercent": 200,
+                        "fps": 50
+                      },
+                      {
+                        "minPercent": 250,
+                        "fps": 60
+                      },
+                      {
+                        "minPercent": 300,
+                        "fps": 70
+                      }
+                    ]
+                  }
+                }
+              },
+              "defense": 8.75,
+              "res": [
+                -15,
+                0,
+                0,
+                0,
+                25
+              ],
+              "skills": [
+                {
+                  "id": 0,
+                  "level": 1,
+                  "missiles": 1,
+                  "melee": true,
+                  "phys": true,
+                  "pve": {
+                    "criticalMultiplier": 2,
+                    "advantageBonus": 0.1,
+                    "maximumResistance": 95,
+                    "series": 1,
+                    "seriesResistance": 0,
+                    "anti": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "resistanceCap": 75,
+                    "flatSeries": 0,
+                    "heavyChance": 0,
+                    "versus": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "spread": 0.15
+                  },
+                  "leech": 0,
+                  "manaLeech": 0,
+                  "cost": 0,
+                  "cooldown": 0.8,
+                  "attackPercent": 100,
+                  "range": 75,
+                  "radius": 0,
+                  "shape": "single",
+                  "targets": 1,
+                  "projectile": null,
+                  "parts": [
+                    5,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "crit": 0,
+                  "stun": 0,
+                  "cold": 0,
+                  "stunSeconds": 0.8,
+                  "poison": 0,
+                  "travel": 0
+                },
+                {
+                  "id": 63,
+                  "level": 20,
+                  "missiles": 1,
+                  "melee": false,
+                  "phys": false,
+                  "pve": {
+                    "criticalMultiplier": 2,
+                    "advantageBonus": 0.1,
+                    "maximumResistance": 95,
+                    "series": 1,
+                    "seriesResistance": 10,
+                    "anti": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "resistanceCap": 75,
+                    "flatSeries": 0,
+                    "heavyChance": 0,
+                    "versus": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "spread": 0.15
+                  },
+                  "leech": 0,
+                  "manaLeech": 0,
+                  "cost": 10,
+                  "cooldown": 1,
+                  "attackPercent": 90,
+                  "range": 384,
+                  "radius": 0,
+                  "shape": "line",
+                  "targets": 1,
+                  "projectile": {
+                    "range": 311.04,
+                    "width": 16,
+                    "speed": 432,
+                    "ignoreTerrain": false,
+                    "pierce": false,
+                    "area": 0,
+                    "homing": false
+                  },
+                  "parts": [
+                    0,
+                    480,
+                    0,
+                    0,
+                    0
+                  ],
+                  "crit": 0,
+                  "stun": 0,
+                  "cold": 0,
+                  "stunSeconds": 0.8,
+                  "poison": 3.3333333333333335,
+                  "travel": 0.768
+                },
+                {
+                  "id": 64,
+                  "curse": {
+                    "duration": 60,
+                    "effects": {
+                      "coldres_p": -49
+                    }
+                  },
+                  "level": 20,
+                  "missiles": 1,
+                  "melee": false,
+                  "phys": false,
+                  "pve": {
+                    "criticalMultiplier": 2,
+                    "advantageBonus": 0.1,
+                    "maximumResistance": 95,
+                    "series": 1,
+                    "seriesResistance": 0,
+                    "anti": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "resistanceCap": 75,
+                    "flatSeries": 0,
+                    "heavyChance": 0,
+                    "versus": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "spread": 0.15
+                  },
+                  "leech": 0,
+                  "manaLeech": 0,
+                  "cost": 60,
+                  "cooldown": 5,
+                  "attackPercent": 90,
+                  "range": 420,
+                  "radius": 120,
+                  "shape": "spot",
+                  "targets": 32,
+                  "projectile": null,
+                  "parts": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "crit": 0,
+                  "stun": 0,
+                  "cold": 0,
+                  "stunSeconds": 0.8,
+                  "poison": 0,
+                  "travel": 0.84
+                },
+                {
+                  "id": 67,
+                  "curse": {
+                    "duration": 60,
+                    "effects": {
+                      "lightingres_p": -49
+                    }
+                  },
+                  "level": 20,
+                  "missiles": 1,
+                  "melee": false,
+                  "phys": false,
+                  "pve": {
+                    "criticalMultiplier": 2,
+                    "advantageBonus": 0.1,
+                    "maximumResistance": 95,
+                    "series": 1,
+                    "seriesResistance": 0,
+                    "anti": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "resistanceCap": 75,
+                    "flatSeries": 0,
+                    "heavyChance": 0,
+                    "versus": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "spread": 0.15
+                  },
+                  "leech": 0,
+                  "manaLeech": 0,
+                  "cost": 60,
+                  "cooldown": 5,
+                  "attackPercent": 90,
+                  "range": 420,
+                  "radius": 120,
+                  "shape": "spot",
+                  "targets": 32,
+                  "projectile": null,
+                  "parts": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "crit": 0,
+                  "stun": 0,
+                  "cold": 0,
+                  "stunSeconds": 0.8,
+                  "poison": 0,
+                  "travel": 0.84
+                },
+                {
+                  "id": 70,
+                  "curse": {
+                    "duration": 60,
+                    "effects": {
+                      "fireres_p": -49
+                    }
+                  },
+                  "level": 20,
+                  "missiles": 1,
+                  "melee": false,
+                  "phys": false,
+                  "pve": {
+                    "criticalMultiplier": 2,
+                    "advantageBonus": 0.1,
+                    "maximumResistance": 95,
+                    "series": 1,
+                    "seriesResistance": 0,
+                    "anti": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "resistanceCap": 75,
+                    "flatSeries": 0,
+                    "heavyChance": 0,
+                    "versus": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "spread": 0.15
+                  },
+                  "leech": 0,
+                  "manaLeech": 0,
+                  "cost": 60,
+                  "cooldown": 5,
+                  "attackPercent": 90,
+                  "range": 420,
+                  "radius": 120,
+                  "shape": "spot",
+                  "targets": 32,
+                  "projectile": null,
+                  "parts": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "crit": 0,
+                  "stun": 0,
+                  "cold": 0,
+                  "stunSeconds": 0.8,
+                  "poison": 0,
+                  "travel": 0.84
+                },
+                {
+                  "id": 72,
+                  "curse": {
+                    "duration": 60,
+                    "effects": {
+                      "poisonres_p": -49
+                    }
+                  },
+                  "level": 20,
+                  "missiles": 1,
+                  "melee": false,
+                  "phys": false,
+                  "pve": {
+                    "criticalMultiplier": 2,
+                    "advantageBonus": 0.1,
+                    "maximumResistance": 95,
+                    "series": 1,
+                    "seriesResistance": 0,
+                    "anti": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "resistanceCap": 75,
+                    "flatSeries": 0,
+                    "heavyChance": 0,
+                    "versus": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "spread": 0.15
+                  },
+                  "leech": 0,
+                  "manaLeech": 0,
+                  "cost": 60,
+                  "cooldown": 5,
+                  "attackPercent": 90,
+                  "range": 420,
+                  "radius": 120,
+                  "shape": "spot",
+                  "targets": 32,
+                  "projectile": null,
+                  "parts": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "crit": 0,
+                  "stun": 0,
+                  "cold": 0,
+                  "stunSeconds": 0.8,
+                  "poison": 0,
+                  "travel": 0.84
+                },
+                {
+                  "id": 73,
+                  "curse": {
+                    "duration": 60,
+                    "effects": {
+                      "poisontimereduce_p": -300
+                    }
+                  },
+                  "level": 20,
+                  "missiles": 1,
+                  "melee": false,
+                  "phys": false,
+                  "pve": {
+                    "criticalMultiplier": 2,
+                    "advantageBonus": 0.1,
+                    "maximumResistance": 95,
+                    "series": 1,
+                    "seriesResistance": 0,
+                    "anti": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "resistanceCap": 75,
+                    "flatSeries": 0,
+                    "heavyChance": 0,
+                    "versus": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "spread": 0.15
+                  },
+                  "leech": 0,
+                  "manaLeech": 0,
+                  "cost": 40,
+                  "cooldown": 5,
+                  "attackPercent": 90,
+                  "range": 420,
+                  "radius": 120,
+                  "shape": "spot",
+                  "targets": 32,
+                  "projectile": null,
+                  "parts": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "crit": 0,
+                  "stun": 0,
+                  "cold": 0,
+                  "stunSeconds": 0.8,
+                  "poison": 0,
+                  "travel": 0.84
+                },
+                {
+                  "id": 356,
+                  "curse": {
+                    "duration": 60,
+                    "effects": {
+                      "physicsres_p": -49
+                    }
+                  },
+                  "level": 20,
+                  "missiles": 1,
+                  "melee": false,
+                  "phys": false,
+                  "pve": {
+                    "criticalMultiplier": 2,
+                    "advantageBonus": 0.1,
+                    "maximumResistance": 95,
+                    "series": 1,
+                    "seriesResistance": 0,
+                    "anti": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "resistanceCap": 75,
+                    "flatSeries": 0,
+                    "heavyChance": 0,
+                    "versus": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "spread": 0.15
+                  },
+                  "leech": 0,
+                  "manaLeech": 0,
+                  "cost": 60,
+                  "cooldown": 5,
+                  "attackPercent": 90,
+                  "range": 420,
+                  "radius": 120,
+                  "shape": "spot",
+                  "targets": 32,
+                  "projectile": null,
+                  "parts": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "crit": 0,
+                  "stun": 0,
+                  "cold": 0,
+                  "stunSeconds": 0.8,
+                  "poison": 0,
+                  "travel": 0.84
+                },
+                {
+                  "id": 390,
+                  "curse": {
+                    "duration": 60,
+                    "effects": {
+                      "allres_p": -40
+                    }
+                  },
+                  "level": 20,
+                  "missiles": 1,
+                  "melee": false,
+                  "phys": false,
+                  "pve": {
+                    "criticalMultiplier": 2,
+                    "advantageBonus": 0.1,
+                    "maximumResistance": 95,
+                    "series": 1,
+                    "seriesResistance": 0,
+                    "anti": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "resistanceCap": 75,
+                    "flatSeries": 0,
+                    "heavyChance": 0,
+                    "versus": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      0
+                    ],
+                    "spread": 0.15
+                  },
+                  "leech": 0,
+                  "manaLeech": 0,
+                  "cost": 120,
+                  "cooldown": 5,
+                  "attackPercent": 90,
+                  "range": 420,
+                  "radius": 120,
+                  "shape": "spot",
+                  "targets": 32,
+                  "projectile": null,
+                  "parts": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "crit": 0,
+                  "stun": 0,
+                  "cold": 0,
+                  "stunSeconds": 0.8,
+                  "poison": 0,
+                  "travel": 0.84
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
     "name": "shaolin",
     "profile": {
       "fac": "shaolin",
@@ -14278,6 +16565,25 @@
       }
     },
     "resolved": {
+      "allyScaling": {
+        "lifePercent": 0,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.0799999999999983,
+          0.0799999999999983,
+          0.20000000000004547,
+          0,
+          0.22400000000001796
+        ]
+      },
       "level": 150,
       "alignment": 0,
       "series": 0,
@@ -14856,6 +17162,12 @@
           {
             "id": 16,
             "level": 20,
+            "shared": {
+              "addphysicsdamage_p": 135,
+              "meleedamagereturn_p": 20,
+              "rangedamagereturn_p": 20,
+              "adddefense_v": 800
+            },
             "aura": true,
             "enabled": true,
             "duration": 1,
@@ -14880,6 +17192,25 @@
           {
             "active": [],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0799999999999983,
+                  0.08000000000000185,
+                  0.19999999999998863,
+                  0,
+                  0.22399999999998954
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 0,
@@ -15449,6 +17780,25 @@
               15
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.1799999999999926,
+                  0.17999999999999972,
+                  0.4500000000000455,
+                  0,
+                  0.5040000000000191
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 0,
@@ -16018,6 +18368,25 @@
               16
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0799999999999983,
+                  0.0799999999999983,
+                  0.20000000000004547,
+                  0,
+                  0.22400000000001796
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 0,
@@ -16588,6 +18957,25 @@
               16
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.1799999999999926,
+                  0.1799999999999926,
+                  0.4500000000000455,
+                  0,
+                  0.5040000000000759
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 0,
@@ -17157,6 +19545,25 @@
               273
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 53,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0800000000000054,
+                  0.0800000000000054,
+                  0.19999999999998863,
+                  0,
+                  0.22400000000004638
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 0,
@@ -17727,6 +20134,25 @@
               273
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 53,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.18000000000000682,
+                  0.18000000000000682,
+                  0.4499999999999318,
+                  0,
+                  0.5040000000001328
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 0,
@@ -18297,6 +20723,25 @@
               273
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 53,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0799999999999983,
+                  0.0799999999999983,
+                  0.19999999999998863,
+                  0,
+                  0.22399999999998954
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 0,
@@ -18868,6 +21313,25 @@
               273
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 53,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.1799999999999926,
+                  0.1799999999999926,
+                  0.4499999999999318,
+                  0,
+                  0.5039999999999054
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 0,
@@ -19466,6 +21930,21 @@
       }
     },
     "resolved": {
+      "allyScaling": {
+        "lifePercent": 125,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.0600000000000005
+        ]
+      },
       "level": 150,
       "alignment": 0,
       "series": 2,
@@ -19805,6 +22284,9 @@
           {
             "id": 86,
             "level": 20,
+            "shared": {
+              "fastwalkrun_p": 66
+            },
             "aura": true,
             "enabled": true,
             "duration": 8,
@@ -19816,6 +22298,10 @@
           {
             "id": 89,
             "level": 20,
+            "shared": {
+              "lifereplenish_v": 20,
+              "manareplenish_v": 20
+            },
             "aura": true,
             "enabled": true,
             "duration": 8,
@@ -19827,6 +22313,9 @@
           {
             "id": 92,
             "level": 20,
+            "shared": {
+              "lifemax_p": 125
+            },
             "aura": true,
             "enabled": true,
             "duration": 8,
@@ -19849,6 +22338,13 @@
           {
             "id": 282,
             "level": 20,
+            "shared": {
+              "fasthitrecover_v": 20,
+              "fatallystrikeres_p": 20,
+              "freezetimereduce_p": 30,
+              "poisontimereduce_p": 30,
+              "stuntimereduce_p": 30
+            },
             "aura": true,
             "enabled": true,
             "duration": 8,
@@ -19860,6 +22356,11 @@
           {
             "id": 332,
             "level": 20,
+            "shared": {
+              "lifereplenish_v": 40,
+              "manareplenish_v": 40,
+              "allres_p": 40
+            },
             "aura": true,
             "enabled": true,
             "duration": 8,
@@ -19873,6 +22374,21 @@
           {
             "active": [],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -20214,6 +22730,21 @@
               86
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -20555,6 +23086,21 @@
               89
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -20897,6 +23443,21 @@
               89
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -21238,6 +23799,21 @@
               92
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -21580,6 +24156,21 @@
               92
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -21922,6 +24513,21 @@
               92
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -22265,6 +24871,21 @@
               92
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -22606,6 +25227,21 @@
               282
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -22948,6 +25584,21 @@
               282
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -23290,6 +25941,21 @@
               282
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -23633,6 +26299,21 @@
               282
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -23975,6 +26656,21 @@
               282
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -24318,6 +27014,21 @@
               282
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -24661,6 +27372,21 @@
               282
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -25005,6 +27731,21 @@
               282
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -25346,6 +28087,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -25688,6 +28444,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -26030,6 +28801,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -26373,6 +29159,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -26715,6 +29516,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -27058,6 +29874,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -27401,6 +30232,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -27745,6 +30591,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -28087,6 +30948,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -28430,6 +31306,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -28773,6 +31664,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -29117,6 +32023,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -29460,6 +32381,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -29804,6 +32740,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -30148,6 +33099,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -30493,6 +33459,21 @@
               332
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 125,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.0600000000000005
+                ]
+              },
               "level": 150,
               "alignment": 0,
               "series": 2,
@@ -30860,6 +33841,22 @@
       }
     },
     "resolved": {
+      "allyScaling": {
+        "lifePercent": 128,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.08000000000000007,
+          0.0799999999999983
+        ]
+      },
       "level": 150,
       "alignment": 1,
       "series": 0,
@@ -31286,6 +34283,22 @@
           {
             "active": [],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 128,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.08000000000000007,
+                  0.0799999999999983
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 0,
@@ -31690,6 +34703,22 @@
               33
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 128,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.08000000000000007,
+                  0.0799999999999983
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 0,
@@ -32094,6 +35123,22 @@
               42
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 128,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.08000000000000007,
+                  0.0799999999999983
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 0,
@@ -32499,6 +35544,22 @@
               42
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 128,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.08000000000000007,
+                  0.0799999999999983
+                ]
+              },
               "level": 150,
               "alignment": 1,
               "series": 0,
@@ -32926,6 +35987,21 @@
       }
     },
     "resolved": {
+      "allyScaling": {
+        "lifePercent": 0,
+        "regenLife": 0,
+        "defense": 1,
+        "resMax": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ],
+        "physical": [
+          0.07000000000000028
+        ]
+      },
       "level": 150,
       "alignment": 2,
       "series": 3,
@@ -33278,6 +36354,21 @@
           {
             "active": [],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.07000000000000028
+                ]
+              },
               "level": 150,
               "alignment": 2,
               "series": 3,
@@ -33619,6 +36710,21 @@
               150
             ],
             "profile": {
+              "allyScaling": {
+                "lifePercent": 0,
+                "regenLife": 0,
+                "defense": 1,
+                "resMax": [
+                  75,
+                  75,
+                  75,
+                  75,
+                  75
+                ],
+                "physical": [
+                  0.07000000000000028
+                ]
+              },
               "level": 150,
               "alignment": 2,
               "series": 3,

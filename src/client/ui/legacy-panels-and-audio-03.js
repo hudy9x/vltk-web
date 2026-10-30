@@ -570,7 +570,7 @@ var Z8 = function (A) {
   n && n.remove();
   const secondary = A === 'secondary', label = secondary ? 'Chiêu phụ · Chuột phải' : `F${A + 1}`;
   const t = secondary ? (canSlotSkill(o.secondarySkill) ? o.secondarySkill : 0) : o.slots[A],
-    e = nh().filter(id => !secondary || typeof gameMultiplayer === 'undefined' || !gameMultiplayer.pve || wn(T[id]) !== 'curse').sort((u, w) => T[u].req - T[w].req),
+    e = nh().filter(id => !secondary || typeof gameMultiplayer === 'undefined' || !gameMultiplayer.pve || wn(T[id]) !== 'curse' || T[id].f==='wudu').sort((u, w) => T[u].req - T[w].req),
     a = m("#battle");
   ((n = document.createElement("div")), (n.id = "skPick"), (n.dataset.i = A));
   const i = (u) => {

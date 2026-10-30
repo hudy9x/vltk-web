@@ -4,8 +4,10 @@ var JP = function () {
   const A = (r) => typeof Vi != "function" || (wn(T[r]) !== "curse" && Vi(T[r]) && !l.buffAssume),
     n = Object.keys(o.sk)
       .map(Number)
-      .filter((r) => o.sk[r] > 0 && U1[r] && T[r] && !UA(T[r]) && A(r)),
-    t = n.join(",");
+      .filter((r) => o.sk[r] > 0 && U1[r] && T[r] && !UA(T[r]) && A(r));
+  const shared = new Set(typeof OnlineSupport!=='undefined'?OnlineSupport.shared().map(([id])=>id).concat(OnlineSupport.harmful().map(c=>c.skill)):[]);
+  for(const id of shared)if(U1[id]&&T[id]&&!n.includes(id))n.push(id);
+  const t = n.join(",");
   if (l.stKey === t) return l.stList;
   const e = n.sort((r, c) => T[c].req - T[r].req),
     a = {},
@@ -13,7 +15,7 @@ var JP = function () {
   for (const r of e) {
     const c = U1[r],
       d = a[c.pos] || [];
-    d.length >= 3 || d.includes(c.f) || (d.push(c.f), (a[c.pos] = d), i.push(c));
+    (d.length >= 3 && !shared.has(r)) || d.includes(c.f) || (d.push(c.f), (a[c.pos] = d), i.push(c));
   }
   return ((l.stKey = t), (l.stList = i), i);
 };

@@ -116,6 +116,8 @@ var onlineWorld = (() => {
         slowPower: m.coldPower,
         max: m.maxHp,
         hp: m.hp,
+        curse:Object.fromEntries((m.curses||[]).map(c=>[c.skill,(l.clock||0)+c.remaining])),
+        curseL:Object.fromEntries((m.curses||[]).map(c=>[c.skill,c.level])),
         dead: m.hp <= 0,
         slowT: m.cold,
         stun: m.stun,
@@ -210,7 +212,7 @@ var onlineWorld = (() => {
     // Revision-based progression; initial/full commands also include canonical inventory.
     const fields = imported&&!saved.full
       ? (window.localGameConfig?.progressionFields||['lvl','xp','gold','attrPts','skPts','attr','sk','fac','skL','bkOk','main','mainLock','secondarySkill','slots','skillRoute','potStock','potUsed','onlinePotionSpent'])
-      : ['lvl', 'xp', 'gold', 'knb', 'attrPts', 'skPts', 'attr', 'sk', 'eq', 'inv', 'fac', 'sex', 'name', 'skL', 'bkOk', 'sk150Training', 'mats', 'main', 'mainLock', 'secondarySkill', 'slots', 'skillRoute', 'auraOff', 'autoBuff', 'supportAutoOff', 'potStock', 'potUsed', 'onlinePotionSpent', 'uid', 'onlineMounted'];
+      : ['lvl', 'xp', 'gold', 'knb', 'attrPts', 'skPts', 'attr', 'sk', 'eq', 'inv', 'fac', 'sex', 'name', 'skL', 'bkOk', 'sk150Training', 'mats', 'main', 'mainLock', 'secondarySkill', 'slots', 'skillRoute', 'auraOff', 'autoBuff', 'autoCurse', 'supportAutoOff', 'potStock', 'potUsed', 'onlinePotionSpent', 'uid', 'onlineMounted'];
     for (const field of fields) if (p[field] !== undefined) o[field] = structuredClone(p[field]);
     if(p.onlineMounted!==undefined)l.mounted=!!p.onlineMounted;
     imported = true;
@@ -221,7 +223,11 @@ var onlineWorld = (() => {
     if(o.lvl>previousLevel&&o.autoPts===true){if(typeof Pt==='function')Pt();if(typeof yt==='function')yt();}
   }
   return {
-    support(id){return send(8,{skill:+id});},
+    support(id,actor=l.manTgt||l.tgt){
+      if(T[id]&&wn(T[id])==='curse'&&T[id].f!=='wudu'){k('Bùa hại của môn phái này chưa được mở trong bản online.');return 0;}
+      if(T[id]&&wn(T[id])==='curse'&&!actor){k('Hãy chọn mục tiêu để thi triển bùa hại');return 0;}
+      return send(8,{skill:+id,target:actor?.id||0});
+    },
     setPvp(enabled){clearTimeout(moveTimer);moveTimer=null;goal=null;motion.cancel();Y.target=null;return OnlinePvp.select(enabled,send);},
     potion(kind){return OnlineConsumables.use(kind,send);},
     bind(value) {
@@ -260,8 +266,7 @@ var onlineWorld = (() => {
     secondary(actor,skill){
       if(!client?.online||!active())return;
       if(T[skill]&&!UA(T[skill])){
-        if(!['buff','aura'].includes(wn(T[skill]))){k('Chiêu bùa hại chưa được mở trong bản online này.');return;}
-        this.support(skill);return;
+        this.support(skill,actor);return;
       }
       if(!l.P?.actives?.some(s=>s.id===skill)){k('Chiêu phụ chưa dùng được với trang bị hiện tại.');return;}
       if(!actor)return;
@@ -282,6 +287,7 @@ var onlineWorld = (() => {
     },
     cast(skill, persisted = false) {
       if(T[skill]&&!UA(T[skill])&&['buff','aura'].includes(wn(T[skill]))){this.support(skill);return;}
+      if(T[skill]&&wn(T[skill])==='curse'&&T[skill].f==='wudu'){Y.pendingSupport=skill;qA();k('Chọn mục tiêu để thi triển: '+T[skill].n);return;}
       if (!T[skill] || !UA(T[skill])) {
         k('Chiêu bùa hại chưa được mở trong bản online này.');
         return;

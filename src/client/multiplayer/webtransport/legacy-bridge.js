@@ -65,7 +65,7 @@ var gameMultiplayer = (() => {
         if (layer === "under" && look.rebirth && vf[look.rebirth])
           F3(ctx, vf[look.rebirth], actor.x, actor.y, 0, phase, Jn, 0.95, actor);
         const support=onlineWorld.state?.actors.find(a=>a.id===p.id)?.supports||[];
-        const serverEffects=support.filter(s=>s.active&&U1[s.skill]).map(s=>s.skill);
+        const serverEffects=support.filter(s=>s.active&&U1[s.skill]).map(s=>s.skill).concat((authoritative?.curses||[]).map(c=>c.skill));
         const effects=[...new Set([...(look.effects||[]).filter(id=>!T[id]||!['buff','aura'].includes(wn(T[id]))),...serverEffects])];
         for (const id of effects) {
           const sprite = U1[id];
