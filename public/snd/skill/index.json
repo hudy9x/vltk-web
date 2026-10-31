@@ -1,0 +1,4100 @@
+[
+  {
+    "file_name": "sound_k001.wav",
+    "path": "snd/skill/sound_k001.wav",
+    "skill_id": 10,
+    "skill_vi": "Võ công cận chiến / ngoại công sơ cấp (Nam)",
+    "skill_cn": "初级外功/近战发招音效 (男)",
+    "sect": "Thiếu Lâm, Thiên Vương, Võ Đang, Đường Môn, Ngũ Độc",
+    "req_level": 10,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu võ công sơ cấp (cấp 10) nhân vật nam: Kim Cang Phục Ma (Thiếu Lâm), Trảm Long Quyết & Hồi Phong Lạc Nhạn (Thiên Vương), Nộ Lôi Chỉ (Võ Đang), Tích Lịch Đơn (Đường Môn), Độc Sa Chưởng (Ngũ Độc).",
+    "cast_skills_count": 41,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 10,
+        "skill_vi": "Kim Cang Phục Ma",
+        "sect": "Thiếu Lâm",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 29,
+        "skill_vi": "Trảm Long quyết",
+        "sect": "Thiên Vương",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 30,
+        "skill_vi": "Hồi Phong Lạc Nhạn",
+        "sect": "Thiên Vương",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 45,
+        "skill_vi": "Tích Lịch đơn",
+        "sect": "Đường Môn",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 63,
+        "skill_vi": "Độc Sa chưởng",
+        "sect": "Ngũ Độc",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 117,
+        "skill_vi": "Đầu Thạch Vấn Lộ",
+        "sect": "Cái Bang",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 139,
+        "skill_vi": "Hỗn Thủy Mạc Ngư",
+        "sect": "Thiên Nhẫn",
+        "req_level": 20,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 153,
+        "skill_vi": "Nộ Lôi Chỉ",
+        "sect": "Võ Đang",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 169,
+        "skill_vi": "Hô Phong Pháp",
+        "sect": "Côn Lôn",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 234,
+        "skill_vi": "Độc Sa chưởng npc",
+        "sect": "Dùng chung",
+        "req_level": 10,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k002.wav",
+    "path": "snd/skill/sound_k002.wav",
+    "skill_id": 11,
+    "skill_vi": "Võ công trung cấp (Cấp 30 - 60, Nam)",
+    "skill_cn": "中级外功发招音效 (男)",
+    "sect": "Thiếu Lâm, Thiên Vương, Đường Môn, Ngũ Độc, Cái Bang",
+    "req_level": 30,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu trung cấp (cấp 30 - 60) nhân vật nam: Hoành Tảo Lục Hợp (Thiếu Lâm lv50), Hàng Vân Quyết (lv30) & Vô Tâm Trảm (lv60, Thiên Vương), Đoạt Hồn Tiêu (Đường Môn lv30), Diên Môn Thác Bát (Cái Bang lv10).",
+    "cast_skills_count": 42,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 11,
+        "skill_vi": "Hoành Tảo Lục Hợp",
+        "sect": "Thiếu Lâm",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 31,
+        "skill_vi": "Hàng Vân Quyết",
+        "sect": "Thiên Vương",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 32,
+        "skill_vi": "Vô Tâm Trảm",
+        "sect": "Thiên Vương",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 33,
+        "skill_vi": "Tĩnh Tâm Quyết",
+        "sect": "Thiên Vương",
+        "req_level": 20,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 47,
+        "skill_vi": "Đoạt Hồn Tiêu",
+        "sect": "Đường Môn",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 65,
+        "skill_vi": "Huyết Đao Độc Sát",
+        "sect": "Ngũ Độc",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 119,
+        "skill_vi": "Diên Môn Thác Bát",
+        "sect": "Cái Bang",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 142,
+        "skill_vi": "Thâu Thiên Hoán Nhật",
+        "sect": "Thiên Nhẫn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 155,
+        "skill_vi": "Thương Hải Minh Nguyệt",
+        "sect": "Võ Đang",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 172,
+        "skill_vi": "Thiên Tế Tấn Lôi",
+        "sect": "Côn Lôn",
+        "req_level": 30,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k003.wav",
+    "path": "snd/skill/sound_k003.wav",
+    "skill_id": 14,
+    "skill_vi": "Võ công tấn công / chiến ý trung cấp (Nam)",
+    "skill_cn": "战意/突进发招音效 (男)",
+    "sect": "Thiếu Lâm, Thiên Vương, Đường Môn, Ngũ Độc, Cái Bang",
+    "req_level": 10,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu công kích mãnh liệt nhân vật nam: Hàng Long Bất Vũ (Thiếu Lâm lv10), Kinh Lôi Trảm (lv10), Dương Quan Tam Điệp (lv30) & Thiên Vương Chiến Ý (lv60, Thiên Vương), Truy Tâm Tiễn (Đường Môn lv30).",
+    "cast_skills_count": 31,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 14,
+        "skill_vi": "Hàng Long Bất Vũ",
+        "sect": "Thiếu Lâm",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 34,
+        "skill_vi": "Kinh Lôi Trảm",
+        "sect": "Thiên Vương",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 35,
+        "skill_vi": "Dương Quan Tam Điệp",
+        "sect": "Thiên Vương",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 36,
+        "skill_vi": "Thiên Vương Chiến ý",
+        "sect": "Thiên Vương",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 50,
+        "skill_vi": "Truy Tâm Tiễn",
+        "sect": "Đường Môn",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 68,
+        "skill_vi": "U Minh Khô Lâu",
+        "sect": "Ngũ Độc",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 122,
+        "skill_vi": "Kiến Nhân Thần Thủ",
+        "sect": "Cái Bang",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 147,
+        "skill_vi": "Huyền Minh Hấp Tinh",
+        "sect": "Thiên Nhẫn",
+        "req_level": 40,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 158,
+        "skill_vi": "Kiếm Phi Kinh Thiên",
+        "sect": "Võ Đang",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 176,
+        "skill_vi": "Cuồng Phong Sậu Điện",
+        "sect": "Côn Lôn",
+        "req_level": 50,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k004.wav",
+    "path": "snd/skill/sound_k004.wav",
+    "skill_id": 17,
+    "skill_vi": "Võ công cao cấp uy lực (Cấp 40 - 50, Nam)",
+    "skill_cn": "高级近战发招音效 (男)",
+    "sect": "Thiếu Lâm, Thiên Vương, Cái Bang, Thiên Nhẫn, Võ Đang",
+    "req_level": 40,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu uy mãnh: Long Trảo Hổ Trảo (Thiếu Lâm lv40), Bát Phong Trảm (lv30), Bàn Cổ Cửu Thức (lv40) & Triêm Y Thập Bát Điệt (lv40, Thiên Vương), Bổng Đả Ác Cẩu (Cái Bang lv50), Huyền Nhất Vô Tượng (Võ Đang lv40).",
+    "cast_skills_count": 26,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 17,
+        "skill_vi": "Long Trảo Hổ Trảo (##)",
+        "sect": "Thiếu Lâm",
+        "req_level": 40,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 37,
+        "skill_vi": "Bát Phong Trảm",
+        "sect": "Thiên Vương",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 38,
+        "skill_vi": "Bàn Cổ Cửu Thức (##)",
+        "sect": "Thiên Vương",
+        "req_level": 40,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 39,
+        "skill_vi": "Triêm Y Thập Bát Điệt (##)",
+        "sect": "Thiên Vương",
+        "req_level": 40,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 125,
+        "skill_vi": "Bổng Đả ác Cẩu",
+        "sect": "Cái Bang",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 148,
+        "skill_vi": "Ma Diệm Thất Sát",
+        "sect": "Thiên Nhẫn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 162,
+        "skill_vi": "Huyền Nhất Vô Tượng",
+        "sect": "Võ Đang",
+        "req_level": 40,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 245,
+        "skill_vi": "Huyền Nhất Vô Tượng npc",
+        "sect": "Dùng chung",
+        "req_level": 40,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 249,
+        "skill_vi": "Tiểu Lý Phi Đao",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 250,
+        "skill_vi": "Tiểu Lý Phi Đao",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k005.wav",
+    "path": "snd/skill/sound_k005.wav",
+    "skill_id": 40,
+    "skill_vi": "Tuyệt kỹ trấn phái / võ công cấp 60 (Nam)",
+    "skill_cn": "绝技/镇派爆发发招音效 (男)",
+    "sect": "Thiên Vương, Đường Môn, Cái Bang, Ngũ Độc, Võ Đang, Thiếu Lâm",
+    "req_level": 50,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu cực mạnh (cấp 40 - 60) nhân vật nam: Đoạn Hồn Thích (lv40), Kim Chung Tráo (lv50), Huyết Chiến Bát Phương (lv60, Thiên Vương), Kháng Long Hữu Hối (Cái Bang lv50), Thiên La Địa Võng (Đường Môn lv60), Chu Cáp Thanh Minh (Ngũ Độc lv60).",
+    "cast_skills_count": 103,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 40,
+        "skill_vi": "Đoạn Hồn Thích",
+        "sect": "Thiên Vương",
+        "req_level": 40,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 41,
+        "skill_vi": "Huyết Chiến Bát Phương",
+        "sect": "Thiên Vương",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 42,
+        "skill_vi": "Kim Chung Tráo",
+        "sect": "Thiên Vương",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 58,
+        "skill_vi": "Thiên La Địa Võng",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 74,
+        "skill_vi": "Chu Cáp Thanh Minh",
+        "sect": "Ngũ Độc",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 128,
+        "skill_vi": "Kháng Long Hữu Hối",
+        "sect": "Cái Bang",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 164,
+        "skill_vi": "Bác Cấp Nhi Phục",
+        "sect": "Võ Đang",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 248,
+        "skill_vi": "Thiên la Địa võng  npc",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 302,
+        "skill_vi": "Bạo Vũ Lê Hoa",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 303,
+        "skill_vi": "Độc Thích Cốt",
+        "sect": "Đường Môn",
+        "req_level": 20,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k006.wav",
+    "path": "snd/skill/sound_k006.wav",
+    "skill_id": 80,
+    "skill_vi": "Võ công sơ cấp (Cấp 10, Nữ)",
+    "skill_cn": "初级内功/暗器发招音效 (女)",
+    "sect": "Nga Mi, Thúy Yên, Đường Môn, Ngũ Độc, Cái Bang",
+    "req_level": 10,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu võ công sơ cấp nhân vật nữ: Phiêu Tuyết Xuyên Vân (Nga Mi lv10), Phong Hoa Tuyết Nguyệt & Trị Liệu Thuật (Thúy Yên lv10), Tích Lịch Đơn (Đường Môn lv10), Độc Sa Chưởng (Ngũ Độc lv10).",
+    "cast_skills_count": 42,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 45,
+        "skill_vi": "Tích Lịch đơn",
+        "sect": "Đường Môn",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 63,
+        "skill_vi": "Độc Sa chưởng",
+        "sect": "Ngũ Độc",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 80,
+        "skill_vi": "Phiêu Tuyết Xuyên Vân",
+        "sect": "Nga Mi",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 99,
+        "skill_vi": "Phong Hoa Tuyết Nguyệt",
+        "sect": "Thúy Yên",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 101,
+        "skill_vi": "Trị liệu thuật",
+        "sect": "Thúy Yên",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 117,
+        "skill_vi": "Đầu Thạch Vấn Lộ",
+        "sect": "Cái Bang",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 139,
+        "skill_vi": "Hỗn Thủy Mạc Ngư",
+        "sect": "Thiên Nhẫn",
+        "req_level": 20,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 153,
+        "skill_vi": "Nộ Lôi Chỉ",
+        "sect": "Võ Đang",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 169,
+        "skill_vi": "Hô Phong Pháp",
+        "sect": "Côn Lôn",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 234,
+        "skill_vi": "Độc Sa chưởng npc",
+        "sect": "Dùng chung",
+        "req_level": 10,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k007.wav",
+    "path": "snd/skill/sound_k007.wav",
+    "skill_id": 82,
+    "skill_vi": "Võ công trung cấp (Cấp 10 - 30, Nữ)",
+    "skill_cn": "中级发招音效 (女)",
+    "sect": "Nga Mi, Thúy Yên, Đường Môn, Ngũ Độc, Côn Lôn",
+    "req_level": 30,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu kiếm khí/ám khí nhân vật nữ: Tứ Tượng Đồng Quy (Nga Mi lv30), Phong Quyển Tàn Tuyết (Thúy Yên lv10), Đoạt Hồn Tiêu (Đường Môn lv30), Huyết Đao Độc Sát (Ngũ Độc lv10), Thiên Tế Tấn Lôi (Côn Lôn lv30).",
+    "cast_skills_count": 22,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 47,
+        "skill_vi": "Đoạt Hồn Tiêu",
+        "sect": "Đường Môn",
+        "req_level": 30,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 65,
+        "skill_vi": "Huyết Đao Độc Sát",
+        "sect": "Ngũ Độc",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 82,
+        "skill_vi": "Tứ Tượng Đồng Quy",
+        "sect": "Nga Mi",
+        "req_level": 30,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 102,
+        "skill_vi": "Phong Quyển Tàn Tuyết",
+        "sect": "Thúy Yên",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 119,
+        "skill_vi": "Diên Môn Thác Bát",
+        "sect": "Cái Bang",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 142,
+        "skill_vi": "Thâu Thiên Hoán Nhật",
+        "sect": "Thiên Nhẫn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 155,
+        "skill_vi": "Thương Hải Minh Nguyệt",
+        "sect": "Võ Đang",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 172,
+        "skill_vi": "Thiên Tế Tấn Lôi",
+        "sect": "Côn Lôn",
+        "req_level": 30,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 235,
+        "skill_vi": "Truy Tâm Tiễn npc",
+        "sect": "Dùng chung",
+        "req_level": 20,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 243,
+        "skill_vi": "Tứ Tượng Đồng Quy",
+        "sect": "Nga Mi",
+        "req_level": 20,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k008.wav",
+    "path": "snd/skill/sound_k008.wav",
+    "skill_id": 85,
+    "skill_vi": "Ám khí / chưởng pháp trung cấp (Cấp 10 - 30, Nữ)",
+    "skill_cn": "中级气劲/飞镖发招音效 (女)",
+    "sect": "Nga Mi, Đường Môn, Ngũ Độc, Cái Bang, Thiên Nhẫn",
+    "req_level": 10,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu: Nhất Diệp Tri Thu (Nga Mi lv10), Truy Tâm Tiễn (Đường Môn lv30), U Minh Khô Lâu (Ngũ Độc lv30), Kiến Nhân Thần Thủ (Cái Bang lv10), Huyền Minh Hấp Tinh (Thiên Nhẫn lv40).",
+    "cast_skills_count": 19,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 50,
+        "skill_vi": "Truy Tâm Tiễn",
+        "sect": "Đường Môn",
+        "req_level": 30,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 68,
+        "skill_vi": "U Minh Khô Lâu",
+        "sect": "Ngũ Độc",
+        "req_level": 30,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 85,
+        "skill_vi": "Nhất Diệp Tri Thu",
+        "sect": "Nga Mi",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 122,
+        "skill_vi": "Kiến Nhân Thần Thủ",
+        "sect": "Cái Bang",
+        "req_level": 10,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 147,
+        "skill_vi": "Huyền Minh Hấp Tinh",
+        "sect": "Thiên Nhẫn",
+        "req_level": 40,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 158,
+        "skill_vi": "Kiếm Phi Kinh Thiên",
+        "sect": "Võ Đang",
+        "req_level": 30,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 176,
+        "skill_vi": "Cuồng Phong Sậu Điện",
+        "sect": "Côn Lôn",
+        "req_level": 50,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 339,
+        "skill_vi": "Nhiếp Hồn Nguyệt ảnh",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 342,
+        "skill_vi": "Cửu Cung Phi Tinh",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 370,
+        "skill_vi": "Vạn Kiếm Tề Phát",
+        "sect": "Võ Đang",
+        "req_level": 30,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k009.wav",
+    "path": "snd/skill/sound_k009.wav",
+    "skill_id": 88,
+    "skill_vi": "Võ công cấp cao (Cấp 50 - 60, Nữ)",
+    "skill_cn": "高级剑法/气功发招音效 (女)",
+    "sect": "Nga Mi, Thúy Yên, Cái Bang, Thiên Nhẫn, Võ Đang",
+    "req_level": 60,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu cấp cao nhân vật nữ: Bất Diệt Bất Tuyệt (Nga Mi lv60), Mục Dã Lưu Tinh (Thúy Yên lv60), Bổng Đả Ác Cẩu (Cái Bang lv50), Ma Diệm Thất Sát (Thiên Nhẫn lv60), Huyền Nhất Vô Tượng (Võ Đang lv40).",
+    "cast_skills_count": 41,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 88,
+        "skill_vi": "Bất Diệt Bất Tuyệt",
+        "sect": "Nga Mi",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 108,
+        "skill_vi": "Mục Dã Lưu Tinh",
+        "sect": "Thúy Yên",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 125,
+        "skill_vi": "Bổng Đả ác Cẩu",
+        "sect": "Cái Bang",
+        "req_level": 50,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 148,
+        "skill_vi": "Ma Diệm Thất Sát",
+        "sect": "Thiên Nhẫn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 162,
+        "skill_vi": "Huyền Nhất Vô Tượng",
+        "sect": "Võ Đang",
+        "req_level": 40,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 245,
+        "skill_vi": "Huyền Nhất Vô Tượng npc",
+        "sect": "Dùng chung",
+        "req_level": 40,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 246,
+        "skill_vi": "Bất Diệt Bất Tuyệt npc",
+        "sect": "Nga Mi",
+        "req_level": 40,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 249,
+        "skill_vi": "Tiểu Lý Phi Đao",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 250,
+        "skill_vi": "Tiểu Lý Phi Đao",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 301,
+        "skill_vi": "Truy Tinh Trục Điện",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k010.wav",
+    "path": "snd/skill/sound_k010.wav",
+    "skill_id": 91,
+    "skill_vi": "Tuyệt kỹ trấn phái / cấp 60 (Nữ)",
+    "skill_cn": "绝技/镇派爆发发招音效 (女)",
+    "sect": "Nga Mi, Thúy Yên, Đường Môn, Ngũ Độc, Cái Bang",
+    "req_level": 60,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu uy lực tột đỉnh nhân vật nữ: Phật Quang Phổ Chiếu (Nga Mi lv60), Bích Hải Triều Sinh (lv60) & Phù Vân Tán Tuyết (lv30, Thúy Yên), Thiên La Địa Võng (Đường Môn lv60), Chu Cáp Thanh Minh (Ngũ Độc lv60), Kháng Long Hữu Hối (Cái Bang lv50).",
+    "cast_skills_count": 109,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 58,
+        "skill_vi": "Thiên La Địa Võng",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 74,
+        "skill_vi": "Chu Cáp Thanh Minh",
+        "sect": "Ngũ Độc",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 91,
+        "skill_vi": "Phật Quang Phổ Chiếu",
+        "sect": "Nga Mi",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 111,
+        "skill_vi": "Bích Hải Triều Sinh",
+        "sect": "Thúy Yên",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 113,
+        "skill_vi": "Phù Vân Tán Tuyết",
+        "sect": "Thúy Yên",
+        "req_level": 30,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 128,
+        "skill_vi": "Kháng Long Hữu Hối",
+        "sect": "Cái Bang",
+        "req_level": 50,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 164,
+        "skill_vi": "Bác Cấp Nhi Phục",
+        "sect": "Võ Đang",
+        "req_level": 30,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 248,
+        "skill_vi": "Thiên la Địa võng  npc",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 255,
+        "skill_vi": "Sư Tử hựu Hống",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 302,
+        "skill_vi": "Bạo Vũ Lê Hoa",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k011.wav",
+    "path": "snd/skill/sound_k011.wav",
+    "skill_id": 13,
+    "skill_vi": "Lập Địa Thành Phật",
+    "skill_cn": "立地成佛",
+    "sect": "Thiếu Lâm",
+    "req_level": 30,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh thi triển chú pháp Phật môn Lập Địa Thành Phật của phái Thiếu Lâm (hóa giải thù hận, giảm sát thương địch thủ).",
+    "cast_skills_count": 1,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 13,
+        "skill_vi": "Lập Địa Thành Phật",
+        "sect": "Thiếu Lâm",
+        "req_level": 30,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k014.wav",
+    "path": "snd/skill/sound_k014.wav",
+    "skill_id": 319,
+    "skill_vi": "Va chạm đao thương chém trúng (Thiếu Lâm / Thần Binh)",
+    "skill_cn": "重兵刃命中破空音效",
+    "sect": "Thiếu Lâm / Toàn phái",
+    "req_level": 90,
+    "sound_type": "HitSound",
+    "desc": "Âm thanh va chạm chém đứt cực mạnh khi chiêu thức Hoành Tảo Thiên Quân (Msl 135) hoặc Vi Đà Hiến Xử / Diệt Tội Độ Sanh (Msl 318) phái Thiếu Lâm đánh trúng mục tiêu.",
+    "cast_skills_count": 0,
+    "missiles_count": 2,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 135,
+        "missle_name_vi": "Hoành Tảo Thiên Quân",
+        "slots": [
+          "HitSoundSlotB4"
+        ]
+      },
+      {
+        "missle_id": 318,
+        "missle_name_vi": "Diệt Tội Độ Sanh",
+        "slots": [
+          "HitSoundSlotB4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k015.wav",
+    "path": "snd/skill/sound_k015.wav",
+    "skill_id": 135,
+    "skill_vi": "Hỏa hệ chưởng pháp Thiên Nhẫn",
+    "skill_cn": "天忍火系掌法发招音效",
+    "sect": "Thiên Nhẫn",
+    "req_level": 10,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu võ công Hỏa giáo phái Thiên Nhẫn: Tàn Dương Như Huyết (lv10), Hỏa Liên Phần Hoa (lv10), Ảo Ảnh Phi Hồ (lv20), Thôi Sơn Điền Hải (lv30), Liệt Hỏa Tình Thiên (lv30).",
+    "cast_skills_count": 31,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 135,
+        "skill_vi": "Tàn Dương Như Huyết",
+        "sect": "Thiên Nhẫn",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 136,
+        "skill_vi": "Hỏa Liên Phần Hoa",
+        "sect": "Thiên Nhẫn",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 137,
+        "skill_vi": "ảo ảnh Phi Hồ",
+        "sect": "Thiên Nhẫn",
+        "req_level": 20,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 138,
+        "skill_vi": "Thôi sơn  Điền Hải",
+        "sect": "Thiên Nhẫn",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 140,
+        "skill_vi": "Phi Hồng Vô Tích",
+        "sect": "Thiên Nhẫn",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 141,
+        "skill_vi": "Liệt Hỏa Tình Thiên",
+        "sect": "Thiên Nhẫn",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 144,
+        "skill_vi": "Minh Tôn Bản Sinh (##)",
+        "sect": "Thiên Nhẫn",
+        "req_level": 30,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 145,
+        "skill_vi": "Đơn Chỉ Liệt Diệm",
+        "sect": "Thiên Nhẫn",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 233,
+        "skill_vi": "Tàn Dương Như Huyết npc",
+        "sect": "Dùng chung",
+        "req_level": 10,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 247,
+        "skill_vi": "Đơn Chỉ Liệt Diệm npc",
+        "sect": "Dùng chung",
+        "req_level": 40,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "sound_k017.wav",
+    "path": "snd/skill/sound_k017.wav",
+    "skill_id": 100,
+    "skill_vi": "Băng giáp hộ thể Thúy Yên & va chạm trúng thương",
+    "skill_cn": "翠烟护体寒冰 / 枪棒破甲命中",
+    "sect": "Thúy Yên / Thiếu Lâm",
+    "req_level": 40,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh kích hoạt hộ thân Băng hệ Thúy Yên: Hộ Thể Hàn Băng (lv40), Thiên Lý Băng Phong (lv20), Tuyết Ảnh (lv50); đồng thời dùng làm âm thanh trúng thương của Hoành Tảo Thiên Quân (Thiếu Lâm).",
+    "cast_skills_count": 3,
+    "missiles_count": 2,
+    "related_skills": [
+      {
+        "skill_id": 100,
+        "skill_vi": "Hộ Thể Hàn Băng",
+        "sect": "Thúy Yên",
+        "req_level": 40,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 103,
+        "skill_vi": "Thiên Lý Băng Phong",
+        "sect": "Thúy Yên",
+        "req_level": 20,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 109,
+        "skill_vi": "Tuyết ảnh",
+        "sect": "Thúy Yên",
+        "req_level": 50,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": [
+      {
+        "missle_id": 135,
+        "missle_name_vi": "Hoành Tảo Thiên Quân",
+        "slots": [
+          "HitSound2",
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 318,
+        "missle_name_vi": "Diệt Tội Độ Sanh",
+        "slots": [
+          "HitSound2",
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k023.wav",
+    "path": "snd/skill/sound_k023.wav",
+    "skill_id": 11,
+    "skill_vi": "Đường đao Hoành Tảo Lục Hợp",
+    "skill_cn": "横扫六合飞行轨迹音效",
+    "sect": "Thiếu Lâm",
+    "req_level": 50,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh đao phong quét ngang không trung của chiêu Hoành Tảo Lục Hợp (Msl 75) phái Thiếu Lâm.",
+    "cast_skills_count": 0,
+    "missiles_count": 1,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 75,
+        "missle_name_vi": "Hoành Tảo Lục Hợp",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k028.wav",
+    "path": "snd/skill/sound_k028.wav",
+    "skill_id": 135,
+    "skill_vi": "Hỏa đạn Tàn Dương Như Huyết / Đơn Chỉ Liệt Diệm",
+    "skill_cn": "残阳如血/单指烈焰飞行音效",
+    "sect": "Thiên Nhẫn",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh luồng hỏa cầu rít gió bay đi của chiêu Tàn Dương Như Huyết (Msl 54) và Đơn Chỉ Liệt Diệm (Msl 57) phái Thiên Nhẫn.",
+    "cast_skills_count": 0,
+    "missiles_count": 3,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 54,
+        "missle_name_vi": "Tàn Dương Như Huyết",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 57,
+        "missle_name_vi": "Đơn Chỉ Liệt Diệm",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 104,
+        "missle_name_vi": "Đơn Chỉ Liệt Diệm npc",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k029.wav",
+    "path": "snd/skill/sound_k029.wav",
+    "skill_id": 82,
+    "skill_vi": "Kiếm khí Tứ Tượng Đồng Quy / Nhất Diệp Tri Thu",
+    "skill_cn": "四象同归/一叶知秋飞剑音效",
+    "sect": "Nga Mi",
+    "req_level": 30,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh tiếng kiếm khí Nga Mi xé gió bay thẳng tới mục tiêu của chiêu Tứ Tượng Đồng Quy (Msl 1) và Nhất Diệp Tri Thu (Msl 2).",
+    "cast_skills_count": 0,
+    "missiles_count": 5,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 1,
+        "missle_name_vi": "Tứ Tượng Đồng Quy",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 2,
+        "missle_name_vi": "Nhất Diệp Tri Thu",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 208,
+        "missle_name_vi": "giảm tốc toàn bộ",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 412,
+        "missle_name_vi": "Bạch Hồng Quán Nhật",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 413,
+        "missle_name_vi": "Kim Nhạn Hoành Không",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k031.wav",
+    "path": "snd/skill/sound_k031.wav",
+    "skill_id": 58,
+    "skill_vi": "Ám khí Thiên La Địa Võng / Tiểu Lý Phi Đao",
+    "skill_cn": "天罗地网/小李飞刀暗器破空音效",
+    "sect": "Đường Môn",
+    "req_level": 60,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh vô số ám khí, phi đao xé toạc không trung dày đặc của tuyệt kỹ Thiên La Địa Võng (Msl 67), Bạo Vũ Lê Hoa (Msl 126) và Tiểu Lý Phi Đao (Msl 107).",
+    "cast_skills_count": 0,
+    "missiles_count": 5,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 67,
+        "missle_name_vi": "Thiên La Địa võng",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 105,
+        "missle_name_vi": "Thiên la Địa võng  npc",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 107,
+        "missle_name_vi": "Tiểu Lý Phi Đao",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 126,
+        "missle_name_vi": "Bạo Vũ Lê Hoa",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 360,
+        "missle_name_vi": "ẫÂằăèỡÅđằă°ờ",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k032.wav",
+    "path": "snd/skill/sound_k032.wav",
+    "skill_id": 142,
+    "skill_vi": "Hút nội lực & áp sát cận chiến (Thiên Nhẫn)",
+    "skill_cn": "吸星大法/近战肉搏命中音效",
+    "sect": "Thiên Nhẫn / Dùng chung",
+    "req_level": 60,
+    "sound_type": "HitSound",
+    "desc": "Âm thanh chạm đích hút nội lực hoặc đòn cận chiến áp sát: Thâu Thiên Hoán Nhật (Msl 69), Tá Lực Đả Lực (Msl 70), Hấp Tinh Đại Pháp (Msl 71) của phái Thiên Nhẫn.",
+    "cast_skills_count": 0,
+    "missiles_count": 4,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 65,
+        "missle_name_vi": "Công kích vật lý gần",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 69,
+        "missle_name_vi": "Thâu Thiên Hoán Nhật",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 70,
+        "missle_name_vi": "Tá Lực Đả Lực",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 71,
+        "missle_name_vi": "Hấp Tinh Đại Pháp",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k036.wav",
+    "path": "snd/skill/sound_k036.wav",
+    "skill_id": 128,
+    "skill_vi": "Nổ chấn động Thôi Sơn Điền Hải / Kháng Long Hữu Hối",
+    "skill_cn": "推山填海/亢龙有悔爆裂命中音效",
+    "sect": "Cái Bang / Thiên Nhẫn",
+    "req_level": 50,
+    "sound_type": "HitSound",
+    "desc": "Âm thanh nổ vang rền khi kình chưởng Kháng Long Hữu Hối (Msl 117), Thôi Sơn Điền Hải (Msl 55) hoặc Ma Viêm Tại Thiên (Msl 185) oanh kích mục tiêu.",
+    "cast_skills_count": 0,
+    "missiles_count": 6,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 55,
+        "missle_name_vi": "Thôi sơn  Điền Hải",
+        "slots": [
+          "HitSound2"
+        ]
+      },
+      {
+        "missle_id": 74,
+        "missle_name_vi": "Trảm Long Quyết",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 117,
+        "missle_name_vi": "Kháng Long Hữu Hối",
+        "slots": [
+          "HitSound2"
+        ]
+      },
+      {
+        "missle_id": 185,
+        "missle_name_vi": "Ma Viêm Tại Thiên",
+        "slots": [
+          "HitSound2"
+        ]
+      },
+      {
+        "missle_id": 223,
+        "missle_name_vi": "Như Nhật Trung Thiên",
+        "slots": [
+          "HitSound2"
+        ]
+      },
+      {
+        "missle_id": 399,
+        "missle_name_vi": "ằðầẵấỉẻÀìểà¯",
+        "slots": [
+          "HitSound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k037.wav",
+    "path": "snd/skill/sound_k037.wav",
+    "skill_id": 1072,
+    "skill_vi": "Khí công Ngũ Diệu Càn Khôn",
+    "skill_cn": "五曜乾坤飞行气劲音效",
+    "sect": "Cái Bang",
+    "req_level": 120,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh luồng long kình xoáy sâu của đại chiêu cấp cao Ngũ Diệu Càn Khôn (Msl 334) bang Cái Bang.",
+    "cast_skills_count": 0,
+    "missiles_count": 27,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 48,
+        "missle_name_vi": "Kháng Long Hữu Hối",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 54,
+        "missle_name_vi": "Tàn Dương Như Huyết",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 56,
+        "missle_name_vi": "Liệt Hỏa Tình Thiên",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 57,
+        "missle_name_vi": "Đơn Chỉ Liệt Diệm",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 104,
+        "missle_name_vi": "Đơn Chỉ Liệt Diệm npc",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 166,
+        "missle_name_vi": "Phi Long Tại Thiên",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 169,
+        "missle_name_vi": "Vân Long Kích",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 171,
+        "missle_name_vi": "Thiên Ngoại Lưu Tinh",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 184,
+        "missle_name_vi": "Vân Long Kích",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 198,
+        "missle_name_vi": "NPC đánh xa (Kim)",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k038.wav",
+    "path": "snd/skill/sound_k038.wav",
+    "skill_id": 304,
+    "skill_vi": "Bẫy nổ chấn địa Đường Môn & Hỏa nổ",
+    "skill_cn": "唐门陷阱/轰击爆炸音效",
+    "sect": "Đường Môn / Thiên Nhẫn",
+    "req_level": 60,
+    "sound_type": "HitSound",
+    "desc": "Âm thanh cạm bẫy Đường Môn phát nổ liên hoàn: Độc Thích Cốt (Msl 128), Xuyên Tâm Thích (Msl 154), Hàn Băng Thích (Msl 156), Địa Diệm Hỏa (Msl 158), Lôi Kích Thuật (Msl 160).",
+    "cast_skills_count": 0,
+    "missiles_count": 15,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 55,
+        "missle_name_vi": "Thôi sơn  Điền Hải",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 117,
+        "missle_name_vi": "Kháng Long Hữu Hối",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 128,
+        "missle_name_vi": "Độc Thích Cốt",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 154,
+        "missle_name_vi": "Xuyên Tâm Thích",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 156,
+        "missle_name_vi": "Hàn Băng Thích",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 158,
+        "missle_name_vi": "Địa Diệm Hỏa",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 160,
+        "missle_name_vi": "Lôi Kích Thuật",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 162,
+        "missle_name_vi": "Loạn Hoàn Kích",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 185,
+        "missle_name_vi": "Ma Viêm Tại Thiên",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 204,
+        "missle_name_vi": "Độc Thích Cốt",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k040.wav",
+    "path": "snd/skill/sound_k040.wav",
+    "skill_id": 341,
+    "skill_vi": "Phi đao Tán Hoa Tiêu / Cửu Cung Phi Tinh / Sét Côn Lôn",
+    "skill_cn": "散花标/九宫飞星/迅雷飞行音效",
+    "sect": "Đường Môn / Côn Lôn",
+    "req_level": 90,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh phi tiêu cao cấp xé gió cực nhanh: Tán Hoa Tiêu (Msl 151), Cửu Cung Phi Tinh (Msl 152), Càn Khôn Nhất Trịch (Msl 333) của Đường Môn & tia lôi điện giáng xuống của Côn Lôn (Msl 15).",
+    "cast_skills_count": 0,
+    "missiles_count": 31,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 15,
+        "missle_name_vi": "Tấn Lôi Chú",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 24,
+        "missle_name_vi": "Nộ Lôi Chỉ",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 73,
+        "missle_name_vi": "Kinh Lôi Trảm",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 134,
+        "missle_name_vi": "Kim Phật Xuất Kích",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 151,
+        "missle_name_vi": "Tán Hoa Tiêu",
+        "slots": [
+          "FlySound2",
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 152,
+        "missle_name_vi": "Cửu Cung Phi Tinh",
+        "slots": [
+          "FlySound2",
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 176,
+        "missle_name_vi": "Thái Cực Kiếm ý",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 180,
+        "missle_name_vi": "Triền Tự Quyết",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 182,
+        "missle_name_vi": "Thiên Địa Vô Cực Nộ Lôi Chỉ",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 197,
+        "missle_name_vi": "Tấn Lôi Chú",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k041.wav",
+    "path": "snd/skill/sound_k041.wav",
+    "skill_id": 92,
+    "skill_vi": "Phật âm vang vọng / Thủy ba thanh khiết",
+    "skill_cn": "慈航普渡/梵唱回荡音效",
+    "sect": "Nga Mi / Thúy Yên",
+    "req_level": 60,
+    "sound_type": "HitSound",
+    "desc": "Âm thanh chuông ngân và sóng nước hồi phục: Từ Hàng Phổ Độ (Msl 5), Vũ Đả Lê Hoa (Msl 8), Mục Dã Lưu Tinh (Msl 9), Thanh Âm Phạn Xướng (Msl 115).",
+    "cast_skills_count": 0,
+    "missiles_count": 8,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 2,
+        "missle_name_vi": "Nhất Diệp Tri Thu",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 5,
+        "missle_name_vi": "Từ Hàng Phổ D",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 8,
+        "missle_name_vi": "Vũ Đả Lê Hoa",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 9,
+        "missle_name_vi": "Mục Dã Lưu Tinh a",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 72,
+        "missle_name_vi": "Hàng Vân Quyết",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 115,
+        "missle_name_vi": "Thanh Âm Phạn Xướng",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 412,
+        "missle_name_vi": "Bạch Hồng Quán Nhật",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 413,
+        "missle_name_vi": "Kim Nhạn Hoành Không",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k044.wav",
+    "path": "snd/skill/sound_k044.wav",
+    "skill_id": 358,
+    "skill_vi": "Rồng bay gầm thét Long Chiến Ư Dã / Tiềm Long Tại Uyên",
+    "skill_cn": "龙战于野/潜龙在渊飞龙呼啸音效",
+    "sect": "Cái Bang",
+    "req_level": 90,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh tiếng rồng vàng gầm thét lao vút trên không của chưởng pháp 9x Cái Bang: Long Chiến Ư Dã (Msl 167) và Tiềm Long Tại Uyên (Msl 195).",
+    "cast_skills_count": 0,
+    "missiles_count": 3,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 44,
+        "missle_name_vi": "Đầu Thạch Vấn Lộ",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 167,
+        "missle_name_vi": "Long Chiến Ư Dã",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 195,
+        "missle_name_vi": "Tiềm Long Tại Uyên",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k045.wav",
+    "path": "snd/skill/sound_k045.wav",
+    "skill_id": 91,
+    "skill_vi": "Băng kết ngọc lăng & Phật quang chấn động",
+    "skill_cn": "冰心玉棱/佛光普照爆裂音效",
+    "sect": "Nga Mi / Thúy Yên",
+    "req_level": 60,
+    "sound_type": "HitSound",
+    "desc": "Âm thanh chấn vang khi đòn Phật Quang Phổ Chiếu (Msl 4), Phong Sương Toái Ảnh (Msl 186) hoặc Băng Tâm Ngọc Lăng (Msl 187) phát nổ đóng băng mục tiêu.",
+    "cast_skills_count": 0,
+    "missiles_count": 6,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 4,
+        "missle_name_vi": "Phật Quang Phổ Chiếu",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 143,
+        "missle_name_vi": "Tam Nga Tề Tuyết #Thân",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 186,
+        "missle_name_vi": "Phong Sương Toái ảnh",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 187,
+        "missle_name_vi": "Băng Tâm Ngọc Lăng",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 188,
+        "missle_name_vi": "Băng Tâm Tuyết Liên",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 351,
+        "missle_name_vi": "Áữãỗằỉẹâd",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "sound_k046.wav",
+    "path": "snd/skill/sound_k046.wav",
+    "skill_id": 509,
+    "skill_vi": "Hoàn thành nhiệm vụ / Kỹ năng Bang hội",
+    "skill_cn": "任务完成/帮会技能生效音效",
+    "sect": "Toàn phái / Dùng chung",
+    "req_level": 50,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh hoan hỉ báo hiệu hoàn thành nhiệm vụ (SkillId 509), nhiệm vụ Sát thủ (SkillId 541), và kích hoạt các bí kỹ Bang Hội (Phụng Hoàng Ấn, Đoạn Võ Hồn, Vô Song Sát Trận, Đào Chu Tiền Đái, Thị Vệ Doanh).",
+    "cast_skills_count": 12,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 509,
+        "skill_vi": "Hoàn thành nhiệm vụ",
+        "sect": "Thúy Yên",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 541,
+        "skill_vi": "Hoàn thành nhiệm vụ  Sát thủ",
+        "sect": "Thúy Yên",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 662,
+        "skill_vi": "trạng thái nhiệm vụ ngẫu nhiên",
+        "sect": "Thúy Yên",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 739,
+        "skill_vi": "Kỹ năng bang hội_Phụng Hoàng ấn",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 740,
+        "skill_vi": "Kỹ năng bang hội_Đoạn Võ Hồn",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 741,
+        "skill_vi": "Kỹ năng bang hội_Vô Song Sát Trận",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 742,
+        "skill_vi": "Kỹ năng bang hội_Đào Chu Tiền Đái",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 743,
+        "skill_vi": "Kỹ năng bang hội_Thị Vệ Doanh",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 744,
+        "skill_vi": "Kỹ năng bang hội_Linh Sâm Lực",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 745,
+        "skill_vi": "Kỹ năng bang hội_Hoàng Kim Lệnh",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "bat-dong-minh-vuong-chu.wav",
+    "path": "snd/skill/bat-dong-minh-vuong-chu.wav",
+    "skill_id": 15,
+    "skill_vi": "Bất Động Minh Vương Chú",
+    "skill_cn": "不动明王咒",
+    "sect": "Thiếu Lâm",
+    "req_level": 90,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu tuyệt kỹ trấn phái Bất Động Minh Vương Chú của Thiếu Lâm phái (hỗ trợ phòng ngự hộ thể tối thượng, tăng kháng tính).",
+    "cast_skills_count": 1,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 15,
+        "skill_vi": "Bất động Minh Vương",
+        "sect": "Thiếu Lâm",
+        "req_level": 20,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "bat-diet-bat-tuyet.wav",
+    "path": "snd/skill/bat-diet-bat-tuyet.wav",
+    "skill_id": 88,
+    "skill_vi": "Bất Diệt Bất Tuyệt",
+    "skill_cn": "不灭不绝",
+    "sect": "Nga Mi",
+    "req_level": 60,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh đường đạn/phóng kiếm chiêu thức Bất Diệt Bất Tuyệt phái Nga Mi (kiếm pháp nội công tầm xa hệ Thủy).",
+    "cast_skills_count": 0,
+    "missiles_count": 8,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 3,
+        "missle_name_vi": "Bất Diệt Bất Tuyệt",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 103,
+        "missle_name_vi": "Bất Diệt Bất Tuyệt npc",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 142,
+        "missle_name_vi": "Tam Nga Tề Tuyết Phi Kiếm",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 191,
+        "missle_name_vi": "Thôi Song Vọng Nguyệt",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 323,
+        "missle_name_vi": "Lưu Phong Hồi Tuyết",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 325,
+        "missle_name_vi": "ÁữãỗằỉẹâàÚảỵấẵ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 435,
+        "missle_name_vi": "Boss Bất Diệt Bất Tuyệt",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 442,
+        "missle_name_vi": "Thôi Song Vọng Nguyệt",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "ngu-loi-chanh-phap-nu.wav",
+    "path": "snd/skill/ngu-loi-chanh-phap-nu.wav",
+    "skill_id": 165,
+    "skill_vi": "Ngũ Lôi Chánh Pháp (Nữ)",
+    "skill_cn": "五雷正法 (女)",
+    "sect": "Võ Đang",
+    "req_level": 60,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu Ngũ Lôi Chánh Pháp phái Võ Đang (nhân vật nữ), chưởng pháp lôi điện hệ Thổ.",
+    "cast_skills_count": 17,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 182,
+        "skill_vi": "Ngũ Lôi Chánh Pháp",
+        "sect": "Côn Lôn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 304,
+        "skill_vi": "Độc Thích Cốt",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 344,
+        "skill_vi": "Xuyên Tâm Thích",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 346,
+        "skill_vi": "Hàn Băng Thích",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 348,
+        "skill_vi": "Địa Diệm Hỏa",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 350,
+        "skill_vi": "Lôi Kích Thuật",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 352,
+        "skill_vi": "Loạn Hoàn Kích",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 375,
+        "skill_vi": "Lôi động Cửu Thiên",
+        "sect": "Côn Lôn",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 952,
+        "skill_vi": "¿ỉệặẽíÚồ±ơếă",
+        "sect": "Dùng chung",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 1081,
+        "skill_vi": "Thiên Lôi Chấn Nhạc",
+        "sect": "Côn Lôn",
+        "req_level": 80,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "ngu-loi-chanh-phap-nam.wav",
+    "path": "snd/skill/ngu-loi-chanh-phap-nam.wav",
+    "skill_id": 165,
+    "skill_vi": "Ngũ Lôi Chánh Pháp (Nam)",
+    "skill_cn": "五雷正法 (男)",
+    "sect": "Võ Đang",
+    "req_level": 60,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu Ngũ Lôi Chánh Pháp phái Võ Đang (nhân vật nam), chưởng pháp lôi điện hệ Thổ.",
+    "cast_skills_count": 17,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 182,
+        "skill_vi": "Ngũ Lôi Chánh Pháp",
+        "sect": "Côn Lôn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 304,
+        "skill_vi": "Độc Thích Cốt",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 344,
+        "skill_vi": "Xuyên Tâm Thích",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 346,
+        "skill_vi": "Hàn Băng Thích",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 348,
+        "skill_vi": "Địa Diệm Hỏa",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 350,
+        "skill_vi": "Lôi Kích Thuật",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 352,
+        "skill_vi": "Loạn Hoàn Kích",
+        "sect": "Đường Môn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 375,
+        "skill_vi": "Lôi động Cửu Thiên",
+        "sect": "Côn Lôn",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 952,
+        "skill_vi": "¿ỉệặẽíÚồ±ơếă",
+        "sect": "Dùng chung",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1081,
+        "skill_vi": "Thiên Lôi Chấn Nhạc",
+        "sect": "Côn Lôn",
+        "req_level": 80,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "khang-long-huu-hoi.wav",
+    "path": "snd/skill/khang-long-huu-hoi.wav",
+    "skill_id": 128,
+    "skill_vi": "Kháng Long Hữu Hối",
+    "skill_cn": "亢龙有悔 / 亢龙无悔",
+    "sect": "Cái Bang",
+    "req_level": 50,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh rồng bay của chưởng pháp Kháng Long Hữu Hối (Hàng Long Thập Bát Chưởng) danh chấn thiên hạ của Cái Bang phái.",
+    "cast_skills_count": 0,
+    "missiles_count": 4,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 48,
+        "missle_name_vi": "Kháng Long Hữu Hối",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 166,
+        "missle_name_vi": "Phi Long Tại Thiên",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 335,
+        "missle_name_vi": "Thời Thặng Lục Long",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 443,
+        "missle_name_vi": "Tuyệt Đỉnh Phi Long",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "phat-quang-pho-chieu.wav",
+    "path": "snd/skill/phat-quang-pho-chieu.wav",
+    "skill_id": 91,
+    "skill_vi": "Phật Quang Phổ Chiếu",
+    "skill_cn": "佛光普照",
+    "sect": "Nga Mi",
+    "req_level": 60,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu Phật Quang Phổ Chiếu phái Nga Mi, chưởng pháp lan tỏa ánh hào quang hệ Thủy gây sát thương lớn.",
+    "cast_skills_count": 11,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 91,
+        "skill_vi": "Phật Quang Phổ Chiếu",
+        "sect": "Nga Mi",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 255,
+        "skill_vi": "Sư Tử hựu Hống",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 329,
+        "skill_vi": "Ngọc Tuyền Tẩy Trần",
+        "sect": "Nga Mi",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 380,
+        "skill_vi": "Phong Sương Toái ảnh",
+        "sect": "Nga Mi",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 381,
+        "skill_vi": "Băng Tâm Ngọc Lăng",
+        "sect": "Thúy Yên",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 382,
+        "skill_vi": "Băng Tâm Tuyết Liên",
+        "sect": "Thúy Yên",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 430,
+        "skill_vi": "Ngọc Tuyền Tẩy Trần npc",
+        "sect": "Dùng chung",
+        "req_level": 80,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1062,
+        "skill_vi": "Băng Vũ Lạc Tinh",
+        "sect": "Nga Mi",
+        "req_level": 80,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1089,
+        "skill_vi": "Kiếm Tâm Tĩnh Điển",
+        "sect": "Nga Mi",
+        "req_level": 0,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1092,
+        "skill_vi": "±ựẩáÂềẹâẫậºƯ",
+        "sect": "Thúy Yên",
+        "req_level": 50,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "bang-bao.wav",
+    "path": "snd/skill/bang-bao.wav",
+    "skill_id": 82,
+    "skill_vi": "Băng Bạo (Hiệu ứng đạn nổ Băng)",
+    "skill_cn": "冰爆",
+    "sect": "Thúy Yên / Nga Mi",
+    "req_level": 10,
+    "sound_type": "HitSound",
+    "desc": "Âm thanh va chạm phát nổ khối băng của các chiêu thức hệ Thủy (Tứ Tượng Đồng Quy, Băng Tung Vô Ảnh, Phong Tuyết Băng Thiên).",
+    "cast_skills_count": 0,
+    "missiles_count": 26,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 1,
+        "missle_name_vi": "Tứ Tượng Đồng Quy",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 6,
+        "missle_name_vi": "Phong Vân Đột Khởi",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 146,
+        "missle_name_vi": "Băng Tung Vô ảnh",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 206,
+        "missle_name_vi": "đóng băng toàn bộ",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 217,
+        "missle_name_vi": "Triều Khởi Nguyệt Doanh",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 218,
+        "missle_name_vi": "Vạn Liễu Phiêu Phong",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 219,
+        "missle_name_vi": "Tuyết ánh Hồng Trần",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 220,
+        "missle_name_vi": "Sương Dã Tiên Tung",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 238,
+        "missle_name_vi": "Vạn Liễu Phiêu Phong",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 239,
+        "missle_name_vi": "Sương Dã Tiên Tung",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "kiem-phi-kinh-thien.wav",
+    "path": "snd/skill/kiem-phi-kinh-thien.wav",
+    "skill_id": 174,
+    "skill_vi": "Kiếm Phi Kinh Thiên",
+    "skill_cn": "剑飞惊天",
+    "sect": "Côn Lôn",
+    "req_level": 60,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh phóng kiếm sấm sét chiêu thức Kiếm Phi Kinh Thiên của Côn Lôn phái, kiếm khí hệ Thổ tấn công mục tiêu.",
+    "cast_skills_count": 0,
+    "missiles_count": 7,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 26,
+        "missle_name_vi": "Thiên Tế Tấn Lôi",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 177,
+        "missle_name_vi": "Nhân Kiếm Hợp Nhất",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 226,
+        "missle_name_vi": "Trường Hà Lạc Nhật",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 228,
+        "missle_name_vi": "Vô ảnh Kiếm Quyết",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 315,
+        "missle_name_vi": "ẵÊặứìúéýìê",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 316,
+        "missle_name_vi": "ẵÊặứểềéýìê",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 411,
+        "missle_name_vi": "³ơẳảẵÊãẫắêèỡìểà¯",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "bac-cuc-nhi-phuc.wav",
+    "path": "snd/skill/bac-cuc-nhi-phuc.wav",
+    "skill_id": 164,
+    "skill_vi": "Bác Cực Nhi Phục",
+    "skill_cn": "剥极而复",
+    "sect": "Côn Lôn / Võ Đang",
+    "req_level": 30,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh đường đạn phóng kình của chiêu Bác Cực Nhi Phục (hệ Thổ võ công đạo gia Võ Đang / Côn Lôn).",
+    "cast_skills_count": 0,
+    "missiles_count": 12,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 28,
+        "missle_name_vi": "Bác Cấp Nhi Phục",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 96,
+        "missle_name_vi": "Bạo Vũ Lê Hoa",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 173,
+        "missle_name_vi": "Thiên Địa Vô Cực",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 174,
+        "missle_name_vi": "Thiên Địa Vô Cực",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 179,
+        "missle_name_vi": "Khiếu Phong Tam Liên Kích",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 225,
+        "missle_name_vi": "Hỗn Nguyên Càn Khôn",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 293,
+        "missle_name_vi": "Đại Xuân Ngưu Tất Sát Kỹ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 300,
+        "missle_name_vi": "GMéĂãảẻĐẳẳÄĩ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 332,
+        "missle_name_vi": "Tản Hoa Thiên Nữ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 340,
+        "missle_name_vi": "Tạo Hóa Thái Thanh",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "thien-ha-vo-cau.wav",
+    "path": "snd/skill/thien-ha-vo-cau.wav",
+    "skill_id": 131,
+    "skill_vi": "Thiên Hạ Vô Cẩu",
+    "skill_cn": "天下无狗",
+    "sect": "Cái Bang",
+    "req_level": 60,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh đường côn uyển chuyển biến ảo của tuyệt kỹ Đả Cẩu Bổng Pháp - Thiên Hạ Vô Cẩu bang Cái Bang.",
+    "cast_skills_count": 0,
+    "missiles_count": 5,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 47,
+        "missle_name_vi": "Bổng Đả ác Cẩu",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 168,
+        "missle_name_vi": "Thiên Hạ Vô Cẩu",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 336,
+        "missle_name_vi": "Thục Khuyển Phệ Nhật",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 437,
+        "missle_name_vi": "Boss Bổng Đả ác Cẩu",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 444,
+        "missle_name_vi": "Thiên Hạ Vô Cẩu New",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "thien-cuong-dia-sat-thu-nu.wav",
+    "path": "snd/skill/thien-cuong-dia-sat-thu-nu.wav",
+    "skill_id": 43,
+    "skill_vi": "Thiên Cương Địa Sát Thủ (Nữ)",
+    "skill_cn": "天罡地煞手 (女)",
+    "sect": "Thiên Vương",
+    "req_level": 50,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu Thiên Cương Địa Sát Thủ (nhân vật nữ) Thiên Vương Bang, quyền pháp dũng mãnh hộ thân.",
+    "cast_skills_count": 11,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 71,
+        "skill_vi": "Thiên Cương Địa Sát",
+        "sect": "Ngũ Độc",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 353,
+        "skill_vi": "Âm Phong Thực Cốt",
+        "sect": "Ngũ Độc",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 354,
+        "skill_vi": "Thiên Cương Độc Thủ",
+        "sect": "Ngũ Độc",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 383,
+        "skill_vi": "Tinh Không Phá",
+        "sect": "Ngũ Độc",
+        "req_level": 60,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 1025,
+        "skill_vi": "Phát ra Tri Thù tơ",
+        "sect": "Dùng chung",
+        "req_level": 80,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 1026,
+        "skill_vi": "ạÅắứẫ±ảắấệ",
+        "sect": "Dùng chung",
+        "req_level": 80,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 1066,
+        "skill_vi": "Hình Tiêu Cốt Lập",
+        "sect": "Ngũ Độc",
+        "req_level": 80,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 1094,
+        "skill_vi": "éẻẽỳạầÁÂẫậºƯ",
+        "sect": "Ngũ Độc",
+        "req_level": 150,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 1095,
+        "skill_vi": "Hồn ảnh Tùng Sanh",
+        "sect": "Ngũ Độc",
+        "req_level": 150,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 1096,
+        "skill_vi": "éẻẽỳạầÁÂẫậºƯ2",
+        "sect": "Ngũ Độc",
+        "req_level": 150,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "thien-cuong-dia-sat-thu-nam.wav",
+    "path": "snd/skill/thien-cuong-dia-sat-thu-nam.wav",
+    "skill_id": 43,
+    "skill_vi": "Thiên Cương Địa Sát Thủ (Nam)",
+    "skill_cn": "天罡地煞手 (男)",
+    "sect": "Thiên Vương",
+    "req_level": 50,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu Thiên Cương Địa Sát Thủ (nhân vật nam) Thiên Vương Bang, kình lực kim cang quyền pháp.",
+    "cast_skills_count": 11,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 71,
+        "skill_vi": "Thiên Cương Địa Sát",
+        "sect": "Ngũ Độc",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 353,
+        "skill_vi": "Âm Phong Thực Cốt",
+        "sect": "Ngũ Độc",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 354,
+        "skill_vi": "Thiên Cương Độc Thủ",
+        "sect": "Ngũ Độc",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 383,
+        "skill_vi": "Tinh Không Phá",
+        "sect": "Ngũ Độc",
+        "req_level": 60,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1025,
+        "skill_vi": "Phát ra Tri Thù tơ",
+        "sect": "Dùng chung",
+        "req_level": 80,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1026,
+        "skill_vi": "ạÅắứẫ±ảắấệ",
+        "sect": "Dùng chung",
+        "req_level": 80,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1066,
+        "skill_vi": "Hình Tiêu Cốt Lập",
+        "sect": "Ngũ Độc",
+        "req_level": 80,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1094,
+        "skill_vi": "éẻẽỳạầÁÂẫậºƯ",
+        "sect": "Ngũ Độc",
+        "req_level": 150,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1095,
+        "skill_vi": "Hồn ảnh Tùng Sanh",
+        "sect": "Ngũ Độc",
+        "req_level": 150,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1096,
+        "skill_vi": "éẻẽỳạầÁÂẫậºƯ2",
+        "sect": "Ngũ Độc",
+        "req_level": 150,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "doat-hon-tieu.wav",
+    "path": "snd/skill/doat-hon-tieu.wav",
+    "skill_id": 47,
+    "skill_vi": "Đoạt Hồn Tiêu",
+    "skill_cn": "夺魂镖",
+    "sect": "Đường Môn",
+    "req_level": 30,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh phi tiêu xé gió của tuyệt chiêu Đoạt Hồn Tiêu phái Đường Môn, ám khí tầm xa mang độc lực sát thương cao.",
+    "cast_skills_count": 0,
+    "missiles_count": 4,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 36,
+        "missle_name_vi": "Thiên La Địa Võng",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 116,
+        "missle_name_vi": "Đoạt Hồn Tiêu",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 199,
+        "missle_name_vi": "NPC đánh xa (Kim)",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 380,
+        "missle_name_vi": "ảăàóãẫùÚìểà¯",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "u-minh-kho-lau.wav",
+    "path": "snd/skill/u-minh-kho-lau.wav",
+    "skill_id": 68,
+    "skill_vi": "U Minh Khô Lâu",
+    "skill_cn": "幽冥骷髅",
+    "sect": "Ngũ Độc",
+    "req_level": 30,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh đạn độc âm hồn U Minh Khô Lâu của Ngũ Độc Giáo, giải phóng oán khí khô lâu gieo rắc tử độc.",
+    "cast_skills_count": 0,
+    "missiles_count": 8,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 30,
+        "missle_name_vi": "Độc Sa chưởng",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 32,
+        "missle_name_vi": "Khô Lâu Tạc Đạn",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 165,
+        "missle_name_vi": "Huyền Âm Trảm",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 189,
+        "missle_name_vi": "Tam Tinh Liệt",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 190,
+        "missle_name_vi": "Bách Độc Xuyên Tâm",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 194,
+        "missle_name_vi": "Truy Phong Độc Cát",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 329,
+        "missle_name_vi": "U Hồn Phệ ảnh",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 441,
+        "missle_name_vi": "Boss U Hồn Phệ ảnh",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "no-loi-chi.wav",
+    "path": "snd/skill/no-loi-chi.wav",
+    "skill_id": 153,
+    "skill_vi": "Nộ Lôi Chỉ",
+    "skill_cn": "怒雷指",
+    "sect": "Võ Đang",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh tia sét phóng ra từ ngón tay của chiêu Nộ Lôi Chỉ phái Võ Đang, điểm huyệt phóng điện sơ cấp.",
+    "cast_skills_count": 0,
+    "missiles_count": 7,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 24,
+        "missle_name_vi": "Nộ Lôi Chỉ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 180,
+        "missle_name_vi": "Triền Tự Quyết",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 182,
+        "missle_name_vi": "Thiên Địa Vô Cực Nộ Lôi Chỉ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 198,
+        "missle_name_vi": "NPC đánh xa (Kim)",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 201,
+        "missle_name_vi": "NPC đánh xa (hỏa)",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 202,
+        "missle_name_vi": "NPC đánh xa (thổ)",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 272,
+        "missle_name_vi": "Ném trùng đỏ",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "tu-hang-pho-do.wav",
+    "path": "snd/skill/tu-hang-pho-do.wav",
+    "skill_id": 92,
+    "skill_vi": "Từ Hàng Phổ Độ",
+    "skill_cn": "慈航普渡",
+    "sect": "Nga Mi",
+    "req_level": 60,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh thi triển Từ Hàng Phổ Độ phái Nga Mi, phật âm vang vọng trị liệu và tăng sức sống cho toàn đội ngũ.",
+    "cast_skills_count": 1,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 93,
+        "skill_vi": "Từ Hàng Phổ D",
+        "sect": "Nga Mi",
+        "req_level": 20,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "tue-nhan-chu.wav",
+    "path": "snd/skill/tue-nhan-chu.wav",
+    "skill_id": 12,
+    "skill_vi": "Tuệ Nhãn Chú (Huệ Nhãn Chú)",
+    "skill_cn": "慧眼咒",
+    "sect": "Thiếu Lâm",
+    "req_level": 20,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh niệm chú Huệ Nhãn Chú phái Thiếu Lâm, tăng thị giác, phá tàng hình và tăng chính xác.",
+    "cast_skills_count": 1,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 18,
+        "skill_vi": "Huệ Nhãn chú",
+        "sect": "Thiếu Lâm",
+        "req_level": 40,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "dau-thach-van-lo.wav",
+    "path": "snd/skill/dau-thach-van-lo.wav",
+    "skill_id": 117,
+    "skill_vi": "Đầu Thạch Vấn Lộ",
+    "skill_cn": "投石问路",
+    "sect": "Cái Bang / Côn Lôn",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh ném đá dò đường của chiêu Đầu Thạch Vấn Lộ, chiêu thức tầm xa sơ khởi của Cái Bang ăn mày.",
+    "cast_skills_count": 0,
+    "missiles_count": 1,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 44,
+        "missle_name_vi": "Đầu Thạch Vấn Lộ",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "thoi-son-dien-hai.wav",
+    "path": "snd/skill/thoi-son-dien-hai.wav",
+    "skill_id": 138,
+    "skill_vi": "Thôi Sơn Điền Hải",
+    "skill_cn": "推山填海",
+    "sect": "Thiên Nhẫn",
+    "req_level": 30,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh luồng hỏa kình Thôi Sơn Điền Hải phái Thiên Nhẫn, dồn sức đẩy ra luồng lửa thiêu đốt đối thủ.",
+    "cast_skills_count": 0,
+    "missiles_count": 5,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 55,
+        "missle_name_vi": "Thôi sơn  Điền Hải",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 117,
+        "missle_name_vi": "Kháng Long Hữu Hối",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 185,
+        "missle_name_vi": "Ma Viêm Tại Thiên",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 223,
+        "missle_name_vi": "Như Nhật Trung Thiên",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 399,
+        "missle_name_vi": "ằðầẵấỉẻÀìểà¯",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "ma-ha-vo-luong.wav",
+    "path": "snd/skill/ma-ha-vo-luong.wav",
+    "skill_id": 21,
+    "skill_vi": "Ma Ha Vô Lượng",
+    "skill_cn": "摩诃无量",
+    "sect": "Thiếu Lâm",
+    "req_level": 60,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh xuất chiêu uy mãnh Ma Ha Vô Lượng phái Thiếu Lâm, quyền côn hợp nhất tạo kình khí trấn áp đối phương.",
+    "cast_skills_count": 4,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 19,
+        "skill_vi": "Ma Ha Vô Lượng",
+        "sect": "Thiếu Lâm",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 244,
+        "skill_vi": "Ma Ha Vô Lượng npc",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 985,
+        "skill_vi": "ạưặùẳẳÄĩ1",
+        "sect": "Dùng chung",
+        "req_level": 50,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1027,
+        "skill_vi": "Không cử động được",
+        "sect": "Dùng chung",
+        "req_level": 0,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "pho-thong-boc-tac.wav",
+    "path": "snd/skill/pho-thong-boc-tac.wav",
+    "skill_id": 68,
+    "skill_vi": "Phổ Thông Bộc Tạc (Tiếng nổ đạn dược)",
+    "skill_cn": "普通爆炸",
+    "sect": "Đường Môn / Ngũ Độc / Dùng chung",
+    "req_level": 10,
+    "sound_type": "HitSound",
+    "desc": "Âm thanh nổ tung phổ thông khi các loại đạn nổ, bộc phá, pháo hoa, cạm bẫy hoặc đạn độc va chạm nổ tung.",
+    "cast_skills_count": 0,
+    "missiles_count": 24,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 32,
+        "missle_name_vi": "Khô Lâu Tạc Đạn",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 165,
+        "missle_name_vi": "Huyền Âm Trảm",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 189,
+        "missle_name_vi": "Tam Tinh Liệt",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 190,
+        "missle_name_vi": "Bách Độc Xuyên Tâm",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 194,
+        "missle_name_vi": "Truy Phong Độc Cát",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 199,
+        "missle_name_vi": "NPC đánh xa (Kim)",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 229,
+        "missle_name_vi": "Hoa Khí Điệp Vũ",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 230,
+        "missle_name_vi": "Lưu Quang Phi Vũ",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 231,
+        "missle_name_vi": "Hoàn Bỉ Chi Thân",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 232,
+        "missle_name_vi": "Đảo Hành Nghịch Thi",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "chu-cap-thanh-minh.wav",
+    "path": "snd/skill/chu-cap-thanh-minh.wav",
+    "skill_id": 74,
+    "skill_vi": "Chu Cáp Thanh Minh",
+    "skill_cn": "朱蛤青冥",
+    "sect": "Ngũ Độc",
+    "req_level": 60,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh chưởng độc Chu Cáp Thanh Minh của Ngũ Độc Giáo, tiếng độc cóc kêu kèm luồng khí độc chết người.",
+    "cast_skills_count": 0,
+    "missiles_count": 1,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 34,
+        "missle_name_vi": "Cáp Mô công",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "thuong-thich-trung-thanh.wav",
+    "path": "snd/skill/thuong-thich-trung-thanh.wav",
+    "skill_id": 29,
+    "skill_vi": "Thương Thích Trung Thanh (Tiếng thương đâm trúng)",
+    "skill_cn": "枪刺中声",
+    "sect": "Thiên Vương / Thiếu Lâm",
+    "req_level": 10,
+    "sound_type": "HitSound",
+    "desc": "Âm thanh mũi thương, mác kim loại đâm xuyên giáp khi xuất chiêu cận chiến trúng đối thủ.",
+    "cast_skills_count": 0,
+    "missiles_count": 2,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 64,
+        "missle_name_vi": "Công kích vật lý",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 130,
+        "missle_name_vi": "Đạn công thành",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "thuong-hai-minh-nguyet.wav",
+    "path": "snd/skill/thuong-hai-minh-nguyet.wav",
+    "skill_id": 155,
+    "skill_vi": "Thương Hải Minh Nguyệt",
+    "skill_cn": "沧海明月",
+    "sect": "Võ Đang / Thúy Yên",
+    "req_level": 30,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh luồng kiếm khí ngân vang như sóng biển trăng rằm của chiêu Thương Hải Minh Nguyệt (Võ Đang kiếm / Thúy Yên).",
+    "cast_skills_count": 0,
+    "missiles_count": 4,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 25,
+        "missle_name_vi": "Thương Hải Minh Nguyệt",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 175,
+        "missle_name_vi": "Nhân Kiếm Hợp Nhất",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 183,
+        "missle_name_vi": "Minh Nguyệt Vô Tâm",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 382,
+        "missle_name_vi": "ệ±ẽò±ựÀõạõ",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "tri-lieu-thuat.wav",
+    "path": "snd/skill/tri-lieu-thuat.wav",
+    "skill_id": 101,
+    "skill_vi": "Trị Liệu Thuật",
+    "skill_cn": "治疗术",
+    "sect": "Nga Mi / Thúy Yên",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh dòng suối mát hồi phục sinh lực của kỹ năng Trị Liệu Thuật sơ cấp của Nga Mi và Thúy Yên.",
+    "cast_skills_count": 0,
+    "missiles_count": 2,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 13,
+        "missle_name_vi": "Trị liệu thuật",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 111,
+        "missle_name_vi": "Băng Tâm Trái ảnh",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "duyen-mon-thac-bat.wav",
+    "path": "snd/skill/duyen-mon-thac-bat.wav",
+    "skill_id": 119,
+    "skill_vi": "Duyên Môn Thác Bát (Diên Môn Thác Bát)",
+    "skill_cn": "沿门托钵",
+    "sect": "Cái Bang",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh tiếng gõ bát xin ăn hóa thành kình khí của chiêu Diên Môn Thác Bát phái Cái Bang.",
+    "cast_skills_count": 0,
+    "missiles_count": 1,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 45,
+        "missle_name_vi": "Diên Môn Thác Bát",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "phu-van-tan-tuyet.wav",
+    "path": "snd/skill/phu-van-tan-tuyet.wav",
+    "skill_id": 113,
+    "skill_vi": "Phù Vân Tán Tuyết",
+    "skill_cn": "浮云散雪",
+    "sect": "Thúy Yên",
+    "req_level": 30,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh tuyết rơi hoa nở bồng bềnh của chiêu Phù Vân Tán Tuyết phái Thúy Yên (đao pháp hệ Thủy tầm xa).",
+    "cast_skills_count": 0,
+    "missiles_count": 4,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 12,
+        "missle_name_vi": "Phù Vân Tán Tuyết",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 148,
+        "missle_name_vi": "Phong Tuyết Băng Thiên",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 355,
+        "missle_name_vi": "ÀọễÂÂọÃãàÚảỵấẵ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 375,
+        "missle_name_vi": "áăệỳảởÃẳ150",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "liet-hoa-tinh-thien.wav",
+    "path": "snd/skill/liet-hoa-tinh-thien.wav",
+    "skill_id": 141,
+    "skill_vi": "Liệt Hỏa Tình Thiên",
+    "skill_cn": "烈火情天",
+    "sect": "Thiên Nhẫn",
+    "req_level": 20,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh luồng lửa bùng cháy ngút trời của chiêu Liệt Hỏa Tình Thiên phái Thiên Nhẫn giáo.",
+    "cast_skills_count": 0,
+    "missiles_count": 10,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 56,
+        "missle_name_vi": "Liệt Hỏa Tình Thiên",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 169,
+        "missle_name_vi": "Vân Long Kích",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 184,
+        "missle_name_vi": "Vân Long Kích",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 291,
+        "missle_name_vi": "Kỹ năng Xuân Ngưu",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 292,
+        "missle_name_vi": "´ºÅÊẳẳÄĩìểẳẳÄĩ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 298,
+        "missle_name_vi": "GM±ỉẫ±ẳẳìểẳẳÄĩ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 305,
+        "missle_name_vi": "ằỳạỉẳẳÄĩ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 337,
+        "missle_name_vi": "Giang Hải Nộ Lan",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 350,
+        "missle_name_vi": "°ễÍừửẫẵðìểà¯",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 438,
+        "missle_name_vi": "Boss Liệt Hỏa Tình Thiên",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "cuong-loi-chan-dia-nu.wav",
+    "path": "snd/skill/cuong-loi-chan-dia-nu.wav",
+    "skill_id": 179,
+    "skill_vi": "Cuồng Lôi Chấn Địa (Nữ)",
+    "skill_cn": "狂雷震地 (女)",
+    "sect": "Côn Lôn",
+    "req_level": 10,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh dậm đất gọi sấm sét của chiêu Cuồng Lôi Chấn Địa phái Côn Lôn (nhân vật nữ).",
+    "cast_skills_count": 1,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 179,
+        "skill_vi": "Cuồng Lôi Chấn Địa",
+        "sect": "Côn Lôn",
+        "req_level": 10,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "cuong-loi-chan-dia-nam.wav",
+    "path": "snd/skill/cuong-loi-chan-dia-nam.wav",
+    "skill_id": 179,
+    "skill_vi": "Cuồng Lôi Chấn Địa (Nam)",
+    "skill_cn": "狂雷震地 (男)",
+    "sect": "Côn Lôn",
+    "req_level": 10,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh dậm đất gọi sấm sét của chiêu Cuồng Lôi Chấn Địa phái Côn Lôn (nhân vật nam).",
+    "cast_skills_count": 1,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 179,
+        "skill_vi": "Cuồng Lôi Chấn Địa",
+        "sect": "Côn Lôn",
+        "req_level": 10,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "cuong-phong-sau-dien.wav",
+    "path": "snd/skill/cuong-phong-sau-dien.wav",
+    "skill_id": 176,
+    "skill_vi": "Cuồng Phong Tấu Điện (Cuồng Phong Sậu Điện)",
+    "skill_cn": "狂风骤电",
+    "sect": "Côn Lôn",
+    "req_level": 50,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh cuồng phong gầm thét xé rách không gian kèm sấm chớp của Cuồng Phong Sậu Điện phái Côn Lôn.",
+    "cast_skills_count": 0,
+    "missiles_count": 11,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 16,
+        "missle_name_vi": "Cuồng Phong Sậu Điện",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 178,
+        "missle_name_vi": "Ngạo Tuyết Tiêu Phong",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 192,
+        "missle_name_vi": "Ngự Phong thuật",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 227,
+        "missle_name_vi": "Tật Phong Tấn Lôi",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 241,
+        "missle_name_vi": "Tật Phong Tấn Lôi",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 342,
+        "missle_name_vi": "Phong Minh Ngọc Toái",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 379,
+        "missle_name_vi": "ằỉéýéýãỗìểà¯",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 381,
+        "missle_name_vi": "ằỉÁƯéĂẫÁàỗ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 420,
+        "missle_name_vi": "ẻịẳôẵÊặứ±ơếă",
+        "slots": [
+          "FlySound2",
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 422,
+        "missle_name_vi": "ÁỳéýẵÊặứ±ơếă",
+        "slots": [
+          "FlySound2",
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "su-tu-hong.wav",
+    "path": "snd/skill/su-tu-hong.wav",
+    "skill_id": 20,
+    "skill_vi": "Sư Tử Hống",
+    "skill_cn": "狮子吼",
+    "sect": "Thiếu Lâm",
+    "req_level": 40,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh tiếng gầm vang dội của tuyệt kỹ Phật môn Sư Tử Hống, làm chấn động tâm can gây choáng váng đối phương.",
+    "cast_skills_count": 2,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 20,
+        "skill_vi": "Sư Tử Hống",
+        "sect": "Thiếu Lâm",
+        "req_level": 40,
+        "cast_gender": "Man"
+      },
+      {
+        "skill_id": 1193,
+        "skill_vi": "Thanh Bình Lạc",
+        "sect": "Dùng chung",
+        "req_level": 120,
+        "cast_gender": "Man"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "huyen-nhat-vo-tuong.wav",
+    "path": "snd/skill/huyen-nhat-vo-tuong.wav",
+    "skill_id": 162,
+    "skill_vi": "Huyền Nhất Vô Tượng",
+    "skill_cn": "玄一无象",
+    "sect": "Võ Đang",
+    "req_level": 40,
+    "sound_type": "HitSound",
+    "desc": "Âm thanh chấn động hư vô của chiêu Huyền Nhất Vô Tượng phái Võ Đang, hóa giải sát thương và phản kích.",
+    "cast_skills_count": 0,
+    "missiles_count": 2,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 27,
+        "missle_name_vi": "Huyền Nhất Vô Tượng",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 373,
+        "missle_name_vi": "ẵÊ´ạéầºểd2",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "tat-phong-chu.wav",
+    "path": "snd/skill/tat-phong-chu.wav",
+    "skill_id": 169,
+    "skill_vi": "Tật Phong Chú",
+    "skill_cn": "疾风咒",
+    "sect": "Côn Lôn",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh luồng gió lốc vun vút của chú pháp Tật Phong Chú (Hô Phong Pháp) phái Côn Lôn.",
+    "cast_skills_count": 0,
+    "missiles_count": 1,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 14,
+        "missle_name_vi": "Tật Phong Chú",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "bich-hai-trieu-sinh.wav",
+    "path": "snd/skill/bich-hai-trieu-sinh.wav",
+    "skill_id": 111,
+    "skill_vi": "Bích Hải Triều Sinh",
+    "skill_cn": "碧海潮生",
+    "sect": "Thúy Yên",
+    "req_level": 60,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh sóng biển dâng trào cuồn cuộn của tuyệt chiêu Bích Hải Triều Sinh phái Thúy Yên môn.",
+    "cast_skills_count": 0,
+    "missiles_count": 1,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 10,
+        "missle_name_vi": "Bích Hải Triều Sinh a",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "huyet-thu-doc-sat.wav",
+    "path": "snd/skill/huyet-thu-doc-sat.wav",
+    "skill_id": 65,
+    "skill_vi": "Huyết Thủ Độc Sát (Huyết Đao Độc Sát)",
+    "skill_cn": "血手毒杀",
+    "sect": "Ngũ Độc",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh vung đao mang theo huyết độc tanh hôi của chiêu Huyết Đao Độc Sát / Huyết Thủ Độc Sát Ngũ Độc Giáo.",
+    "cast_skills_count": 0,
+    "missiles_count": 2,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 31,
+        "missle_name_vi": "Huyết Đao Độc Sát",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 207,
+        "missle_name_vi": "trúng độc toàn bộ",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "hang-long-bat-vu.wav",
+    "path": "snd/skill/hang-long-bat-vu.wav",
+    "skill_id": 14,
+    "skill_vi": "Hàng Long Bất Vũ",
+    "skill_cn": "行龙不雨",
+    "sect": "Thiếu Lâm",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh kình khí rồng bay của chưởng pháp Hàng Long Bất Vũ sơ cấp phái Thiếu Lâm.",
+    "cast_skills_count": 0,
+    "missiles_count": 2,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 66,
+        "missle_name_vi": "Hàng Long Bất Vũ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 212,
+        "missle_name_vi": "Bất Diệt Sát ý",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "kien-nhan-than-thu.wav",
+    "path": "snd/skill/kien-nhan-than-thu.wav",
+    "skill_id": 122,
+    "skill_vi": "Kiến Nhân Thân Thủ (Kiến Nhân Thần Thủ)",
+    "skill_cn": "见人伸手",
+    "sect": "Cái Bang",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh xuất chưởng chớp nhoáng của chiêu Kiến Nhân Thần Thủ thuộc chưởng pháp Cái Bang.",
+    "cast_skills_count": 0,
+    "missiles_count": 1,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 46,
+        "missle_name_vi": "Kiến Nhân Thần Thủ",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "tan-loi-chu.wav",
+    "path": "snd/skill/tan-loi-chu.wav",
+    "skill_id": 172,
+    "skill_vi": "Tấn Lôi Chú",
+    "skill_cn": "迅雷咒",
+    "sect": "Côn Lôn",
+    "req_level": 30,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh sấm sét giáng xuống chớp nhoáng của Tấn Lôi Chú (Thiên Tế Tấn Lôi) Côn Lôn phái.",
+    "cast_skills_count": 0,
+    "missiles_count": 4,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 15,
+        "missle_name_vi": "Tấn Lôi Chú",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 197,
+        "missle_name_vi": "Tấn Lôi Chú",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 205,
+        "missle_name_vi": "Hôn mê toàn bộ",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 246,
+        "missle_name_vi": "Bẫy choáng (Noel)",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "truy-tam-tien.wav",
+    "path": "snd/skill/truy-tam-tien.wav",
+    "skill_id": 50,
+    "skill_vi": "Truy Tâm Tiễn",
+    "skill_cn": "追心箭",
+    "sect": "Đường Môn",
+    "req_level": 30,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh mũi nỏ truy lùng tim đối thủ xé toạc không khí của tuyệt kỹ Truy Tâm Tiễn phái Đường Môn.",
+    "cast_skills_count": 0,
+    "missiles_count": 4,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 37,
+        "missle_name_vi": "Truy Tâm Tiễn",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 149,
+        "missle_name_vi": "Nhiếp Hồn Nguyệt ảnh",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 299,
+        "missle_name_vi": "GMằự´ĂẳẳÄĩ",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 331,
+        "missle_name_vi": "Truy Tâm Tỏa Mệnh",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "vu-da-le-hoa.wav",
+    "path": "snd/skill/vu-da-le-hoa.wav",
+    "skill_id": 105,
+    "skill_vi": "Vũ Đả Lê Hoa",
+    "skill_cn": "雨打梨花",
+    "sect": "Thúy Yên",
+    "req_level": 30,
+    "sound_type": "CastSound",
+    "desc": "Âm thanh thi triển kiếm pháp hoa lệ như mưa sa trên cành lê của chiêu Vũ Đả Lê Hoa phái Thúy Yên.",
+    "cast_skills_count": 2,
+    "missiles_count": 0,
+    "related_skills": [
+      {
+        "skill_id": 105,
+        "skill_vi": "Vũ Đả Lê Hoa",
+        "sect": "Thúy Yên",
+        "req_level": 30,
+        "cast_gender": "Female"
+      },
+      {
+        "skill_id": 284,
+        "skill_vi": "Hoa hồng 1",
+        "sect": "Dùng chung",
+        "req_level": 30,
+        "cast_gender": "Female"
+      }
+    ],
+    "missiles": []
+  },
+  {
+    "file_name": "tich-lich-dan.wav",
+    "path": "snd/skill/tich-lich-dan.wav",
+    "skill_id": 45,
+    "skill_vi": "Tích Lịch Đạn (Tích Lịch Đơn)",
+    "skill_cn": "霹雳弹",
+    "sect": "Đường Môn",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh quả hỏa đạn sấm sét bay vút đi của chiêu Tích Lịch Đơn phái Đường Môn.",
+    "cast_skills_count": 0,
+    "missiles_count": 21,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 35,
+        "missle_name_vi": "Tích Lịch đơn",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 128,
+        "missle_name_vi": "Độc Thích Cốt",
+        "slots": [
+          "FlySound2",
+          "HitSound2"
+        ]
+      },
+      {
+        "missle_id": 154,
+        "missle_name_vi": "Xuyên Tâm Thích",
+        "slots": [
+          "FlySound2",
+          "HitSound2"
+        ]
+      },
+      {
+        "missle_id": 156,
+        "missle_name_vi": "Hàn Băng Thích",
+        "slots": [
+          "FlySound2",
+          "HitSound2"
+        ]
+      },
+      {
+        "missle_id": 158,
+        "missle_name_vi": "Địa Diệm Hỏa",
+        "slots": [
+          "FlySound2",
+          "HitSound2"
+        ]
+      },
+      {
+        "missle_id": 160,
+        "missle_name_vi": "Lôi Kích Thuật",
+        "slots": [
+          "FlySound2",
+          "HitSound2"
+        ]
+      },
+      {
+        "missle_id": 162,
+        "missle_name_vi": "Loạn Hoàn Kích",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 204,
+        "missle_name_vi": "Độc Thích Cốt",
+        "slots": [
+          "FlySound2",
+          "HitSound2"
+        ]
+      },
+      {
+        "missle_id": 213,
+        "missle_name_vi": "Hắc Sát Thần Sa",
+        "slots": [
+          "SoundSlot4"
+        ]
+      },
+      {
+        "missle_id": 214,
+        "missle_name_vi": "Thiên Thù Vạn Độc",
+        "slots": [
+          "SoundSlot4"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "phong-quyen-tan-tuyet.wav",
+    "path": "snd/skill/phong-quyen-tan-tuyet.wav",
+    "skill_id": 102,
+    "skill_vi": "Phong Quyển Tàn Tuyết",
+    "skill_cn": "风卷残雪",
+    "sect": "Thúy Yên",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh gió cuốn bão tuyết mù mịt của chiêu thức Phong Quyển Tàn Tuyết đao pháp Thúy Yên.",
+    "cast_skills_count": 0,
+    "missiles_count": 2,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 7,
+        "missle_name_vi": "Phong Quyển Tàn Tuyết",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 196,
+        "missle_name_vi": "Phong Quyển Tàn Tuyết (ảnh động)",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "phong-hoa-tuyet-nguyet.wav",
+    "path": "snd/skill/phong-hoa-tuyet-nguyet.wav",
+    "skill_id": 99,
+    "skill_vi": "Phong Hoa Tuyết Nguyệt",
+    "skill_cn": "风花雪月",
+    "sect": "Thúy Yên",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh đường kiếm mỹ miều thanh tao của kiếm pháp sơ cấp Phong Hoa Tuyết Nguyệt Thúy Yên.",
+    "cast_skills_count": 0,
+    "missiles_count": 22,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 6,
+        "missle_name_vi": "Phong Vân Đột Khởi",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 119,
+        "missle_name_vi": "Hoa hồng 2",
+        "slots": [
+          "FlySound1"
+        ]
+      },
+      {
+        "missle_id": 146,
+        "missle_name_vi": "Băng Tung Vô ảnh",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 200,
+        "missle_name_vi": "NPC đánh xa (thủy)",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 248,
+        "missle_name_vi": "Hoa hồng 2",
+        "slots": [
+          "FlySound1"
+        ]
+      },
+      {
+        "missle_id": 254,
+        "missle_name_vi": "Hoa Tuyết 2",
+        "slots": [
+          "FlySound1"
+        ]
+      },
+      {
+        "missle_id": 263,
+        "missle_name_vi": "Hoa hồng rơi rụng",
+        "slots": [
+          "FlySound1"
+        ]
+      },
+      {
+        "missle_id": 265,
+        "missle_name_vi": "Hoa hồng đỏ rơi rụng",
+        "slots": [
+          "FlySound1"
+        ]
+      },
+      {
+        "missle_id": 277,
+        "missle_name_vi": "Quả cầu tuyết",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 303,
+        "missle_name_vi": "tianchi3²óìểà¯",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  },
+  {
+    "file_name": "phieu-tuyet-xuyen-van.wav",
+    "path": "snd/skill/phieu-tuyet-xuyen-van.wav",
+    "skill_id": 80,
+    "skill_vi": "Phiêu Tuyết Xuyên Vân",
+    "skill_cn": "飘雪穿云",
+    "sect": "Nga Mi",
+    "req_level": 10,
+    "sound_type": "FlySound",
+    "desc": "Âm thanh chưởng phong xuyên mây tuyết bay của chưởng pháp sơ cấp Phiêu Tuyết Xuyên Vân phái Nga Mi.",
+    "cast_skills_count": 0,
+    "missiles_count": 5,
+    "related_skills": [],
+    "missiles": [
+      {
+        "missle_id": 68,
+        "missle_name_vi": "Phiêu Tuyết Xuyên Vân",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 144,
+        "missle_name_vi": "Kim Đỉnh Phật Quang",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 145,
+        "missle_name_vi": "Thiên Phật Thiên Diệp",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 147,
+        "missle_name_vi": "Băng Tâm Tiên Tử",
+        "slots": [
+          "FlySound2"
+        ]
+      },
+      {
+        "missle_id": 352,
+        "missle_name_vi": "ìẽẻÂ±ựằêd",
+        "slots": [
+          "FlySound2"
+        ]
+      }
+    ]
+  }
+]

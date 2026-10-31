@@ -171,7 +171,6 @@ var Q8 = function (A, n = 1, t = 1, priority = false) {
     z8(A);
     return;
   }
-  if (c0.voices >= wv) return;
   ((c0.last[A] = e), c0.voices++);
   const i = c0.ctx.createBufferSource(),
     r = c0.ctx.createGain();
@@ -222,8 +221,6 @@ var c0 = {
 };
 
 var mv = 0.07;
-
-var wv = 10;
 
 var W3 = (s, A, n = 0.6) => {
   const t = Me.npc[s];
