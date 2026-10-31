@@ -31,7 +31,7 @@ for (const sex of [0, 1]) for (const sim of [false, true]) {
     } else s.queueSkillContact(actor, target, skill, () => {}, { targets: () => [target] });
     assert.deepEqual(calls, [], 'windup is silent');
     for (let i = 0; i < 200; i++) s.advanceSkillContacts(.01);
-    const expected = `snd/sfx-${sex ? 'female' : 'male'}.MP3`;
+    const expected = `snd/skill/sound_k00${sex ? 6 : 1}.wav`;
     assert.deepEqual(calls, [expected]);
     assert.ok(fs.existsSync('public/' + expected));
   });

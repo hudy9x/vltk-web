@@ -1,0 +1,2493 @@
+{
+  "version": 1,
+  "defaults": {
+    "male": "voice_male_default",
+    "female": "voice_female_default"
+  },
+  "sounds": {
+    "voice_male_01": {
+      "src": "snd/skill/sound_k001.wav",
+      "category": "voice",
+      "gender": "male",
+      "name": "Võ công cận chiến / ngoại công sơ cấp (Nam)",
+      "sourceType": "CastSound"
+    },
+    "voice_male_02": {
+      "src": "snd/skill/sound_k002.wav",
+      "category": "voice",
+      "gender": "male",
+      "name": "Võ công trung cấp (Cấp 30 - 60, Nam)",
+      "sourceType": "CastSound"
+    },
+    "voice_male_03": {
+      "src": "snd/skill/sound_k003.wav",
+      "category": "voice",
+      "gender": "male",
+      "name": "Võ công tấn công / chiến ý trung cấp (Nam)",
+      "sourceType": "CastSound"
+    },
+    "voice_male_04": {
+      "src": "snd/skill/sound_k004.wav",
+      "category": "voice",
+      "gender": "male",
+      "name": "Võ công cao cấp uy lực (Cấp 40 - 50, Nam)",
+      "sourceType": "CastSound"
+    },
+    "voice_male_05": {
+      "src": "snd/skill/sound_k005.wav",
+      "category": "voice",
+      "gender": "male",
+      "name": "Tuyệt kỹ trấn phái / võ công cấp 60 (Nam)",
+      "sourceType": "CastSound"
+    },
+    "voice_female_01": {
+      "src": "snd/skill/sound_k006.wav",
+      "category": "voice",
+      "gender": "female",
+      "name": "Võ công sơ cấp (Cấp 10, Nữ)",
+      "sourceType": "CastSound"
+    },
+    "voice_female_02": {
+      "src": "snd/skill/sound_k007.wav",
+      "category": "voice",
+      "gender": "female",
+      "name": "Võ công trung cấp (Cấp 10 - 30, Nữ)",
+      "sourceType": "CastSound"
+    },
+    "voice_female_03": {
+      "src": "snd/skill/sound_k008.wav",
+      "category": "voice",
+      "gender": "female",
+      "name": "Ám khí / chưởng pháp trung cấp (Cấp 10 - 30, Nữ)",
+      "sourceType": "CastSound"
+    },
+    "voice_female_04": {
+      "src": "snd/skill/sound_k009.wav",
+      "category": "voice",
+      "gender": "female",
+      "name": "Võ công cấp cao (Cấp 50 - 60, Nữ)",
+      "sourceType": "CastSound"
+    },
+    "voice_female_05": {
+      "src": "snd/skill/sound_k010.wav",
+      "category": "voice",
+      "gender": "female",
+      "name": "Tuyệt kỹ trấn phái / cấp 60 (Nữ)",
+      "sourceType": "CastSound"
+    },
+    "fx_sound_k011": {
+      "src": "snd/skill/sound_k011.wav",
+      "category": "effect",
+      "name": "Lập Địa Thành Phật",
+      "sourceType": "CastSound"
+    },
+    "fx_sound_k014": {
+      "src": "snd/skill/sound_k014.wav",
+      "category": "effect",
+      "name": "Va chạm đao thương chém trúng (Thiếu Lâm / Thần Binh)",
+      "sourceType": "HitSound"
+    },
+    "fx_sound_k015": {
+      "src": "snd/skill/sound_k015.wav",
+      "category": "effect",
+      "name": "Hỏa hệ chưởng pháp Thiên Nhẫn",
+      "sourceType": "CastSound"
+    },
+    "fx_sound_k017": {
+      "src": "snd/skill/sound_k017.wav",
+      "category": "effect",
+      "name": "Băng giáp hộ thể Thúy Yên & va chạm trúng thương",
+      "sourceType": "CastSound"
+    },
+    "fx_sound_k023": {
+      "src": "snd/skill/sound_k023.wav",
+      "category": "effect",
+      "name": "Đường đao Hoành Tảo Lục Hợp",
+      "sourceType": "FlySound"
+    },
+    "fx_sound_k028": {
+      "src": "snd/skill/sound_k028.wav",
+      "category": "effect",
+      "name": "Hỏa đạn Tàn Dương Như Huyết / Đơn Chỉ Liệt Diệm",
+      "sourceType": "FlySound"
+    },
+    "fx_sound_k029": {
+      "src": "snd/skill/sound_k029.wav",
+      "category": "effect",
+      "name": "Kiếm khí Tứ Tượng Đồng Quy / Nhất Diệp Tri Thu",
+      "sourceType": "FlySound"
+    },
+    "fx_sound_k031": {
+      "src": "snd/skill/sound_k031.wav",
+      "category": "effect",
+      "name": "Ám khí Thiên La Địa Võng / Tiểu Lý Phi Đao",
+      "sourceType": "FlySound"
+    },
+    "fx_sound_k032": {
+      "src": "snd/skill/sound_k032.wav",
+      "category": "effect",
+      "name": "Hút nội lực & áp sát cận chiến (Thiên Nhẫn)",
+      "sourceType": "HitSound"
+    },
+    "fx_sound_k036": {
+      "src": "snd/skill/sound_k036.wav",
+      "category": "effect",
+      "name": "Nổ chấn động Thôi Sơn Điền Hải / Kháng Long Hữu Hối",
+      "sourceType": "HitSound"
+    },
+    "fx_sound_k037": {
+      "src": "snd/skill/sound_k037.wav",
+      "category": "effect",
+      "name": "Khí công Ngũ Diệu Càn Khôn",
+      "sourceType": "FlySound"
+    },
+    "fx_sound_k038": {
+      "src": "snd/skill/sound_k038.wav",
+      "category": "effect",
+      "name": "Bẫy nổ chấn địa Đường Môn & Hỏa nổ",
+      "sourceType": "HitSound"
+    },
+    "fx_sound_k040": {
+      "src": "snd/skill/sound_k040.wav",
+      "category": "effect",
+      "name": "Phi đao Tán Hoa Tiêu / Cửu Cung Phi Tinh / Sét Côn Lôn",
+      "sourceType": "FlySound"
+    },
+    "fx_sound_k041": {
+      "src": "snd/skill/sound_k041.wav",
+      "category": "effect",
+      "name": "Phật âm vang vọng / Thủy ba thanh khiết",
+      "sourceType": "HitSound"
+    },
+    "fx_sound_k044": {
+      "src": "snd/skill/sound_k044.wav",
+      "category": "effect",
+      "name": "Rồng bay gầm thét Long Chiến Ư Dã / Tiềm Long Tại Uyên",
+      "sourceType": "FlySound"
+    },
+    "fx_sound_k045": {
+      "src": "snd/skill/sound_k045.wav",
+      "category": "effect",
+      "name": "Băng kết ngọc lăng & Phật quang chấn động",
+      "sourceType": "HitSound"
+    },
+    "fx_sound_k046": {
+      "src": "snd/skill/sound_k046.wav",
+      "category": "effect",
+      "name": "Hoàn thành nhiệm vụ / Kỹ năng Bang hội",
+      "sourceType": "CastSound"
+    },
+    "fx_bat_dong_minh_vuong_chu": {
+      "src": "snd/skill/bat-dong-minh-vuong-chu.wav",
+      "category": "effect",
+      "name": "Bất Động Minh Vương Chú",
+      "sourceType": "CastSound"
+    },
+    "fx_bat_diet_bat_tuyet": {
+      "src": "snd/skill/bat-diet-bat-tuyet.wav",
+      "category": "effect",
+      "name": "Bất Diệt Bất Tuyệt",
+      "sourceType": "FlySound"
+    },
+    "fx_ngu_loi_chanh_phap_nu": {
+      "src": "snd/skill/ngu-loi-chanh-phap-nu.wav",
+      "category": "effect",
+      "name": "Ngũ Lôi Chánh Pháp (Nữ)",
+      "sourceType": "CastSound",
+      "gender": "female"
+    },
+    "fx_ngu_loi_chanh_phap_nam": {
+      "src": "snd/skill/ngu-loi-chanh-phap-nam.wav",
+      "category": "effect",
+      "name": "Ngũ Lôi Chánh Pháp (Nam)",
+      "sourceType": "CastSound",
+      "gender": "male"
+    },
+    "fx_khang_long_huu_hoi": {
+      "src": "snd/skill/khang-long-huu-hoi.wav",
+      "category": "effect",
+      "name": "Kháng Long Hữu Hối",
+      "sourceType": "FlySound"
+    },
+    "fx_phat_quang_pho_chieu": {
+      "src": "snd/skill/phat-quang-pho-chieu.wav",
+      "category": "effect",
+      "name": "Phật Quang Phổ Chiếu",
+      "sourceType": "CastSound"
+    },
+    "fx_bang_bao": {
+      "src": "snd/skill/bang-bao.wav",
+      "category": "effect",
+      "name": "Băng Bạo (Hiệu ứng đạn nổ Băng)",
+      "sourceType": "HitSound"
+    },
+    "fx_kiem_phi_kinh_thien": {
+      "src": "snd/skill/kiem-phi-kinh-thien.wav",
+      "category": "effect",
+      "name": "Kiếm Phi Kinh Thiên",
+      "sourceType": "FlySound"
+    },
+    "fx_bac_cuc_nhi_phuc": {
+      "src": "snd/skill/bac-cuc-nhi-phuc.wav",
+      "category": "effect",
+      "name": "Bác Cực Nhi Phục",
+      "sourceType": "FlySound"
+    },
+    "fx_thien_ha_vo_cau": {
+      "src": "snd/skill/thien-ha-vo-cau.wav",
+      "category": "effect",
+      "name": "Thiên Hạ Vô Cẩu",
+      "sourceType": "FlySound"
+    },
+    "fx_thien_cuong_dia_sat_thu_nu": {
+      "src": "snd/skill/thien-cuong-dia-sat-thu-nu.wav",
+      "category": "effect",
+      "name": "Thiên Cương Địa Sát Thủ (Nữ)",
+      "sourceType": "CastSound",
+      "gender": "female"
+    },
+    "fx_thien_cuong_dia_sat_thu_nam": {
+      "src": "snd/skill/thien-cuong-dia-sat-thu-nam.wav",
+      "category": "effect",
+      "name": "Thiên Cương Địa Sát Thủ (Nam)",
+      "sourceType": "CastSound",
+      "gender": "male"
+    },
+    "fx_doat_hon_tieu": {
+      "src": "snd/skill/doat-hon-tieu.wav",
+      "category": "effect",
+      "name": "Đoạt Hồn Tiêu",
+      "sourceType": "FlySound"
+    },
+    "fx_u_minh_kho_lau": {
+      "src": "snd/skill/u-minh-kho-lau.wav",
+      "category": "effect",
+      "name": "U Minh Khô Lâu",
+      "sourceType": "FlySound"
+    },
+    "fx_no_loi_chi": {
+      "src": "snd/skill/no-loi-chi.wav",
+      "category": "effect",
+      "name": "Nộ Lôi Chỉ",
+      "sourceType": "FlySound"
+    },
+    "fx_tu_hang_pho_do": {
+      "src": "snd/skill/tu-hang-pho-do.wav",
+      "category": "effect",
+      "name": "Từ Hàng Phổ Độ",
+      "sourceType": "CastSound"
+    },
+    "fx_tue_nhan_chu": {
+      "src": "snd/skill/tue-nhan-chu.wav",
+      "category": "effect",
+      "name": "Tuệ Nhãn Chú (Huệ Nhãn Chú)",
+      "sourceType": "CastSound"
+    },
+    "fx_dau_thach_van_lo": {
+      "src": "snd/skill/dau-thach-van-lo.wav",
+      "category": "effect",
+      "name": "Đầu Thạch Vấn Lộ",
+      "sourceType": "FlySound"
+    },
+    "fx_thoi_son_dien_hai": {
+      "src": "snd/skill/thoi-son-dien-hai.wav",
+      "category": "effect",
+      "name": "Thôi Sơn Điền Hải",
+      "sourceType": "FlySound"
+    },
+    "fx_ma_ha_vo_luong": {
+      "src": "snd/skill/ma-ha-vo-luong.wav",
+      "category": "effect",
+      "name": "Ma Ha Vô Lượng",
+      "sourceType": "CastSound"
+    },
+    "fx_pho_thong_boc_tac": {
+      "src": "snd/skill/pho-thong-boc-tac.wav",
+      "category": "effect",
+      "name": "Phổ Thông Bộc Tạc (Tiếng nổ đạn dược)",
+      "sourceType": "HitSound"
+    },
+    "fx_chu_cap_thanh_minh": {
+      "src": "snd/skill/chu-cap-thanh-minh.wav",
+      "category": "effect",
+      "name": "Chu Cáp Thanh Minh",
+      "sourceType": "FlySound"
+    },
+    "fx_thuong_thich_trung_thanh": {
+      "src": "snd/skill/thuong-thich-trung-thanh.wav",
+      "category": "effect",
+      "name": "Thương Thích Trung Thanh (Tiếng thương đâm trúng)",
+      "sourceType": "HitSound"
+    },
+    "fx_thuong_hai_minh_nguyet": {
+      "src": "snd/skill/thuong-hai-minh-nguyet.wav",
+      "category": "effect",
+      "name": "Thương Hải Minh Nguyệt",
+      "sourceType": "FlySound"
+    },
+    "fx_tri_lieu_thuat": {
+      "src": "snd/skill/tri-lieu-thuat.wav",
+      "category": "effect",
+      "name": "Trị Liệu Thuật",
+      "sourceType": "FlySound"
+    },
+    "fx_duyen_mon_thac_bat": {
+      "src": "snd/skill/duyen-mon-thac-bat.wav",
+      "category": "effect",
+      "name": "Duyên Môn Thác Bát (Diên Môn Thác Bát)",
+      "sourceType": "FlySound"
+    },
+    "fx_phu_van_tan_tuyet": {
+      "src": "snd/skill/phu-van-tan-tuyet.wav",
+      "category": "effect",
+      "name": "Phù Vân Tán Tuyết",
+      "sourceType": "FlySound"
+    },
+    "fx_liet_hoa_tinh_thien": {
+      "src": "snd/skill/liet-hoa-tinh-thien.wav",
+      "category": "effect",
+      "name": "Liệt Hỏa Tình Thiên",
+      "sourceType": "FlySound"
+    },
+    "fx_cuong_loi_chan_dia_nu": {
+      "src": "snd/skill/cuong-loi-chan-dia-nu.wav",
+      "category": "effect",
+      "name": "Cuồng Lôi Chấn Địa (Nữ)",
+      "sourceType": "CastSound",
+      "gender": "female"
+    },
+    "fx_cuong_loi_chan_dia_nam": {
+      "src": "snd/skill/cuong-loi-chan-dia-nam.wav",
+      "category": "effect",
+      "name": "Cuồng Lôi Chấn Địa (Nam)",
+      "sourceType": "CastSound",
+      "gender": "male"
+    },
+    "fx_cuong_phong_sau_dien": {
+      "src": "snd/skill/cuong-phong-sau-dien.wav",
+      "category": "effect",
+      "name": "Cuồng Phong Tấu Điện (Cuồng Phong Sậu Điện)",
+      "sourceType": "FlySound"
+    },
+    "fx_su_tu_hong": {
+      "src": "snd/skill/su-tu-hong.wav",
+      "category": "effect",
+      "name": "Sư Tử Hống",
+      "sourceType": "CastSound"
+    },
+    "fx_huyen_nhat_vo_tuong": {
+      "src": "snd/skill/huyen-nhat-vo-tuong.wav",
+      "category": "effect",
+      "name": "Huyền Nhất Vô Tượng",
+      "sourceType": "HitSound"
+    },
+    "fx_tat_phong_chu": {
+      "src": "snd/skill/tat-phong-chu.wav",
+      "category": "effect",
+      "name": "Tật Phong Chú",
+      "sourceType": "FlySound"
+    },
+    "fx_bich_hai_trieu_sinh": {
+      "src": "snd/skill/bich-hai-trieu-sinh.wav",
+      "category": "effect",
+      "name": "Bích Hải Triều Sinh",
+      "sourceType": "FlySound"
+    },
+    "fx_huyet_thu_doc_sat": {
+      "src": "snd/skill/huyet-thu-doc-sat.wav",
+      "category": "effect",
+      "name": "Huyết Thủ Độc Sát (Huyết Đao Độc Sát)",
+      "sourceType": "FlySound"
+    },
+    "fx_hang_long_bat_vu": {
+      "src": "snd/skill/hang-long-bat-vu.wav",
+      "category": "effect",
+      "name": "Hàng Long Bất Vũ",
+      "sourceType": "FlySound"
+    },
+    "fx_kien_nhan_than_thu": {
+      "src": "snd/skill/kien-nhan-than-thu.wav",
+      "category": "effect",
+      "name": "Kiến Nhân Thân Thủ (Kiến Nhân Thần Thủ)",
+      "sourceType": "FlySound"
+    },
+    "fx_tan_loi_chu": {
+      "src": "snd/skill/tan-loi-chu.wav",
+      "category": "effect",
+      "name": "Tấn Lôi Chú",
+      "sourceType": "FlySound"
+    },
+    "fx_truy_tam_tien": {
+      "src": "snd/skill/truy-tam-tien.wav",
+      "category": "effect",
+      "name": "Truy Tâm Tiễn",
+      "sourceType": "FlySound"
+    },
+    "fx_vu_da_le_hoa": {
+      "src": "snd/skill/vu-da-le-hoa.wav",
+      "category": "effect",
+      "name": "Vũ Đả Lê Hoa",
+      "sourceType": "CastSound"
+    },
+    "fx_tich_lich_dan": {
+      "src": "snd/skill/tich-lich-dan.wav",
+      "category": "effect",
+      "name": "Tích Lịch Đạn (Tích Lịch Đơn)",
+      "sourceType": "FlySound"
+    },
+    "fx_phong_quyen_tan_tuyet": {
+      "src": "snd/skill/phong-quyen-tan-tuyet.wav",
+      "category": "effect",
+      "name": "Phong Quyển Tàn Tuyết",
+      "sourceType": "FlySound"
+    },
+    "fx_phong_hoa_tuyet_nguyet": {
+      "src": "snd/skill/phong-hoa-tuyet-nguyet.wav",
+      "category": "effect",
+      "name": "Phong Hoa Tuyết Nguyệt",
+      "sourceType": "FlySound"
+    },
+    "fx_phieu_tuyet_xuyen_van": {
+      "src": "snd/skill/phieu-tuyet-xuyen-van.wav",
+      "category": "effect",
+      "name": "Phiêu Tuyết Xuyên Vân",
+      "sourceType": "FlySound"
+    },
+    "voice_male_default": {
+      "src": "snd/sfx-male.MP3",
+      "category": "voice",
+      "gender": "male",
+      "name": "Tiếng hô nam mặc định"
+    },
+    "voice_female_default": {
+      "src": "snd/sfx-female.MP3",
+      "category": "voice",
+      "gender": "female",
+      "name": "Tiếng hô nữ mặc định"
+    }
+  },
+  "skills": {
+    "10": {
+      "name": "Kim Cang Phục Ma",
+      "level": 10,
+      "faction": "shaolin",
+      "icon": "img/s/10.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "11": {
+      "name": "Hoành Tảo Lục Hợp",
+      "level": 50,
+      "faction": "shaolin",
+      "icon": "img/s/11.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k023",
+          "reason": "Descriptive skill ID only: missile mapping unverified"
+        }
+      ]
+    },
+    "13": {
+      "name": "Lập Địa Thành Phật",
+      "level": 30,
+      "faction": "shaolin",
+      "icon": "img/s/13.png",
+      "cast": {
+        "effect": "fx_sound_k011"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "14": {
+      "name": "Hàng Long Bất Vũ",
+      "level": 10,
+      "faction": "shaolin",
+      "icon": "img/s/14.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {
+        "effect": "fx_hang_long_bat_vu"
+      },
+      "hit": {},
+      "review": []
+    },
+    "15": {
+      "name": "Bất động Minh Vương",
+      "level": 20,
+      "faction": "shaolin",
+      "icon": "img/s/15.png",
+      "cast": {
+        "effect": "fx_bat_dong_minh_vuong_chu"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "16": {
+      "name": "La Hán Trận",
+      "level": 30,
+      "faction": "shaolin",
+      "icon": "img/s/16.png",
+      "cast": {},
+      "release": {
+        "effect": "fx_no_loi_chi"
+      },
+      "hit": {},
+      "review": []
+    },
+    "17": {
+      "name": "Long Trảo Hổ Trảo (##)",
+      "level": 40,
+      "faction": "shaolin",
+      "icon": "img/s/17.png",
+      "cast": {
+        "male": "voice_male_04",
+        "female": "voice_female_04"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_bang_bao",
+          "reason": "SoundSlot4 for missile 218: timing unverified"
+        }
+      ]
+    },
+    "18": {
+      "name": "Huệ Nhãn chú",
+      "level": 40,
+      "faction": "shaolin",
+      "icon": "img/s/18.png",
+      "cast": {
+        "effect": "fx_tue_nhan_chu"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "19": {
+      "name": "Ma Ha Vô Lượng",
+      "level": 50,
+      "faction": "shaolin",
+      "icon": "img/s/19.png",
+      "cast": {
+        "effect": "fx_ma_ha_vo_luong"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "20": {
+      "name": "Sư Tử Hống",
+      "level": 40,
+      "faction": "shaolin",
+      "icon": "img/s/20.png",
+      "cast": {
+        "effect": "fx_su_tu_hong"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "29": {
+      "name": "Trảm Long quyết",
+      "level": 10,
+      "faction": "tianwang",
+      "icon": "img/s/29.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_thuong_thich_trung_thanh",
+          "reason": "Descriptive skill ID only: missile mapping unverified"
+        }
+      ]
+    },
+    "30": {
+      "name": "Hồi Phong Lạc Nhạn",
+      "level": 10,
+      "faction": "tianwang",
+      "icon": "img/s/30.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_bang_bao",
+          "reason": "SoundSlot4 for missile 219: timing unverified"
+        }
+      ]
+    },
+    "31": {
+      "name": "Hàng Vân Quyết",
+      "level": 30,
+      "faction": "tianwang",
+      "icon": "img/s/31.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "32": {
+      "name": "Vô Tâm Trảm",
+      "level": 60,
+      "faction": "tianwang",
+      "icon": "img/s/32.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_bang_bao",
+          "reason": "SoundSlot4 for missile 220: timing unverified"
+        }
+      ]
+    },
+    "33": {
+      "name": "Tĩnh Tâm Quyết",
+      "level": 20,
+      "faction": "tianwang",
+      "icon": "img/s/33.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "34": {
+      "name": "Kinh Lôi Trảm",
+      "level": 10,
+      "faction": "tianwang",
+      "icon": "img/s/34.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "35": {
+      "name": "Dương Quan Tam Điệp",
+      "level": 30,
+      "faction": "tianwang",
+      "icon": "img/s/35.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "36": {
+      "name": "Thiên Vương Chiến ý",
+      "level": 60,
+      "faction": "tianwang",
+      "icon": "img/s/36.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "37": {
+      "name": "Bát Phong Trảm",
+      "level": 30,
+      "faction": "tianwang",
+      "icon": "img/s/37.png",
+      "cast": {
+        "male": "voice_male_04",
+        "female": "voice_female_04"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "38": {
+      "name": "Bàn Cổ Cửu Thức (##)",
+      "level": 40,
+      "faction": "tianwang",
+      "icon": "img/s/38.png",
+      "cast": {
+        "male": "voice_male_04",
+        "female": "voice_female_04"
+      },
+      "release": {
+        "effect": "fx_thoi_son_dien_hai"
+      },
+      "hit": {
+        "effect": "fx_sound_k036"
+      },
+      "review": []
+    },
+    "40": {
+      "name": "Đoạn Hồn Thích",
+      "level": 40,
+      "faction": "tianwang",
+      "icon": "img/s/40.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "41": {
+      "name": "Huyết Chiến Bát Phương",
+      "level": 60,
+      "faction": "tianwang",
+      "icon": "img/s/41.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {
+        "effect": "fx_bac_cuc_nhi_phuc"
+      },
+      "hit": {},
+      "review": []
+    },
+    "42": {
+      "name": "Kim Chung Tráo",
+      "level": 50,
+      "faction": "tianwang",
+      "icon": "img/s/42.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "45": {
+      "name": "Phích Lịch đơn",
+      "level": 10,
+      "faction": "tangmen",
+      "icon": "img/s/45.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {
+        "effect": "fx_tich_lich_dan"
+      },
+      "hit": {},
+      "review": []
+    },
+    "47": {
+      "name": "Đoạt Hồn Tiêu",
+      "level": 30,
+      "faction": "tangmen",
+      "icon": "img/s/47.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {
+        "effect": "fx_doat_hon_tieu"
+      },
+      "hit": {},
+      "review": []
+    },
+    "50": {
+      "name": "Truy Tâm Tiễn",
+      "level": 30,
+      "faction": "tangmen",
+      "icon": "img/s/50.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {
+        "effect": "fx_truy_tam_tien"
+      },
+      "hit": {},
+      "review": []
+    },
+    "58": {
+      "name": "Thiên La Địa Võng",
+      "level": 60,
+      "faction": "tangmen",
+      "icon": "img/s/58.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {
+        "effect": "fx_sound_k031"
+      },
+      "hit": {},
+      "review": []
+    },
+    "63": {
+      "name": "Độc Sa chưởng",
+      "level": 10,
+      "faction": "wudu",
+      "icon": "img/s/63.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {
+        "effect": "fx_u_minh_kho_lau"
+      },
+      "hit": {},
+      "review": []
+    },
+    "65": {
+      "name": "Huyết Đao Độc Sát",
+      "level": 10,
+      "faction": "wudu",
+      "icon": "img/s/65.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {
+        "effect": "fx_huyet_thu_doc_sat"
+      },
+      "hit": {},
+      "review": []
+    },
+    "68": {
+      "name": "U Minh Khô Lâu",
+      "level": 30,
+      "faction": "wudu",
+      "icon": "img/s/68.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {
+        "effect": "fx_u_minh_kho_lau"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_pho_thong_boc_tac",
+          "reason": "SoundSlot4 for missile 32: timing unverified"
+        }
+      ]
+    },
+    "71": {
+      "name": "Thiên Cương Địa Sát",
+      "level": 60,
+      "faction": "wudu",
+      "icon": "img/s/71.png",
+      "cast": {
+        "femaleEffect": "fx_thien_cuong_dia_sat_thu_nu",
+        "maleEffect": "fx_thien_cuong_dia_sat_thu_nam"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "74": {
+      "name": "Chu Cáp Thanh Minh",
+      "level": 60,
+      "faction": "wudu",
+      "icon": "img/s/74.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {
+        "effect": "fx_chu_cap_thanh_minh"
+      },
+      "hit": {},
+      "review": []
+    },
+    "80": {
+      "name": "Phiêu Tuyết Xuyên Vân",
+      "level": 10,
+      "faction": "emei",
+      "icon": "img/s/80.png",
+      "cast": {
+        "female": "voice_female_01",
+        "male": "voice_male_01"
+      },
+      "release": {
+        "effect": "fx_phieu_tuyet_xuyen_van"
+      },
+      "hit": {},
+      "review": []
+    },
+    "81": {
+      "name": "Thu Phong Diệp",
+      "level": 10,
+      "faction": "emei",
+      "icon": "img/s/81.png",
+      "cast": {},
+      "release": {
+        "effect": "fx_tich_lich_dan"
+      },
+      "hit": {
+        "effect": "fx_tich_lich_dan"
+      },
+      "review": [
+        {
+          "sound": "fx_sound_k038",
+          "reason": "SoundSlot4 for missile 204: timing unverified"
+        }
+      ]
+    },
+    "82": {
+      "name": "Tứ Tượng Đồng Quy",
+      "level": 30,
+      "faction": "emei",
+      "icon": "img/s/82.png",
+      "cast": {
+        "female": "voice_female_02",
+        "male": "voice_male_02"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k029",
+          "reason": "Descriptive skill ID only: missile mapping unverified"
+        },
+        {
+          "sound": "fx_bang_bao",
+          "reason": "Descriptive skill ID only: missile mapping unverified"
+        }
+      ]
+    },
+    "85": {
+      "name": "Nhất Diệp Tri Thu",
+      "level": 10,
+      "faction": "emei",
+      "icon": "img/s/85.png",
+      "cast": {
+        "female": "voice_female_03",
+        "male": "voice_male_03"
+      },
+      "release": {
+        "effect": "fx_sound_k029"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k041",
+          "reason": "SoundSlot4 for missile 2: timing unverified"
+        }
+      ]
+    },
+    "86": {
+      "name": "Lưu Thủy",
+      "level": 40,
+      "faction": "emei",
+      "icon": "img/s/86.png",
+      "cast": {},
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_bang_bao",
+          "reason": "SoundSlot4 for missile 206: timing unverified"
+        }
+      ]
+    },
+    "88": {
+      "name": "Bất Diệt Bất Tuyệt",
+      "level": 60,
+      "faction": "emei",
+      "icon": "img/s/88.png",
+      "cast": {
+        "female": "voice_female_04",
+        "male": "voice_male_04"
+      },
+      "release": {
+        "effect": "fx_bat_diet_bat_tuyet"
+      },
+      "hit": {},
+      "review": []
+    },
+    "89": {
+      "name": "Mộng Điệp",
+      "level": 30,
+      "faction": "emei",
+      "icon": "img/s/89.png",
+      "cast": {},
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_huyet_thu_doc_sat",
+          "reason": "SoundSlot4 for missile 207: timing unverified"
+        }
+      ]
+    },
+    "91": {
+      "name": "Phật Quang Phổ Chiếu",
+      "level": 60,
+      "faction": "emei",
+      "icon": "img/s/91.png",
+      "cast": {
+        "female": "voice_female_05",
+        "effect": "fx_phat_quang_pho_chieu",
+        "male": "voice_male_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k045",
+          "reason": "SoundSlot4 for missile 4: timing unverified"
+        }
+      ]
+    },
+    "92": {
+      "name": "Phật Tâm Từ Hữu",
+      "level": 50,
+      "faction": "emei",
+      "icon": "img/s/92.png",
+      "cast": {},
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k041",
+          "reason": "Descriptive skill ID only: missile mapping unverified"
+        }
+      ]
+    },
+    "93": {
+      "name": "Từ Hàng Phổ Độ",
+      "level": 20,
+      "faction": "emei",
+      "icon": "img/s/93.png",
+      "cast": {
+        "effect": "fx_tu_hang_pho_do"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k041",
+          "reason": "SoundSlot4 for missile 5: timing unverified"
+        }
+      ]
+    },
+    "94": {
+      "name": "Từ Hàng Phổ Độ11",
+      "level": 0,
+      "faction": "emei",
+      "icon": "img/s/93.png",
+      "cast": {},
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k041",
+          "reason": "SoundSlot4 for missile 5: timing unverified"
+        }
+      ]
+    },
+    "99": {
+      "name": "Phong Hoa Tuyết Nguyệt",
+      "level": 10,
+      "faction": "cuiyan",
+      "icon": "img/s/99.png",
+      "cast": {
+        "female": "voice_female_01",
+        "male": "voice_male_01"
+      },
+      "release": {
+        "effect": "fx_phong_hoa_tuyet_nguyet"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_bang_bao",
+          "reason": "SoundSlot4 for missile 6: timing unverified"
+        }
+      ]
+    },
+    "100": {
+      "name": "Hộ Thể Hàn Băng",
+      "level": 40,
+      "faction": "cuiyan",
+      "icon": "img/s/100.png",
+      "cast": {
+        "effect": "fx_sound_k017"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "101": {
+      "name": "Trị liệu thuật",
+      "level": 10,
+      "faction": "cuiyan",
+      "icon": "img/s/101.png",
+      "cast": {
+        "female": "voice_female_01",
+        "male": "voice_male_01"
+      },
+      "release": {
+        "effect": "fx_tri_lieu_thuat"
+      },
+      "hit": {},
+      "review": []
+    },
+    "102": {
+      "name": "Phong Quyển Tàn Tuyết",
+      "level": 10,
+      "faction": "cuiyan",
+      "icon": "img/s/102.png",
+      "cast": {
+        "female": "voice_female_02",
+        "male": "voice_male_02"
+      },
+      "release": {
+        "effect": "fx_phong_quyen_tan_tuyet"
+      },
+      "hit": {},
+      "review": []
+    },
+    "105": {
+      "name": "Vũ Đả Lê Hoa",
+      "level": 30,
+      "faction": "cuiyan",
+      "icon": "img/s/105.png",
+      "cast": {
+        "effect": "fx_vu_da_le_hoa"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k041",
+          "reason": "SoundSlot4 for missile 8: timing unverified"
+        }
+      ]
+    },
+    "108": {
+      "name": "Mục Dã Lưu Tinh",
+      "level": 60,
+      "faction": "cuiyan",
+      "icon": "img/s/108.png",
+      "cast": {
+        "female": "voice_female_04",
+        "male": "voice_male_04"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k041",
+          "reason": "SoundSlot4 for missile 9: timing unverified"
+        }
+      ]
+    },
+    "109": {
+      "name": "Tuyết ảnh",
+      "level": 50,
+      "faction": "cuiyan",
+      "icon": "img/s/109.png",
+      "cast": {
+        "effect": "fx_sound_k017"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "110": {
+      "name": "Ngũ hành độn",
+      "level": 40,
+      "faction": "cuiyan",
+      "icon": "img/s/110.png",
+      "cast": {},
+      "release": {
+        "effect": "fx_phong_hoa_tuyet_nguyet"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_bang_bao",
+          "reason": "SoundSlot4 for missile 6: timing unverified"
+        }
+      ]
+    },
+    "111": {
+      "name": "Bích Hải Triều Sinh",
+      "level": 60,
+      "faction": "cuiyan",
+      "icon": "img/s/111.png",
+      "cast": {
+        "female": "voice_female_05",
+        "male": "voice_male_05"
+      },
+      "release": {
+        "effect": "fx_bich_hai_trieu_sinh"
+      },
+      "hit": {},
+      "review": []
+    },
+    "113": {
+      "name": "Phù Vân Tán Tuyết",
+      "level": 30,
+      "faction": "cuiyan",
+      "icon": "img/s/113.png",
+      "cast": {
+        "female": "voice_female_05",
+        "male": "voice_male_05"
+      },
+      "release": {
+        "effect": "fx_phu_van_tan_tuyet"
+      },
+      "hit": {},
+      "review": []
+    },
+    "119": {
+      "name": "Diên Môn Thác Bát",
+      "level": 10,
+      "faction": "gaibang",
+      "icon": "img/s/119.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {
+        "effect": "fx_duyen_mon_thac_bat"
+      },
+      "hit": {},
+      "review": []
+    },
+    "122": {
+      "name": "Kiến Nhân Thần Thủ",
+      "level": 10,
+      "faction": "gaibang",
+      "icon": "img/s/122.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {
+        "effect": "fx_kien_nhan_than_thu"
+      },
+      "hit": {},
+      "review": []
+    },
+    "125": {
+      "name": "Bổng Đả ác Cẩu",
+      "level": 50,
+      "faction": "gaibang",
+      "icon": "img/s/125.png",
+      "cast": {
+        "male": "voice_male_04",
+        "female": "voice_female_04"
+      },
+      "release": {
+        "effect": "fx_thien_ha_vo_cau"
+      },
+      "hit": {},
+      "review": []
+    },
+    "128": {
+      "name": "Kháng Long Hữu Hối",
+      "level": 50,
+      "faction": "gaibang",
+      "icon": "img/s/128.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {
+        "effect": "fx_khang_long_huu_hoi"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k037",
+          "reason": "SoundSlot4 for missile 48: timing unverified"
+        },
+        {
+          "sound": "fx_sound_k036",
+          "reason": "Descriptive skill ID only: missile mapping unverified"
+        }
+      ]
+    },
+    "131": {
+      "name": "Thiên Nhẫn Đao pháp",
+      "level": 10,
+      "faction": "tianren",
+      "icon": "img/s/131.png",
+      "cast": {},
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_thien_ha_vo_cau",
+          "reason": "Descriptive skill ID only: missile mapping unverified"
+        }
+      ]
+    },
+    "135": {
+      "name": "Tàn Dương Như Huyết",
+      "level": 10,
+      "faction": "tianren",
+      "icon": "img/s/135.png",
+      "cast": {
+        "effect": "fx_sound_k015"
+      },
+      "release": {
+        "effect": "fx_sound_k028"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k037",
+          "reason": "SoundSlot4 for missile 54: timing unverified"
+        }
+      ]
+    },
+    "136": {
+      "name": "Hỏa Liên Phần Hoa",
+      "level": 10,
+      "faction": "tianren",
+      "icon": "img/s/136.png",
+      "cast": {
+        "effect": "fx_sound_k015"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "137": {
+      "name": "Ảo ảnh Phi Hồ",
+      "level": 20,
+      "faction": "tianren",
+      "icon": "img/s/137.png",
+      "cast": {
+        "effect": "fx_sound_k015"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "138": {
+      "name": "Thôi sơn Điền Hải",
+      "level": 30,
+      "faction": "tianren",
+      "icon": "img/s/138.png",
+      "cast": {
+        "effect": "fx_sound_k015"
+      },
+      "release": {
+        "effect": "fx_thoi_son_dien_hai"
+      },
+      "hit": {
+        "effect": "fx_sound_k036"
+      },
+      "review": [
+        {
+          "sound": "fx_sound_k038",
+          "reason": "SoundSlot4 for missile 55: timing unverified"
+        }
+      ]
+    },
+    "139": {
+      "name": "Hỗn Thủy Mạc Ngư",
+      "level": 20,
+      "faction": "tianren",
+      "icon": "img/s/139.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k032",
+          "reason": "SoundSlot4 for missile 70: timing unverified"
+        }
+      ]
+    },
+    "140": {
+      "name": "Phi Hồng Vô Tích",
+      "level": 30,
+      "faction": "tianren",
+      "icon": "img/s/140.png",
+      "cast": {
+        "effect": "fx_sound_k015"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "141": {
+      "name": "Liệt Hỏa Tình Thiên",
+      "level": 30,
+      "faction": "tianren",
+      "icon": "img/s/141.png",
+      "cast": {
+        "effect": "fx_sound_k015"
+      },
+      "release": {
+        "effect": "fx_liet_hoa_tinh_thien"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k037",
+          "reason": "SoundSlot4 for missile 56: timing unverified"
+        }
+      ]
+    },
+    "142": {
+      "name": "Thâu Thiên Hoán Nhật",
+      "level": 60,
+      "faction": "tianren",
+      "icon": "img/s/142.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k032",
+          "reason": "SoundSlot4 for missile 69: timing unverified"
+        }
+      ]
+    },
+    "145": {
+      "name": "Đơn Chỉ Liệt Diệm",
+      "level": 10,
+      "faction": "tianren",
+      "icon": "img/s/145.png",
+      "cast": {
+        "effect": "fx_sound_k015"
+      },
+      "release": {
+        "effect": "fx_sound_k028"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k037",
+          "reason": "SoundSlot4 for missile 57: timing unverified"
+        }
+      ]
+    },
+    "146": {
+      "name": "Ngũ hành trận",
+      "level": 40,
+      "faction": "tianren",
+      "icon": "img/s/146.png",
+      "cast": {},
+      "release": {
+        "effect": "fx_kiem_phi_kinh_thien"
+      },
+      "hit": {},
+      "review": []
+    },
+    "147": {
+      "name": "Huyền Minh Hấp Tinh",
+      "level": 40,
+      "faction": "tianren",
+      "icon": "img/s/147.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k032",
+          "reason": "SoundSlot4 for missile 71: timing unverified"
+        }
+      ]
+    },
+    "148": {
+      "name": "Ma Diệm Thất Sát",
+      "level": 60,
+      "faction": "tianren",
+      "icon": "img/s/148.png",
+      "cast": {
+        "male": "voice_male_04",
+        "female": "voice_female_04"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "153": {
+      "name": "Nộ Lôi Chỉ",
+      "level": 10,
+      "faction": "wudang",
+      "icon": "img/s/153.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {
+        "effect": "fx_no_loi_chi"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k040",
+          "reason": "SoundSlot4 for missile 24: timing unverified"
+        }
+      ]
+    },
+    "155": {
+      "name": "Thương Hải Minh Nguyệt",
+      "level": 10,
+      "faction": "wudang",
+      "icon": "img/s/155.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {
+        "effect": "fx_thuong_hai_minh_nguyet"
+      },
+      "hit": {},
+      "review": []
+    },
+    "158": {
+      "name": "Kiếm Phi Kinh Thiên",
+      "level": 30,
+      "faction": "wudang",
+      "icon": "img/s/158.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {
+        "effect": "fx_kiem_phi_kinh_thien"
+      },
+      "hit": {},
+      "review": []
+    },
+    "164": {
+      "name": "Bác Cấp Nhi Phục",
+      "level": 30,
+      "faction": "wudang",
+      "icon": "img/s/164.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {
+        "effect": "fx_bac_cuc_nhi_phuc"
+      },
+      "hit": {},
+      "review": []
+    },
+    "169": {
+      "name": "Hô Phong Pháp",
+      "level": 10,
+      "faction": "kunlun",
+      "icon": "img/s/169.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {
+        "effect": "fx_tat_phong_chu"
+      },
+      "hit": {},
+      "review": []
+    },
+    "172": {
+      "name": "Thiên Tế Tấn Lôi",
+      "level": 30,
+      "faction": "kunlun",
+      "icon": "img/s/172.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {
+        "effect": "fx_tan_loi_chu"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k040",
+          "reason": "SoundSlot4 for missile 15: timing unverified"
+        }
+      ]
+    },
+    "174": {
+      "name": "Ki Bán phù",
+      "level": 20,
+      "faction": "kunlun",
+      "icon": "img/s/174.png",
+      "cast": {},
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_kiem_phi_kinh_thien",
+          "reason": "Descriptive skill ID only: missile mapping unverified"
+        }
+      ]
+    },
+    "176": {
+      "name": "Cuồng Phong Sậu Điện",
+      "level": 50,
+      "faction": "kunlun",
+      "icon": "img/s/176.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {
+        "effect": "fx_cuong_phong_sau_dien"
+      },
+      "hit": {},
+      "review": []
+    },
+    "179": {
+      "name": "Cuồng Lôi Chấn Địa",
+      "level": 10,
+      "faction": "kunlun",
+      "icon": "img/s/179.png",
+      "cast": {
+        "femaleEffect": "fx_cuong_loi_chan_dia_nu",
+        "maleEffect": "fx_cuong_loi_chan_dia_nam"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "182": {
+      "name": "Ngũ Lôi Chánh Pháp",
+      "level": 60,
+      "faction": "kunlun",
+      "icon": "img/s/182.png",
+      "cast": {
+        "femaleEffect": "fx_ngu_loi_chanh_phap_nu",
+        "maleEffect": "fx_ngu_loi_chanh_phap_nam"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "249": {
+      "name": "Tiểu Lý Phi Đao",
+      "level": 60,
+      "faction": "tangmen",
+      "icon": "img/s/249.png",
+      "cast": {
+        "male": "voice_male_04",
+        "female": "voice_female_04"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "267": {
+      "name": "Tam Hoàn Thao Nguyệt",
+      "level": 60,
+      "faction": "wudang",
+      "icon": "img/s/267.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "269": {
+      "name": "Băng Tâm Trái ảnh",
+      "level": 20,
+      "faction": "cuiyan",
+      "icon": "img/s/269.png",
+      "cast": {},
+      "release": {
+        "effect": "fx_tri_lieu_thuat"
+      },
+      "hit": {},
+      "review": []
+    },
+    "271": {
+      "name": "Long Trảo Hổ Trảo",
+      "level": 50,
+      "faction": "shaolin",
+      "icon": "img/s/17.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {
+        "effect": "fx_no_loi_chi"
+      },
+      "hit": {},
+      "review": []
+    },
+    "302": {
+      "name": "Bạo Vũ Lê Hoa",
+      "level": 80,
+      "faction": "tangmen",
+      "icon": "img/s/302.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {
+        "effect": "fx_bac_cuc_nhi_phuc"
+      },
+      "hit": {},
+      "review": []
+    },
+    "303": {
+      "name": "Độc Thích Cốt",
+      "level": 20,
+      "faction": "tangmen",
+      "icon": "img/s/303.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "317": {
+      "name": "Kim Phật Xuất Kích",
+      "level": 30,
+      "faction": "shaolin",
+      "icon": "img/s/17.png",
+      "cast": {},
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k040",
+          "reason": "SoundSlot4 for missile 134: timing unverified"
+        }
+      ]
+    },
+    "318": {
+      "name": "Đạt Ma Độ Giang",
+      "level": 80,
+      "faction": "shaolin",
+      "icon": "img/s/318.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "319": {
+      "name": "Hoành Tảo Thiên Quân",
+      "level": 80,
+      "faction": "shaolin",
+      "icon": "img/s/319.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {
+        "effect": "fx_sound_k014"
+      },
+      "review": [
+        {
+          "sound": "fx_sound_k017",
+          "reason": "Alternative hit for missile 135"
+        },
+        {
+          "sound": "fx_sound_k017",
+          "reason": "SoundSlot4 for missile 135: timing unverified"
+        }
+      ]
+    },
+    "321": {
+      "name": "Vô Tướng Trảm",
+      "level": 80,
+      "faction": "shaolin",
+      "icon": "img/s/321.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "322": {
+      "name": "Phá Thiên Trảm",
+      "level": 80,
+      "faction": "tianwang",
+      "icon": "img/s/322.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "323": {
+      "name": "Truy Tinh Trục Nguyệt",
+      "level": 80,
+      "faction": "tianwang",
+      "icon": "img/s/323.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "324": {
+      "name": "Thừa Long Quyết",
+      "level": 60,
+      "faction": "tianwang",
+      "icon": "img/s/324.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "325": {
+      "name": "Truy Phong Quyết",
+      "level": 80,
+      "faction": "tianwang",
+      "icon": "img/s/325.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "328": {
+      "name": "Tam Nga Tề Tuyết",
+      "level": 80,
+      "faction": "emei",
+      "icon": "img/s/328.png",
+      "cast": {},
+      "release": {
+        "effect": "fx_bat_diet_bat_tuyet"
+      },
+      "hit": {},
+      "review": []
+    },
+    "336": {
+      "name": "Băng Tung Vô ảnh",
+      "level": 80,
+      "faction": "cuiyan",
+      "icon": "img/s/336.png",
+      "cast": {},
+      "release": {
+        "effect": "fx_phong_hoa_tuyet_nguyet"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_bang_bao",
+          "reason": "SoundSlot4 for missile 146: timing unverified"
+        }
+      ]
+    },
+    "337": {
+      "name": "Băng Tâm Tiên Tử",
+      "level": 80,
+      "faction": "cuiyan",
+      "icon": "img/s/337.png",
+      "cast": {},
+      "release": {
+        "effect": "fx_phieu_tuyet_xuyen_van"
+      },
+      "hit": {},
+      "review": []
+    },
+    "339": {
+      "name": "Nhiếp Hồn Nguyệt ảnh",
+      "level": 80,
+      "faction": "tangmen",
+      "icon": "img/s/339.png",
+      "cast": {
+        "female": "voice_female_03",
+        "male": "voice_male_03"
+      },
+      "release": {
+        "effect": "fx_truy_tam_tien"
+      },
+      "hit": {},
+      "review": []
+    },
+    "341": {
+      "name": "Tán Hoa Tiêu",
+      "level": 60,
+      "faction": "tangmen",
+      "icon": "img/s/341.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {
+        "effect": "fx_sound_k040"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k040",
+          "reason": "SoundSlot4 for missile 151: timing unverified"
+        }
+      ]
+    },
+    "342": {
+      "name": "Cửu Cung Phi Tinh",
+      "level": 80,
+      "faction": "tangmen",
+      "icon": "img/s/342.png",
+      "cast": {
+        "female": "voice_female_03",
+        "male": "voice_male_03"
+      },
+      "release": {
+        "effect": "fx_sound_k040"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k040",
+          "reason": "SoundSlot4 for missile 152: timing unverified"
+        }
+      ]
+    },
+    "343": {
+      "name": "Xuyên Tâm Thích",
+      "level": 30,
+      "faction": "tangmen",
+      "icon": "img/s/343.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "345": {
+      "name": "Hàn Băng Thích",
+      "level": 40,
+      "faction": "tangmen",
+      "icon": "img/s/345.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "347": {
+      "name": "Địa Diệm Hỏa",
+      "level": 10,
+      "faction": "tangmen",
+      "icon": "img/s/347.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "349": {
+      "name": "Lôi Kích Thuật",
+      "level": 50,
+      "faction": "tangmen",
+      "icon": "img/s/349.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "351": {
+      "name": "Loạn Hoàn Kích",
+      "level": 80,
+      "faction": "tangmen",
+      "icon": "img/s/351.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "353": {
+      "name": "Âm Phong Thực Cốt",
+      "level": 80,
+      "faction": "wudu",
+      "icon": "img/s/353.png",
+      "cast": {
+        "femaleEffect": "fx_thien_cuong_dia_sat_thu_nu",
+        "maleEffect": "fx_thien_cuong_dia_sat_thu_nam"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "355": {
+      "name": "Huyền Âm Trảm",
+      "level": 80,
+      "faction": "wudu",
+      "icon": "img/s/355.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {
+        "effect": "fx_u_minh_kho_lau"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_pho_thong_boc_tac",
+          "reason": "SoundSlot4 for missile 165: timing unverified"
+        }
+      ]
+    },
+    "357": {
+      "name": "Phi Long Tại Thiên",
+      "level": 80,
+      "faction": "gaibang",
+      "icon": "img/s/357.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {
+        "effect": "fx_khang_long_huu_hoi"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k037",
+          "reason": "SoundSlot4 for missile 166: timing unverified"
+        }
+      ]
+    },
+    "359": {
+      "name": "Thiên Hạ Vô Cẩu",
+      "level": 80,
+      "faction": "gaibang",
+      "icon": "img/s/359.png",
+      "cast": {
+        "male": "voice_male_04",
+        "female": "voice_female_04"
+      },
+      "release": {
+        "effect": "fx_thien_ha_vo_cau"
+      },
+      "hit": {},
+      "review": []
+    },
+    "361": {
+      "name": "Vân Long Kích",
+      "level": 80,
+      "faction": "tianren",
+      "icon": "img/s/361.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {
+        "effect": "fx_liet_hoa_tinh_thien"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k037",
+          "reason": "SoundSlot4 for missile 169: timing unverified"
+        }
+      ]
+    },
+    "362": {
+      "name": "Thiên Ngoại Lưu Tinh",
+      "level": 80,
+      "faction": "tianren",
+      "icon": "img/s/362.png",
+      "cast": {
+        "male": "voice_male_02",
+        "female": "voice_female_02"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k037",
+          "reason": "SoundSlot4 for missile 171: timing unverified"
+        }
+      ]
+    },
+    "365": {
+      "name": "Thiên Địa Vô Cực",
+      "level": 80,
+      "faction": "wudang",
+      "icon": "img/s/365.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {
+        "effect": "fx_bac_cuc_nhi_phuc"
+      },
+      "hit": {},
+      "review": []
+    },
+    "368": {
+      "name": "Nhân Kiếm Hợp Nhất",
+      "level": 80,
+      "faction": "wudang",
+      "icon": "img/s/163.png",
+      "cast": {
+        "male": "voice_male_03",
+        "female": "voice_female_03"
+      },
+      "release": {
+        "effect": "fx_thuong_hai_minh_nguyet"
+      },
+      "hit": {},
+      "review": []
+    },
+    "372": {
+      "name": "Ngạo Tuyết Tiêu Phong",
+      "level": 80,
+      "faction": "kunlun",
+      "icon": "img/s/372.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {
+        "effect": "fx_cuong_phong_sau_dien"
+      },
+      "hit": {},
+      "review": []
+    },
+    "375": {
+      "name": "Lôi động Cửu Thiên",
+      "level": 80,
+      "faction": "kunlun",
+      "icon": "img/s/375.png",
+      "cast": {
+        "femaleEffect": "fx_ngu_loi_chanh_phap_nu",
+        "maleEffect": "fx_ngu_loi_chanh_phap_nam"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "380": {
+      "name": "Phong Sương Toái ảnh",
+      "level": 80,
+      "faction": "emei",
+      "icon": "img/s/380.png",
+      "cast": {
+        "effect": "fx_phat_quang_pho_chieu"
+      },
+      "release": {},
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_sound_k045",
+          "reason": "SoundSlot4 for missile 186: timing unverified"
+        }
+      ]
+    },
+    "384": {
+      "name": "Bách Độc Xuyên Tâm",
+      "level": 30,
+      "faction": "wudu",
+      "icon": "img/s/76.png",
+      "cast": {
+        "male": "voice_male_01",
+        "female": "voice_female_01"
+      },
+      "release": {
+        "effect": "fx_u_minh_kho_lau"
+      },
+      "hit": {},
+      "review": [
+        {
+          "sound": "fx_pho_thong_boc_tac",
+          "reason": "SoundSlot4 for missile 190: timing unverified"
+        }
+      ]
+    },
+    "385": {
+      "name": "Thôi Song Vọng Nguyệt",
+      "level": 30,
+      "faction": "emei",
+      "icon": "img/s/81.png",
+      "cast": {},
+      "release": {
+        "effect": "fx_bat_diet_bat_tuyet"
+      },
+      "hit": {},
+      "review": []
+    },
+    "407": {
+      "name": "Thừa Long Quyết",
+      "level": 60,
+      "faction": "tianwang",
+      "icon": "img/s/322.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "408": {
+      "name": "Truy Phong Quyết",
+      "level": 60,
+      "faction": "tianwang",
+      "icon": "img/s/324.png",
+      "cast": {
+        "male": "voice_male_05",
+        "female": "voice_female_05"
+      },
+      "release": {},
+      "hit": {},
+      "review": []
+    },
+    "1055": {
+      "name": "Đại Lực Kim Cang Chưởng",
+      "level": 150,
+      "faction": "shaolin",
+      "icon": "img/s/1055.png",
+      "inherit": 318,
+      "route": "Quyền pháp"
+    },
+    "1056": {
+      "name": "Vi Đà Hiến Xử",
+      "level": 150,
+      "faction": "shaolin",
+      "icon": "img/s/1056.png",
+      "inherit": 319,
+      "route": "Côn pháp"
+    },
+    "1057": {
+      "name": "Tam Giới Quy Thiền",
+      "level": 150,
+      "faction": "shaolin",
+      "icon": "img/s/1057.png",
+      "inherit": 321,
+      "route": "Đao pháp"
+    },
+    "1058": {
+      "name": "Hào Hùng Trảm",
+      "level": 150,
+      "faction": "tianwang",
+      "icon": "img/s/1058.png",
+      "inherit": 322,
+      "route": "Đao pháp"
+    },
+    "1059": {
+      "name": "Tung Hoành Bát Hoang",
+      "level": 150,
+      "faction": "tianwang",
+      "icon": "img/s/1059.png",
+      "inherit": 323,
+      "route": "Thương pháp"
+    },
+    "1060": {
+      "name": "Bá Vương Tạm Kim",
+      "level": 150,
+      "faction": "tianwang",
+      "icon": "img/s/1060.png",
+      "inherit": 325,
+      "route": "Chùy pháp"
+    },
+    "1061": {
+      "name": "Kiếm Hoa Vãn Tinh",
+      "level": 150,
+      "faction": "emei",
+      "icon": "img/s/1061.png",
+      "inherit": 328,
+      "route": "Kiếm pháp"
+    },
+    "1062": {
+      "name": "Băng Vũ Lạc Tinh",
+      "level": 150,
+      "faction": "emei",
+      "icon": "img/s/1062.png",
+      "inherit": 380,
+      "route": "Chưởng pháp"
+    },
+    "1063": {
+      "name": "Băng Tước Hoạt Kỳ",
+      "level": 150,
+      "faction": "cuiyan",
+      "icon": "img/s/1063.png",
+      "inherit": 336,
+      "route": "Đơn đao"
+    },
+    "1065": {
+      "name": "Thủy Anh Man Tú",
+      "level": 150,
+      "faction": "cuiyan",
+      "icon": "img/s/1065.png",
+      "inherit": 337,
+      "route": "Song đao"
+    },
+    "1066": {
+      "name": "Hình Tiêu Cốt Lập",
+      "level": 150,
+      "faction": "wudu",
+      "icon": "img/s/1066.png",
+      "inherit": 355,
+      "route": "Đao pháp"
+    },
+    "1067": {
+      "name": "U Hồn Phệ Ảnh",
+      "level": 150,
+      "faction": "wudu",
+      "icon": "img/s/1067.png",
+      "inherit": 353,
+      "route": "Chưởng pháp"
+    },
+    "1069": {
+      "name": "Vô Ảnh Xuyên",
+      "level": 150,
+      "faction": "tangmen",
+      "icon": "img/s/1069.png",
+      "inherit": 339,
+      "route": "Phi đao"
+    },
+    "1070": {
+      "name": "Thiết Liên Tứ Sát",
+      "level": 150,
+      "faction": "tangmen",
+      "icon": "img/s/1070.png",
+      "inherit": 302,
+      "route": "Tụ tiễn"
+    },
+    "1071": {
+      "name": "Càn Khôn Nhất Trịch",
+      "level": 150,
+      "faction": "tangmen",
+      "icon": "img/s/1071.png",
+      "inherit": 342,
+      "route": "Phi tiêu"
+    },
+    "1073": {
+      "name": "Thời Thặng Lục Long",
+      "level": 150,
+      "faction": "gaibang",
+      "icon": "img/s/1073.png",
+      "inherit": 357,
+      "route": "Chưởng pháp"
+    },
+    "1074": {
+      "name": "Bổng Huýnh Lược Địa",
+      "level": 150,
+      "faction": "gaibang",
+      "icon": "img/s/1074.png",
+      "inherit": 359,
+      "route": "Bổng pháp"
+    },
+    "1075": {
+      "name": "Giang Hải Nộ Lan",
+      "level": 150,
+      "faction": "tianren",
+      "icon": "img/s/1075.png",
+      "inherit": 361,
+      "route": "Mâu pháp"
+    },
+    "1076": {
+      "name": "Tật Hỏa Liệu Nguyên",
+      "level": 150,
+      "faction": "tianren",
+      "icon": "img/s/1076.png",
+      "inherit": 362,
+      "route": "Đao pháp · Nội công"
+    },
+    "1078": {
+      "name": "Tạo Hóa Thái Thanh",
+      "level": 150,
+      "faction": "wudang",
+      "icon": "img/s/1078.png",
+      "inherit": 365,
+      "route": "Khí công"
+    },
+    "1079": {
+      "name": "Kiếm Thùy Tinh Hà",
+      "level": 150,
+      "faction": "wudang",
+      "icon": "img/s/1079.png",
+      "inherit": 368,
+      "route": "Kiếm pháp"
+    },
+    "1080": {
+      "name": "Cửu Thiên Cương Phong",
+      "level": 150,
+      "faction": "kunlun",
+      "icon": "img/s/1080.png",
+      "inherit": 372,
+      "route": "Đao pháp"
+    },
+    "1081": {
+      "name": "Thiên Lôi Chấn Nhạc",
+      "level": 150,
+      "faction": "kunlun",
+      "icon": "img/s/1081.png",
+      "inherit": 375,
+      "route": "Kiếm pháp · Lôi pháp"
+    }
+  }
+}

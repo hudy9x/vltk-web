@@ -14,6 +14,123 @@ npm start
 `npm run dev` bật môi trường development và Node watch. `PORT=3001 npm start` đổi port.
 `DB_PATH=/absolute/path/test.sqlite npm start` dùng database riêng.
 
+## Âm thanh kỹ năng: Sound ID và cấu hình
+
+### 1. Vị trí lưu trữ
+
+| Đường dẫn | Vai trò |
+| --- | --- |
+| `public/snd/skill/` | File WAV của kỹ năng; đặt tên tiếng Việt không dấu, nối bằng dấu `-`. |
+| `public/snd/skill/index.json` | Metadata nguồn để tra cứu kỹ năng, đạn và các slot âm thanh. |
+| `public/snd/sfx-male.MP3`, `public/snd/sfx-female.MP3` | Tiếng hô mặc định khi kỹ năng chưa có tiếng hô riêng. |
+| `src/client/combat/audio/config.json` | Nguồn cấu hình game: danh mục Sound ID, mapping skill và kế thừa. |
+| `src/client/combat/audio/runtime.ts` | Phân giải kế thừa, preload và phát âm thanh theo ID/thời điểm. |
+| `src/client/ui/legacy-panels-and-audio-01.js` | Bộ phát Web Audio, cache, mute/volume và chính sách tiếng hô đám đông. |
+| `tools/skill-audio-report.cjs` | Sinh bảng HTML có icon, cấp, Sound ID và nút nghe từ config của game. |
+
+Luồng tra cứu:
+
+```text
+Skill ID + cast/release/hit + giới tính
+    -> config.skills (phân giải inherit nếu có)
+    -> Sound ID -> config.sounds[ID].src -> Web Audio
+```
+
+### 2. Đổi hoặc thêm sound
+
+1. Thêm file vào `public/snd/skill/`, hoặc thay file hiện có.
+2. Trong `config.json`, thêm/sửa mục `sounds[Sound ID]`. Giữ Sound ID ổn định
+   khi đổi tên hoặc thay nội dung file; chỉ sửa `src` để mọi skill đang dùng ID
+   đó nhận thay đổi. `src` là đường dẫn từ thư mục `public/`, ví dụ
+   `snd/skill/su-tu-hong.wav`, không ghi tiền tố `public/`.
+3. Gắn Sound ID vào `skills[Skill ID]` ở thời điểm cần phát. Khi đổi tên file
+   cũng cập nhật `file_name` và `path` tương ứng trong `public/snd/skill/index.json`.
+   Sửa metadata nguồn này riêng lẻ không tự thay đổi cấu hình runtime.
+4. Build lại game, reload trình duyệt và sinh lại report để nghe thử.
+
+Ví dụ một mục trong `sounds`:
+
+```json
+"fx_su_tu_hong": {
+  "src": "snd/skill/su-tu-hong.wav",
+  "category": "effect",
+  "name": "Sư Tử Hống",
+  "sourceType": "CastSound"
+}
+```
+
+`category` phân biệt `voice` (tiếng hô) và `effect` (hiệu ứng).
+`gender` có thể là `male` hoặc `female`; đây là metadata, còn lựa chọn âm thanh
+theo giới tính được khai báo trong mapping của skill. `sourceType` ghi loại gốc
+trong danh mục, không tự quyết định thời điểm phát.
+
+| Sound ID | File | Phân loại |
+| --- | --- | --- |
+| `voice_male_01` → `voice_male_05` | `sound_k001.wav` → `sound_k005.wav` | Tiếng hô nam |
+| `voice_female_01` → `voice_female_05` | `sound_k006.wav` → `sound_k010.wav` | Tiếng hô nữ |
+| `voice_male_default`, `voice_female_default` | Hai file `sfx-*.MP3` ở trên | Tiếng hô dự phòng |
+
+### 3. Đổi mapping của skill và kế thừa skill 150
+
+Trong mỗi mục `skills[ID]`, giữ các trường thông tin `name`, `level`, `faction`,
+`icon`; sửa các khối âm thanh sau:
+
+| Khối | Thời điểm | Các trường nhận Sound ID |
+| --- | --- | --- |
+| `cast` | Khi chiêu thực sự được tung sau windup | `male`, `female`: tiếng hô; `effect`: hiệu ứng chung; `maleEffect`, `femaleEffect`: hiệu ứng theo giới tính. |
+| `release` | Khi phóng đạn/kình khí, một lần cho cả loạt | `effect` hoặc `maleEffect` / `femaleEffect`. |
+| `hit` | Lần contact đầu tiên của lượt thi triển | `effect`. |
+| `review` | Chỉ để nghe/đối chiếu trong report | Mảng `{ "sound": "Sound ID", "reason": "Lý do cần xác minh" }`; chưa phát trong game. |
+
+Ví dụ phần âm thanh của skill `14` — Hàng Long Bất Vũ:
+
+```json
+"cast": {
+  "male": "voice_male_03",
+  "female": "voice_female_03"
+},
+"release": {
+  "effect": "fx_hang_long_bat_vu"
+},
+"hit": {}
+```
+
+Để đổi tiếng va chạm, sửa `skills[ID].hit.effect` thành ID đã có trong `sounds`.
+Ví dụ skill `319` đang dùng `fx_sound_k014`. Không gắn đường dẫn file trực tiếp
+vào các khối của skill. Các `SoundSlot4` chưa rõ thời điểm được giữ trong
+`review`; chỉ chuyển sang `hit` sau khi đã xác minh.
+
+Skill cấp 150 dùng `inherit` để kế thừa skill cấp 80 cùng tuyến, ví dụ
+`skills["1055"].inherit = 318`. Thay sound ở skill 80 sẽ cập nhật cả skill 150.
+Muốn skill 150 dùng sound riêng, thêm trường cần ghi đè trong `cast`, `release`
+hoặc `hit` của chính skill 150; các trường khác vẫn kế thừa. Tránh tạo vòng lặp
+`inherit` và luôn trỏ tới Skill ID tồn tại trong config.
+
+Tiếng hô riêng thay tiếng hô mặc định. Nếu có hiệu ứng xuất chiêu mà không cấu
+hình tiếng hô riêng, runtime bỏ tiếng hô mặc định để tránh chồng tiếng.
+Game vẫn giữ mute/volume, giảm âm theo khoảng cách, chống phát trùng và chính
+sách lọc tiếng hô đám đông; bộ phát chung đã bỏ giới hạn 10 âm thanh đồng thời.
+Không lặp tiếng va chạm theo từng tick DOT hay từng mục tiêu trong cùng một cast.
+
+### 4. Kiểm tra và sinh lại report
+
+Chạy từ thư mục gốc repository:
+
+```sh
+npm run build
+node --test test/skill-audio.test.js test/skill-sfx.test.js test/attack-voice.test.js test/attack-voice-crowd.test.js
+node tools/skill-audio-report.cjs /tmp/skill-audio-report.html
+```
+
+Mở `/tmp/skill-audio-report.html` bằng trình duyệt để nghe theo Sound ID.
+Có thể thay đối số cuối bằng đường dẫn file HTML muốn lưu. Report dùng cùng
+config và hàm `resolveSkillAudio` với game, nhúng icon/âm thanh để mở độc lập.
+Đây là snapshot tại lúc sinh: sau khi sửa config hoặc thay file âm thanh cần
+chạy lại lệnh; SHA-256 của config được hiển thị trong phần “Config nguồn”.
+Các test kiểm tra file tồn tại, tham chiếu ID, nhóm hô nam/nữ, kế thừa 80 → 150,
+thời điểm phát, hủy chiêu và chống phát trùng. Khi sửa luồng combat, chạy thêm
+`npm test` trước khi commit.
+
 ## Vấn đề đã xác nhận, tạm hoãn sửa
 
 **2026-10-19 — Điểm tiềm năng Nội công chưa tăng sát thương phép ở tất cả môn phái**,

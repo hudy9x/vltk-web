@@ -39,5 +39,6 @@ export { spawnSwordFlowerCharge, SWORD_FLOWER_CHARGE_RADIUS } from './skill-effe
 export type { CombatCast, CombatTarget, CombatSkill, SkillGeometry, ContactEffect, CastOptions, ContactHitHandler, ContactImpactHandler, WorldPoint } from './types';
 
 export { describePoisonDamage } from './poison-summary';
+export { SKILL_AUDIO_CONFIG, resolveSkillAudio, playSound, playSkillSound, preloadSkillAudio } from './audio/runtime';
 
 export { resolveSkillImpactGeometry } from './skill-geometry';

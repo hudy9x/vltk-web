@@ -737,9 +737,11 @@ var sD = function (A) {
     l.dash = null;
     const e = n.tg;
     (beginActorCast(v, actorAttackTiming(v, n.a).cycleSeconds, () => {
-      if (e && !e.dead && e.hp > 0 && q0(v, e) <= ((e.r || 12) + 24) / QA && mt(v.x, v.y, e.x, e.y)) Ls(hs(n.a, e), n.a);
+      if (e && !e.dead && e.hp > 0 && q0(v, e) <= ((e.r || 12) + 24) / QA && mt(v.x, v.y, e.x, e.y)) {
+        CombatEngine.playSkillSound(e, n.a.id || 0, "hit");
+        Ls(hs(n.a, e), n.a);
+      }
       if (n.a.id) G8(n.a.id);
-      playActorAttackVoice(v);
     }),
       (v.act = "at"),
       (v.actT = 0));
@@ -890,7 +892,7 @@ var oD = function () {
     (v.dir = kn(t.x - v.x, t.y - v.y)),
     (v.act = "at"),
     (v.actT = 0),
-    e.id ? (+e.id !== 1081 && G8(e.id)) : W3(Jt() && Jt().anim, "at", 0.4),
+    !e.id && W3(Jt() && Jt().anim, "at", 0.4),
     Math.max(actorAttackTiming(v, e).cycleSeconds, e.cd || 0)
   );
 };

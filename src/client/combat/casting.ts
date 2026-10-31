@@ -5,8 +5,7 @@ import { beginActorCast } from './action-state';
 import { defaultCombatTargets } from './spatial/contact-query';
 import { resolveSpeed } from '../speed/runtime';
 import type { ResolvedSpeed } from '../speed/types';
-declare function G8(skillId: number | string): void;
-declare function playActorAttackVoice(actor: CombatTarget): void;
+import { playSkillSound } from './audio/runtime';
 declare function actorAttackTiming(actor: CombatTarget, skill: CombatSkill): ResolvedSpeed;
 // Secondary fields created synchronously at release inherit the same tick remainder.
 let releaseStep: number | undefined;
@@ -26,7 +25,13 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     actor,
     skill,
     ignoreTerrain: skillIgnoresTerrain(skill),
-    onHit,
+    onHit: contact => {
+      if (!impactSoundPlayed && !skill.ev2) {
+        impactSoundPlayed = true;
+        playSkillSound(contact, skill.id || 0, 'hit');
+      }
+      onHit(contact);
+    },
     onImpact: options.onImpact,
     duration: options.duration,
     targets: options.targets || defaultCombatTargets,
@@ -42,6 +47,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     firstStep: releaseStep,
     interval: [362, 375].includes(+skill.id!) ? 0.3 : 0,
   };
+  let impactSoundPlayed = false;
   if (blocked) return cast;
   if (+skill.id! === 1075 && !skill.ev2) {
     // Same fixed forward rectangle as Vân Long Kích. Keep the original
@@ -114,8 +120,10 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
         if (!l.quiet && !options.hideFallbackVisual) l.fx.push(effect);
       }
       // One sound per primary release, shared by world combat and arena.
-      if (!skill.ev2 && typeof playActorAttackVoice === 'function') playActorAttackVoice(actor);
-      if (+skill.id! === 1081 && !skill.ev2 && typeof G8 === 'function') G8(1081);
+      if (!skill.ev2) {
+        playSkillSound(actor, skill.id || 0, 'cast');
+        playSkillSound(actor, skill.id || 0, 'release');
+      }
       options.afterRelease?.();
     } finally {
       activeCombatCast = previous;

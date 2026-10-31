@@ -133,9 +133,7 @@ var j8 = function () {
     (c0.gain = c0.ctx.createGain()),
     c0.gain.connect(c0.ctx.destination),
     ks(),
-    z8(Me.skill[1081]),
-    z8("snd/sfx-female.MP3"),
-    z8("snd/sfx-male.MP3"));
+    CombatEngine.preloadSkillAudio());
 };
 
 var ks = function () {
@@ -227,14 +225,17 @@ var W3 = (s, A, n = 0.6) => {
   t && Q8(t[A], n, Z(0.93, 1.07));
 };
 
-var G8 = (s) => Q8(Me.skill[s], 0.5);
+var G8 = (s, actor = v) => {
+  CombatEngine.playSkillSound(actor, s, "cast");
+  CombatEngine.playSkillSound(actor, s, "release");
+};
 
 // Separate voice budget: never queue crowd shouts for later playback.
 var attackVoicePolicy = { range: 420, nearest: 3, maxVoices: 5, playerCooldown: 0.8,
   targetCooldown: 1.5, crowdCooldown: 2, crowdChance: 0.25 };
 var attackVoiceState = { last: new WeakMap(), active: new Set() };
 
-var playActorAttackVoice = function (actor) {
+var playActorAttackVoice = function (actor, soundId) {
   if (l.quiet || !c0.ctx || !g1().on || actor.dead || actor.hp <= 0 ||
       actor.battlefieldBoss || actor.battlefieldMonster) return;
   const context = typeof skillVisualContext !== "undefined" ? skillVisualContext : null;
@@ -267,7 +268,7 @@ var playActorAttackVoice = function (actor) {
   const victim = [...state.active].sort((a, b) => a.rank - b.rank || a.volume - b.volume)[0];
   if (state.active.size >= policy.maxVoices && (!victim || victim.rank >= rank)) return;
   const volume = player ? 0.5 : (selected ? 0.35 : 0.2) * (1 - distance / policy.range);
-  const source = Q8(profile.sex === 1 ? "snd/sfx-female.MP3" : "snd/sfx-male.MP3", volume, 1, player);
+  const source = CombatEngine.playSound(soundId || CombatEngine.SKILL_AUDIO_CONFIG.defaults[profile.sex === 1 ? "female" : "male"], volume, player);
   if (!source) return;
   if (state.active.size >= policy.maxVoices) { state.active.delete(victim); victim.source.stop(); }
   const voice = { source, rank, volume }, ended = source.onended;

@@ -128,6 +128,7 @@ var castSupportSkill = function (id) {
     if (off[id]) delete off[id]; else off[id] = 1;
     l.dirty = true; D0(); qA(); $();
     k(`${off[id] ? "Tắt" : "Bật"} vòng sáng: ${skill.n}`);
+    if (!off[id] && typeof G8 === "function") G8(id);
     return true;
   }
   const state = ba(), now = ya(), level = zi(id), duration = ae(skill, level);
@@ -157,6 +158,8 @@ var castSupportSkill = function (id) {
   if (kind === "buff") {
     if (heal) za(healing[0] * duration * 2, false);
     else state.buff[id] = now + duration;
+    if (typeof G8 === "function") G8(id);
+    CombatEngine.playSkillSound(v, id, "hit");
     l.dirty = true;
   } else {
     queueSkillContact(v, target, {
@@ -202,6 +205,7 @@ var A6 = function (A) {
       u = i4(r),
       w = () => {
         beginActorCast(v);
+        if (d === "buff" && typeof G8 === "function") G8(i);
         u ? (l.life = Math.max(1, l.life - h)) : (l.mana -= h);
         const row = typeof b0 === "function" && r.attr && b0(r,
           l.mounted && r.attr.skill_mintimepercastonhorse_v

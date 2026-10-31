@@ -41,6 +41,7 @@ var Lm = function (A) {
     }
   l.traps = e;
   for (const i of a) {
+    CombatEngine.playSkillSound(i, i.a.id, "hit");
     for (const r of t) r.hp > 0 && q0(i, r) <= u_ + r.r / QA && Ls(hs(i.a, r), i.a);
     d_(i);
   }
@@ -78,7 +79,7 @@ var jm = function (A, n) {
       : ((l.moveTo = null),
         (l.tgtHitT = l.clock || 0),
         (l.tgtD = 0),
-        o4(A), beginActorCast(v, actorAttackTiming(v, A).cycleSeconds, () => { l_(A, n); G8(A.id); playActorAttackVoice(v); }),
+        o4(A), beginActorCast(v, actorAttackTiming(v, A).cycleSeconds, () => { l_(A, n); G8(A.id); }),
         typeof Y !== "undefined" && Y.stopAfterCast(),
         A.cd && ((l.skCd = l.skCd || {})[A.id] = (l.clock || 0) + A.cd),
         l.rotNext != null && ((l.rotI = l.rotNext), (l.rotNext = null)),

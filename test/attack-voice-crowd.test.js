@@ -2,12 +2,14 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
+const { loadCombatEngine } = require('./helpers/combat-engine');
 
 function audio() {
   const sources = [];
   const s = { window: {}, Math: Object.assign(Object.create(Math), { random: () => 0 }),
     l: {}, o: { sex: 0 }, v: { x: 100, y: 100 }, B0: { x: 0, y: 0 }, M0: { w: 800, h: 600 } };
   vm.createContext(s);
+  loadCombatEngine(s, { bridge: false });
   vm.runInContext(fs.readFileSync('src/client/ui/legacy-panels-and-audio-01.js', 'utf8'), s);
   s.c0.ctx = { currentTime: 0,
     createGain() { return { gain: {}, connect() {} }; },
