@@ -1,10 +1,11 @@
 import source from './config.json';
+import { skillSoundGender } from './rules';
 
 export type SoundStage = 'cast' | 'release' | 'hit';
 type Stage = { effect?: string; maleEffect?: string; femaleEffect?: string; male?: string; female?: string };
 interface SkillSounds {
   name: string; level: number; faction: string; icon: string;
-  inherit?: number; route?: string;
+  inherit?: number; route?: string; disabled?: boolean;
   cast?: Stage; release?: Stage; hit?: Stage;
   review?: { sound: string; reason: string }[];
 }
@@ -47,8 +48,9 @@ export function preloadSkillAudio(): void {
 /** One invocation per primary release, and one hit sound per cast. */
 export function playSkillSound(actor: Actor, id: number | string, stage: SoundStage): void {
   const config = resolveSkillAudio(id), event = config?.[stage];
+  if (config?.disabled) return;
   const profile = actor.profile || (typeof v !== 'undefined' && actor === v && typeof o !== 'undefined' ? o : null);
-  const sex = profile?.sex === 1 ? 'female' : 'male';
+  const sex = skillSoundGender(config?.faction || '', profile?.sex === 1 ? 'female' : 'male');
   const effect = event?.[sex === 'female' ? 'femaleEffect' : 'maleEffect'] || event?.effect;
   if (effect) {
     const listener = typeof skillVisualContext !== 'undefined' && skillVisualContext?.audioListener ||

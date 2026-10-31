@@ -25,6 +25,7 @@ pub fn allowed(path: &str) -> bool {
     ) {
         return true;
     }
+    if crate::paths::sound_target(path) { return true; }
     let public_image = path.starts_with("public/app/maps/content/");
     let Some(rest) = path.strip_prefix("src/client/maps/content/")
         .or_else(|| path.strip_prefix("public/app/maps/content/")) else {

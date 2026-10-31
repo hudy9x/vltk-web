@@ -1,4 +1,6 @@
 mod image_assets;
+mod paths;
+mod audio;
 mod transactions;
 mod workspace;
 
@@ -10,7 +12,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             workspace::open_workspace,
             workspace::read_asset,
-            workspace::save_map
+            workspace::save_map,
+            audio::load_audio,
+            audio::read_audio_asset,
+            audio::save_audio
         ])
         .run(tauri::generate_context!())
         .expect("error while running map editor");

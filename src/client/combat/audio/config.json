@@ -903,6 +903,16 @@
         }
       ]
     },
+    "69": {
+      "name": "Vô Hình Độc",
+      "level": 30,
+      "faction": "wudu",
+      "icon": "img/s/69.png",
+      "disabled": true,
+      "cast": {},
+      "release": {},
+      "hit": {}
+    },
     "71": {
       "name": "Thiên Cương Địa Sát",
       "level": 60,
@@ -1050,7 +1060,8 @@
           "sound": "fx_huyet_thu_doc_sat",
           "reason": "SoundSlot4 for missile 207: timing unverified"
         }
-      ]
+      ],
+      "disabled": true
     },
     "91": {
       "name": "Phật Quang Phổ Chiếu",

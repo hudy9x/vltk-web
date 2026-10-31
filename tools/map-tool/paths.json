@@ -1,0 +1,8 @@
+{
+  "publicRoot": "public",
+  "soundDirectory": "public/snd/skill",
+  "soundConfig": "src/client/combat/audio/config.json",
+  "factionPortraitDirectory": "public/img/portraits",
+  "elementIconDirectory": "public/img/elements",
+  "maxSoundBytes": 20971520
+}

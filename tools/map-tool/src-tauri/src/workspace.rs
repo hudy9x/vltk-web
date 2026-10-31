@@ -16,7 +16,7 @@ type Result<T> = std::result::Result<T, String>;
 #[derive(Default)]
 pub struct WorkspaceState(pub Arc<Mutex<Option<Workspace>>>);
 pub struct Workspace {
-    root: PathBuf,
+    pub(crate) root: PathBuf,
     monsters: Value,
     image_revisions: Mutex<BTreeMap<PathBuf, ImageRevision>>,
 }
@@ -48,7 +48,7 @@ fn read_json(path: &Path) -> Result<Value> {
     serde_json::from_slice(&fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?)
         .map_err(|e| format!("{}: {e}", path.display()))
 }
-fn node(root: &Path, args: &[&str], input: Option<&[u8]>) -> Result<Vec<u8>> {
+pub(crate) fn node(root: &Path, args: &[&str], input: Option<&[u8]>) -> Result<Vec<u8>> {
     let mut candidates = vec![
         PathBuf::from("node"),
         PathBuf::from("/opt/homebrew/bin/node"),
@@ -442,10 +442,11 @@ mod save_integration_tests {
         let repository = Path::new(env!("CARGO_MANIFEST_DIR")).ancestors().nth(3).unwrap();
         let root = std::env::temp_dir().join(format!("map-tool-integration-{}-{}", std::process::id(),
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
-        for directory in ["src/client", "tools/maps", "tools/map-tool/src/lib"] {
+        for directory in ["src/client", "src/shared", "tools/maps", "tools/map-tool/src/lib"] {
             copy_tree(&repository.join(directory), &root.join(directory));
         }
-        for file in ["tools/build-app.js", "tsconfig.json"] {
+        fs::create_dir_all(root.join("public")).unwrap();
+        for file in ["tools/build-app.js", "tools/potential-worker.js", "public/data.js", "tsconfig.json"] {
             fs::copy(repository.join(file), root.join(file)).unwrap();
         }
         #[cfg(unix)]

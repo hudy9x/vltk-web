@@ -92,3 +92,115 @@ src-tauri/src/
 `project.json` giữ `schemaVersion`, `mapId`, `paintedNavigation`, `colliders` theo khóa `<layer-id>/<object-id>`, `originalImages` theo layer và `imageRevision` để nhận diện phiên bản ảnh khi lưu. Game chỉ đọc `map.json` với navigation đã compile. Save lỗi rollback dữ liệu nguồn; journal trong `.map-tool/transactions/` phục hồi khi mở workspace sau lần lưu bị ngắt. Build artifacts không nằm trong transaction; build lại từ nguồn được phục hồi.
 
 Kiểm tra từ root: `npm run build`, `npm test`. Đặc tả gốc: [SPEC.md](../../docs/SPEC.md).
+
+## Sidebar Map / Sound
+
+Thanh điều hướng nhỏ bên trái chuyển giữa **Map Tool** và **Sound Tool**. Hai
+màn hình giữ bản nháp riêng khi đổi tab; đổi tab không lưu và không bỏ thay đổi.
+Âm thanh đang nghe dừng khi về Map. `⌘/Ctrl+S` lưu màn hình đang chọn; phím tắt
+map không tác động lên sound. Khi đóng ứng dụng hoặc đổi workspace, tool kiểm
+tra cả bản nháp map và âm thanh chưa lưu.
+
+Trong **Sound Tool**:
+
+- Thư viện đọc trực tiếp danh mục `sounds` và mapping `skills` trong config game.
+  Tìm tên/Sound ID, lọc hiệu ứng hoặc tiếng hô nam/nữ và nghe bằng nút Play.
+- Chọn **Import sound**, chọn WAV/MP3, đặt tên, loại và giới tính. Tool tự tạo
+  Sound ID cùng tên file không dấu; nếu tên trùng trong thư viện thì thêm hậu tố.
+  Import chỉ thêm vào bản nháp; **Lưu âm thanh** mới ghi file vào workspace.
+  File đã có trên ổ đĩa được giữ nguyên, không ghi đè âm thầm.
+- Chọn môn phái/kỹ năng, gắn Sound ID vào **Xuất chiêu**, **Phóng đạn/kình khí**
+  hoặc **Va chạm**. Xuất chiêu có tiếng hô nam/nữ, hiệu ứng chung và hiệu ứng
+  theo giới tính. Chọn một sound trong thư viện để xem những skill đang dùng,
+  bao gồm skill kế thừa.
+- Skill 150 hiển thị sound kế thừa từ skill 80; sửa một trường chỉ ghi đè trường
+  đó. Chọn **Kế thừa** để bỏ ghi đè. Mục **Không gắn sound** bỏ sound riêng ở
+  trường đó; tiếng hô vẫn có thể dùng fallback mặc định của game.
+- Các mục `review` hiện dưới **Cần xác minh** để nghe và đối chiếu; chưa tự bật
+  chúng trong combat. Metadata gốc `index.json` là tài liệu nhập ban đầu;
+  các thay đổi của tool được lưu vào config runtime, không tự sinh lại metadata gốc.
+- **Lưu âm thanh** kiểm tra ID/file/kế thừa → kiểm tra revision → ghi config và
+  file upload theo transaction → build game. Lỗi build khôi phục dữ liệu nguồn;
+  bản nháp được giữ. Reload game sau khi lưu. **Hoàn tác** áp dụng cho bản nháp;
+  **Tải lại** đọc cấu hình mới từ ổ đĩa và hỏi trước khi bỏ bản nháp chưa lưu.
+
+### Một nơi cấu hình đường dẫn
+
+Toàn bộ vị trí dữ liệu sound của tool được khai báo tại
+[`paths.json`](paths.json), dùng chung cho TypeScript và Rust:
+
+```json
+{
+  "publicRoot": "public",
+  "soundDirectory": "public/snd/skill",
+  "soundConfig": "src/client/combat/audio/config.json",
+  "factionPortraitDirectory": "public/img/portraits",
+  "elementIconDirectory": "public/img/elements",
+  "maxSoundBytes": 20971520
+}
+```
+
+Các đường dẫn tính từ **root workspace**, không phải từ thư mục map-tool.
+`soundDirectory` phải nằm trong `publicRoot`. `sounds[ID].src` vẫn là đường dẫn
+so với `publicRoot`, do đó file mới có dạng `snd/skill/ten-sound.wav`.
+`maxSoundBytes` là giới hạn mỗi file import/đọc (mặc định 20 MiB).
+
+Khi đổi vị trí thư viện/config, sửa **một file `paths.json`**, rồi build lại app
+hoặc khởi động lại `pnpm tauri dev` để cả frontend và native nhận cấu hình mới.
+Tool không di chuyển file tự động: thư mục và config cần có ở vị trí đã khai báo.
+Việc chuyển vị trí source config của game còn cần cập nhật import phía game;
+`paths.json` chỉ quản lý đường dẫn mà editor sử dụng.
+
+Avatar phái lấy từ `factionPortraitDirectory` (10 file `<faction>.webp`), biểu
+tượng ngũ hành lấy từ `elementIconDirectory` (`kim.svg`, `moc.svg`, `thuy.svg`,
+`hoa.svg`, `tho.svg`). Hai đường dẫn này cũng tính từ root workspace.
+Preview chỉ đọc sound/icon được liệt kê trong config và ảnh trong catalog bộ lọc. Native chỉ ghi vào file
+config và thư mục âm thanh đã cấu hình; từ chối đường dẫn thoát workspace hoặc
+symbolic link. Revision âm thanh độc lập với map, theo dõi config và nội dung
+file sound để không ghi đè thay đổi bên ngoài tool.
+
+Kiểm tra riêng tính năng:
+
+```sh
+node --test test/sound-tool.test.js test/map-tool.test.js test/map-tool-import.test.js test/map-tool-window.test.js
+cargo test --manifest-path tools/map-tool/src-tauri/Cargo.toml
+pnpm --dir tools/map-tool build
+```
+
+## Bảng âm thanh nhiều kỹ năng
+
+Sound Tool hiển thị các kỹ năng thành bảng: mỗi hàng có icon, tên/cấp/ID,
+âm thanh **Xuất chiêu**, **Phóng đạn/kình khí**, **Va chạm** và nút nghe cả chiêu.
+Chọn **avatar môn phái** là thấy toàn bộ chiêu của phái; có thể kết hợp tìm kiếm,
+chọn biểu tượng **Ngũ hành** và bộ lọc **Cấp chiêu** (chọn nhiều cấp cùng lúc,
+không chọn cấp nào nghĩa là tất cả). ID của mỗi chiêu được tô nổi bật trong bảng.
+Nếu đổi ngũ hành không khớp phái đang chọn, bộ lọc phái trở
+về “Tất cả môn phái” trong ngũ hành đó.
+Chọn avatar phái không khớp ngũ hành hiện tại sẽ bỏ lọc ngũ hành để luôn thấy
+đúng phái vừa chọn. Các bộ lọc được đặt cùng một hàng; cửa sổ hẹp có thể cuộn ngang.
+
+**Giới tính nghe** chọn Nam, Nữ hoặc Nam và nữ: điều chỉnh các trường theo
+giới tính đang hiển thị và phiên bản âm thanh được nghe thử. **Hệ Thủy chỉ dùng
+âm nữ**: chọn Thủy/Nga My/Thúy Yên sẽ khóa giới tính ở Nữ; trong danh sách hỗn
+hợp, từng skill Thủy vẫn chỉ hiện/nghe bản nữ. Quy tắc dùng chung với runtime
+game tại `src/client/combat/audio/rules.ts`.
+Bấm **Thư viện** trên thanh đầu để mở/đóng danh sách sound và thông tin file.
+
+Nút **Tắt âm** lưu `skills[ID].disabled = true`: hàng bị làm mờ, các ô sound/nút
+nghe bị khóa, Play all và game đều bỏ qua toàn bộ giai đoạn của skill (kể cả
+tiếng hô mặc định). Mapping được giữ để **Bật lại**; skill kế thừa nhận trạng
+thái của cha nếu chưa ghi đè `disabled`. Mộng Điệp #89 và Vô Hình Độc #69 được
+tắt sẵn. Bấm **Lưu âm thanh** để ghi thay đổi bật/tắt trong tool vào config.
+
+- Click một select âm thanh rồi dùng **↑/↓** để đổi lựa chọn và nghe ngay,
+  không cần Enter. Có thể tìm theo tên/ID trong danh sách mở; Escape đóng danh sách.
+  Lựa chọn mới được ghi vào bản nháp, chỉ **Lưu âm thanh** mới ghi xuống file.
+- Nút Play cạnh mỗi select nghe sound của trường đó. Nút **Nghe cả chiêu**
+  phát lần lượt các sound của hàng theo thứ tự xuất chiêu → phóng đạn → va chạm.
+- **Play all** phát các hàng đang hiển thị theo thứ tự bảng. Chế độ Nam và nữ
+  nghe toàn bộ bản nam rồi bản nữ trong mỗi hàng. Các tiếng hô dự phòng và
+  hiệu ứng theo giới tính được phân giải từ config giống game; mục `review`
+  chưa xác minh không được đưa vào hàng đợi.
+- **Dừng nghe**, đổi bộ lọc, chọn sound mới, hoàn tác hoặc chuyển Map sẽ hủy
+  hàng đợi cũ. Các file được nghe tuần tự, không chồng nhiều bản phát. File lỗi
+  được báo ở thanh trạng thái và hàng đợi tiếp tục với file sau.

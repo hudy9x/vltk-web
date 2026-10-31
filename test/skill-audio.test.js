@@ -14,7 +14,7 @@ test('sound IDs, files, stage references and all 23 inheritance pairs are valid'
  const inherited=Object.entries(config.skills).filter(([,s])=>s.inherit);assert.equal(inherited.length,23);
  for(const [id,s]of Object.entries(config.skills)){
   const resolved=a.resolveSkillAudio(id);
-  for(const stage of ['cast','release','hit'])for(const sound of Object.values(resolved[stage]))assert(config.sounds[sound],`${id}: ${sound}`);
+  for(const stage of ['cast','release','hit'])for(const sound of Object.values(resolved[stage]))assert(sound === '' || config.sounds[sound],`${id}: ${sound}`);
   for(const review of resolved.review)assert(config.sounds[review.sound]);
   if(s.inherit){assert(config.skills[s.inherit]);const parent=a.resolveSkillAudio(s.inherit);for(const stage of ['cast','release','hit'])assert.deepEqual(resolved[stage],parent[stage]);}
  }
@@ -35,6 +35,23 @@ test('primary release uses configured gender, release sound and one hit per cast
 
 test('named cast effects suppress the generic shout',()=>{
  const played=[],s={Q8:(url)=>played.push(url),playActorAttackVoice:()=>played.push('generic'),v:{x:0,y:0},o:{sex:0}};vm.createContext(s);vm.runInContext(compileTypeScriptEntry('combat/audio/runtime.ts','SkillAudio').code,s);s.SkillAudio.playSkillSound(s.v,20,'cast');assert.deepEqual(played,['snd/skill/su-tu-hong.wav']);
+});
+
+test('disabled skill skips all stages, default shouts and inherited effects, and can be re-enabled',()=>{
+ const played=[],s={Q8:(url)=>played.push(url),playActorAttackVoice:(_,id)=>played.push(id),v:{x:0,y:0},o:{sex:0}};
+ vm.createContext(s);vm.runInContext(compileTypeScriptEntry('combat/audio/runtime.ts','SkillAudio').code,s);
+ const a=s.SkillAudio,skill=a.SKILL_AUDIO_CONFIG.skills[14];skill.disabled=true;skill.hit={effect:'fx_sound_k014'};
+ a.SKILL_AUDIO_CONFIG.skills.child={inherit:14};
+ for(const id of [14,'child',69,89])for(const stage of ['cast','release','hit'])a.playSkillSound(s.v,id,stage);
+ assert.deepEqual(played,[]);
+ a.SKILL_AUDIO_CONFIG.skills.child.disabled=false;a.playSkillSound(s.v,'child','cast');assert.deepEqual(played,['voice_male_03']);
+});
+
+test('Water factions use the same female voice in game and previews even with a male actor profile',()=>{
+ const played=[],s={Q8:(url)=>played.push(url),playActorAttackVoice:(_,id)=>played.push(id),v:{x:0,y:0,profile:{sex:0}}};
+ vm.createContext(s);vm.runInContext(compileTypeScriptEntry('combat/audio/runtime.ts','SkillAudio').code,s);
+ const a=s.SkillAudio;
+ for(const id of [80,99]){played.length=0;a.playSkillSound(s.v,id,'cast');assert.deepEqual(played,[a.resolveSkillAudio(id).cast.female]);}
 });
 
 test('gender-specific named cast effects select the actor voice, including inherited 150',()=>{

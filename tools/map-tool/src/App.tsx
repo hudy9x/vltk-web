@@ -1,4 +1,5 @@
 import { stageLayerImage } from "@/lib/image-editing";
+import { SoundTool } from "@/editor/SoundTool";
 import { removeNpc } from '../../../src/client/npcs';
 import { deleteMapLayer } from "@/lib/layer-editing";
 import type { ZoomAction } from "@/lib/zoom";
@@ -34,6 +35,7 @@ import {
   CircleDot,
   LassoSelect,
   X,
+  Volume2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,6 +147,11 @@ export default function App() {
   const dirty = !!document && documentKey(document) !== baseline;
   const state = useRef({ document, dirty, busy });
   state.current = { document, dirty, busy };
+  const [activeTool, setActiveTool] = useState<'map' | 'sound'>('map');
+  const [soundEpoch, setSoundEpoch] = useState(0);
+  const soundState = useRef({ dirty: false, busy: false });
+  const activeToolRef = useRef(activeTool); activeToolRef.current = activeTool;
+  const onSoundState = useCallback((dirty: boolean, busy: boolean) => { soundState.current = { dirty, busy }; }, []);
   const accept = useCallback((next: Workspace, mapId?: number) => {
     setWorkspace(next);
     setRoot(next.root);
@@ -169,6 +176,8 @@ export default function App() {
       setError("");
       try {
         const next = await openWorkspace(path);
+        setSoundEpoch(value => value + 1);
+        soundState.current = { dirty: false, busy: false };
         assets.dispose();
         accept(next, Number(localStorage.getItem("map-tool:last-map")));
         localStorage.setItem("map-tool:workspace", next.root);
@@ -233,9 +242,9 @@ export default function App() {
     setFuture(future.slice(1));
     setPast([...past, document]);
   };
-  const requestTransition = (action: () => void) => {
-    if (state.current.busy) return;
-    if (state.current.dirty) {
+  const requestTransition = (action: () => void, includeSound = false) => {
+    if (state.current.busy || soundState.current.busy) return;
+    if (state.current.dirty || includeSound && soundState.current.dirty) {
       transition.current = action;
       setDiscardOpen(true);
     } else action();
@@ -306,6 +315,7 @@ export default function App() {
   handlers.current = { save, undo, redo, removeSelection, requestTransition };
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
+      if (activeToolRef.current !== 'map' || soundState.current.busy) return;
       if (state.current.busy) return;
       const key = event.key.toLowerCase();
       if ((event.metaKey || event.ctrlKey) && key === "s") {
@@ -344,7 +354,7 @@ export default function App() {
     };
     window.addEventListener("keydown", keydown);
     const beforeunload = (event: BeforeUnloadEvent) => {
-      if (state.current.dirty && !closeConfirmed.current)
+      if ((state.current.dirty || soundState.current.dirty) && !closeConfirmed.current)
         event.preventDefault();
     };
     window.addEventListener("beforeunload", beforeunload);
@@ -353,16 +363,16 @@ export default function App() {
       void getCurrentWindow()
         .onCloseRequested((event) => {
           if (closeConfirmed.current) return;
-          if (state.current.busy) {
+          if (state.current.busy || soundState.current.busy) {
             event.preventDefault();
             return;
           }
-          if (state.current.dirty) {
+          if (state.current.dirty || soundState.current.dirty) {
             event.preventDefault();
             handlers.current.requestTransition(() => {
               closeConfirmed.current = true;
               void getCurrentWindow().close();
-            });
+            }, true);
           }
         })
         .then((fn) => {
@@ -550,6 +560,14 @@ export default function App() {
   const navigation = document?.project.paintedNavigation;
   return (
     <TooltipProvider delayDuration={250}>
+      <div className="workbench dark">
+        <nav className="tool-rail" aria-label="Công cụ workspace">
+          <div className="tool-rail-brand">VL</div>
+          <button aria-label="Map Tool" aria-pressed={activeTool === 'map'} onClick={() => setActiveTool('map')}><MapIcon size={22} /><span>Map</span></button>
+          <button aria-label="Sound Tool" aria-pressed={activeTool === 'sound'} onClick={() => setActiveTool('sound')}><Volume2 size={22} /><span>Sound</span></button>
+        </nav>
+        <div className="tool-pages">
+        <div className="tool-page" hidden={activeTool !== 'map'}>
       <div className="editor-shell dark">
         <header className="app-header">
           <div className="brand">
@@ -585,7 +603,7 @@ export default function App() {
               variant="ghost"
               size="sm"
               disabled={!!busy}
-              onClick={() => requestTransition(() => setWorkspaceDialog(true))}
+              onClick={() => requestTransition(() => setWorkspaceDialog(true), true)}
             >
               <FolderOpen />
               Workspace
@@ -646,7 +664,7 @@ export default function App() {
             onReload={() =>
               requestTransition(() => {
                 void connect(workspace!.root);
-              })
+              }, true)
             }
             onImportObject={() => {
               importTarget.current = { kind: "object" };
@@ -929,7 +947,7 @@ export default function App() {
         <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Map đang có thay đổi chưa lưu</AlertDialogTitle>
+              <AlertDialogTitle>Workspace đang có thay đổi chưa lưu</AlertDialogTitle>
               <AlertDialogDescription>
                 Bạn có thể quay lại để lưu hoặc bỏ bản sửa hiện tại và tiếp tục.
               </AlertDialogDescription>
@@ -948,6 +966,12 @@ export default function App() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      </div>
+        </div>
+        <div className="tool-page" hidden={activeTool !== 'sound'}>
+          <SoundTool key={`${workspace?.root || ''}:${soundEpoch}`} root={workspace?.root || null} active={activeTool === 'sound'} onState={onSoundState} onWorkspace={() => requestTransition(() => { setActiveTool('map'); setWorkspaceDialog(true); }, true)} />
+        </div>
+        </div>
       </div>
     </TooltipProvider>
   );

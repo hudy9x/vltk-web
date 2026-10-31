@@ -96,6 +96,12 @@ Ví dụ phần âm thanh của skill `14` — Hàng Long Bất Vũ:
 ```
 
 Để đổi tiếng va chạm, sửa `skills[ID].hit.effect` thành ID đã có trong `sounds`.
+Để tắt hoàn toàn âm của một skill, đặt `skills[ID].disabled = true` (hoặc nút
+**Tắt âm** trong Sound Tool). Game bỏ qua cả xuất chiêu, phóng, va chạm và hô
+mặc định; mapping vẫn giữ nguyên để bật lại với `disabled = false`. Skill kế
+thừa cũng nhận trạng thái này nếu chưa ghi đè. Mộng Điệp #89 và Vô Hình Độc
+#69 được tắt sẵn. Quy tắc âm nữ cho các phái hệ Thủy dùng chung giữa game và
+tool tại `src/client/combat/audio/rules.ts`.
 Ví dụ skill `319` đang dùng `fx_sound_k014`. Không gắn đường dẫn file trực tiếp
 vào các khối của skill. Các `SoundSlot4` chưa rõ thời điểm được giữ trong
 `review`; chỉ chuyển sang `hit` sau khi đã xác minh.
