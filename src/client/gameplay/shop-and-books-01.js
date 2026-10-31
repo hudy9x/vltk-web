@@ -552,6 +552,7 @@ var B4 = function (A, n) {
 };
 
 var c6 = function (A) {
+  if (A?.ktc?.k === "newbie_token" && o.inv.includes(A)) { openNewbieSupport(); return true; }
   const n = A && A.ktc && J0.find((a) => a.k === A.ktc.k);
   if (!n || !o.inv.includes(A)) return !1;
   if (n.srv) return (L7(n.k), !1);
@@ -684,6 +685,7 @@ var O7 = function (A, n) {
 };
 
 var f6 = function s(A) {
+  if (A?.ktc?.k === "newbie_token" && o.inv.includes(A)) return openNewbieSupport();
   const n = J0.find((e) => e.k === A.ktc.k) || { n: A.n, d: "" },
     t = A.ktc.c;
   J(

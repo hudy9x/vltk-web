@@ -220,6 +220,7 @@ var xa = (s) => pn(s) + N("misc", s) < XA(s);
 var ns = (s) => Math.max(0, pn(s) + N("misc", s) - XA(s));
 
 var J0 = [
+  { k: "newbie_token", n: "Lệnh bài tân thủ", ic: "img/ep/newbie-token.png", hide: 1, d: "Mở hỗ trợ tân thủ. Không thể bán, giao dịch hoặc tiêu hao." },
   {
     k: "knb",
     n: "Kim Nguyên Bảo",

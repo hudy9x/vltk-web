@@ -9,8 +9,8 @@ function fixture(profile=base){const db=new DatabaseSync(':memory:');db.exec('CR
 function selection(d=5){return native.withProgression(base,s=>{const item=s.equipmentTrader.blueCatalog(0,10).find(t=>t.d===d);return {kind:'blue',sex:0,level:10,item:item.key,series:0,lines:s.equipmentTrader.affixes(item,0,0).filter(a=>a.a===111).map(a=>a.a)};});}
 test('NPC equipment, horse, worn slots and UIDs survive reload; retries do not duplicate or charge twice',()=>{
  const {db,store,act}=fixture();try{
-  let p=act({kind:'equipmentTrader',operation:'rings'});assert.equal(p.inv.length,2);
-  for(const item of p.inv)p=act({kind:'equip',uid:item.uid});assert.ok(p.eq.ring1&&p.eq.ring2);
+  let p=act({kind:'equipmentTrader',operation:'rings'});assert.equal(p.inv.filter(item=>!item.ktc).length,2);assert.equal(p.inv.filter(item=>item.ktc?.k==='newbie_token').length,1);
+  for(const item of p.inv.filter(item=>!item.ktc))p=act({kind:'equip',uid:item.uid});assert.ok(p.eq.ring1&&p.eq.ring2);
   const action={kind:'horseBuy',offer:'0:10'};const a=store.mutate('one',0,'buy-horse-once',action,false);store.mutate('one',0,'buy-horse-once',action,false);
   assert.equal(a.profile.knb,90);p=act({kind:'equip',uid:a.profile.inv[0].uid});
   p=act({kind:'mount',enabled:true});assert.equal(p.onlineMounted,true);
@@ -22,7 +22,7 @@ test('NPC equipment, horse, worn slots and UIDs survive reload; retries do not d
 test('boots and mounted horse increase actual authoritative distance speed, not only sprite frames',()=>{
  let p=structuredClone(base);const foot=catalog.character(p).speed;
  const sel=selection();assert.equal(sel.lines.length,1);
- p=progression.apply(p,{kind:'equipmentTrader',operation:'item',selection:sel});p=progression.apply(p,{kind:'equip',uid:p.inv[0].uid});const boots=catalog.character(p).speed;
+ p=progression.apply(p,{kind:'equipmentTrader',operation:'item',selection:sel});p=progression.apply(p,{kind:'equip',uid:p.inv.at(-1).uid});const boots=catalog.character(p).speed;
  assert.ok(boots>foot,`${boots} > ${foot}`);
  p=progression.apply(p,{kind:'horseBuy',offer:'0:10'});p=progression.apply(p,{kind:'equip',uid:p.inv[0].uid});assert.equal(catalog.character(p).speed,boots);
  p=progression.apply(p,{kind:'mount',enabled:true});assert.ok(catalog.character(p).speed>boots);assert.equal(catalog.character(p).speed,native.buildCharacter(p).moveSpeed);

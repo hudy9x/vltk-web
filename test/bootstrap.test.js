@@ -217,3 +217,23 @@ test('disconnect dialog waits for both storage and combat recovery and reload bu
     client.localGameConnection.set('storage',false);assert.equal(client.nodes.has('serverDisconnect'),false);
   }finally{await app.close();db.close();}
 });
+
+test('real bootstrap reload restores full newbie progression from server despite a stale or empty browser cache',async()=>{
+ const oldControl=process.env.MULTIPLAYER_WT_CONTROL_URL,oldSecret=process.env.MULTIPLAYER_SECRET;
+ process.env.MULTIPLAYER_WT_CONTROL_URL='http://127.0.0.1:1';process.env.MULTIPLAYER_SECRET='test-progression-secret-0123456789';
+ const db=openDatabase(':memory:'),{app,server}=createServer({db,downloadAssets:false});await app.ready();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${server.address().port}`;
+ try{
+  const registration=await fetch(base+'/api/auth/register',{method:'POST',body:JSON.stringify({username:'test_user',password:'secret123'})}),account=(await registration.json()).user.id;
+  const stale={fac:'vo0',lvl:1,inv:[],gold:100000};db.prepare('INSERT INTO account_storage VALUES(?,?,?)').run(account,'jxidle',JSON.stringify(stale));
+  const {createCharacters}=require('../src/server/multiplayer/persistence/characters.ts'),store=createCharacters(db);let id=0;
+  const act=action=>store.mutate(account,0,'reload-browser-'+ ++id,action,false,'development').profile;
+  act({kind:'specialItemBuy',item:'newbie_token'});act({kind:'newbie',action:'level150'});act({kind:'newbie',action:'join',value:'shaolin'});
+  for(const action of ['learn90','learn120','learn150','max90','potential','gold','knb','warMerit','xp','chest'])act({kind:'newbie',action});
+  act({kind:'potential',key:'str',amount:10});let expected=act({kind:'equipmentTrader',operation:'rings'});
+  for(const item of expected.inv.slice(-2))expected=act({kind:'equip',uid:item.uid});
+  for(const values of [new Map(),new Map([['jxidle',JSON.stringify(stale)]])]){
+   const client=await boot(base,values),loaded=JSON.parse(client.localStorage.getItem('jxidle'));
+   for(const key of ['lvl','xp','gold','knb','attrPts','skPts','attr','sk','skL','bkOk','inv','eq','fac','uid','mats','specialPurchases'])assert.deepEqual(loaded[key],expected[key],key+' must load from canonical server state');
+  }
+ }finally{await app.close();db.close();if(oldControl===undefined)delete process.env.MULTIPLAYER_WT_CONTROL_URL;else process.env.MULTIPLAYER_WT_CONTROL_URL=oldControl;if(oldSecret===undefined)delete process.env.MULTIPLAYER_SECRET;else process.env.MULTIPLAYER_SECRET=oldSecret;}
+});

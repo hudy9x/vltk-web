@@ -289,6 +289,7 @@ var equipmentTrader = (function () {
     const names = new Set(MapsEngine.npcCatalog.map(npc => npc.name));
     const actions = {
       equipment: open,
+      'special-items': () => openSpecialItemShop(),
       quartermaster: () => { if (typeof quartermaster !== "undefined" && quartermaster) quartermaster.open(); },
       pharmacy: () => {
         if(typeof OnlineBattlefield!=='undefined'&&OnlineBattlefield.state){OnlineBattlefield.pharmacy();return;}

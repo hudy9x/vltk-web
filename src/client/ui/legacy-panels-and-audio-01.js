@@ -478,6 +478,7 @@ var Pv = function () {
 };
 
 var Ef = function (A) {
+  if (A?.ktc?.k === "newbie_token") return k("Lệnh bài tân thủ không thể bán.");
   if (!o.inv.includes(A)) {
     n0();
     return;

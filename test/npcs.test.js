@@ -20,10 +20,10 @@ const document = id => model.createDocument({ projects: {}, encounters: JSON.par
   progression: JSON.parse(fs.readFileSync(path.join(root, 'src/client/maps/progression.json'))) }, readMap(id));
 
 test('NPC catalog has reusable sprites and fixed-team recruiters and placements cover town and Hoang Nguyên', () => {
-  assert.deepEqual(plain(npcs.npcCatalog.map(npc => npc.id)), ['equipment', 'pharmacy', 'tongkim', 'horse', 'quartermaster', 'song-recruiter', 'jin-recruiter']);
+  assert.deepEqual(plain(npcs.npcCatalog.map(npc => npc.id)), ['equipment', 'pharmacy', 'tongkim', 'horse', 'quartermaster', 'song-recruiter', 'jin-recruiter', 'special-items']);
   for (const npc of npcs.npcCatalog) {
     assert.ok(fs.statSync(path.join(root, 'src/client', npc.image.slice(4))).size > 0);
-    assert.equal(npc.directions, npc.id === 'quartermaster'||npc.id.endsWith('-recruiter') ? 1 : 8);
+    assert.equal(npc.directions, npc.id === 'quartermaster'||npc.id.endsWith('-recruiter')||npc.id === 'special-items' ? 1 : 8);
   }
   for (const id of [37, 9003]) {
     const map = readMap(id);
@@ -246,4 +246,11 @@ test('NPC map labels contain only the name and follow the rendered head at defau
     scope.equipmentTrader.draw(context,{x:100,y:200,name:definition.name,subtitle:'Không hiển thị',mapNpc:placement});
     assert.deepEqual(labels,[[definition.name,100,200-definition.anchor.y*(scale??definition.scale)-6]]);
   }
+});
+
+test('special merchant uses the provided static sprite, stands on walkable ground and opens its shop',()=>{
+ const town=readMap(37),definition=npcs.getNpc('special-items'),placement=npcs.mapNpcs(town).find(npc=>npc.npcId==='special-items');
+ assert.ok(placement);assert.equal(definition.width,35);assert.equal(definition.height,73);assert.equal(definition.frames,1);assert.ok(Math.abs(definition.height*definition.scale-62.1)<0.001);
+ const grid=town.navigation,bits=Buffer.from(grid.blockedBase64,'base64'),index=Math.floor(placement.position.y/grid.cellSize.height)*grid.columns+Math.floor(placement.position.x/grid.cellSize.width);assert.equal(bits[index>>3]&(1<<(index&7)),0);
+ const scope=legacyGame([town]);scope.openSpecialItemShop=()=>{scope.specialOpened=true;};scope.equipmentTrader.entities().find(npc=>npc.mapNpc?.npcId==='special-items').onInteract();assert.equal(scope.specialOpened,true);
 });

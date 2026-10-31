@@ -113,11 +113,11 @@ var I3 = function () {
     main: 0,
     secondarySkill: 0,
     eq: {},
-    inv: [],
+    inv: [{ uid: 1, n: "Lệnh bài tân thủ", d: 99, k: 0, lvl: 1, s: -1, r: 2, ic: "img/ep/newbie-token.png", price: 0, base: [], req: [], mag: [], ext: [], lock: true, ktc: { k: "newbie_token", c: 1 } }],
     stage: 1,
     maxStage: 1,
     wave: 1,
-    uid: 1,
+    uid: 2,
     autoSell: 0,
     kps: 0.2,
     totalKills: 0,
@@ -905,3 +905,63 @@ var kP = ["gold", "knb", "lvl", "attrPts", "skPts"];
 var LA = { sent: {}, q: [], f12: !1 };
 
 var N3 = ["towerBest", "bosses"];
+
+
+// Shared by the inventory dialog and authoritative online progression.
+var newbieSupport = function (action, value) {
+  if (!o.inv.some(item => item.ktc?.k === 'newbie_token' && item.ktc.c === 1)) throw new Error('Cần Lệnh bài tân thủ trong hành trang.');
+  if (action === 'join') {
+    const faction = I[value];
+    if (!faction || faction.novice || !ht() || faction.series !== F0() || !hn(faction, o.sex)) throw new Error('Môn phái không phù hợp ngũ hành hoặc giới tính, hoặc đã gia nhập phái.');
+    $v(value);
+  } else if (action === 'element') {
+    if (!Number.isInteger(value) || value < 0 || value > 4 || value === F0()) throw new Error('Hãy chọn ngũ hành khác hiện tại.');
+    const token = o.inv.find(item => item.ktc?.k === 'newbie_token');
+    // Start from a fresh profile to clear hidden progression, materials and rewards too.
+    const next = Object.assign(I3(), { name: o.name, sex: o.sex, sexSet: 1, fac: 'vo' + value, lvl: o.lvl, xp: o.xp, uid: o.uid, inv: [token], skPts: 0, specialPurchases: o.specialPurchases || {} });
+    for (const key of Object.keys(o)) delete o[key];
+    Object.assign(o, next);
+  } else if (action === 'gender') {
+    const sex = o.sex ? 0 : 1;
+    if (!hn(I[o.fac], sex)) throw new Error('Môn phái hiện tại không nhận giới tính mới. Hãy đổi ngũ hành trước.');
+    const restricted = item => (item.req || []).some(([kind, value]) => kind === 38 && value >= 0);
+    o.inv = o.inv.filter(item => !restricted(item));
+    for (const key of ['epBox', 'stable']) if (Array.isArray(o[key])) o[key] = o[key].filter(item => !restricted(item));
+    o.ground = (o.ground || []).filter(drop => !drop?.it || !restricted(drop.it));
+    for (const [slot, item] of Object.entries(o.eq)) if (item && restricted(item)) delete o.eq[slot];
+    o.sex = sex; o.sexSet = 1; o.onlineMounted = false;
+  } else throw new Error('Lựa chọn hỗ trợ không hợp lệ.');
+  l.sks = null; l.dirty = true; R = true;
+};
+
+var openNewbieSupport = function () {
+  const supportStyle = `<style>.newbie-options{display:grid;gap:8px}.newbie-options .btn{width:100%;min-height:44px;text-align:left;padding:10px;background:linear-gradient(#5d684d,#2e3825);border:1px solid #a6ad80;color:#f3edc8}</style>`;
+  const rewards = [['level150','Tăng nhân vật lên cấp 150'],['learn90','Học tất cả chiêu cấp 90 của môn phái'],['learn120','Học tất cả chiêu cấp 120 của môn phái'],['learn150','Học tất cả chiêu cấp 150 của môn phái'],['max90','Nâng tối đa các chiêu cấp 90 và 150 đã học'],['potential','+3.000 điểm tiềm năng'],['gold','+100 triệu vạn lượng (1.000 tỷ lượng)'],['knb','+10 vạn Kim Nguyên Bảo'],['warMerit','+10.000 điểm Quân trạng / tích lũy'],['xp','+100m - 1 tỉ điểm kinh nghiệm'],['chest','+100 rương Hoàng Kim môn phái hiện tại']];
+  const run = async (action, value) => {
+    try {
+      if (typeof OnlineProgression !== 'undefined' && window.localGameStorage) {
+        await OnlineProgression.run({kind:'newbie', action, value});
+        await window.localGameStorage.flush();
+      } else if (rewards.some(([key]) => key === action)) await newbieGrant(action);
+      else newbieSupport(action, value);
+      R = true; l.dirty = true; $(); V();
+      k('Đã áp dụng hỗ trợ tân thủ.'); openNewbieSupport();
+    } catch (error) { k(error.message); }
+  };
+  const choices = (title, rows, action) => J(`${supportStyle}<h3>${title}</h3><div class="newbie-options">${rows.map(([value,label])=>`<button class="btn" data-newbie-choice="${value}">${D(label)}</button>`).join('')}</div><button class="btn" id="newbieBack">Quay lại</button>`, () => {
+    m('#newbieBack').onclick = openNewbieSupport;
+    document.querySelectorAll('[data-newbie-choice]').forEach(button => button.onclick = async () => {
+      const value = action === 'element' ? Number(button.dataset.newbieChoice) : button.dataset.newbieChoice;
+      if (action === 'element' && !await X1('Đổi ngũ hành sẽ xóa toàn bộ tiềm năng, kỹ năng, tiền, trang bị và vật phẩm trên nhân vật. Giữ cấp, kinh nghiệm, Lệnh bài tân thủ và vật phẩm trong rương chung. Không thể hoàn tác.', 'Xác nhận đổi', 'Hủy')) return;
+      button.disabled = true; try { await run(action, value); } finally { button.disabled = false; }
+    });
+  });
+  J(`<h3>Hỗ trợ tân thủ</h3>${supportStyle}<div class="newbie-options"><button class="btn" id="newbieJoin">Gia nhập phái</button><button class="btn" id="newbieElement">Đổi thuộc tính ngũ hành</button><button class="btn" id="newbieGender">Đổi giới tính</button>${rewards.map(([key,label])=>`<button class="btn" data-newbie-reward="${key}">${label}</button>`).join('')}</div>`, () => {
+    m('#newbieJoin').onclick = () => choices('Bạn muốn gia nhập phái nào?', Object.values(I).filter(f => !f.novice && f.series === F0() && hn(f,o.sex)).map(f => [f.key,f.n]), 'join');
+    m('#newbieElement').onclick = () => choices('Chọn thuộc tính ngũ hành mới', [0,1,2,3,4].filter(series=>series!==F0()).map(series=>[series,g0[series]]), 'element');
+    m('#newbieGender').onclick = async () => {
+      if (await X1(`Đổi sang ${o.sex ? 'Nam' : 'Nữ'} sẽ xóa toàn bộ trang bị chỉ dành cho nam hoặc nữ trên người và trong hành trang. Rương chung được giữ nguyên. Không thể hoàn tác.`, 'Xác nhận đổi', 'Hủy')) await run('gender');
+    };
+    document.querySelectorAll('[data-newbie-reward]').forEach(button=>button.onclick=async()=>{button.disabled=true;try{await run(button.dataset.newbieReward);}finally{button.disabled=false;}});
+  });
+};

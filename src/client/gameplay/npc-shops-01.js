@@ -153,3 +153,41 @@ if (
   S.shops && S.shops.med && !S.shops.med.items.some((s) => s.g === 1 && s.d === 2))
 )
   for (const s of fh) S.shops.med.items.push({ g: 1, d: 2, k: 0, lvl: s.tier, price: s.price });
+
+
+// The same catalog and purchase rules run in the browser and trusted server runtime.
+var specialItemOffers = [{ key: 'newbie_token', price: 100000, limit: 1 }];
+
+var specialItemShopBuy = function (key) {
+  const offer = specialItemOffers.find(row => row.key === key);
+  if (!offer) throw new Error('Vật phẩm không được bán tại cửa hàng này.');
+  if ((o.specialPurchases?.[key] || 0) >= offer.limit) throw new Error('Mỗi nhân vật chỉ được mua 1 Lệnh bài tân thủ.');
+  const owned = [...o.inv, ...Object.values(o.eq || {}), ...(o.epBox || []), ...(o.stable || []), ...(o.ground || []).map(drop => drop?.it)];
+  if (owned.some(item => item?.ktc?.k === key)) throw new Error('Nhân vật đã có Lệnh bài tân thủ.');
+  if (!Number.isSafeInteger(o.gold) || o.gold < offer.price) throw new Error('Không đủ 10 vạn lượng.');
+  if (o.inv.length >= INV_MAX) throw new Error('Hành trang đầy.');
+  if (!B4(key, 1)) throw new Error('Không thể thêm vật phẩm vào hành trang.');
+  o.inv.find(item => item.ktc?.k === key).lock = true;
+  o.gold -= offer.price;
+  o.specialPurchases ||= {}; o.specialPurchases[key] = (o.specialPurchases[key] || 0) + 1;
+  R = true; l.dirty = true;
+};
+
+var openSpecialItemShop = function () {
+  const owns = key => [...o.inv, ...Object.values(o.eq || {}), ...(o.epBox || []), ...(o.stable || []), ...(o.ground || []).map(drop => drop?.it)].some(item => item?.ktc?.k === key);
+  J(`<h3>Kỳ Trân Sứ Giả</h3><p class="desc">Lệnh bài và vật phẩm đặc biệt</p><p>Ngân lượng: <b class="gold">${q(o.gold || 0)}</b></p><div class="shoplist">${specialItemOffers.map(offer => {
+    const item = J0.find(row => row.k === offer.key), bought = (o.specialPurchases?.[offer.key] || 0) >= offer.limit;
+    return `<button class="shoprow" data-special-item="${offer.key}" ${bought || owns(offer.key) || o.gold < offer.price ? 'disabled' : ''}><img src="${D(item.ic)}" alt=""><span><b>${D(item.n)}</b><small>10 vạn lượng · Chỉ được mua 1 cái / nhân vật${bought ? ' · Đã mua' : owns(offer.key) ? ' · Đã sở hữu' : ''}</small></span></button>`;
+  }).join('')}</div><p class="dim small">Lệnh bài không thể bán lại.</p>`, () => {
+    document.querySelectorAll('#mBody [data-special-item]').forEach(button => button.onclick = async () => {
+      button.disabled = true;
+      try {
+        if (typeof OnlineProgression !== 'undefined' && OnlineProgression.enabled() && window.localGameStorage) {
+          await OnlineProgression.run({kind:'specialItemBuy', item:button.dataset.specialItem});
+          await window.localGameStorage.flush();
+        } else specialItemShopBuy(button.dataset.specialItem);
+        $(); V(); k('Đã mua Lệnh bài tân thủ với giá 10 vạn lượng.'); openSpecialItemShop();
+      } catch (error) { k(error.message); button.disabled = false; }
+    });
+  });
+};

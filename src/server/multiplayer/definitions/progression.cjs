@@ -10,7 +10,12 @@ exports.apply=function(input,action,development=false,gameMasterMode){
   if(!action||typeof action!=='object'||Array.isArray(action))fail('Thao tác không hợp lệ.');
   const gmMode=resolveGmMode(gameMasterMode);
   return native.withProgression(input,s=>{
-    const p=s.o,kind=action.kind,integer=(n,min,max)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
+    const p=s.o,kind=action.kind==='newbie'?'gm':action.kind,integer=(n,min,max)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
+    if(action.kind==='newbie'){
+      if(!p.inv.some(item=>item.ktc?.k==='newbie_token'&&item.ktc.c===1))fail('Cần Lệnh bài tân thủ trong hành trang.');
+      if(['join','element','gender'].includes(action.action)){s.newbieSupport(action.action,action.value);return structuredClone(p);}
+      if(!['level150','learn90','learn120','learn150','max90','potential','gold','knb','warMerit','xp','chest'].includes(action.action))fail('Lựa chọn hỗ trợ không hợp lệ.');
+    }
     const skill=()=>{const row=s.T[action.skill];if(!row||!s.I[p.fac]?.skills.includes(row.id))fail('Chiêu không thuộc môn phái.');return row;};
     switch(kind){
       case 'mainSkill':{
@@ -48,6 +53,10 @@ exports.apply=function(input,action,development=false,gameMasterMode){
           p.gold-=price;bag.bought[slot][id]=(bag.bought[slot][id]||0)+quantity;
         }
         bag.selected[slot]=id;break;
+      }
+      case 'specialItemBuy':{
+        try{s.specialItemShopBuy(action.item);}catch(error){fail(error.message);}
+        break;
       }
       case 'potionBuy':{
         const potion=s.S.potions.find(row=>row.kind===action.potion&&row.tier===action.tier);
@@ -95,11 +104,14 @@ exports.apply=function(input,action,development=false,gameMasterMode){
       case 'autoSkill':s.Pt();break;
       case 'reset':if(typeof action.attributes!=='boolean'||typeof action.skills!=='boolean')fail('Lệnh tẩy tủy không hợp lệ.');s.p4(action.attributes,action.skills);break;
       case 'gm':{
-        if(gmMode!=='all'&&!development)throw Object.assign(new Error('GM chỉ dùng trong development.'),{status:403});
+        if(action.kind!=='newbie'&&gmMode!=='all'&&!development)throw Object.assign(new Error('GM chỉ dùng trong development.'),{status:403});
         const name=action.action;
         if(name==='level150'){
           const levels=Math.max(0,150-p.lvl);p.lvl+=levels;p.xp=levels?0:p.xp;p.attrPts+=levels*s.z2;p.skPts+=levels*s.x5;
-        }else if(name==='xp')exports.addExperience(p,100000000,s.S.exp);
+        }else if(name==='xp'){
+          if(p.lvl>=200)fail('Nhân vật đã đạt giới hạn cấp 200.');
+          exports.addExperience(p,require('node:crypto').randomInt(100000000,1000000001),s.S.exp);
+        }
         else if(name==='potential')p.attrPts+=3000;
         else if(['learn90','learn120','learn150','max90'].includes(name)){
           const max=name==='max90',tier=Number(name.slice(5));
@@ -135,6 +147,7 @@ exports.apply=function(input,action,development=false,gameMasterMode){
         }else if(name==='quickSale'){
           const item=Number.isSafeInteger(action.uid)&&p.inv.find(row=>row.uid===action.uid);
           if(!item)fail('Không tìm thấy vật phẩm để bán.');
+          if(item.ktc?.k==='newbie_token')fail('Lệnh bài tân thủ không thể bán.');
           delete item.lock;
           if(!Number.isSafeInteger((p.gold||0)+s.x0(item)))fail('Số dư vượt giới hạn số nguyên an toàn.');
           s.Ef(item);

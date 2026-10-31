@@ -115,7 +115,7 @@ function game(development = true, gameMasterMode = "all") {
   vm.runInContext(source, s);
   return s;
 }
-test("GM grants exact currencies and XP through real level-up logic; rejects absent characters and unsafe balances", () => {
+test("GM grants exact currencies and random XP through real level-up logic; rejects absent characters and unsafe balances", () => {
   const s = game();
   s.gameMaster.grant("gold");
   s.gameMaster.grant("knb");
@@ -125,7 +125,8 @@ test("GM grants exact currencies and XP through real level-up logic; rejects abs
   assert.equal(s.o.lvl, 5);
   assert.equal(s.o.attrPts, 20);
   assert.equal(s.o.skPts, 4);
-  assert.equal(s.o.xp + 10 + 20 + 30 + 40, 100_000_000);
+  const awarded = s.o.xp + 10 + 20 + 30 + 40;
+  assert.ok(awarded >= 100_000_000 - 0.001 && awarded <= 1_000_000_000 + 0.001);
   assert.equal(s.saved.length, 3);
   assert.throws(() => s.gameMaster.grant("xp"), /giới hạn cấp/);
   s.o.gold = Number.MAX_SAFE_INTEGER;
@@ -491,4 +492,11 @@ test('GM ellipse matches a narrowed impact shape and its upward world offset',()
     combat:{zone:1,skill:{id:1070,geo:{k:'spot',r:75/.81,yScale:75/45,offsetY:-12}}}}]});
   s.CombatEngine.drawSkillDamageAreas({save(){},restore(){},setLineDash(){},beginPath(){},fill(){},stroke(){},ellipse(...args){ellipses.push(args);}});
   assert.deepEqual(ellipses[0].slice(0,4),[180,98,75,45]);
+});
+
+test('newbie rewards remain available when production hides the GM toolbar', () => {
+  const s = game(false, 'development');
+  assert.equal(s.gameMaster, null);
+  s.newbieGrant('gold');
+  assert.equal(s.o.gold, 1_000_000_000_007);
 });

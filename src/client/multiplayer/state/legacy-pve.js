@@ -214,8 +214,8 @@ var onlineWorld = (() => {
     const previousLevel=o.lvl;
     // Revision-based progression; initial/full commands also include canonical inventory.
     const fields = imported&&!saved.full
-      ? (window.localGameConfig?.progressionFields||['lvl','xp','gold','attrPts','skPts','attr','sk','fac','skL','bkOk','main','mainLock','secondarySkill','slots','skillRoute','potStock','potUsed','onlinePotionSpent'])
-      : ['lvl', 'xp', 'gold', 'knb', 'attrPts', 'skPts', 'attr', 'sk', 'eq', 'inv', 'fac', 'sex', 'name', 'skL', 'bkOk', 'sk150Training', 'mats', 'main', 'mainLock', 'secondarySkill', 'slots', 'skillRoute', 'auraOff', 'autoBuff', 'autoCurse', 'supportAutoOff', 'potStock', 'potUsed', 'onlinePotionSpent', 'uid', 'onlineMounted'];
+      ? (window.localGameConfig?.progressionFields||['lvl','xp','gold','attrPts','skPts','attr','sk','fac','skL','bkOk','main','mainLock','secondarySkill','slots','skillRoute','potStock','potUsed','onlinePotionSpent','specialPurchases'])
+      : ['lvl', 'xp', 'gold', 'knb', 'attrPts', 'skPts', 'attr', 'sk', 'eq', 'inv', 'fac', 'sex', 'name', 'skL', 'bkOk', 'sk150Training', 'mats', 'main', 'mainLock', 'secondarySkill', 'slots', 'skillRoute', 'auraOff', 'autoBuff', 'autoCurse', 'supportAutoOff', 'potStock', 'potUsed', 'onlinePotionSpent', 'uid', 'onlineMounted', 'specialPurchases'];
     for (const field of fields) if (p[field] !== undefined) o[field] = structuredClone(p[field]);
     if(p.onlineMounted!==undefined)l.mounted=!!p.onlineMounted;
     imported = true;

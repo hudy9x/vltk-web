@@ -13,6 +13,7 @@ export function mapNpcs(map: MapDefinition): MapNpc[] {
     { id: 'town-horse', npcId: 'horse', position: { x: 1380, y: 2139 } },
     { id: 'town-pharmacy', npcId: 'pharmacy', position: { x: 1520, y: 2139 } },
     { id: 'town-tongkim', npcId: 'tongkim', position: { x: 1660, y: 2139 } },
+    { id: 'town-special-items', npcId: 'special-items', position: { x: 1624, y: 2392 } },
   ];
   return [];
 }

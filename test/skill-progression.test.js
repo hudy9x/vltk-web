@@ -108,7 +108,7 @@ test('clearing/relearning or resetting trained 150 skills cannot create points o
 test('real save normalization preserves new books and migrates allocated 150 points once',()=>{
   const s=game();Object.assign(s,{b8:1,d0:100,Q2:1000,gP:[],INV_MAX:100,$i:0,_5:()=>100,iP(){}});
   for(const name of ['I3','v8'])decl(s,'src/client/core/state-and-save-03.js',name);
-  const original={fac:'shaolin',lvl:150,sk:{1055:12},skPts:488,sk9Free:1,sk9m:1,mats:{misc:{bk120:2,bk150:3,bk90:4}}};
+  const original={fac:'shaolin',lvl:150,inv:[],sk:{1055:12},skPts:488,sk9Free:1,sk9m:1,mats:{misc:{bk120:2,bk150:3,bk90:4}}};
   const migrated=s.v8(JSON.parse(JSON.stringify(original)));
   assert.equal(migrated.sk[1055],12);assert.equal(migrated.skL[1055].lv,12);assert.equal(migrated.skPts,500);
   assert.equal(migrated.bkOk[1055],1);assert.equal(migrated.mats.misc.bk120,2);assert.equal(migrated.mats.misc.bk150,3);

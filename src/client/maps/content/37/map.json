@@ -77,6 +77,15 @@
         "x": 1436,
         "y": 2260
       }
+    },
+    {
+      "id": "town-special-items",
+      "npcId": "special-items",
+      "position": {
+        "x": 1624,
+        "y": 2392
+      },
+      "direction": 0
     }
   ]
 }

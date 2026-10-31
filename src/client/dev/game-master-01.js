@@ -1,4 +1,5 @@
 // GameMaster tools. Appended after the original game initialization.
+var newbieGrant;
 var gameMaster = (function () {
   const prefix = "gm_hk_";
   const saveAndRefresh = () => {
@@ -68,7 +69,6 @@ var gameMaster = (function () {
     return true;
   };
   const mode = window.localGameConfig?.gameMasterMode === "development" ? "development" : "all";
-  if (mode === "development" && !window.localGameConfig?.development) return null;
 
   let showSkillRange = false;
   let showDamageAreas = false;
@@ -102,6 +102,7 @@ var gameMaster = (function () {
       return OnlineProgression.run({kind:'gm',action}).then(async()=>{await window.localGameStorage.flush();return 'Đã áp dụng GM và lưu trên máy chủ.';});
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
     if (!(action in amounts)) throw new Error("Lệnh GM không hợp lệ.");
+    let awardedXp = 0;
     if (action === "warMerit") {
       o.mats ||= {};o.mats.misc ||= {};
       const current=o.mats.misc.tk_merit;
@@ -156,9 +157,9 @@ var gameMaster = (function () {
       if (!Number.isSafeInteger(next)) throw new Error("Số dư vượt giới hạn số nguyên an toàn.");
       o[action] = next;
     } else if (action === "xp") {
-      if (o.lvl >= G2()) throw new Error("Nhân vật đã đạt giới hạn cấp hiện tại.");
-      // d8 applies XP bonuses and performs level-ups. Compensate those bonuses
-      // so the GM reward adds exactly 100 million XP, including XP spent leveling.
+      if (o.lvl >= Math.min(200, G2())) throw new Error("Nhân vật đã đạt giới hạn cấp hiện tại.");
+      // Compensate XP bonuses so the random reward stays within its advertised range.
+      awardedXp = 100_000_000 + Math.floor(Math.random() * 900_000_001);
       const factor =
         ye *
         (1 + (o.tanthuXp && !(v0() > 0) ? +o.tanthuXp : 0)) *
@@ -167,7 +168,7 @@ var gameMaster = (function () {
         (1 + Lt("tt") + Lt("tt2"));
       if (!(factor > 0) || !Number.isFinite(factor))
         throw new Error("Hệ số kinh nghiệm không hợp lệ.");
-      d8(amounts.xp / factor);
+      d8(awardedXp / factor);
     } else {
       const key = prefix + o.fac;
       if (!I[o.fac] || I[o.fac].novice) throw new Error("Hãy gia nhập môn phái trước.");
@@ -179,7 +180,7 @@ var gameMaster = (function () {
     saveAndRefresh();
     return (
       "Đã nhận " +
-      amounts[action].toLocaleString("vi-VN") +
+      (action === "xp" ? awardedXp : amounts[action]).toLocaleString("vi-VN") +
       " " +
       {
         gold: "lượng",
@@ -190,6 +191,8 @@ var gameMaster = (function () {
       "."
     );
   }
+  newbieGrant = grant;
+  if (mode === "development" && !window.localGameConfig?.development) return null;
   const saleCursor = 'url("img/cursors/sell.png") 11 9, pointer';
   const style = document.createElement("style");
   style.textContent = `
@@ -242,7 +245,7 @@ var gameMaster = (function () {
     <button type="button" data-gm="gold">+100 triệu vạn lượng (1.000 tỷ lượng)</button>
     <button type="button" data-gm="knb"><img src="img/ep/knb.png" alt="">+10 vạn Kim Nguyên Bảo</button>
     <button type="button" data-gm="warMerit">+10.000 điểm Quân trạng / tích lũy</button>
-    <button type="button" data-gm="xp">+100 triệu điểm kinh nghiệm</button>
+    <button type="button" data-gm="xp">+100m - 1 tỉ điểm kinh nghiệm</button>
     <button type="button" data-gm="chest"><img src="img/ep/box2.png" alt="">+100 rương Hoàng Kim môn phái hiện tại</button>
     <p id="gm-status" role="status" aria-live="polite">Phần thưởng được lưu vào save hiện tại.</p></div>`;
   toggle.onclick = () => {
@@ -308,6 +311,7 @@ var gameMaster = (function () {
   const originalInspect = He;
   He = function (item, slot) {
     if (!quickSale || !o || !o.inv.includes(item)) return originalInspect(item, slot);
+    if (item?.ktc?.k === "newbie_token") return originalInspect(item, slot);
     const price = x0(item);
     if(typeof OnlineProgression!=='undefined'&&window.localGameStorage){
       OnlineProgression.run({kind:'gm',action:'quickSale',uid:item.uid}).then(async()=>{
