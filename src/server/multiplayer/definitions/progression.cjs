@@ -28,6 +28,10 @@ exports.apply=function(input,action,development=false,gameMasterMode){
         if(action.skill!==-1&&previous>=0)slots[previous]=slots[action.index];
         slots[action.index]=action.skill;p.slots=slots;break;
       }
+      case 'warItemBuy':case 'warItemUse':{
+        try{require('./war-items.cjs').apply(p,action,s.INV_MAX);}catch(error){fail(error.message);}
+        break;
+      }
       case 'warPotionBuy':case 'warPotionSelect':{
         if(!integer(action.matchId,1,4294967295)||!Number.isFinite(action.starts)||![0,1].includes(action.slot))fail('Chưa gia nhập chiến trường.');
         const potion=s.S.potions.find(row=>row.kind===action.potion&&row.tier===action.tier);

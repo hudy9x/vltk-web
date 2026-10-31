@@ -32,7 +32,7 @@ pub(crate) fn movement(a:&Actor)->f32 {
 pub(super) fn attack(a:&Actor,s:&Skill)->(f32,f32) {
     if let (Some(t),Some(percent))=(&a.profile.timing,s.attack_percent) {
         if let Some((_,cycle))=resolve(percent*pvp::movement_factor(a),&t.config.attack,&t.config){
-            return (cycle,cycle.max(s.cooldown));
+            return (cycle,cycle.max(s.cast_cooldown.unwrap_or(s.cooldown)));
         }
     }
     (0.4,s.cooldown.max(0.15))

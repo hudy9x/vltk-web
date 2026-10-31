@@ -4,6 +4,12 @@ use std::collections::BTreeMap;
 #[serde(rename_all = "camelCase")]
 pub struct Skill {
     #[serde(default,skip_serializing_if="Option::is_none")]
+    pub geometry:Option<SkillGeometry>,
+    #[serde(default,skip_serializing_if="Vec::is_empty")]
+    pub followups:Vec<Followup>,
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub accuracy:Option<Accuracy>,
+    #[serde(default,skip_serializing_if="Option::is_none")]
     pub curse:Option<Curse>,
     #[serde(default)]
     pub leech: f32,
@@ -22,6 +28,8 @@ pub struct Skill {
     pub cooldown: f32,
     #[serde(default)]
     pub attack_percent: Option<f32>,
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub cast_cooldown:Option<f32>,
     pub range: f32,
     pub radius: f32,
     pub shape: String,
@@ -39,6 +47,10 @@ pub struct Skill {
     pub poison: f32,
     pub travel: f32,
 }
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Accuracy {pub rating:f32,pub ignore:f32}
+#[derive(Clone,Debug,Deserialize,Serialize)]
+pub struct Followup {pub id:u16,pub parts:[f32;5],pub delay:f32,pub targets:usize,pub stun:f32}
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PveDamage {
@@ -260,3 +272,14 @@ pub struct AllyScaling {
 
 #[derive(Clone,Debug,Deserialize,Serialize)]
 pub struct Curse {pub duration:f32,pub effects:BTreeMap<String,f32>}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all="camelCase")]
+pub struct SkillGeometry {
+    pub scale:f32,
+    pub cast_y_ratio:f32,
+    pub impact_y_scale:f32,
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub impact_offset_y:Option<f32>,
+    pub ignore_terrain:bool,
+}

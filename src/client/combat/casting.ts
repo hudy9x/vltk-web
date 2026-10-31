@@ -1,3 +1,4 @@
+import { resolveSkillImpactGeometry } from './skill-geometry';
 import type { CombatTarget, CombatSkill, ContactHitHandler, CastOptions, CombatCast, SpriteMissile, ContactEffect, FallbackContact } from './types';
 import { skillIgnoresTerrain, SKILL_RANGE_Y_RATIO } from './config';
 import { beginActorCast } from './action-state';
@@ -5,6 +6,7 @@ import { defaultCombatTargets } from './spatial/contact-query';
 import { resolveSpeed } from '../speed/runtime';
 import type { ResolvedSpeed } from '../speed/types';
 declare function G8(skillId: number | string): void;
+declare function playActorAttackVoice(actor: CombatTarget): void;
 declare function actorAttackTiming(actor: CombatTarget, skill: CombatSkill): ResolvedSpeed;
 // Secondary fields created synchronously at release inherit the same tick remainder.
 let releaseStep: number | undefined;
@@ -17,16 +19,8 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
   const timing = timed ? (typeof actorAttackTiming === 'function' ? actorAttackTiming(actor, skill)
     : resolveSpeed('attack', (skill.rawRate ?? skill.rate!) * 100)) : null;
   const blocked = !timed && !skill.ev2 && !beginActorCast(actor);
-  const narrow = [361, 368].includes(+skill.id!);
-  if (narrow) skill = Object.assign({}, skill, {
-    geo: Object.assign({}, skill.geo, {
-      k: "line", shape: "rect", width: 24, len: (skill.geo && skill.geo.len) || skill.rad || 100, pierce: true, area: 0,
-    })
-  });
-  const impactScale = [353, 355].includes(+skill.id!) ? 2 / 3 : [302, 339, 342, 357, 318, 321].includes(+skill.id!) ? 1 / 3 : 1;
-  if (impactScale !== 1 && skill.geo && skill.geo.area) {
-    skill = Object.assign({}, skill, { geo: Object.assign({}, skill.geo, { area: skill.geo.area * impactScale }) });
-  }
+  const visualSkill = !skill.ev2 && [1075,1078,1081,1076].includes(+skill.id!) ? skill : null;
+  skill = resolveSkillImpactGeometry(skill);
   const cast: CombatCast = {
     actionRevision: skill.ev2 ? undefined : actor.actionRevision || 0,
     actor,
@@ -52,14 +46,10 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
   if (+skill.id! === 1075 && !skill.ev2) {
     // Same fixed forward rectangle as Vân Long Kích. Keep the original
     // skill passed to G3 so Giang Hải still plays its own traveling wave.
-    cast.skill = { ...skill, geo: {
-      k: 'line', shape: 'rect', width: 24, len: skill.rad || 198, pierce: true, area: 0,
-    } };
     cast.maxTargets = Infinity;
   }
   if ([1078, 1081].includes(+skill.id!) && !skill.ev2) {
     // These fields use a 150-unit impact radius, independent of cast range.
-    cast.skill = { ...skill, geo: { k: 'spot', r: 150, pierce: true } };
     const duration = +skill.id! === 1081 ? 20 / 18 : 30 / 18;
     cast.pulseCount = +skill.id! === 1081 ? 5 : 7;
     cast.interval = duration / cast.pulseCount;
@@ -67,7 +57,6 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     cast.duration = cast.windup + duration;
   }
   if ([365, 1076].includes(+skill.id!) && !skill.ev2) {
-    if (+skill.id! === 1076) cast.skill = { ...skill, geo: { k: 'spot', r: 150, pierce: true } };
     // Finite damage beats; the existing renderer keeps one uninterrupted FX.
     const duration = +skill.id! === 365 ? 20 / 18 : 16 / 18;
     cast.pulseCount = +skill.id! === 365 ? 5 : 3;
@@ -75,7 +64,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     cast.nextPulse = cast.windup;
     cast.duration = cast.windup + duration;
   }
-  if (skill.geo || narrow || cast.interval) cast.maxTargets = Infinity;
+  if (skill.geo || cast.interval) cast.maxTargets = Infinity;
   if (cast.interval) {
     const spriteId = A0.f && A0.f[skill.id!] && A0.f[skill.id!].c || A0.s && A0.s[skill.id!];
     const sprite = A0.m[spriteId!] && A0.m[spriteId!].fly;
@@ -93,7 +82,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     activeCombatCast = cast;
     try {
       if (options.visual) options.visual();
-      else G3(actor, target, skill);
+      else G3(actor, target, visualSkill || skill);
       // Older secondary effects use interpolated missiles / stationary sprites.
       for (const effect of l.fx.slice(start)) {
         if (!effect.combat && !effect.cosmetic && (effect.k === "mis" || effect.k === "boom") && !effect.follow && !effect.add) {
@@ -125,6 +114,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
         if (!l.quiet && !options.hideFallbackVisual) l.fx.push(effect);
       }
       // One sound per primary release, shared by world combat and arena.
+      if (!skill.ev2 && typeof playActorAttackVoice === 'function') playActorAttackVoice(actor);
       if (+skill.id! === 1081 && !skill.ev2 && typeof G8 === 'function') G8(1081);
       options.afterRelease?.();
     } finally {

@@ -1,5 +1,6 @@
 import { WAR_ITEMS, warItemStacks } from './war-rewards';
 import type { WarItem, WarRewards } from './war-rewards';
+declare const OnlineProgression:{enabled():boolean;run(action:unknown):Promise<unknown>};
 interface InventoryHost {
   active(): boolean;
   rewards: WarRewards;
@@ -12,14 +13,22 @@ export function createWarInventory(host: InventoryHost) {
     return warItemStacks(host.rewards.state.inventory).map(({kind,count}) =>
       `<button class="it r1 mi" data-war-item="${kind}" title="${WAR_ITEMS[kind].name}: ${WAR_ITEMS[kind].description}. Bấm để dùng · Chỉ dùng trong Tống Kim"><img src="${WAR_ITEMS[kind].icon}" alt="${WAR_ITEMS[kind].name}" width="24" height="24"><i>${count}</i></button>`).join('');
   }
-  document.addEventListener('click', event => {
+  let busy=false;
+  document.addEventListener('click', async event => {
     const itemButton = (event.target as Element | null)?.closest?.<HTMLElement>('[data-war-item]');
     if (!itemButton) return;
     const kind = itemButton.dataset.warItem as WarItem;
     if (!Object.prototype.hasOwnProperty.call(WAR_ITEMS,kind)) return;
     event.stopPropagation();
-    try { host.rewards.use(kind); host.refresh(); }
+    if(busy)return;
+    busy=true;
+    try {
+      if(typeof OnlineProgression!=='undefined'&&OnlineProgression.enabled())await OnlineProgression.run({kind:'warItemUse',item:kind});
+      else host.rewards.use(kind);
+      host.refresh();
+    }
     catch(error) { host.error(error instanceof Error ? error.message : String(error)); }
+    finally {busy=false;}
   }, true);
   return { html, get slots() { return warItemStacks(host.rewards.state.inventory).length; } };
 }

@@ -739,6 +739,7 @@ var sD = function (A) {
     (beginActorCast(v, actorAttackTiming(v, n.a).cycleSeconds, () => {
       if (e && !e.dead && e.hp > 0 && q0(v, e) <= ((e.r || 12) + 24) / QA && mt(v.x, v.y, e.x, e.y)) Ls(hs(n.a, e), n.a);
       if (n.a.id) G8(n.a.id);
+      playActorAttackVoice(v);
     }),
       (v.act = "at"),
       (v.actT = 0));
@@ -912,15 +913,19 @@ var $d = function (A, n) {
     }
     A._lh = A.hp;
   }
-  if (A.stun > 0) {
-    A.stun -= n;
-    return;
-  }
   A.slowT = Math.max(0, (A.slowT || 0) - n);
   if (A.poison > 0) {
     const before = A.hp;
-    A.poison -= n; A.hp -= A.poisonDmg * n;
+    const duration = Math.min(n, A.poison);
+    A.poison = Math.max(0, A.poison - duration);
+    A.hp = Math.max(0, A.hp - A.poisonDmg * duration);
     showDamageNumber(A, Math.max(0, Math.min(before, before - A.hp)), "poison");
+  }
+  if (A.hp <= 0) return;
+  // Stun blocks actions, never the passage of time for an existing poison.
+  if (A.stun > 0) {
+    A.stun -= n;
+    return;
   }
   if (actorActionLocked(A)) { A.moving = false; A.atkCd = Math.max(0, (A.atkCd || 0) - n); return; }
   if (A.home && KD(A, n)) return;

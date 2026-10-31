@@ -101,8 +101,8 @@ impl Game {
                             (target_x - a.x).hypot((target_y - a.y) * 2.0) <= p.range + 17.0
                         });
                         if reaches
-                            && distance(a.x, a.y, target_x, target_y) <= skill.range + 12.0
-                            && room.nav.clear(a.x, a.y, target_x, target_y)
+                            && combat_range::can_cast(skill,(a.x,a.y),(target_x,target_y))
+                            && (combat_range::ignores_terrain(skill) || room.nav.clear(a.x, a.y, target_x, target_y))
                         {
                             a.path.clear();
                             if *a.cooldowns.get(&ATTACK_COOLDOWN).unwrap_or(&0.0) <= 0.0
@@ -122,7 +122,7 @@ impl Game {
                                         target: target_id,
                                         remaining: 0.12 + skill.travel,
                                         origin: (a.x, a.y),
-                                        flight: skill.projectile.as_ref().map(|_| {
+                                        aim: Some((target_x,target_y)), flight: skill.projectile.as_ref().map(|_| {
                                             projectiles::Flight::new(
                                                 (a.x, a.y),
                                                 (target_x, target_y),

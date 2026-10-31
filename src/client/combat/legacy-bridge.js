@@ -62,3 +62,5 @@ var showDamageNumber = function (target, amount, kind = "phys", critical = false
         ? { x: B0.x, y: B0.y, width: M0.w, height: M0.h } : undefined });
 };
 var updateDamageLabels = CombatEngine.updateDamageLabels;
+
+var describePoisonDamage = CombatEngine.describePoisonDamage;

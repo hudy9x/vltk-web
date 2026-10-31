@@ -78,7 +78,7 @@ var jm = function (A, n) {
       : ((l.moveTo = null),
         (l.tgtHitT = l.clock || 0),
         (l.tgtD = 0),
-        o4(A), beginActorCast(v, actorAttackTiming(v, A).cycleSeconds, () => { l_(A, n); G8(A.id); }),
+        o4(A), beginActorCast(v, actorAttackTiming(v, A).cycleSeconds, () => { l_(A, n); G8(A.id); playActorAttackVoice(v); }),
         typeof Y !== "undefined" && Y.stopAfterCast(),
         A.cd && ((l.skCd = l.skCd || {})[A.id] = (l.clock || 0) + A.cd),
         l.rotNext != null && ((l.rotI = l.rotNext), (l.rotNext = null)),

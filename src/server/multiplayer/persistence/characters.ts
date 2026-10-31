@@ -126,6 +126,7 @@ export function createCharacters(db: DatabaseSync) {
     if(typeof id!=='string'||!/^[-a-zA-Z0-9_]{8,80}$/.test(id))throw Object.assign(new Error('Mã thao tác không hợp lệ.'),{status:400});
     if(!action||typeof action!=='object'||Array.isArray(action)||typeof (action as {kind?:unknown}).kind!=='string')throw Object.assign(new Error('Thao tác không hợp lệ.'),{status:400});
     const hashAction={...(action as Record<string,unknown>)};if(hashAction.kind==='warPotionBuy'||hashAction.kind==='warPotionSelect')delete hashAction.spent;
+    if(hashAction.kind==='warItemBuy'||hashAction.kind==='warItemUse')delete hashAction.room;
     const hash=createHash('sha256').update(JSON.stringify(hashAction)).digest('hex');
     db.exec('BEGIN IMMEDIATE');
     try{

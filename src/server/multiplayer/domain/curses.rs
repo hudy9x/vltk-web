@@ -92,7 +92,7 @@ impl Game {
         let Some((x, y)) = destination else {
             return false;
         };
-        if distance(a.x, a.y, x, y) > 420.0 || !room.nav.clear(a.x, a.y, x, y) {
+        if !combat_range::can_cast(&skill,(a.x,a.y),(x,y)) || (!combat_range::ignores_terrain(&skill) && !room.nav.clear(a.x, a.y, x, y)) {
             return false;
         }
         let map = a.map;
@@ -114,7 +114,7 @@ impl Game {
             target,
             remaining: skill.travel,
             origin,
-            flight: None,
+            aim: Some((x,y)), flight: None,
             skill,
         });
         self.event(map, 1, id, target, skill_id, 0.5, 0);
@@ -164,7 +164,7 @@ impl Game {
                     .map(|(&id, b)| (id, b.x, b.y));
                 if let Some((target, _, _)) = mobs
                     .chain(peers)
-                    .filter(|(_, x, y)| distance(a.x, a.y, *x, *y) <= 420.0)
+                    .filter(|(_, x, y)| combat_range::can_cast(skill,(a.x,a.y),(*x,*y)))
                     .min_by(|a1, b| {
                         distance(a.x, a.y, a1.1, a1.2).total_cmp(&distance(a.x, a.y, b.1, b.2))
                     })

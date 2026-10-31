@@ -1,3 +1,4 @@
+import { describePoisonDamage } from '../combat/poison-summary';
 import { POTENTIALS } from './build';
 import type { Faction, LegacyRecord, SimulatorActor } from './types';
 
@@ -25,7 +26,7 @@ export function createSimInspectionCache(catalog: {factions:Record<string,Factio
         table(['Chỉ số','Giá trị'],[
           ['Lực tay trái',range(stats.basic)],['Lực tay phải',range(stats.main)],['Chiêu chính',escape(stats.main?.n || 'Đánh thường')],
           ['Sinh lực tối đa',number(stats.life)],['Nội lực tối đa',number(stats.mana)],['Chính xác',number(stats.ar)],['Né tránh',number(stats.def)],
-        ])+'<p>Chỉ số của cấu hình hiện tại khi mở tab, bao gồm thưởng đang được áp dụng. Không phải sát thương thực nhận sau kháng.</p>';
+        ])+'<p>Chỉ số của cấu hình hiện tại khi mở tab, bao gồm thưởng đang được áp dụng. Không phải sát thương thực nhận sau kháng.</p>'+ (describePoisonDamage(stats.main)?`<p>${escape(describePoisonDamage(stats.main))}</p>`:'');
     } else if(tab==='potential') {
       content=`<p>Điểm tiềm năng chưa cộng: ${number(profile.attrPts)}</p>`+table(['Thuộc tính','Đã cộng','Tổng hiện tại'],
         Object.entries(POTENTIALS).map(([key,name])=>[name,number(profile.attr[key]||0),number(stats[key]) ]));

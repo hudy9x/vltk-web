@@ -14,8 +14,8 @@ export const WAR_ITEMS = {
   resistance: { name:'Hộ Thể Hoàn', description:'+20 điểm kháng mọi loại', color:'#7bc6ff', icon:pill },
   attack: { name:'Thần Lực Hoàn', description:'+25% tốc độ đánh/thi triển', color:'#ffc56e', icon:pill },
   movement: { name:'Thần Hành Hoàn', description:'+25% tốc độ di chuyển', color:'#96e7a1', icon:pill },
-  drum: { name:'Chiến Cổ', description:'+30% sinh lực tối đa và 30 điểm kháng mọi loại cho bản thân và đồng đội trong bán kính 300', color:'#ff8585', icon:drum },
-  command: { name:'Lệnh Bài', description:'+30% di chuyển, +50% tốc độ đánh/thi triển cho bản thân và đồng đội trong bán kính 300', color:'#ffd06e', icon:command },
+  drum: { name:'Chiến Cổ', description:'+30% sinh lực tối đa và 30 điểm kháng mọi loại cho bản thân và đồng đội trong bán kính 410', color:'#ff8585', icon:drum },
+  command: { name:'Lệnh Bài', description:'+30% di chuyển, +50% tốc độ đánh/thi triển cho bản thân và đồng đội trong bán kính 410', color:'#ffd06e', icon:command },
   external: { name:'Ngoại Phổ Hoàn', description:'+50% sát thương vật lý ngoại công', color:'#ffd06e', icon:pill },
   externalCold: { name:'Ngoại Băng Hoàn', description:'+100 băng sát ngoại công', color:'#83dcff', icon:pill },
   internal: { name:'Nội Phổ Hoàn', description:'+100 sát thương vật lý nội công', color:'#eac8ff', icon:pill },
@@ -28,7 +28,7 @@ export const WAR_ITEMS = {
   evasion: { name:'Cao Thiểm Hoàn', description:'+500 né tránh', color:'#a1e6dc', icon:pill },
   accuracy: { name:'Cao Trung Hoàn', description:'+500 chính xác', color:'#ffd06e', icon:pill },
   haste: { name:'Phi Tốc Hoàn', description:'+50% tốc độ đánh/thi triển', color:'#ffc56e', icon:pill },
-  horn: { name:'Kháng Đơn Chi Giác', description:'Giảm 20% phản đòn của đối thủ trong bán kính 300', color:'#eac8ff', icon:command },
+  horn: { name:'Kháng Đơn Chi Giác', description:'Giảm 20% phản đòn của đối thủ trong bán kính 410', color:'#eac8ff', icon:command },
   poisonRes: { name:'Độc Phòng Hoàn', description:'+50 điểm kháng độc', color:'#9ee978', icon:pill },
   coldRes: { name:'Băng Phòng Hoàn', description:'+50 điểm kháng băng', color:'#83dcff', icon:pill },
   lightRes: { name:'Lôi Phòng Hoàn', description:'+50 điểm kháng lôi', color:'#d7b3ff', icon:pill },
@@ -141,7 +141,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
       const player=host.player();
       for(const actor of [player,...(host.actors?.()||[])]) {
         const friendly=actor===player||actor.battlefieldTeam===host.team();
-        if((kind==='horn'?friendly:!friendly)||actor.battlefieldMonster||actor.battlefieldBoss||actor.dead||(actor!==player&&actor.hp<=0)||Math.hypot(actor.x-player.x,(actor.y-player.y)*2)>300)continue;
+        if((kind==='horn'?friendly:!friendly)||actor.battlefieldMonster||actor.battlefieldBoss||actor.dead||(actor!==player&&actor.hp<=0)||Math.hypot(actor.x-player.x,(actor.y-player.y)*2)>410)continue;
         const buffs=shared.get(actor)||{};buffs[kind]=elapsed+WAR_BUFF_SECONDS;shared.set(actor,buffs);
       }
     } else until[kind]=elapsed+WAR_BUFF_SECONDS;

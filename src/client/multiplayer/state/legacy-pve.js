@@ -374,6 +374,7 @@ var onlineWorld = (() => {
       send(6, { target: drop.id });
       return true;
     },
+    drawDamageAreas(context){if(active()&&state)visuals.drawDamageAreas(context);},
     pose(id){return visuals.pose(id);},
     entities() {
       if (!active() || !state) return [];

@@ -68,7 +68,7 @@ impl Game {
                 .collect();
             for target in ready {
                 gate.applied.insert(target);
-                let p = Pending {
+                let mut p = Pending {
                     cast_id: 0,
                     source: gate.source,
                     map: gate.map,
@@ -76,9 +76,10 @@ impl Game {
                     skill: gate.skill.clone(),
                     remaining: 0.0,
                     origin: (0.0, 0.0),
-                    flight: None,
+                    aim: None, flight: None,
                 };
-                self.contact(&p, target, events);
+                self.contact(&mut p, target, events);
+                gate.skill.followups=p.skill.followups;
             }
         }
         gates.retain(|_, gate| self.tick.wrapping_sub(gate.tick) <= 100);
@@ -134,7 +135,7 @@ impl Game {
                 }
                 let (alive, contacts) = flight.advance_bodies(geometry, &room.nav, &bodies, step);
                 for id in contacts {
-                    self.contact(&p, id, events);
+                    self.contact(&mut p, id, events);
                 }
                 if alive {
                     self.pending.push(p);
@@ -143,6 +144,12 @@ impl Game {
             }
             if p.remaining > 0.0 {
                 self.pending.push(p);
+                continue;
+            }
+            if p.skill.shape=="paired" {
+                let position=self.actors.get(&p.target).filter(|_|pvp::can_hit(self,p.source,p.target)).map(|a|(a.x,a.y))
+                    .or_else(||self.rooms.get(&p.map)?.mobs.iter().find(|m|m.id==p.target&&m.hp>0.0).map(|m|(m.x,m.y)));
+                if position.is_some_and(|(x,y)|distance(x,y,p.origin.0,p.origin.1)<=29.0){let target=p.target;self.contact(&mut p,target,events);}
                 continue;
             }
             let Some(room) = self.rooms.get(&p.map) else {
@@ -159,19 +166,19 @@ impl Game {
                         .filter(|_| pvp::can_hit(self, p.source, p.target))
                         .map(|a| (a.x, a.y))
                 });
-            let Some(center) = center else {
-                continue;
-            };
-            if distance(p.origin.0, p.origin.1, center.0, center.1) > p.skill.range * 1.5 + 50.0
-                || !room.nav.clear(p.origin.0, p.origin.1, center.0, center.1)
-            {
+            let center = if p.skill.shape=="self" { Some(p.origin) }
+                else if p.skill.radius>0.0 { p.aim.or(center) } else { center };
+            let Some(center) = center else { continue; };
+            let ignores_terrain=combat_range::ignores_terrain(&p.skill);
+            if !combat_range::can_cast(&p.skill,p.origin,center)
+                || (!ignores_terrain && !room.nav.clear(p.origin.0,p.origin.1,center.0,center.1)) {
                 continue;
             }
             let nearby = |id, x, y| {
-                room.nav.clear(center.0, center.1, x, y)
-                    && (id == p.target
-                        || p.skill.radius > 0.0
-                            && distance(center.0, center.1, x, y) <= p.skill.radius)
+                (ignores_terrain || room.nav.clear(center.0,center.1,x,y))
+                    && if p.skill.radius>0.0 {
+                        combat_range::contains_impact(&p.skill,center,(x,y))
+                    } else { id==p.target }
             };
             let mut targets: Vec<_> = room
                 .mobs
@@ -187,11 +194,11 @@ impl Game {
             );
             targets.sort_by_key(|id| (*id != p.target, *id));
             for id in targets.into_iter().take(p.skill.targets) {
-                self.contact(&p, id, events);
+                self.contact(&mut p, id, events);
             }
         }
     }
-    fn contact(&mut self, p: &Pending, target: u32, events: &mut Vec<EventData>) {
+    fn contact(&mut self, p: &mut Pending, target: u32, events: &mut Vec<EventData>) {
         if p.cast_id != 0 {
             if let Some(gate) = self.contacts.get_mut(&p.cast_id) {
                 gate.candidates.insert(target);
@@ -206,6 +213,22 @@ impl Game {
             return;
         }
         if self.apply_curse(p,target){return;}
+        let position=self.actors.get(&target).filter(|_|pvp::can_hit(self,p.source,target)).map(|a|(a.x,a.y))
+            .or_else(||self.rooms.get(&p.map)?.mobs.iter().find(|m|m.id==target&&m.hp>0.0).map(|m|(m.x,m.y)));
+        if let Some(position)=position {
+            let mut children=Vec::new();
+            let parent=p.skill.clone();
+            for followup in &mut p.skill.followups {
+                if followup.targets==0||self.pending.len()+children.len()>=4096{continue;}
+                followup.targets-=1;
+                let mut skill=parent.clone();
+                skill.id=followup.id;skill.parts=followup.parts;skill.stun=followup.stun;
+                skill.crit=0.0;skill.accuracy=None;skill.followups.clear();skill.projectile=None;
+                skill.targets=1;skill.radius=0.0;skill.shape="paired".into();
+                children.push(Pending{cast_id:0,source:p.source,map:p.map,target,skill,remaining:followup.delay,origin:position,aim: None, flight:None});
+            }
+            self.pending.extend(children);
+        }
         if self.actors.contains_key(&target) {
             pvp::hit(self, p.source, target, &p.skill, events);
             return;

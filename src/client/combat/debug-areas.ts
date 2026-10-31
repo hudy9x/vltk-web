@@ -2,7 +2,7 @@ import { SKILL_RANGE_Y_RATIO } from './config';
 
 /** GM overlay in world coordinates. Mirrors collision geometry, without
  * including target body radii or changing the combat/visual clocks. */
-export function drawSkillDamageAreas(context: CanvasRenderingContext2D): void {
+export function drawSkillDamageAreas(context: CanvasRenderingContext2D, effects = l.combatProjectiles || []): void {
   const seen = new Set<string>();
   context.save();
   context.globalAlpha = 1;
@@ -20,7 +20,7 @@ export function drawSkillDamageAreas(context: CanvasRenderingContext2D): void {
     context.stroke();
   };
   try {
-    for (const effect of l.combatProjectiles || []) {
+    for (const effect of effects) {
       const cast = effect.combat, geo = cast.skill.geo || {};
       if (effect.contactAlive === false || cast.zone !== l.zoneShown || l.town || l.deadT > 0) continue;
       if ((effect.k === 'jm' || effect.k === 'contact') ? effect.age < 0 : effect.t < 0) continue;
@@ -32,6 +32,7 @@ export function drawSkillDamageAreas(context: CanvasRenderingContext2D): void {
         x = effect.x1 + (effect.x2 - effect.x1) * progress;
         y = effect.y1 + (effect.y2 - effect.y1) * progress;
       }
+      if (fixed) y += geo.offsetY || 0;
       if (geo.shape === 'rect') {
         const direction = cast.direction;
         const start = fixed ? cast.origin : { x, y };
@@ -47,7 +48,7 @@ export function drawSkillDamageAreas(context: CanvasRenderingContext2D): void {
         context.closePath(); context.fill(); context.stroke();
       } else {
         ellipse(x, y, fixed ? Math.max(8, (geo.r || geo.area || 12) * QA) : 8,
-          fixed && geo.k === 'self' ? SKILL_RANGE_Y_RATIO : .5);
+          fixed ? 1 / (geo.yScale || (geo.k === 'self' ? 1 / SKILL_RANGE_Y_RATIO : 2)) : .5);
       }
       if (geo.area) ellipse(x, y, geo.area * QA, .5);
     }

@@ -102,6 +102,7 @@
       $1: () => false,
       kn: () => 0,
       G8: () => {},
+      playActorAttackVoice: () => {},
       Y: undefined,
     });
     const skill = { id: 1081, rate: 1, rad: 470 },

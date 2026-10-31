@@ -473,3 +473,22 @@ test('GM learns real 120/150 skills for every faction and maxes only learned 90/
     assert.equal(s.o.skPts, 0);
   }
 });
+
+test('GM damage checkbox forwards drawing to the online combat world only while enabled',()=>{
+  const s=game();let onlineDraws=0;const context={save(){},restore(){},setLineDash(){}};
+  s.onlineWorld={drawDamageAreas(ctx){assert.equal(ctx,context);onlineDraws++;}};
+  const panel=s.nodes.find(node=>node.id==='gm-panel');
+  s.gameMaster.drawSkillRange(context);assert.equal(onlineDraws,0);
+  panel.onchange({target:{id:'gm-show-damage',checked:true}});
+  s.gameMaster.drawSkillRange(context);assert.equal(onlineDraws,1);
+  panel.onchange({target:{id:'gm-show-damage',checked:false}});
+  s.gameMaster.drawSkillRange(context);assert.equal(onlineDraws,1);
+});
+
+test('GM ellipse matches a narrowed impact shape and its upward world offset',()=>{
+  const s=game(),ellipses=[];Object.assign(s,{QA:.81,wf:.5});
+  Object.assign(s.l,{zoneShown:1,fx:[],combatProjectiles:[{k:'jm',kind:0,x:180,y:96,z:0,hz:0,age:1,
+    combat:{zone:1,skill:{id:1070,geo:{k:'spot',r:75/.81,yScale:75/45,offsetY:-12}}}}]});
+  s.CombatEngine.drawSkillDamageAreas({save(){},restore(){},setLineDash(){},beginPath(){},fill(){},stroke(){},ellipse(...args){ellipses.push(args);}});
+  assert.deepEqual(ellipses[0].slice(0,4),[180,98,75,45]);
+});

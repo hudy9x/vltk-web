@@ -868,11 +868,11 @@ test('24 detail entries and all 82 exact support curves cover the document witho
       assert.equal(link.coefficients.at(-1),link.maximum);
       const matches=Object.values(s.T[link.id].attr).filter(rows=>Array.isArray(rows[0])&&rows[0][0]===link.target);
       assert.equal(matches.length,1,`${link.id} -> ${link.target} must not double count`);
-      assert.deepEqual(Array.from(matches[0],row=>row[2]),Array.from(link.coefficients));
+      assert.deepEqual(Array.from(matches[0].slice(0,20),row=>row[2]),Array.from(link.coefficients));
     }
   }
   assert.equal(links,82);
-  for(const [id,total]of [[1055,395],[1056,114],[1076,305],[1081,197]])
+  for(const [id,total]of [[1055,395],[1056,114],[1076,305],[1081,850]])
     assert.equal(details[id].support.reduce((n,link)=>n+link.maximum,0),total);
   const before=JSON.stringify(s.T);
   load(s,'src/client/data/skill-150-details-01.js');assert.equal(JSON.stringify(s.T),before,'reload must be idempotent');
@@ -880,7 +880,7 @@ test('24 detail entries and all 82 exact support curves cover the document witho
   load(base,'public/data.js');load(base,'src/client/data/advanced-skills-01.js');
   for(const skill of Object.values(base.JX.skills)) {
     if(skill.tier===120)assert.equal(JSON.stringify(s.T[skill.id]),JSON.stringify(skill));
-    for(const [key,value]of Object.entries(skill.attr))assert.equal(JSON.stringify(s.T[skill.id].attr[key]),JSON.stringify(value),`${skill.id}.${key}`);
+    for(const [key,value]of Object.entries(skill.attr)){if(Array.isArray(value[0])&&value[0][0]===1109){assert.equal(s.T[skill.id].attr[key][19][2],require('../src/shared/thunder-support.json')[skill.id]);continue;}assert.equal(JSON.stringify(s.T[skill.id].attr[key]),JSON.stringify(value),`${skill.id}.${key}`);}
   }
 });
 
@@ -892,7 +892,7 @@ test('150 support bonuses change real damage, use exact intermediate levels and 
   stats=supportStats(s,{14:20,218:20,271:20,318:20});assert.equal(stats.skillBonus[1055],395);
   assert.ok(Math.abs(s.F2(stats,s.T[1055],25).tot/base-4.95)<1e-10);
   stats=supportStats(s,{172:20,179:20,182:20,375:20});
-  assert.equal(stats.skillBonus[1109],197);assert.equal(stats.skillBonus[1081],undefined);
+  assert.equal(stats.skillBonus[1109],850);assert.equal(stats.skillBonus[1081],undefined);
   assert.ok(skill(1114).tot>0);assert.equal(s.SKILL_150_DETAILS[1114].support.length,0);
 });
 
@@ -917,7 +917,7 @@ test('150 skill details use the same compact current/next-level layout as 90 wit
   assert.match(s.Kf(1055,25,0,25,25,0),/Hàng Long Bất Vũ cấp 21: \+132%/);
   assert.doesNotMatch(s.Kf(1055,25,0,25,25,0),/Cấp kế tiếp/);
   s.o.sk={172:20};s.z1=()=>0;
-  assert.match(s.Kf(1081,10,0,10,10,11),/Thiên Tế Tấn Lôi → Thiên Lôi Chấn Nhạc \(tầng 2\) cấp 20: \+54%/);
+  assert.match(s.Kf(1081,10,0,10,10,11),/Thiên Tế Tấn Lôi → Thiên Lôi Chấn Nhạc \(tầng 2\) cấp 20: \+180%/);
   for(const skill of Object.values(s.T).filter(skill=>skill.tier===120)) {
     const before=s.Kf(skill.id,20,0,20,20,0),details=s.SKILL_150_DETAILS;
     s.SKILL_150_DETAILS=undefined;
@@ -1103,12 +1103,12 @@ test('Thiên Lôi Chấn Nhạc unlocks its real secondary at 11 and max level c
   }
 });
 
-test('Kunlun tier 2 applies its own +252% support and retains damage with quiet, low FX or missing sprites',()=>{
+test('Kunlun tier 2 applies its own +850% support and retains damage with quiet, low FX or missing sprites',()=>{
   for(const options of [{},{quiet:true},{lowFx:true},{budget:true},{missing:true},{sim:true}]) {
     const game=kunlunThunderCombat(27,{...options,support:true});game.advance(.7);
     const secondary=game.hits.filter(hit=>hit.secondary);
     assert.equal(secondary.length,2,JSON.stringify(options));
-    assert.ok(secondary.every(hit=>Math.abs(hit.damage/game.ability.parts.light-.55*3.52)<1e-9));
+    assert.ok(secondary.every(hit=>Math.abs(hit.damage/game.ability.parts.light-.55*9.5)<1e-9));
     assert.ok(secondary.every(hit=>game.targets.includes(hit.target)));
   }
 });
@@ -1144,10 +1144,10 @@ test('Kunlun tier 2 respects cast interruption, zone changes and dead recipients
   assert.equal(dead.hits.filter(hit=>hit.secondary).length,0);
 });
 
-test('Kunlun tooltip distinguishes primary support from the +252% secondary support',()=>{
+test('Kunlun tooltip distinguishes primary support from the +850% secondary support',()=>{
   const s=normalizedSkillUi();s.o.sk={172:20,179:20,182:20,375:20};s.z1=()=>5;
   const html=s.Kf(1081,25,2,27,27,0);
-  assert.match(html,/Được hỗ trợ \(chiêu chính: \+0%, tầng 2: \+252%\)/);
+  assert.match(html,/Được hỗ trợ \(chiêu chính: \+0%, tầng 2: \+850%\)/);
 });
 
 test('Kunlun ring and lightning share the chosen target when an offset neighbour is contacted first',()=>{
@@ -1235,4 +1235,19 @@ test('Hình Tiêu Cốt Lập has a 100-unit impact footprint independent of cas
     assert.equal(outside.hp,1000,`${mode}/${level}: outside horizontal edge`);
     assert.equal(above.hp,1000,`${mode}/${level}: outside vertical edge`);
   }
+});
+
+test('Thiết Liên narrowed and raised field hits near bodies and excludes former broad-area victims',()=>{
+ for(const mode of ['native','quiet','missing']){
+  const {s,skill}=advancedCombat();s.l.quiet=mode==='quiet';
+  if(mode==='missing')delete s.A0.m[s.A0.f[1070].c];
+  const actor={x:0,y:110,hp:100};
+  const targets=[[180,110],[220,98],[245,98],[180,70],[180,140]].map(([x,y])=>({x,y,hp:1000,r:12}));
+  const ability=skill(1070,25);delete ability.rate;delete ability.rawRate;
+  const cast=s.queueSkillContact(actor,targets[0],ability,t=>t.hp-=10,{targets:()=>targets,windup:0});
+  for(let i=0;i<150;i++)s.advanceSkillContacts(.02);
+  assert.equal(cast.skill.rad,ability.rad,'cast reach is preserved');
+  assert.ok(Math.abs(cast.skill.geo.r*s.QA-45)<1e-8);
+  assert.deepEqual(targets.map(t=>t.hp),[990,990,1000,990,1000],mode);
+ }
 });

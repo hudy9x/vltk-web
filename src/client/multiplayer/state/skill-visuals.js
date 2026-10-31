@@ -14,7 +14,10 @@ var OnlineSkillVisuals = function (onContact = () => {}) {
     world.fx=l.fx;world.zoneShown=l.zoneShown;world.town=l.town;world.P=l.P;
     l=world;v=actor;o=actor.profile||real.profile;Y={target:null,keys:{}};
     const token=generation,before=info?new Set(world.fx):null;
-    skillVisualContext={actor,run:fn=>run(actor,fn,info),schedule(fn,delay){
+    skillVisualContext={actor,
+      audioListener:real.context?.audioListener||real.hero,audioSelf:frame?.self,
+      audioWorld:real.context?.audioWorld||real.world,audioActors:frame?.actors,
+      run:fn=>run(actor,fn,info),schedule(fn,delay){
       const handle=setTimeout(()=>{timers.delete(handle);if(token===generation)run(actor,fn,info);},delay);
       timers.add(handle);return handle;
     }};
@@ -104,6 +107,7 @@ var OnlineSkillVisuals = function (onContact = () => {}) {
       caster.dir=kn(meta.targetX-meta.x,meta.targetY-meta.y);
     },
     advance(dt){if(world&&frame){const actor=bodies.get(frame.self)||bodies.values().next().value;if(actor)run(actor,()=>advanceSkillContacts(dt));}},
+    drawDamageAreas(context){if(world&&frame)CombatEngine.drawSkillDamageAreas(context,world.combatProjectiles);},
     pose(id){const actor=bodies.get(id);return actor&&actor.castT>0?{atT:actor.castT,atD:actor.speedCastDuration||.4,dir:actor.dir}:null;},
     cancelPose(id){const actor=bodies.get(id);if(actor){actor.castT=0;actor.actionRevision=(actor.actionRevision||0)+1;}},
     reset(){generation++;for(const timer of timers)clearTimeout(timer);timers.clear();for(const actor of bodies.values()){actor.castT=0;actor.actionRevision=(actor.actionRevision||0)+1;}bodies.clear();world=null;frame=null;},

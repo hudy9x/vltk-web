@@ -2,6 +2,7 @@
 use super::*;
 #[derive(Default)]
 pub struct SupportState {
+    pub war_items:BTreeMap<String,f64>,
     pub active: BTreeMap<u16, f32>,
     pub auras: std::collections::BTreeSet<u16>,
     pub cooldowns: BTreeMap<u16, f32>,
@@ -32,6 +33,7 @@ pub(super) fn resolve(actor: &mut Actor) {
     apply_shared(actor);
     curses::apply_profile(actor);
     battlefield::apply_profile(actor);
+    war_items::apply(actor);
     actor.hp = (hp * actor.profile.hp).clamp(0.0, actor.profile.hp);
     actor.mp = (mp * actor.profile.mp).clamp(0.0, actor.profile.mp);
 }
@@ -263,13 +265,6 @@ impl Game {
         for (&id,a) in &mut self.actors {
             let mut shared=BTreeMap::<u16,SupportSkill>::new();
             if a.hp>0.0&&a.war.is_none_or(|w|w.kind<2) {
-                if a.war.is_some_and(|w|w.kind==1&&w.ready) {
-                    if let Some(definition)=&self.battlefield.definition {
-                        for skill in &definition.sim_support {
-                            if !a.support.auras.contains(&skill.id)&&!a.support.active.contains_key(&skill.id){shared.insert(skill.id,skill.clone());}
-                        }
-                    }
-                }
                 for (source,map,x,y,alignment,war,skill) in &sources {
                     let allied=if war.is_some()||a.war.is_some(){war.zip(a.war).is_some_and(|(x,y)|x.match_id==y.match_id&&x.team==y.team&&x.ready&&y.ready)}else{*alignment==a.party_alignment.unwrap_or(a.profile.alignment)};
                     if *source==id||*map!=a.map||!allied

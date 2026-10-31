@@ -115,6 +115,10 @@ export function registerMultiplayerWebTransport(
     if(!body||typeof body.slot!=='number'||!Number.isInteger(body.slot)||body.slot<0||body.slot>2||typeof body.id!=='string')
       return sendJson(reply,400,{error:'Ô nhân vật hoặc thao tác không hợp lệ.'});
     const action=body.action as {kind?:string;matchId?:number;starts?:number;spent?:number[]}|undefined;
+    if(action?.kind==='warItemBuy'||action?.kind==='warItemUse'){
+      const room=await controlCall('/battlefield/shop',{account:String(user.id),slot:body.slot});
+      (action as typeof action & {room:unknown}).room=room;
+    }
     if(action?.kind==='warPotionBuy'||action?.kind==='warPotionSelect'){
       const room=await controlCall('/battlefield/shop',{account:String(user.id),slot:body.slot});
       // Only trusted room metadata is forwarded to the transactional mutation.

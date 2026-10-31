@@ -333,7 +333,7 @@ fn piercing_fixture(points: &[(f32, f32)], speed: f32) -> Game {
         skill,
         remaining: 0.52,
         origin: (100.0, 100.0),
-        flight: Some(projectiles::Flight::new((100.0, 100.0), points[0])),
+        aim: None, flight: Some(projectiles::Flight::new((100.0, 100.0), points[0])),
     });
     g
 }
@@ -980,7 +980,7 @@ fn slaughter_piercing_hits_other_colors_once_and_never_same_color(){
     for id in 1..=4{let a=g.actors.get_mut(&id).unwrap();a.map=2;a.x=100.0+(id-1)as f32*50.0;a.y=100.0;}
     g.actors.get_mut(&4).unwrap().profile.alignment=2;
     let mut skill=g.actors[&1].profile.skills[0].clone();skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.travel=0.4;skill.projectile=Some(LinearProjectile{range:300.0,width:24.0,speed:1000.0,ignore_terrain:false,pierce:true,area:0.0,homing:false});
-    g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),flight:Some(projectiles::Flight::new((100.0,100.0),(150.0,100.0)))});
+    g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),aim: None, flight:Some(projectiles::Flight::new((100.0,100.0),(150.0,100.0)))});
     for _ in 0..16{g.step();}
     assert_eq!(g.actors[&2].hp,180.0);assert_eq!(g.actors[&3].hp,200.0);assert_eq!(g.actors[&4].hp,180.0);
     assert_eq!(g.events.iter().filter(|e|e.kind==2&&e.source==1).count(),2);
@@ -1029,7 +1029,7 @@ fn party_join_blocks_projectiles_already_in_flight_and_clears_enemy_poison() {
     assert!(g.actors[&2].pvp.poison>0.0);
     skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.poison=0.0;skill.travel=0.4;
     skill.projectile=Some(LinearProjectile{range:300.0,width:24.0,speed:1000.0,ignore_terrain:false,pierce:true,area:0.0,homing:false});
-    g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),flight:Some(projectiles::Flight::new((100.0,100.0),(150.0,100.0)))});
+    g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),aim: None, flight:Some(projectiles::Flight::new((100.0,100.0),(150.0,100.0)))});
     g.command(1,cmd(2,12,2,2,0,0.0,0.0)).unwrap();let invitation=g.parties.invitations[&2].id;
     g.command(2,cmd(2,13,2,invitation,0,0.0,0.0)).unwrap();
     let hp=g.actors[&2].hp;
@@ -1202,7 +1202,7 @@ fn ordinary_pvp_missiles_do_not_damage_players_before_arrival_or_after_dodging()
         let mut skill=g.actors[&1].profile.skills[0].clone();
         skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.stun=0.0;skill.cold=0.0;skill.travel=0.4;
         skill.projectile=Some(LinearProjectile{range:300.0,width:16.0,speed:100.0,ignore_terrain:false,pierce:false,area:0.0,homing:false});
-        g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),flight:Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)))});
+        g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),aim: None, flight:Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)))});
         for _ in 0..10 {g.step();}
         assert_eq!(g.actors[&2].hp,200.0,"no damage at the former fixed deadline");
         if dodge {g.actors.get_mut(&2).unwrap().y=200.0;}
@@ -1525,4 +1525,130 @@ fn pvp_curse_requires_enemy_permissions_and_contact_from_both_clients(){
     g.actors.get_mut(&2).unwrap().party_alignment=Some(g.actors[&1].profile.alignment);
     let mp=g.actors[&1].mp;assert!(!g.cast_curse(1,70,2,false));assert_eq!(g.actors[&1].mp,mp);
     remove_fixture(g);
+}
+
+#[test]
+fn poison_keeps_ticking_during_stun_in_online_training_and_pvp(){
+    let mut training=game();field(&mut training);
+    let mut skill=training.actors[&1].profile.skills[0].clone();
+    skill.parts=[0.0,100.0,0.0,0.0,0.0];skill.poison=2.0;skill.stun=0.0;skill.crit=0.0;
+    let m=&mut training.rooms.get_mut(&2).unwrap().mobs[0];m.hp=1000.0;m.def.hp=1000.0;m.def.res=[0.0;5];m.stun=3.0;
+    status::apply_hit(&skill,m,1,&mut training.rng);
+    training.advance_monsters(&mut vec![]);
+    let m=&training.rooms[&2].mobs[0];assert!((m.hp-997.5).abs()<0.001);assert!(m.stun>0.0);assert!((m.poison-1.95).abs()<0.001);
+    remove_fixture(training);
+    let mut pvp=pvp_fixture();let mut events=vec![];
+    pvp.actors.get_mut(&2).unwrap().stun=3.0;
+    pvp::hit(&mut pvp,1,2,&skill,&mut events);
+    pvp.advance_pvp_status(&mut events);
+    assert!((pvp.actors[&2].hp-199.5).abs()<0.001);assert!(pvp.actors[&2].stun>0.0);
+    remove_fixture(pvp);
+}
+
+#[test]
+fn auto_and_manual_do_not_start_attacks_outside_the_native_vertical_ellipse(){
+    for automatic in [false,true]{
+        let mut g=game();field(&mut g);
+        let mut value=serde_json::to_value(&g.actors[&1].profile.skills[0]).unwrap();
+        value["range"]=serde_json::json!(470.0);value["projectile"]=serde_json::Value::Null;
+        value["geometry"]=serde_json::json!({"scale":0.81,"castYRatio":0.6,"impactYScale":2.0,"ignoreTerrain":false});
+        let skill:Skill=serde_json::from_value(value).unwrap();let skill_id=skill.id;
+        {let a=g.actors.get_mut(&1).unwrap();a.x=100.0;a.y=100.0;a.profile.skills=vec![skill];a.skill=skill_id;}
+        let mob=&mut g.rooms.get_mut(&2).unwrap().mobs[0];mob.x=100.0;mob.y=550.0;let target=mob.id;
+        g.command(1,cmd(2,if automatic{5}else{3},2,if automatic{1}else{target},skill_id,0.0,0.0)).unwrap();
+        let mut events=vec![];g.advance_players(&mut events);
+        assert!(!events.iter().any(|e|e.1==1&&e.2==1),"Auto={automatic}: 450 vertical pixels are outside a 470-unit native ellipse");
+        remove_fixture(g);
+    }
+}
+
+#[test]
+fn native_cast_and_impact_boundaries_match_projected_axes(){
+    let mut g=game();
+    let mut skill=g.actors[&1].profile.skills[0].clone();
+    skill.range=470.0;skill.radius=121.5;
+    skill.geometry=Some(SkillGeometry{scale:0.81,cast_y_ratio:0.6,impact_y_scale:2.0,impact_offset_y:None,ignore_terrain:false});
+    for sign in [-1.0,1.0]{
+        assert!(combat_range::can_cast(&skill,(0.0,0.0),(sign*397.6,0.0)));
+        assert!(!combat_range::can_cast(&skill,(0.0,0.0),(sign*398.0,0.0)));
+        assert!(combat_range::can_cast(&skill,(0.0,0.0),(0.0,sign*238.5)));
+        assert!(!combat_range::can_cast(&skill,(0.0,0.0),(0.0,sign*239.0)));
+        assert!(combat_range::contains_impact(&skill,(0.0,0.0),(sign*138.4,0.0)));
+        assert!(!combat_range::contains_impact(&skill,(0.0,0.0),(0.0,sign*69.4)));
+    }
+    g.actors.get_mut(&1).unwrap().profile.skills=vec![skill];
+    remove_fixture(g);
+}
+
+#[test]
+fn stationary_fields_stay_at_the_cast_point_and_do_not_follow_a_fleeing_target(){
+    for shape in ["spot","self","single"]{
+        let mut g=game();field(&mut g);
+        let mut skill=g.actors[&1].profile.skills[0].clone();
+        skill.range=470.0;skill.radius=if shape=="single"{0.0}else{121.5};skill.shape=shape.into();
+        skill.geometry=Some(SkillGeometry{scale:0.81,cast_y_ratio:0.6,impact_y_scale:2.0,impact_offset_y:None,ignore_terrain:false});
+        let mob=&mut g.rooms.get_mut(&2).unwrap().mobs[0];mob.x=650.0;mob.y=100.0;let target=mob.id;let hp=mob.hp;
+        g.pending.push(Pending{cast_id:0,source:1,map:2,target,skill,remaining:0.0,origin:(100.0,100.0),aim:Some((150.0,100.0)),flight:None});
+        let mut events=vec![];g.advance_attacks(&mut events);
+        assert_eq!(g.rooms[&2].mobs[0].hp,hp,"{shape}: fleeing target cannot drag the hit zone or use the old 1.5x allowance");
+        remove_fixture(g);
+    }
+}
+
+#[test]
+fn stationary_field_only_hits_bodies_overlapping_its_fixed_ellipse(){
+    for (x,y,hit) in [(280.0,100.0,true),(150.0,160.0,true),(150.0,180.0,false),(300.0,100.0,false)]{
+        let mut g=game();field(&mut g);
+        let mut skill=g.actors[&1].profile.skills[0].clone();
+        skill.range=470.0;skill.radius=121.5;skill.shape="spot".into();
+        skill.geometry=Some(SkillGeometry{scale:0.81,cast_y_ratio:0.6,impact_y_scale:2.0,impact_offset_y:None,ignore_terrain:false});
+        let mob=&mut g.rooms.get_mut(&2).unwrap().mobs[0];mob.x=x;mob.y=y;let target=mob.id;let hp=mob.hp;
+        g.pending.push(Pending{cast_id:0,source:1,map:2,target,skill,remaining:0.0,origin:(100.0,100.0),aim:Some((150.0,100.0)),flight:None});
+        g.advance_attacks(&mut vec![]);
+        assert_eq!(g.rooms[&2].mobs[0].hp<hp,hit,"body at ({x},{y})");
+        remove_fixture(g);
+    }
+}
+
+#[test]
+fn battlefield_sims_require_a_real_nearby_allied_emei_source(){
+    let mut g=game();g.actors.clear();
+    let emei=support_fixture("emei");
+    let legacy:Vec<_>=emei.support.as_ref().unwrap().skills.iter().filter(|s|s.shared.is_some()).cloned().collect();
+    g.battlefield.definition=Some(serde_json::from_value(serde_json::json!({"simSupport":legacy,"templates":[],"soldiers":[],"camps":{},"armySpawns":{},"marshals":{}})).unwrap());
+    for (id,name) in [(1,"tianwang"),(2,"emei"),(3,"tianwang")]{
+        g.join(id,format!("sim-{id}"),0,support_fixture(name)).unwrap();
+        let a=g.actors.get_mut(&id).unwrap();a.map=2;a.x=100.0;a.y=100.0;
+        a.war=Some(battlefield::Membership{prefer_players:true,team:0,match_id:7,ready:true,kind:1,points:0});
+    }
+    let base=g.actors[&1].profile.hp;
+    g.actors.get_mut(&2).unwrap().x=510.1;
+    g.refresh_shared_support();assert!(g.actors[&1].support.shared.is_empty(),"template support must not grant global buffs to SIMs");assert_eq!(g.actors[&1].profile.hp,base);
+    g.actors.get_mut(&2).unwrap().x=510.0;
+    g.actors.get_mut(&3).unwrap().x=50.0;
+    g.refresh_shared_support();assert_eq!(g.actors[&1].support.shared.len(),5);assert!(g.actors[&1].profile.hp>base);
+    assert!(g.actors[&3].support.shared.is_empty(),"a supported SIM cannot relay received auras");
+    g.actors.get_mut(&2).unwrap().x=510.1;
+    g.refresh_shared_support();assert!(g.actors[&1].support.shared.is_empty());assert_eq!(g.actors[&1].profile.hp,base);
+    g.actors.get_mut(&2).unwrap().x=100.0;
+    g.refresh_shared_support();assert_eq!(g.actors[&1].support.shared.len(),5);
+    g.actors.get_mut(&2).unwrap().war.as_mut().unwrap().team=1;
+    g.refresh_shared_support();assert!(g.actors[&1].support.shared.is_empty());
+    g.actors.get_mut(&2).unwrap().war.as_mut().unwrap().team=0;
+    g.actors.get_mut(&2).unwrap().hp=0.0;
+    g.refresh_shared_support();assert!(g.actors[&1].support.shared.is_empty());
+    remove_fixture(g);
+}
+
+#[test]
+fn iron_lotus_impact_is_narrower_and_raised_without_changing_cast_distance(){
+    let mut g=game();let mut skill=g.actors[&1].profile.skills[0].clone();
+    skill.id=1070;skill.range=512.0;skill.radius=75.0;
+    skill.geometry=Some(SkillGeometry{scale:0.81,cast_y_ratio:0.6,impact_y_scale:75.0/45.0,impact_offset_y:Some(-12.0),ignore_terrain:true});
+    assert!(combat_range::contains_impact(&skill,(100.0,100.0),(191.0,88.0)));
+    assert!(!combat_range::contains_impact(&skill,(100.0,100.0),(193.0,88.0)));
+    assert!(combat_range::contains_impact(&skill,(100.0,100.0),(100.0,34.0)));
+    assert!(!combat_range::contains_impact(&skill,(100.0,100.0),(100.0,145.0)));
+    assert!(combat_range::can_cast(&skill,(100.0,100.0),(500.0,100.0)));
+    g.actors.get_mut(&1).unwrap().profile.skills=vec![skill];remove_fixture(g);
 }

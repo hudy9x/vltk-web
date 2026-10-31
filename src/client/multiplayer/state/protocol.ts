@@ -65,7 +65,7 @@ export interface PartyMember {id:number;map:number;hp:number;maxHp:number;alignm
 export interface PartyInvitation {id:number;from:number;remaining:number;name:string}
 export interface PartyState {leader:number;reply:{seq:number;code:number};members:PartyMember[];invitations:PartyInvitation[]}
 export interface BattlefieldUnit {appearance?:{sx:'m'|'f';rows:{helm:number;armor:number;weapon:number;horse:number};ride:number;mg:boolean};id:number;name:string;faction:string;sex:number;skin:number;team:number;kind:number;tier:number;points:number;kills:number;playerKills?:number;online:boolean;moving:boolean;ready:boolean;level:number}
-export interface BattlefieldState {id:number;starts:number;ends:number;now:number;phase:'waiting'|'running'|'finished';score:number[];team:number;entryRemaining:number;respawnRemaining:number;deaths:number;potions:number[];selected?:number[];inventory?:{id:number;slot:number;count:number}[];units:BattlefieldUnit[]}
+export interface BattlefieldState {itemBuffs?:Record<string,number>;itemTraps?:{kind:string;x:number;y:number;team:number;expires:number}[];id:number;starts:number;ends:number;now:number;phase:'waiting'|'running'|'finished';score:number[];team:number;entryRemaining:number;respawnRemaining:number;deaths:number;potions:number[];selected?:number[];inventory?:{id:number;slot:number;count:number}[];units:BattlefieldUnit[]}
 export interface WorldState {
   battlefield?:BattlefieldState;
   death?:{killer:number;name:string;player:boolean};
@@ -253,6 +253,9 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
       !Array.isArray(s.units)||s.units.length>160||new Set(s.units.map(u=>u.id)).size!==s.units.length||
       s.units.some(u=>!Number.isSafeInteger(u.id)||u.id<1||typeof u.name!=='string'||u.name.length>96||typeof u.faction!=='string'||
         ![0,1].includes(u.team)||![0,1,2,3].includes(u.kind)||!Number.isSafeInteger(u.points)||u.points<0||typeof u.ready!=='boolean'))throw new Error('Invalid battlefield state');
+    if(s.itemBuffs&&(typeof s.itemBuffs!=='object'||Object.values(s.itemBuffs).some(t=>!Number.isFinite(t)||t<0||t>180)))throw new Error('Invalid item buffs');
+    if(s.itemTraps&&(!Array.isArray(s.itemTraps)||s.itemTraps.length>128||s.itemTraps.some(t=>
+      !['freezeTrap','stunTrap','slowTrap'].includes(t.kind)||![t.x,t.y,t.expires].every(Number.isFinite)||t.team!==s.team)))throw new Error('Invalid item traps');
     for(const actor of actors){const u=s.units.find(u=>u.id===actor.id);if(u)Object.assign(actor,{battlefieldTeam:u.team,battlefieldKind:u.kind,battlefieldReady:u.ready});}
   }
   if(at!==bytes.length)throw new Error('Invalid world size');

@@ -113,6 +113,13 @@ pub(super) fn hit(
     if !can_hit(game, source, target) {
         return;
     }
+    if let Some(accuracy)=input.accuracy.as_ref(){
+        let defense=game.actors[&target].profile.defense.max(0.0)*(1.0-accuracy.ignore.clamp(0.0,100.0)/100.0);
+        let total=accuracy.rating+defense;
+        let raw=if total>0.0{accuracy.rating*100.0/total}else{50.0};
+        let hit=if raw>99.0{95.0}else{raw.max(40.0)};
+        if !chance(&mut game.rng,hit){return;}
+    }
     let source_name=game.actors[&source].name.clone();
     let target_name=game.actors[&target].name.clone();
     let mut skill = input.clone();

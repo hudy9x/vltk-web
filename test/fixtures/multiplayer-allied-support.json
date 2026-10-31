@@ -327,6 +327,10 @@
       "skills": [
         {
           "id": 0,
+          "accuracy": {
+            "rating": 72,
+            "ignore": 0
+          },
           "level": 1,
           "missiles": 1,
           "melee": true,
@@ -360,7 +364,14 @@
           "manaLeech": 0,
           "cost": 0,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 75,
           "radius": 0,
           "shape": "single",
@@ -415,7 +426,14 @@
           "manaLeech": 0,
           "cost": 10,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 384,
           "radius": 0,
           "shape": "line",
@@ -478,9 +496,16 @@
           "manaLeech": 0,
           "cost": 30,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 300,
-          "radius": 48,
+          "radius": 38.88,
           "shape": "spot",
           "targets": 3,
           "projectile": null,
@@ -533,9 +558,16 @@
           "manaLeech": 0,
           "cost": 40,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 480,
-          "radius": 48,
+          "radius": 38.88,
           "shape": "spot",
           "targets": 2,
           "projectile": null,
@@ -588,7 +620,14 @@
           "manaLeech": 0,
           "cost": 60,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 512,
           "radius": 0,
           "shape": "fan",
@@ -947,6 +986,10 @@
       "skills": [
         {
           "id": 0,
+          "accuracy": {
+            "rating": 72,
+            "ignore": 0
+          },
           "level": 1,
           "missiles": 1,
           "melee": true,
@@ -980,7 +1023,14 @@
           "manaLeech": 0,
           "cost": 0,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 75,
           "radius": 0,
           "shape": "single",
@@ -1035,7 +1085,14 @@
           "manaLeech": 0,
           "cost": 20,
           "cooldown": 0.5714285714285714,
+          "castCooldown": 0,
           "attackPercent": 148.5,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 384,
           "radius": 0,
           "shape": "line",
@@ -1098,9 +1155,16 @@
           "manaLeech": 0,
           "cost": 65,
           "cooldown": 0.5714285714285714,
+          "castCooldown": 0,
           "attackPercent": 148.5,
-          "range": 72,
-          "radius": 192,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 1.6666666666666667,
+            "ignoreTerrain": false
+          },
+          "range": 192,
+          "radius": 155.52,
           "shape": "self",
           "targets": 3,
           "projectile": null,
@@ -1153,9 +1217,16 @@
           "manaLeech": 0,
           "cost": 50,
           "cooldown": 0.5714285714285714,
+          "castCooldown": 0,
           "attackPercent": 148.5,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 416,
-          "radius": 72,
+          "radius": 58.32000000000001,
           "shape": "spot",
           "targets": 3,
           "projectile": null,
@@ -1208,7 +1279,14 @@
           "manaLeech": 0,
           "cost": 75,
           "cooldown": 0.5714285714285714,
+          "castCooldown": 0,
           "attackPercent": 148.5,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 512,
           "radius": 0,
           "shape": "line",
@@ -1567,6 +1645,10 @@
       "skills": [
         {
           "id": 0,
+          "accuracy": {
+            "rating": 16676,
+            "ignore": 0
+          },
           "level": 1,
           "missiles": 1,
           "melee": true,
@@ -1600,7 +1682,14 @@
           "manaLeech": 0,
           "cost": 0,
           "cooldown": 0.5714285714285714,
+          "castCooldown": 0,
           "attackPercent": 149,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 75,
           "radius": 0,
           "shape": "single",
@@ -1655,7 +1744,14 @@
           "manaLeech": 0,
           "cost": 20,
           "cooldown": 0.5714285714285714,
+          "castCooldown": 0,
           "attackPercent": 134.1,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 384,
           "radius": 0,
           "shape": "line",
@@ -1718,9 +1814,16 @@
           "manaLeech": 0,
           "cost": 70,
           "cooldown": 0.5714285714285714,
+          "castCooldown": 0,
           "attackPercent": 134.1,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 416,
-          "radius": 96,
+          "radius": 77.76,
           "shape": "spot",
           "targets": 3,
           "projectile": null,
@@ -1773,7 +1876,14 @@
           "manaLeech": 0,
           "cost": 130,
           "cooldown": 0.5714285714285714,
+          "castCooldown": 0,
           "attackPercent": 134.1,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 512,
           "radius": 0,
           "shape": "fan",
@@ -1836,9 +1946,16 @@
           "manaLeech": 0,
           "cost": 150,
           "cooldown": 0.5714285714285714,
+          "castCooldown": 0,
           "attackPercent": 134.1,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": true
+          },
           "range": 512,
-          "radius": 96,
+          "radius": 77.76,
           "shape": "spot",
           "targets": 3,
           "projectile": null,
@@ -2186,6 +2303,10 @@
       "skills": [
         {
           "id": 0,
+          "accuracy": {
+            "rating": 32,
+            "ignore": 0
+          },
           "level": 1,
           "missiles": 1,
           "melee": true,
@@ -2219,7 +2340,14 @@
           "manaLeech": 0,
           "cost": 0,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 75,
           "radius": 0,
           "shape": "single",
@@ -2274,7 +2402,14 @@
           "manaLeech": 0,
           "cost": 15,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 384,
           "radius": 0,
           "shape": "line",
@@ -2337,7 +2472,14 @@
           "manaLeech": 0,
           "cost": 25,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 512,
           "radius": 0,
           "shape": "line",
@@ -2400,7 +2542,14 @@
           "manaLeech": 0,
           "cost": 45,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 512,
           "radius": 0,
           "shape": "line",
@@ -2758,6 +2907,10 @@
       "skills": [
         {
           "id": 0,
+          "accuracy": {
+            "rating": 52,
+            "ignore": 0
+          },
           "level": 1,
           "missiles": 1,
           "melee": true,
@@ -2791,7 +2944,14 @@
           "manaLeech": 0,
           "cost": 0,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 100,
           "radius": 0,
           "shape": "single",
@@ -2846,7 +3006,14 @@
           "manaLeech": 0,
           "cost": 10,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 240,
           "radius": 0,
           "shape": "line",
@@ -2909,7 +3076,14 @@
           "manaLeech": 0,
           "cost": 48,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 512,
           "radius": 0,
           "shape": "ring",
@@ -2972,7 +3146,14 @@
           "manaLeech": 0,
           "cost": 50,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 165,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 512,
           "radius": 0,
           "shape": "wall",
@@ -3335,6 +3516,10 @@
       "skills": [
         {
           "id": 0,
+          "accuracy": {
+            "rating": 112,
+            "ignore": 0
+          },
           "level": 1,
           "missiles": 1,
           "melee": true,
@@ -3368,7 +3553,14 @@
           "manaLeech": 0,
           "cost": 0,
           "cooldown": 0.8,
+          "castCooldown": 0,
           "attackPercent": 100,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 75,
           "radius": 0,
           "shape": "single",
@@ -3423,7 +3615,14 @@
           "manaLeech": 0,
           "cost": 10,
           "cooldown": 1,
+          "castCooldown": 0,
           "attackPercent": 90,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 384,
           "radius": 0,
           "shape": "line",
@@ -3492,9 +3691,16 @@
           "manaLeech": 0,
           "cost": 60,
           "cooldown": 5,
+          "castCooldown": 5,
           "attackPercent": 90,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 420,
-          "radius": 120,
+          "radius": 97.2,
           "shape": "spot",
           "targets": 32,
           "projectile": null,
@@ -3553,9 +3759,16 @@
           "manaLeech": 0,
           "cost": 60,
           "cooldown": 5,
+          "castCooldown": 5,
           "attackPercent": 90,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 420,
-          "radius": 120,
+          "radius": 97.2,
           "shape": "spot",
           "targets": 32,
           "projectile": null,
@@ -3614,9 +3827,16 @@
           "manaLeech": 0,
           "cost": 60,
           "cooldown": 5,
+          "castCooldown": 5,
           "attackPercent": 90,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 420,
-          "radius": 120,
+          "radius": 97.2,
           "shape": "spot",
           "targets": 32,
           "projectile": null,
@@ -3675,9 +3895,16 @@
           "manaLeech": 0,
           "cost": 60,
           "cooldown": 5,
+          "castCooldown": 5,
           "attackPercent": 90,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 420,
-          "radius": 120,
+          "radius": 97.2,
           "shape": "spot",
           "targets": 32,
           "projectile": null,
@@ -3736,9 +3963,16 @@
           "manaLeech": 0,
           "cost": 40,
           "cooldown": 5,
+          "castCooldown": 5,
           "attackPercent": 90,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 420,
-          "radius": 120,
+          "radius": 97.2,
           "shape": "spot",
           "targets": 32,
           "projectile": null,
@@ -3797,9 +4031,16 @@
           "manaLeech": 0,
           "cost": 60,
           "cooldown": 5,
+          "castCooldown": 5,
           "attackPercent": 90,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 420,
-          "radius": 120,
+          "radius": 97.2,
           "shape": "spot",
           "targets": 32,
           "projectile": null,
@@ -3858,9 +4099,16 @@
           "manaLeech": 0,
           "cost": 120,
           "cooldown": 5,
+          "castCooldown": 5,
           "attackPercent": 90,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 420,
-          "radius": 120,
+          "radius": 97.2,
           "shape": "spot",
           "targets": 32,
           "projectile": null,
@@ -4205,6 +4453,10 @@
       "skills": [
         {
           "id": 0,
+          "accuracy": {
+            "rating": 630,
+            "ignore": 0
+          },
           "level": 1,
           "missiles": 1,
           "melee": true,
@@ -4238,7 +4490,14 @@
           "manaLeech": 0,
           "cost": 0,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 154,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 100,
           "radius": 0,
           "shape": "single",
@@ -4293,7 +4552,14 @@
           "manaLeech": 0,
           "cost": 6,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 154,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 54,
           "radius": 0,
           "shape": "single",
@@ -4323,6 +4589,10 @@
         },
         {
           "id": 11,
+          "accuracy": {
+            "rating": 666,
+            "ignore": 0
+          },
           "level": 20,
           "missiles": 1,
           "melee": true,
@@ -4356,9 +4626,16 @@
           "manaLeech": 0,
           "cost": 8,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 154,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 1.6666666666666667,
+            "ignoreTerrain": false
+          },
           "range": 96,
-          "radius": 96,
+          "radius": 77.76,
           "shape": "self",
           "targets": 3,
           "projectile": null,
@@ -4411,9 +4688,16 @@
           "manaLeech": 0,
           "cost": 60,
           "cooldown": 3,
+          "castCooldown": 3,
           "attackPercent": 90,
-          "range": 90,
-          "radius": 144,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 1.6666666666666667,
+            "ignoreTerrain": false
+          },
+          "range": 144,
+          "radius": 116.64000000000001,
           "shape": "self",
           "targets": 3,
           "projectile": null,
@@ -4466,9 +4750,16 @@
           "manaLeech": 0,
           "cost": 20,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 154,
-          "range": 128,
-          "radius": 144,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 1.6666666666666667,
+            "ignoreTerrain": false
+          },
+          "range": 144,
+          "radius": 116.64000000000001,
           "shape": "self",
           "targets": 3,
           "projectile": null,
@@ -4793,6 +5084,10 @@
       "skills": [
         {
           "id": 0,
+          "accuracy": {
+            "rating": 72,
+            "ignore": 0
+          },
           "level": 1,
           "missiles": 1,
           "melee": true,
@@ -4826,7 +5121,14 @@
           "manaLeech": 0,
           "cost": 0,
           "cooldown": 0.5714285714285714,
+          "castCooldown": 0,
           "attackPercent": 146,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 75,
           "radius": 0,
           "shape": "single",
@@ -5174,6 +5476,10 @@
       "skills": [
         {
           "id": 0,
+          "accuracy": {
+            "rating": 8232,
+            "ignore": 0
+          },
           "level": 1,
           "missiles": 1,
           "melee": true,
@@ -5207,7 +5513,14 @@
           "manaLeech": 0,
           "cost": 0,
           "cooldown": 0.8,
+          "castCooldown": 0,
           "attackPercent": 100,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 75,
           "radius": 0,
           "shape": "single",
@@ -5262,7 +5575,14 @@
           "manaLeech": 0,
           "cost": 20,
           "cooldown": 1.5,
+          "castCooldown": 1.5,
           "attackPercent": 100,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 960,
           "radius": 0,
           "shape": "single",
@@ -5617,6 +5937,10 @@
       "skills": [
         {
           "id": 0,
+          "accuracy": {
+            "rating": 404.03999999999996,
+            "ignore": 0
+          },
           "level": 1,
           "missiles": 1,
           "melee": true,
@@ -5650,7 +5974,14 @@
           "manaLeech": 0,
           "cost": 0,
           "cooldown": 0.5,
+          "castCooldown": 0,
           "attackPercent": 175,
+          "geometry": {
+            "scale": 0.81,
+            "castYRatio": 0.6,
+            "impactYScale": 2,
+            "ignoreTerrain": false
+          },
           "range": 75,
           "radius": 0,
           "shape": "single",

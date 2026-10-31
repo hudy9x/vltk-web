@@ -76,10 +76,10 @@ function importDetails(bundlePath) {
     for (const line of section.split('\n').filter(line => /^\s+\| \*\*/.test(line))) {
       const supportId = Number(line.match(/ID: `(\d+)`/)[1]);
       const percentages = [...line.matchAll(/\+(\d+)%/g)].map(m => Number(m[1]));
-      const maximum = percentages.at(-1);
+      let maximum = percentages.at(-1);
       const candidates = Object.values(skills[supportId]?.attr || {}).filter(rows =>
         Array.isArray(rows) && Array.isArray(rows[0]) && rows[0][0] >= 1000 && rows.at(-1)[2] === maximum);
-      const rows = candidates.find(rows => rows[0][0] === id) || candidates.find(rows => {
+      let rows = candidates.find(rows => rows[0][0] === id) || candidates.find(rows => {
         const fx = advanced.fx.f[id] || {};
         return Object.values(fx).includes(rows[0][0]) || Object.values(advanced.fx.f).some(f => f.sk === rows[0][0]);
       }) || (candidates.length === 1 ? candidates[0] : null);
@@ -89,8 +89,14 @@ function importDetails(bundlePath) {
       if (target !== id && !Object.values(advanced.fx.f[id] || {}).includes(target)) {
         throw new Error(`Unresolved secondary support: ${supportId} -> ${id} (${target})`);
       }
+      const balance = require('../src/shared/thunder-support.json')[supportId];
+      if (target === 1109 && balance) {
+        rows = rows.map(row => [row[0], row[1], Math.round(row[2] * balance / maximum)]);
+        maximum = balance;
+      }
       const key = `addskilldamage150_${target}`;
-      (patches[supportId] || (patches[supportId] = {}))[key] = rows;
+      (patches[supportId] || (patches[supportId] = {}))[key] = target === 1109 && balance
+        ? rows.concat(Array.from({length:16}, () => rows.at(-1).slice())) : rows;
       names[target] = heading + (target === id ? '' : ' (tầng phụ)');
       support.push({ id: supportId, target, name: skills[supportId].n,
         coefficients: rows.map(row => row[2]), maximum });

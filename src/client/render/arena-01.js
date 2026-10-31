@@ -435,7 +435,8 @@ var OP = function (A) {
 };
 
 var EP = function (A, n) {
-  if (mapScene.drawGround(A, n)) return;
+  if (mapScene.drawGround(A, n, typeof B0 !== "undefined" && typeof M0 !== "undefined"
+    ? { x: B0.x, y: B0.y, width: M0.w, height: M0.h } : undefined)) return;
   if (!(n && n.complete && n.naturalWidth)) {
     ((A.fillStyle = "#26301f"), A.fillRect(B0.x - 2, B0.y - 2, M0.w + 4, M0.h + 4));
     return;

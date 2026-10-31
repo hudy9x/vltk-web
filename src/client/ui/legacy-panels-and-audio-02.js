@@ -842,7 +842,10 @@ var Mv = function () {
   const t = m("#lvS");
   t && (t.textContent = o.lvl);
   const e = m("#pwS");
-  e && l.P && (e.textContent = F(Math.round(l.P.main.tot)));
+  if (e && l.P) {
+    e.textContent = F(Math.round(l.P.main.tot));
+    e.title = typeof describePoisonDamage === "function" ? describePoisonDamage(l.P.main, F) : "";
+  }
 };
 
 var F8 = function (A) {

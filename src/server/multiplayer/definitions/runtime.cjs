@@ -182,6 +182,11 @@ exports.buildCharacter = function (input, activeBuffs = [], activeAuras = null, 
           heal:heal?Math.max(0,(scope.b0(row,'lifereplenish_v',level)||[0])[0]*duration*2):0};
       }),
       skills,
+      // These attacks have damage-bearing secondary layers, not cosmetic-only FX.
+      followups: Object.fromEntries(skills.filter(skill=>[353,355,1066,1067,1081].includes(+skill.id)).map(skill=>[
+        skill.id,scope.F5(skill).map(event=>({id:event.sid||skill.id,parts:scope.S5(skill,event),delay:event.delay||0.12,
+          targets:scope.Qi(skill,event)||1,stun:event.stun||0})),
+      ])),
       attackTimings: skills.map(skill=>scope.actorAttackTiming(scope.v,skill)),
       timing: { runPercent: 100 * (scope.l.mounted ? stats.speed : stats.speedFoot ?? stats.speed), config: scope.CombatEngine.SPEED_CONFIG },
       moveSpeed: vm.runInContext('150 * actorMovementSpeed(v)', context, { timeout: 1000 }),
@@ -208,7 +213,7 @@ exports.monsterStats = function (level, rank = 'normal') {
 // Probe only the native geometry configuration; never run casts, timers or damage.
 exports.contactGeometry = function (skill) {
   const { scope } = getRuntime();
-  const cast = { skill: structuredClone(skill), maxTargets: 1 };
+  const cast = { skill: scope.CombatEngine.resolveSkillImpactGeometry(structuredClone(skill)), maxTargets: 1 };
   scope.CombatEngine.configureAdvancedSkillImpact(+skill.id, cast);
   const row = scope.T[skill.id];
   const speed = row && scope.b0(row, 'missle_speed_v', skill.L || 1)?.[0];
@@ -231,6 +236,9 @@ exports.contactGeometry = function (skill) {
   return JSON.parse(JSON.stringify({
     geometry: cast.skill.geo || skill.geo || null,
     scale: scope.QA,
+    castYRatio: scope.CombatEngine.SKILL_RANGE_Y_RATIO,
+    impactYScale: cast.skill.geo?.yScale || (cast.skill.geo?.k === 'self' ? 1 / scope.CombatEngine.SKILL_RANGE_Y_RATIO : 2),
+    ...(cast.skill.geo?.offsetY ? {impactOffsetY:cast.skill.geo.offsetY} : {}),
     speed: velocity * scope.K3,
     moving: (missile ? !!kind : skill.melee === false) && !scope.XP.has(+skill.id) && ![362,375].includes(+skill.id),
     homing: kind === 5,

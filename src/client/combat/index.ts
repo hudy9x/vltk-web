@@ -37,3 +37,7 @@ export { enqueueDamageLabel, updateDamageLabels, DAMAGE_LABEL_COLORS, DAMAGE_LAB
 export { advancedSkillLayout, configureAdvancedSkillImpact, spawnAdvancedCastVisual, SOUL_PALM_SPACING } from '../render/skills-150';
 export { spawnSwordFlowerCharge, SWORD_FLOWER_CHARGE_RADIUS } from './skill-effects/kiem-hoa-van-tinh';
 export type { CombatCast, CombatTarget, CombatSkill, SkillGeometry, ContactEffect, CastOptions, ContactHitHandler, ContactImpactHandler, WorldPoint } from './types';
+
+export { describePoisonDamage } from './poison-summary';
+
+export { resolveSkillImpactGeometry } from './skill-geometry';

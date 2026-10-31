@@ -2,8 +2,7 @@ const native = require('./runtime.cjs');
 // Physical flights use Wn/KP movement data, even when a skill is tagged melee.
 // Advanced piercing flags retain the native level gates and fixed rectangles.
 const rectangles = new Set([361, 368, 1075]);
-exports.linearProjectile = function (skill) {
-  const contact = native.contactGeometry(skill);
+exports.linearProjectile = function (skill, contact = native.contactGeometry(skill)) {
   const rectangle = rectangles.has(+skill.id);
   const geometry = contact.geometry;
   const piercing = rectangle || geometry?.k === 'line' && !!geometry.pierce;

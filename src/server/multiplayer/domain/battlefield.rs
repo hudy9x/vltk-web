@@ -3,7 +3,7 @@ use super::*;
 use serde::{Deserialize,Serialize};
 #[derive(Clone,Debug,Deserialize,Serialize)]
 #[serde(rename_all="camelCase")]
-pub struct Supplies {pub match_id:u32,pub starts:f64,pub bought:[BTreeMap<u16,u32>;2],pub selected:[u16;2]}
+pub struct Supplies {pub match_id:u32,pub starts:f64,pub bought:[BTreeMap<u16,u32>;2],pub selected:[u16;2],#[serde(default)]pub item_uses:Vec<war_items::Use>}
 pub const MAP: u32 = 9003;
 pub const WAIT_MAP: u32 = 9004;
 pub const DURATION: f64 = 1200.0;
@@ -43,7 +43,7 @@ pub struct Unit {
     pub bought:[BTreeMap<u16,u32>;2],pub spent:[BTreeMap<u16,u32>;2],pub selected:[u16;2],pub potions:[u32;2],pub potion_at:[f64;2],pub last_hit:f64,pub last_source:u32,
 }
 #[derive(Default)]
-pub struct Battlefield {pub definition:Option<Definition>,pub id:u32,pub starts:f64,pub ends:f64,pub clock:f64,pub finished:bool,pub spawned:bool,pub marshals:bool,pub score:[u32;2],pub units:BTreeMap<u32,Unit>}
+pub struct Battlefield {pub items:war_items::State,pub definition:Option<Definition>,pub id:u32,pub starts:f64,pub ends:f64,pub clock:f64,pub finished:bool,pub spawned:bool,pub marshals:bool,pub score:[u32;2],pub units:BTreeMap<u32,Unit>}
 pub fn rank(points:u32)->u32 { [3000,9000,18000,30000].iter().filter(|&&p|points>=p).count() as u32 }
 pub fn apply_profile(a:&mut Actor) {
     let Some(w)=a.war.filter(|w|w.kind<2) else{return;};
@@ -126,7 +126,7 @@ impl Game {
     fn clear_battlefield(&mut self) {
         self.actors.retain(|_,a|a.war.is_none_or(|w|w.kind==0));
         self.pending.retain(|p|p.map!=MAP);self.contacts.retain(|_,g|g.map()!=MAP);self.events.retain(|e|e.map!=MAP);
-        self.battlefield.units.clear();self.battlefield.score=[0,0];
+        self.battlefield.units.clear();self.battlefield.score=[0,0];self.battlefield.items=Default::default();
     }
     fn spawn_battlefield(&mut self,marshals:bool) {
         let definition=self.battlefield.definition.clone().unwrap();
@@ -140,7 +140,7 @@ impl Game {
                 let tier=match s.rank.as_str(){"captain"=>1,"commander"=>2,"general"=>3,"grandGeneral"=>4,_=>0};
                 let mut profile=definition.templates[0].profile.clone();profile.level=120;profile.hp=s.hp;profile.mp=0.0;profile.regen=0.0;profile.mana_regen=0.0;profile.speed=s.speed*(1.15+tier as f32*0.08);profile.timing=None;
                 profile.support=None;profile.ally_scaling=None;profile.protection=Default::default();profile.res=[35.0;5];profile.defense=s.defense;
-                profile.skills.truncate(1);let skill=&mut profile.skills[0];skill.id=0;skill.parts=[s.damage,0.0,0.0,0.0,0.0];skill.pve=None;skill.cost=0.0;skill.range=55.0;skill.radius=0.0;skill.targets=1;skill.projectile=None;skill.attack_percent=None;skill.cooldown=(1.5*(0.85-tier as f32*0.1)).max(0.25);skill.crit=0.0;skill.leech=0.0;skill.mana_leech=0.0;skill.stun=0.0;skill.cold=0.0;skill.poison=0.0;skill.travel=0.0;
+                profile.skills.truncate(1);let skill=&mut profile.skills[0];skill.id=0;skill.parts=[s.damage,0.0,0.0,0.0,0.0];skill.pve=None;skill.cost=0.0;skill.range=55.0;skill.geometry=None;skill.radius=0.0;skill.targets=1;skill.projectile=None;skill.attack_percent=None;skill.cooldown=(1.5*(0.85-tier as f32*0.1)).max(0.25);skill.crit=0.0;skill.leech=0.0;skill.mana_leech=0.0;skill.stun=0.0;skill.cold=0.0;skill.poison=0.0;skill.travel=0.0;
                 plans.push((u8::from(s.team=="jin"),2,tier,s.name,String::new(),0,s.skin,(s.x,s.y),profile,vec![0],s.respawn_seconds,s.patrol_radius,s.leash_radius));
             }
         } else {
@@ -163,6 +163,7 @@ impl Game {
     pub(super) fn advance_battlefield(&mut self,clock:f64) {
         if self.battlefield.id==0{return;}
         self.battlefield.clock=clock;
+        self.advance_war_items(clock);
         for (&id,u) in &mut self.battlefield.units {
             if u.kind!=0{continue;}
             let Some(bag)=self.actors.get(&id).and_then(|a|a.base_profile.war_supplies.as_ref()).filter(|b|b.match_id==self.battlefield.id&&b.starts==self.battlefield.starts)else{continue;};
@@ -290,7 +291,7 @@ impl Game {
 
     pub fn battlefield_snapshot(&self,id:u32)->Option<serde_json::Value> {
         let a=self.actors.get(&id)?;let w=a.war?;let own=self.battlefield.units.get(&id)?;let clock=self.battlefield.clock;
-        Some(serde_json::json!({"id":w.match_id,"starts":self.battlefield.starts,"ends":self.battlefield.ends,"now":clock,"phase":if self.battlefield.finished{"finished"}else if clock<self.battlefield.starts{"waiting"}else{"running"},"score":self.battlefield.score,"team":w.team,"entryRemaining":(own.ready_at-clock).max(0.0),"respawnRemaining":(own.respawn_at-clock).max(0.0),"deaths":own.deaths,"potions":own.potions,"selected":own.selected,"inventory":(0..2).flat_map(|slot|own.bought[slot].iter().map(move |(&id,&bought)|serde_json::json!({"slot":slot,"id":id,"count":bought.saturating_sub(*own.spent[slot].get(&id).unwrap_or(&0))}))).collect::<Vec<_>>(),
+        Some(serde_json::json!({"id":w.match_id,"starts":self.battlefield.starts,"ends":self.battlefield.ends,"now":clock,"itemBuffs":a.support.war_items.iter().map(|(k,t)|(k,(t-clock).max(0.0))).collect::<BTreeMap<_,_>>(),"itemTraps":self.battlefield.items.traps.iter().filter(|t|t.team==w.team).collect::<Vec<_>>(),"phase":if self.battlefield.finished{"finished"}else if clock<self.battlefield.starts{"waiting"}else{"running"},"score":self.battlefield.score,"team":w.team,"entryRemaining":(own.ready_at-clock).max(0.0),"respawnRemaining":(own.respawn_at-clock).max(0.0),"deaths":own.deaths,"potions":own.potions,"selected":own.selected,"inventory":(0..2).flat_map(|slot|own.bought[slot].iter().map(move |(&id,&bought)|serde_json::json!({"slot":slot,"id":id,"count":bought.saturating_sub(*own.spent[slot].get(&id).unwrap_or(&0))}))).collect::<Vec<_>>(),
             "units":self.battlefield.units.values().filter(|u|u.kind<2||self.actors.contains_key(&u.id)).map(|u|serde_json::json!({"id":u.id,"name":u.name,"faction":u.faction,"sex":u.sex,"skin":u.skin,"appearance":u.appearance,"team":u.team,"kind":u.kind,"tier":u.tier,"points":u.points,"kills":u.kills,"playerKills":u.player_kills,"online":self.actors.get(&u.id).is_some_and(|a|a.war.is_some()),"ready":self.actors.get(&u.id).is_some_and(|a|a.war.is_some_and(|w|w.ready)),"moving":self.actors.get(&u.id).is_some_and(|a|!a.path.is_empty()),"level":if u.kind==2{120}else{200}})).collect::<Vec<_>>() }))
     }
 }
@@ -402,7 +403,7 @@ mod tests {
     fn public_supplies_start_empty_purchase_refresh_does_not_refill_consumed_bottles() {
         let mut g=fixture();start(&mut g);assert_eq!(g.battlefield.units[&1].potions,[0,0]);assert!(!g.battlefield_potion(1,0));
         let clock=g.battlefield.clock;
-        let bag=Supplies{match_id:g.battlefield.id,starts:g.battlefield.starts,bought:[BTreeMap::from([(1,20)]),BTreeMap::new()],selected:[1,0]};
+        let bag=Supplies{match_id:g.battlefield.id,starts:g.battlefield.starts,bought:[BTreeMap::from([(1,20)]),BTreeMap::new()],selected:[1,0],item_uses:vec![]};
         let a=g.actors.get_mut(&1).unwrap();a.base_profile.war_supplies=Some(bag);a.profile.potions.push(Potion{id:1,kind:"life".into(),tier:1,level:1,hp:250.0,mp:0.0,count:0,spent:0});a.base_profile.potions=a.profile.potions.clone();a.hp=100.0;
         g.advance_battlefield(clock);assert_eq!(g.battlefield.units[&1].potions,[20,0]);assert!(g.battlefield_potion(1,0));assert_eq!(g.actors[&1].hp,350.0);
         assert_eq!(g.battlefield.units[&1].potions,[19,0]);g.advance_battlefield(clock+0.1);assert_eq!(g.battlefield.units[&1].potions,[19,0]);assert!(!g.battlefield_potion(1,0));
@@ -490,4 +491,91 @@ mod tests {
         let map:MapDefinition=serde_json::from_value(serde_json::json!({"id":1,"level":1,"town":true,"width":1000,"height":1000,"entry":{"x":100,"y":100},"grid":{"kind":"open"},"monsters":[]})).unwrap();
         restored.install(Definitions{battlefield:None,version:1,town:1,maps:vec![map]}).unwrap();restored.join(1,"account-a".into(),0,profile).unwrap();assert_eq!(restored.actors[&1].map,1);assert_eq!(restored.actors[&1].hp,1000.0);assert_eq!(restored.battlefield.id,0);
     }
+    fn item(g:&mut Game,id:u32,kind:&str,seq:u64){
+        let at=g.battlefield.clock;let a=g.actors.get_mut(&id).unwrap();
+        let record=war_items::Use{seq,kind:kind.into(),at,x:a.x,y:a.y};
+        let bag=a.base_profile.war_supplies.get_or_insert(Supplies{match_id:g.battlefield.id,starts:g.battlefield.starts,bought:Default::default(),selected:[0,0],item_uses:vec![]});
+        bag.item_uses.push(record);
+        g.advance_war_items(at);
+    }
+    #[test]
+    fn quartermaster_area_items_obey_410_team_boundary_and_expire_without_stacking(){
+        let mut g=fixture();start(&mut g);
+        let ally=*g.actors.iter().find(|(_,a)|a.war.is_some_and(|w|w.kind==1&&w.team==0)).unwrap().0;
+        let outside=*g.actors.iter().find(|(id,a)|**id!=ally&&a.war.is_some_and(|w|w.kind==1&&w.team==0)).unwrap().0;
+        for (id,x) in [(1,100.0),(ally,510.0),(outside,510.1),(2,150.0)]{let a=g.actors.get_mut(&id).unwrap();a.x=x;a.y=100.0;}
+        item(&mut g,1,"drum",1);
+        assert_eq!(g.actors[&1].profile.hp,1300.0);assert_eq!(g.actors[&ally].profile.hp,1300.0);
+        assert_eq!(g.actors[&outside].profile.hp,1000.0);assert_eq!(g.actors[&2].profile.hp,1000.0);
+        assert_eq!(g.actors[&ally].profile.res,[30.0;5]);
+        let clock=g.battlefield.clock;g.advance_war_items(clock+1.0);assert_eq!(g.actors[&1].profile.hp,1300.0);
+        support::resolve(g.actors.get_mut(&1).unwrap());assert_eq!(g.actors[&1].profile.hp,1300.0);
+        g.advance_war_items(clock+180.0);assert_eq!(g.actors[&1].profile.hp,1000.0);assert!(g.actors[&1].support.war_items.is_empty());
+        g.advance_war_items(clock+181.0);assert_eq!(g.actors[&1].profile.hp,1000.0);
+    }
+    #[test]
+    fn quartermaster_horn_debuffs_only_living_enemies_and_traps_trigger_once(){
+        let mut g=fixture();start(&mut g);
+        g.actors.retain(|id,_|*id<=2);g.battlefield.units.retain(|id,_|*id<=2);
+        for id in [1,2]{let a=g.actors.get_mut(&id).unwrap();a.x=100.0;a.y=100.0;a.base_profile.protection.reflect=100.0;support::resolve(a);}
+        item(&mut g,1,"horn",1);
+        assert_eq!(g.actors[&1].profile.protection.reflect,100.0);assert_eq!(g.actors[&2].profile.protection.reflect,80.0);
+        item(&mut g,1,"freezeTrap",2);assert_eq!(g.actors[&1].stun,0.0);assert_eq!(g.actors[&2].stun,3.0);
+        assert!(g.battlefield.items.traps.is_empty());
+        g.actors.get_mut(&2).unwrap().stun=0.0;g.advance_war_items(g.battlefield.clock+0.1);assert_eq!(g.actors[&2].stun,0.0);
+        g.actors.get_mut(&2).unwrap().x=700.0;item(&mut g,1,"slowTrap",3);assert_eq!(g.battlefield.items.traps.len(),1);
+        g.advance_war_items(g.battlefield.clock+31.0);assert!(g.battlefield.items.traps.is_empty());
+    }
+    #[test]
+    fn quartermaster_personal_bonuses_apply_once_and_clear_when_leaving(){
+        let mut g=fixture();start(&mut g);
+        let a=g.actors.get_mut(&1).unwrap();a.base_profile.skills[0].phys=true;support::resolve(a);
+        for (seq,kind) in ["external","externalCold","life","resistance","physicalRes","attack","movement","evasion"].iter().enumerate(){item(&mut g,1,kind,seq as u64+1);}
+        let a=&g.actors[&1];assert_eq!(a.profile.hp,1500.0);assert_eq!(a.profile.skills[0].parts[0],150.0);assert_eq!(a.profile.skills[0].parts[2],100.0);
+        assert_eq!(a.profile.res[0],70.0);assert_eq!(a.profile.speed,187.5);assert_eq!(a.profile.defense,500.0);
+        assert_eq!(g.actors[&2].profile.hp,1000.0);
+        g.battlefield_leave(1);assert_eq!(g.actors[&1].profile.hp,1000.0);assert_eq!(g.actors[&1].profile.skills[0].parts[0],100.0);
+    }
+
+    #[test]
+    fn trusted_secondary_damage_releases_after_delay_and_is_not_a_recursive_cast(){
+        let mut g=fixture();start(&mut g);
+        g.actors.retain(|id,_|*id<=2);g.battlefield.units.retain(|id,_|*id<=2);
+        for id in [1,2]{let a=g.actors.get_mut(&id).unwrap();a.x=100.0;a.y=100.0;}
+        let mut skill=g.actors[&1].profile.skills[0].clone();
+        skill.id=1081;skill.parts=[0.0,0.0,0.0,0.0,100.0];
+        skill.followups=vec![definitions::Followup{id:1109,parts:[0.0,0.0,0.0,0.0,200.0],delay:0.3,targets:2,stun:0.0}];
+        g.pending.push(Pending{cast_id:0,source:1,map:MAP,target:2,skill,remaining:0.0,origin:(100.0,100.0),aim: None, flight:None});
+        let mut events=vec![];g.advance_attacks(&mut events);
+        assert_eq!(g.actors[&2].hp,980.0);assert_eq!(g.pending.len(),1);
+        for _ in 0..5{g.advance_attacks(&mut events);}
+        assert_eq!(g.actors[&2].hp,980.0);
+        for _ in 0..2{g.advance_attacks(&mut events);}
+        assert_eq!(g.actors[&2].hp,940.0);assert!(g.pending.is_empty());
+        assert_eq!(events.iter().filter(|e|e.4==1109&&e.1==2).count(),1);
+    }
+    #[test]
+    fn paired_secondary_does_not_chase_a_target_that_leaves_the_impact_point(){
+        let mut g=fixture();start(&mut g);g.actors.retain(|id,_|*id<=2);
+        for id in [1,2]{let a=g.actors.get_mut(&id).unwrap();a.x=100.0;a.y=100.0;}
+        let mut skill=g.actors[&1].profile.skills[0].clone();skill.shape="paired".into();skill.parts=[1000.0,0.0,0.0,0.0,0.0];
+        g.pending.push(Pending{cast_id:0,source:1,map:MAP,target:2,skill,remaining:0.1,origin:(100.0,100.0),aim: None, flight:None});
+        g.actors.get_mut(&2).unwrap().x=200.0;
+        for _ in 0..3{g.advance_attacks(&mut vec![]);}
+        assert_eq!(g.actors[&2].hp,1000.0);
+    }
+    #[test]
+    fn wudu_secondary_restores_physical_hit_and_poison_budget_in_pvp(){
+        let mut g=fixture();start(&mut g);g.actors.retain(|id,_|*id<=2);
+        for id in [1,2]{let a=g.actors.get_mut(&id).unwrap();a.x=100.0;a.y=100.0;}
+        let mut skill=g.actors[&1].profile.skills[0].clone();skill.id=353;skill.parts=[0.0,1000.0,0.0,0.0,0.0];skill.poison=3.0;
+        skill.followups=vec![definitions::Followup{id:354,parts:[300.0,100.0,0.0,0.0,0.0],delay:0.12,targets:3,stun:0.0}];
+        g.pending.push(Pending{cast_id:0,source:1,map:MAP,target:2,skill,remaining:0.0,origin:(100.0,100.0),aim: None, flight:None});
+        let mut events=vec![];for _ in 0..5{g.advance_attacks(&mut events);}
+        assert_eq!(g.actors[&2].hp,940.0);assert!(g.actors[&2].pvp.poison>0.0);
+        assert!(events.iter().any(|e|e.4==354&&e.5==60.0));
+        for _ in 0..61{g.advance_pvp_status(&mut events);}
+        assert!((g.actors[&2].hp-720.0).abs()<0.01,"poison applies 220 after the 60-point direct hit, scaled only once");
+    }
+
 }

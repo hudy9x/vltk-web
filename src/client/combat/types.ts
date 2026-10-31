@@ -28,6 +28,9 @@ export interface SkillGeometry {
   k?: 'line' | 'self' | 'spot' | 'fan';
   shape?: 'rect';
   r?: number;
+  /** Static impact shape in world coordinates. */
+  yScale?: number;
+  offsetY?: number;
   area?: number;
   width?: number;
   len?: number;

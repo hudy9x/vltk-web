@@ -45,10 +45,11 @@ function collideCombatPulse(effect: ContactEffect, x0: number, y0: number, x1: n
     x1 = x0 + Math.cos(cast.direction) * geo.len! * QA;
     y1 = y0 + Math.sin(cast.direction) * geo.len! * QA / 2;
   }
+  if (staticArea && geo.offsetY) { y0 += geo.offsetY; y1 += geo.offsetY; }
   const radius = staticArea
     ? Math.max(8, (geo.r || geo.area || 12) * QA)
     : 8;
-  const yScale = staticArea && geo.k === "self" ? 1 / SKILL_RANGE_Y_RATIO : 2;
+  const yScale = staticArea ? geo.yScale || (geo.k === "self" ? 1 / SKILL_RANGE_Y_RATIO : 2) : 2;
   const extent = geo.shape === "rect" ? geo.width! * QA / 2 : radius;
   const candidates = queryContactTargets(cast, {
     minX: Math.min(x0, x1) - extent, maxX: Math.max(x0, x1) + extent,

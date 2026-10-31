@@ -20,7 +20,7 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
       return result;
     }
   }
-  const { stats, skills, moveSpeed, supports, attackTimings, timing, allyScaling } = native.buildCharacter(profile,activeBuffs,activeAuras,allies);
+  const { stats, skills, moveSpeed, supports, attackTimings, timing, allyScaling, followups } = native.buildCharacter(profile,activeBuffs,activeAuras,allies);
   const result = {
     ...(profile.warSupplies?{warSupplies:structuredClone(profile.warSupplies)}:{}),
     allyScaling,
@@ -38,8 +38,10 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
     timing,
     defense: stats.def,
     res: elements.map((k) => stats.res[k] || 0),
-    skills: skills.map((s,index) => ({
-      id: s.id,...(s.curse?{curse:s.curse}:{}),
+    skills: skills.map((s,index) => {
+      const contact = native.contactGeometry(s), geo = contact.geometry;
+      return ({
+      id: s.id,...(followups?.[s.id]?.length?{followups:followups[s.id].map(event=>({...event,parts:elements.map(k=>event.parts[k]||0)}))}:{}),...(s.useAR?{accuracy:{rating:s.ar||stats.ar||0,ignore:s.ignore||0}}:{}),...(s.curse?{curse:s.curse}:{}),
       level:s.L||1,missiles:Math.max(1,Math.min(16,s.nMis||1)),melee:s.melee!==false,phys:s.phys!==false,
       pve: {
         ...native.damageRules(),series:s.series??stats.series,
@@ -52,12 +54,14 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
       manaLeech: ((s.basic||s.wpn)?stats.manaLeech||0:0)+(s.skMLeech||0),
       cost: s.cost || 0,
       cooldown: Math.max(s.cd || 0, attackTimings[index].cycleSeconds),
+      castCooldown: s.cd || 0,
       attackPercent: 100 * (s.rawRate ?? s.rate ?? 1),
-      range: s.rad || 75,
-      radius: s.geo?.r || 0,
-      shape: s.geo?.k || 'single',
+      geometry: {scale:contact.scale,castYRatio:contact.castYRatio,impactYScale:contact.impactYScale,...(contact.impactOffsetY?{impactOffsetY:contact.impactOffsetY}:{}),ignoreTerrain:contact.ignoreTerrain},
+      range: s.geo?.k === 'self' ? s.geo.r || s.rad || 75 : s.rad || 75,
+      radius: (geo?.r || 0) * contact.scale,
+      shape: geo?.k || 'single',
       targets: Math.max(1, Math.min(32, s.targets || 1)),
-      projectile: s.curse?null:linearProjectile(s),
+      projectile: s.curse?null:linearProjectile(s,contact),
       parts: elements.map((k) => s.parts[k] || 0),
       crit: Math.max(0, Math.min(100, s.crit || 0)),
       stun: Math.max(0, Math.min(100, (s.stun || 0) + (stats.stunAdd || 0))),
@@ -65,7 +69,7 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
       stunSeconds: .8 * (1 + (stats.stunLong || 0) / 100),
       poison: s.parts.poison > 0 ? s.poisonT || 3 : 0,
       travel: s.melee ? 0 : Math.min(1.5, (s.rad || 300) / 500),
-    })),
+    }); }),
   };
   if(includeSupport){
     const persistent=supports.filter(s=>!s.curse&&(s.aura||s.duration>=5));

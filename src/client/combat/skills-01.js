@@ -478,7 +478,13 @@ var mn = (s) => k1(s.req);
 
 var V5 = 0.7;
 
-var Ki = (s) => (s ? `${F(Math.round(s.tot * 0.85))} – ${F(Math.round(s.tot * 1.15))}` : "—");
+var Ki = (s) => {
+  if (!s) return "—";
+  const range = `${F(Math.round(s.tot * 0.85))} – ${F(Math.round(s.tot * 1.15))}`;
+  return s.parts && s.parts.poison > 0
+    ? `${range} <small>(gồm tổng độc trong ${(s.poisonT || 3).toLocaleString("vi-VN", { maximumFractionDigits: 2 })} giây)</small>`
+    : range;
+};
 
 var xt = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190];
 

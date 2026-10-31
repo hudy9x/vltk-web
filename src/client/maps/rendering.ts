@@ -11,12 +11,29 @@ export interface WorldObjectItem { mapObject: MapObject; y: number }
 export function createMapScene(imageFor: (path: string) => HTMLImageElement | null) {
   let active: MapDefinition | undefined;
   function setMap(map: MapDefinition | undefined): void { active = map; }
-  function drawGround(context: CanvasRenderingContext2D, image: HTMLImageElement | null): boolean {
+  function drawGround(context: CanvasRenderingContext2D, image: HTMLImageElement | null, view?: Viewport): boolean {
     if (!active || !image?.complete || !image.naturalWidth) return false;
     const layer = active.layers.find(layer => layer.type === 'ground');
     context.save();
     context.globalAlpha *= layer && 'opacity' in layer ? layer.opacity ?? 1 : 1;
-    context.drawImage(typeof renderImage === 'function' ? renderImage(image) : image, 0, 0, active.size.width, active.size.height);
+    const source = typeof renderImage === 'function' ? renderImage(image) : image;
+    const { width, height } = active.size;
+    const visible = view || { x: 0, y: 0, width, height };
+    // Extend only the ground beyond small maps. Mirror adjacent copies so the
+    // edge pixels meet; objects and navigation retain their authored bounds.
+    for (let y = Math.floor(visible.y / height); y < Math.ceil((visible.y + visible.height) / height); y++) {
+      for (let x = Math.floor(visible.x / width); x < Math.ceil((visible.x + visible.width) / width); x++) {
+        if (x === 0 && y === 0) context.drawImage(source, 0, 0, width, height);
+        else {
+          const flipX = Math.abs(x % 2) === 1, flipY = Math.abs(y % 2) === 1;
+          context.save();
+          context.translate((x + Number(flipX)) * width, (y + Number(flipY)) * height);
+          context.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+          context.drawImage(source, 0, 0, width, height);
+          context.restore();
+        }
+      }
+    }
     context.restore();
     return true;
   }

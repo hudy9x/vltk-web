@@ -133,7 +133,9 @@ var j8 = function () {
     (c0.gain = c0.ctx.createGain()),
     c0.gain.connect(c0.ctx.destination),
     ks(),
-    z8(Me.skill[1081]));
+    z8(Me.skill[1081]),
+    z8("snd/sfx-female.MP3"),
+    z8("snd/sfx-male.MP3"));
 };
 
 var ks = function () {
@@ -160,10 +162,10 @@ var z8 = function (A) {
       }));
 };
 
-var Q8 = function (A, n = 1, t = 1) {
+var Q8 = function (A, n = 1, t = 1, priority = false) {
   if (!A || l.quiet || !c0.ctx || !g1().on) return;
   const e = c0.ctx.currentTime;
-  if (c0.last[A] && e - c0.last[A] < mv) return;
+  if (!priority && c0.last[A] != null && e - c0.last[A] < mv) return;
   const a = c0.buf[A];
   if (!a) {
     z8(A);
@@ -180,6 +182,7 @@ var Q8 = function (A, n = 1, t = 1) {
     r.connect(c0.gain),
     (i.onended = () => c0.voices--),
     i.start());
+  return i;
 };
 
 var _e = function (A) {
@@ -228,6 +231,53 @@ var W3 = (s, A, n = 0.6) => {
 };
 
 var G8 = (s) => Q8(Me.skill[s], 0.5);
+
+// Separate voice budget: never queue crowd shouts for later playback.
+var attackVoicePolicy = { range: 420, nearest: 3, maxVoices: 5, playerCooldown: 0.8,
+  targetCooldown: 1.5, crowdCooldown: 2, crowdChance: 0.25 };
+var attackVoiceState = { last: new WeakMap(), active: new Set() };
+
+var playActorAttackVoice = function (actor) {
+  if (l.quiet || !c0.ctx || !g1().on || actor.dead || actor.hp <= 0 ||
+      actor.battlefieldBoss || actor.battlefieldMonster) return;
+  const context = typeof skillVisualContext !== "undefined" ? skillVisualContext : null;
+  const listener = context?.audioListener || (typeof v !== "undefined" ? v : null);
+  if (!listener) return;
+  // Online monsters also get cosmetic profiles; only roster actors have voices.
+  if (context?.audioActors && !context.audioActors.some(a => a.id === actor.id)) return;
+  const player = context?.audioSelf != null ? actor.id === context.audioSelf : actor === listener;
+  const profile = actor.profile || (player ? o : null);
+  if (!profile) return;
+  const policy = attackVoicePolicy, state = attackVoiceState, now = c0.ctx.currentTime;
+  const world = context?.audioWorld || l, target = world.manTgt;
+  const selected = !player && (target === actor || target?.id != null && target.id === actor.id);
+  const distance = Math.hypot(actor.x - listener.x, actor.y - listener.y);
+  const visible = a => typeof B0 === "undefined" || typeof M0 === "undefined" ||
+    a.x >= B0.x && a.x <= B0.x + M0.w && a.y >= B0.y && a.y <= B0.y + M0.h;
+  const cooldown = player ? policy.playerCooldown : selected ? policy.targetCooldown : policy.crowdCooldown;
+  if (now - (state.last.get(actor) ?? -Infinity) < cooldown) return;
+  if (!player) {
+    if (distance >= policy.range || !visible(actor)) return;
+    const peers = context?.audioActors || (typeof arenaSimulator !== "undefined" ? arenaSimulator?.actors : []) || [];
+    if (!selected && peers.filter(a => a !== actor && (context?.audioSelf == null || a.id !== context.audioSelf) && !a.dead &&
+      !(a.hp <= 0) && !a.battlefieldBoss && !a.battlefieldMonster && visible(a) &&
+      Math.hypot(a.x - listener.x, a.y - listener.y) < distance).length >= policy.nearest) return;
+    // Count a rejected random attempt too, so fast attackers cannot roll every frame.
+    state.last.set(actor, now);
+    if (!selected && Math.random() >= policy.crowdChance) return;
+  }
+  const rank = player ? 2 : selected ? 1 : 0;
+  const victim = [...state.active].sort((a, b) => a.rank - b.rank || a.volume - b.volume)[0];
+  if (state.active.size >= policy.maxVoices && (!victim || victim.rank >= rank)) return;
+  const volume = player ? 0.5 : (selected ? 0.35 : 0.2) * (1 - distance / policy.range);
+  const source = Q8(profile.sex === 1 ? "snd/sfx-female.MP3" : "snd/sfx-male.MP3", volume, 1, player);
+  if (!source) return;
+  if (state.active.size >= policy.maxVoices) { state.active.delete(victim); victim.source.stop(); }
+  const voice = { source, rank, volume }, ended = source.onended;
+  source.onended = () => { state.active.delete(voice); ended?.(); };
+  state.active.add(voice);
+  state.last.set(actor, now);
+};
 
 var o0 = (s) => Q8(Me.ui[s], 0.6);
 

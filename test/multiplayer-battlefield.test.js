@@ -101,3 +101,22 @@ test('own respawn notice follows server time and clears on revival or leaving',(
   next.actors[0].hp=0;next.battlefield.respawnRemaining=7;s.OnlineBattlefield.sync(next,()=>1);assert.equal(nodes.get('public-war-respawn').hidden,false);
   delete next.battlefield;s.OnlineBattlefield.sync(next,()=>1);assert.equal(nodes.get('public-war-respawn').hidden,true);
 });
+
+test('SIM support visuals clear when a snapshot omits expired shared support and return on re-entry',()=>{
+  const module={exports:{}};
+  vm.runInNewContext(esbuild.buildSync({entryPoints:['src/client/multiplayer/webtransport/interpolation.ts'],bundle:true,platform:'node',format:'cjs',write:false}).outputFiles[0].text,{module,exports:module.exports,TextEncoder,TextDecoder,Uint8Array,DataView});
+  let now=100;const effects=[];
+  const s={performance:{now:()=>now},GameWebTransport:module.exports,onlineWorld:{pose:()=>null},kn:()=>0,Jn:1,Ua:1,
+    Jt:()=>({anim:'hero'}),Va:()=>80,ws:()=>1,U1:{92:{pos:'foot'}},F3:(_ctx,sprite)=>effects.push(sprite),L3(){},OnlinePvp:{healthColor:()=>''},nameplateOffset:()=>65};
+  vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/battlefield.js','utf8'),s);
+  const next={tick:2,map:9003,battlefield:{units:[{id:9,kind:1,online:true,moving:false,faction:'wudu',name:'Ngũ Độc',team:0}]},actors:[{id:9,x:100,y:100,hp:100,maxHp:100,life:1,supports:[{skill:92,active:true,shared:true,aura:true}]}]};
+  const ctx={beginPath(){},ellipse(){},fill(){}};
+  const draw=()=>{now+=50;next.tick++;const body=s.OnlineBattlefield.entities(next)[0].remotePlayer;s.OnlineBattlefield.draw(ctx,body,next);return body;};
+  const initial=draw();assert.equal(effects.length,1);
+  delete next.actors[0].supports;
+  const outside=draw();assert.equal(outside,initial,'reuse the existing rendered SIM');
+  assert.equal(outside.supports.length,0);assert.equal(effects.length,1,'old aura must stop drawing');
+  next.actors[0].supports=[{skill:92,active:true,shared:true,aura:true}];
+  draw();assert.equal(effects.length,2,'receiving support again restores the FX');
+  next.actors[0].supports=[];draw();assert.equal(effects.length,2);
+});

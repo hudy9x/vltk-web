@@ -1,5 +1,6 @@
 pub mod battlefield;
 mod attacks;
+mod combat_range;
 pub mod lifecycle;
 pub mod definitions;
 mod loot;
@@ -18,6 +19,7 @@ pub mod pvp;
 pub mod party;
 mod progression;
 pub mod support;
+mod war_items;
 pub mod curses;
 #[path = "../persistence/outbox.rs"]
 pub mod outbox;
@@ -196,6 +198,7 @@ struct Pending {
     skill: Skill,
     remaining: f32,
     origin: (f32, f32),
+    aim: Option<(f32,f32)>,
     flight: Option<projectiles::Flight>,
 }
 pub struct Game {

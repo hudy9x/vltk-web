@@ -97,6 +97,7 @@ declare function Fa(sprite:LegacyRecord,direction:number,age:number,x:number,y:n
 declare function d_(trap:{c:number;x:number;y:number}):void;
 declare function $(): void;
 declare const INV_MAX: number;
+declare const OnlineBattlefield:{state?:{itemBuffs?:Partial<Record<keyof typeof WAR_ITEMS,number>>}};
 declare function k(message: string): void;
 declare function ma(id: number | string): unknown;
 declare function j2(id: number): number;
@@ -1351,6 +1352,6 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
   updateWarNpcs();
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (arenaEnabled && typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { nearestMonsterTarget: arenaTargets.nearestTarget, battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, warBuffs: () => battlefield?.running ? warBuffHud(warRewards.state.buffs) : '', pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, advanceAnimation, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  return { nearestMonsterTarget: arenaTargets.nearestTarget, battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, warBuffs: () => typeof OnlineBattlefield!=='undefined'&&OnlineBattlefield.state?.itemBuffs ? warBuffHud(OnlineBattlefield.state.itemBuffs) : battlefield?.running ? warBuffHud(warRewards.state.buffs) : '', pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, advanceAnimation, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }

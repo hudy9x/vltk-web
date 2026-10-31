@@ -92,3 +92,23 @@ test('the PvP victim confirms its own displayed impact without acting as the att
   await new Promise(resolve=>setTimeout(resolve,5));assert.equal(reports.length,1);assert.equal(reports[0][1],2);
   visuals.reset();
 });
+
+test('GM overlay includes the private online cast world and clears after map reset',()=>{
+  const f=fixture();f.load();
+  const {loadCombatEngine}=require('./helpers/combat-engine');
+  Object.assign(f.game,{QA:.81,wf:.5});loadCombatEngine(f.game,{bridge:false});
+  const localWorld=f.game.l;
+  f.game.GameWebTransport.castSkillVisual=()=>{
+    f.game.l.combatProjectiles.push({k:'jm',kind:0,age:0,x:60,y:6,z:0,hz:0,
+      combat:{zone:140,skill:{id:1070,geo:{k:'spot',r:90/.81}}}});
+  };
+  f.visuals.play(f.event);
+  const ellipses=[];const context={save(){},restore(){},setLineDash(){},beginPath(){},fill(){},stroke(){},ellipse(...args){ellipses.push(args);}};
+  f.game.CombatEngine.drawSkillDamageAreas(context);assert.equal(ellipses.length,0,'local list has no online cast');
+  f.visuals.drawDamageAreas(context);
+  assert.equal(ellipses.length,1);assert.deepEqual(ellipses[0].slice(0,4),[60,20,90,45]);
+  assert.equal(f.game.l,localWorld,'overlay must not replace the main world');
+  assert.equal(localWorld.combatProjectiles?.length||0,0);
+  f.visuals.reset();ellipses.length=0;f.visuals.drawDamageAreas(context);
+  assert.equal(ellipses.length,0,'stale map effects do not remain in the overlay');
+});

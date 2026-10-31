@@ -157,16 +157,23 @@ body.tongkim-controls #public-war-prefer{display:flex}
         body.history.push({id:actor.id,seq:next.tick,timestamp:(next.tick*50)>>>0,effectTime:0,x:actor.x,y:actor.y,dir:body.dir,moving:unit.moving},now);
         const position=body.history.sample(now),dx=position.x-body.x,dy=position.y-body.y,dt=Math.max(0,(now-body.at)/1000);
         if(Math.hypot(dx,dy)>0.01)body.dir=kn(dx,dy);
-        Object.assign(body,{...unit,...actor,x:position.x,y:position.y,battlefieldUnit:true,max:actor.maxHp,hpMax:actor.maxHp,n:unit.name,f:unit.faction,s:unit.sex,dead:actor.hp<=0,mv:position.moving,t:body.t+dt,at:now});
+        Object.assign(body,{...unit,...actor,supports:actor.supports||[],x:position.x,y:position.y,battlefieldUnit:true,max:actor.maxHp,hpMax:actor.maxHp,n:unit.name,f:unit.faction,s:unit.sex,dead:actor.hp<=0,mv:position.moving,t:body.t+dt,at:now});
         // Movement wins over a lingering attack pose. Preserve each actor's gait across brief stops.
         const pose=onlineWorld.pose(actor.id),action=body.dead?'die':body.mv?'run':pose?.atT>0?'at':actor.hurt>0?'hurt':'st';
         if(body.mv)body.runT+=Math.min(dt,.15);
         body.actT=action==='run'?body.runT:body.act===action?body.actT+dt:0;body.act=action;
         result.push({remotePlayer:body,x:body.x,y:body.y});
       }
-      for(const id of bodies.keys())if(!ids.has(id))bodies.delete(id);return result;
+      for(const id of bodies.keys())if(!ids.has(id))bodies.delete(id);
+      for(const trap of next.battlefield.itemTraps||[])result.push({remotePlayer:{...trap,battlefieldUnit:true,warTrap:true},x:trap.x,y:trap.y});
+      return result;
     },
     draw(ctx,actor,next){
+      if(actor.warTrap){
+        const skill=({freezeTrap:345,stunTrap:349,slowTrap:343})[actor.kind],code=A0.f?.[skill]?.c,sprite=A0.m?.[code]?.fly;
+        if(!(sprite&&Fa(sprite,0,Math.max(0,30-(actor.expires-clock())),actor.x,actor.y,true))){ctx.strokeStyle='#83dcff';ctx.beginPath();ctx.ellipse(actor.x,actor.y,24,12,0,0,7);ctx.stroke();}
+        return;
+      }
       const color=actor.team===0?'#ffcc00':'#c77bff',pose=onlineWorld.pose(actor.id);
       const definition=actor.kind===1?Jt(actor.f,actor.s):r0[actor.skin],anim=definition?.anim;
       let elapsed=actor.actT;

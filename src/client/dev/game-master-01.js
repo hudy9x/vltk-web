@@ -73,7 +73,10 @@ var gameMaster = (function () {
   let showSkillRange = false;
   let showDamageAreas = false;
   function drawSkillRange(context) {
-    if (showDamageAreas) CombatEngine.drawSkillDamageAreas(context);
+    if (showDamageAreas) {
+      CombatEngine.drawSkillDamageAreas(context);
+      if (typeof onlineWorld !== 'undefined') onlineWorld.drawDamageAreas?.(context);
+    }
     if (!showSkillRange || !o || !o.fac || !l.P || !l.P.main) return;
     const skill = l.P.main;
     const reach = skill.geo && skill.geo.k === "self" ? skill.geo.r || skill.rad : skill.rad;
