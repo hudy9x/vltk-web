@@ -69,3 +69,24 @@ test('adding the exact equipment requirements equips immediately, persists and c
   assert.equal(wrongSex.attrPts,p.attrPts,'non-attribute requirements cannot spend points');
  }finally{db.close();}
 });
+
+test('online compatible kit persists selected alternative templates and rejects wrong-slot overrides',()=>{
+ const {db,act,store}=fixture();
+ try{
+  const {pick,expected}=native.withProgression(base,s=>{
+   const trader=s.equipmentTrader,weapon=trader.blueCatalog(0,10).find(item=>item.d===0);
+   const pick={kind:'blue',sex:0,level:10,item:weapon.key,series:0,lines:[trader.affixes(weapon,0,0)[0].a],compatibleItems:{}};
+   for(const {slot,item} of trader.compatiblePreview(pick).slice(1)){
+    const alternative=trader.blueCatalog(0,10).find(other=>other.d===item.d&&other.k!==item.k&&other.req.every(([id,value])=>id!==39||value<0||value===s.I[base.fac].id));
+    if(alternative)pick.compatibleItems[slot]=alternative.key;
+   }
+   return {pick,expected:trader.compatiblePreview(pick).map(({item})=>item.n)};
+  });
+  const p=act({kind:'equipmentTrader',operation:'compatible',selection:pick});
+  assert.deepEqual(p.inv.slice(-10).map(item=>item.n),expected);
+  assert.deepEqual(createCharacters(db).read('one',0).profile.inv,p.inv);
+  const before=store.read('one',0).profile;
+  assert.throws(()=>act({kind:'equipmentTrader',operation:'compatible',selection:{...pick,compatibleItems:{armor:pick.item}}}),/phù hợp/);
+  assert.deepEqual(store.read('one',0).profile,before);
+ }finally{db.close();}
+});

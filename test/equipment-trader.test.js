@@ -478,3 +478,54 @@ test('obsolete platina armor cannot migrate into a weapon when its slot has no n
   assert.equal(s.nw(item), false);
   assert.equal(JSON.stringify(item), before);
 });
+
+test('compatible piece clicks change only that slot and receive the displayed templates', async () => {
+  const s = game(), trader = s.equipmentTrader;
+  s.Math.random = () => 0;
+  s.o.lvl = 150;
+  const click = dataset => s.m('#mBody .equipment-trader').onclick({ target: { closest: () => ({
+    dataset, hasAttribute: name => name === 'data-trader-compatible' && 'traderCompatible' in dataset
+  }) } });
+  const pieces = () => Object.fromEntries([...s.html.matchAll(/data-trader-reroll="([^"]+)"[^>]*>[\s\S]*?<small>(.*?)<\/small>/g)].map(match => [match[1], match[2]]));
+  trader.open();
+  await click({ traderChoice: 'slot', value: '0' });
+  let before = pieces();
+  assert.equal(Object.keys(before).length, 10);
+  for (const slot of ['armor', 'helm', 'amulet', 'belt', 'cuff', 'boot', 'pendant', 'ring1', 'ring2']) {
+    await click({ traderReroll: slot });
+    const after = pieces();
+    const d = { armor: 2, helm: 7, amulet: 4, belt: 6, cuff: 8, boot: 5, pendant: 9, ring1: 3, ring2: 3 }[slot];
+    const alternatives = trader.blueCatalog(0, 10).filter(item => item.d === d &&
+      item.req.every(([id, value]) => id !== 39 || value < 0 || value === s.I[s.o.fac].id));
+    if (alternatives.length > 1) assert.notEqual(after[slot], before[slot], slot);
+    else assert.equal(after[slot], before[slot]);
+    for (const other of Object.keys(before)) if (other !== slot) assert.equal(after[other], before[other]);
+    before = after;
+  }
+  await click({ traderReroll: 'weapon' });
+  assert.deepEqual(pieces(), before);
+  await click({ traderCompatible: '' });
+  assert.deepEqual(Array.from(s.o.inv, item => item.n), Object.values(before));
+  const eq = Object.fromEntries(Object.keys(before).map((slot, i) => [slot, s.o.inv[i]]));
+  assert.ok(s.o.inv.every(item => s.Dt(item, eq) >= 2));
+});
+
+test('compatible overrides validate slot and tier before granting any items', () => {
+  const s = game(), trader = s.equipmentTrader;
+  const weapon = trader.blueCatalog(0, 10).find(item => item.d === 0);
+  const pick = { ...selection(s, weapon), level: 10 };
+  const original = trader.compatiblePreview(pick);
+  for (const entry of original.slice(1)) {
+    const candidates = trader.blueCatalog(0, 10).filter(item => item.d === entry.item.d &&
+      item.req.every(([id, value]) => id !== 39 || value < 0 || value === s.I[s.o.fac].id));
+    for (const candidate of candidates) {
+      const preview = trader.compatiblePreview({ ...pick, compatibleItems: { [entry.slot]: candidate.key } });
+      assert.equal(preview.find(piece => piece.slot === entry.slot).item.k, candidate.k);
+      const eq = Object.fromEntries(preview.map(piece => [piece.slot, piece.item]));
+      assert.ok(preview.every(piece => s.Dt(piece.item, eq) >= 2));
+    }
+  }
+  const uid = s.o.uid;
+  assert.throws(() => trader.tradeCompatible({ ...pick, compatibleItems: { armor: weapon.key } }), /phù hợp/);
+  assert.equal(s.o.inv.length, 0); assert.equal(s.o.uid, uid);
+});
