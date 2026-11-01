@@ -19,7 +19,7 @@ export function skillDefense(damageAfterResistance: number, defenseStats: SkillD
   const incomingDamage = Math.max(0, damageAfterResistance - shieldAbsorbed) * generalAbsorption * elementalAbsorption;
   const refundedMana = Math.min(Math.max(0, defenseStats.mana - currentMana), incomingDamage * Math.max(0, defenseStats.dmg2mana || 0) / 100);
   const availableMana = currentMana + refundedMana;
-  const manaShieldPercent = Math.max(0, Math.min(90, defenseStats.manaShield || 0));
+  const manaShieldPercent = Math.max(0, Math.min(100, defenseStats.manaShield || 0));
   const manaAbsorbed = Math.min(availableMana, incomingDamage * manaShieldPercent / 100);
   // Preserve the diagnostic payload keys consumed by runtime/log viewers.
   return { shield: shieldAbsorbed, incoming: incomingDamage, refunded: refundedMana,

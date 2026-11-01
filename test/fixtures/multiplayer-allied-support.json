@@ -1380,7 +1380,7 @@
         "coldReduction": 30,
         "stunReduction": 30,
         "poisonReduction": 30,
-        "manaShield": 74,
+        "manaShield": 100,
         "reflect": 0,
         "reflectPercent": 20,
         "absorption": 0,

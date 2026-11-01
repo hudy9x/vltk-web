@@ -201,7 +201,7 @@ pub(super) fn receive_skill_hit(a: &mut Actor, damage: f32, series: i8) -> (f32,
         amount *= 1.0 - p.from[series as usize].clamp(0.0, 100.0) / 100.0;
     }
     a.mp = (a.mp + amount * p.damage_to_mana.max(0.0) / 100.0).min(a.profile.mp);
-    let shield = a.mp.min(amount * p.mana_shield.clamp(0.0, 90.0) / 100.0);
+    let shield = a.mp.min(amount * p.mana_shield.clamp(0.0, 100.0) / 100.0);
     a.mp -= shield;
     amount -= shield;
     let reflected = p.reflect.max(0.0) + amount * p.reflect_percent.max(0.0) / 100.0;

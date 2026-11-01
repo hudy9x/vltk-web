@@ -300,7 +300,7 @@ var j0 = function (A, trace) {
     (u.lucky = z(n, "lucky_v") + (typeof Lt == "function" ? Lt("luck") + Lt("luck2") : 0)),
     (u.speed = 1 + z(n, "fastwalkrun_p") / 100),
     (u.speedFoot = 1 + (z(n, "fastwalkrun_p") - d) / 100),
-    (u.manaShield = E(z(n, "manashield_p"), 0, 90)),
+    (u.manaShield = E(z(n, "manashield_p"), 0, 100)),
     (u.skillEnh = z(n, "skill_enhance")),
     (u.heavy = E(z(n, "enhancehit_rate"), 0, 50)),
     (u.block = E(z(n, "block_rate"), 0, 50)),
