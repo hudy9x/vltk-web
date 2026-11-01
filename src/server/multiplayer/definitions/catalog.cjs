@@ -42,7 +42,7 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
       const contact = native.contactGeometry(s), geo = contact.geometry;
       return ({
       id: s.id,...(followups?.[s.id]?.length?{followups:followups[s.id].map(event=>({...event,parts:elements.map(k=>event.parts[k]||0)}))}:{}),...(s.useAR?{accuracy:{rating:s.ar||stats.ar||0,ignore:s.ignore||0}}:{}),...(s.curse?{curse:s.curse}:{}),
-      level:s.L||1,missiles:Math.max(1,Math.min(16,s.nMis||1)),melee:s.melee!==false,phys:s.phys!==false,
+      level:s.L||1,missiles:+s.id===1063?3:Math.max(1,Math.min(16,s.nMis||1)),melee:s.melee!==false,phys:s.phys!==false,
       pve: {
         ...native.damageRules(),series:s.series??stats.series,
         seriesResistance:s.series5||0,anti:elements.map(k=>stats.anti?.[k]||0),

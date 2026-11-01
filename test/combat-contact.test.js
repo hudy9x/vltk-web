@@ -704,8 +704,8 @@ test('three separate rays hitting one monster produce three blooms and three ind
   run(s, 1.5);
   assert.equal(s.flowers.length, 3);
   assert.ok(s.flowers.every(f => f.center.x === 180 && f.center.y === 0));
-  assert.equal(target.hp, 60, 'One existing primary hit plus one secondary hit per lotus');
-  run(s, 1); assert.equal(target.hp, 60);
+  assert.equal(target.hp, 40, 'Three independent primary hits plus one secondary hit per lotus');
+  run(s, 1); assert.equal(target.hp, 40);
 });
 
 test('a single Bang Tung impact creates one real lotus sprite and an 80-radius field; nearby AoE hits do not spawn more flowers', () => {
@@ -743,7 +743,7 @@ test('quiet and low-FX combat retain one lotus field per missile and the same da
     const missiles = s.l.combatProjectiles.slice();
     for (const missile of missiles) missile.ang = missiles[1].ang;
     run(s, 1.5);
-    assert.equal(s.flowers.length, 3); assert.equal(target.hp, 60);
+    assert.equal(s.flowers.length, 3); assert.equal(target.hp, 40);
     if (quiet) assert.equal(s.l.fx.length, 0);
   }
 });
@@ -995,4 +995,13 @@ test('SIM snow uses its own caster, damage bonuses and allowed targets; cancella
  run(s,1.5);assert.equal(middle.hp,90);assert.equal(excluded.hp,100);assert.equal(s.v,s.hero);
  const cancelled=simulatorCastWorld(337),later=enemy(cancelled,350);cancelled.cast(later,()=>[later]);
  cancelled.valid=false;run(cancelled,2);assert.equal(later.hp,100);
+});
+
+test('Bang Tung keeps two to five independent primary contacts plus its existing lotus damage',()=>{
+  for(const count of [2,3,4,5])for(const quiet of [false,true]) {
+    const s=lotusWorld({state:{quiet}}),target=enemy(s,40);target.hp=10000;
+    s.skill.nMis=count;launch(s);run(s,2);
+    assert.equal(s.flowers.length,count,`${count}/${quiet}: each impacting missile keeps its lotus`);
+    assert.equal(target.hp,10000-count*20,`${count}/${quiet}: primary and lotus both add damage`);
+  }
 });

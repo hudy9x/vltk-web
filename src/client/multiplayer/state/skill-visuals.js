@@ -51,6 +51,9 @@ var OnlineSkillVisuals = function (onContact = () => {}) {
         };
         collect(event.skill);
         addSprites(event.skill,true);
+        if (+event.skill === 1065 && A0.m[148]?.fly?.f) {
+          urls.add(A0.m[148].fly.f);primary.add(A0.m[148].fly.f);
+        }
         // Form 12 renders its child as the primary projectile (the G3 rule).
         // Other event children are optional impacts: prefetch them, but a slow
         // secondary image must never hold the entire primary release hostage.

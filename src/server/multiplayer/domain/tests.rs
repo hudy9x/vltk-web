@@ -1854,3 +1854,55 @@ fn emei_secondary_ring_damage_keeps_its_own_skill_id() {
         remove_fixture(g);
     }
 }
+
+#[test]
+fn ice_peacock_blades_keep_full_native_damage_per_contact_for_mobs_and_players() {
+    for pvp in [false,true] {for (y,count) in [(100.0,3),(106.0,2),(120.0,1),(180.0,0)] {
+        let mut g=if pvp {pvp_fixture()} else {piercing_fixture(&[(250.0,y)],100.0)};
+        let mut skill=g.actors[&1].profile.skills[0].clone();skill.id=1063;
+        skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.crit=0.0;skill.stun=0.0;skill.cold=0.0;skill.travel=0.4;
+        skill.projectile=Some(LinearProjectile{range:400.0,width:16.0,speed:100.0,ignore_terrain:false,pierce:false,area:96.0*0.81,homing:false});
+        let target=if pvp {
+            g.rooms.get_mut(&2).unwrap().mobs.clear();let a=g.actors.get_mut(&2).unwrap();a.x=250.0;a.y=y;a.hp=10000.0;2
+        } else {let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];m.hp=10000.0;m.id};
+        g.pending.clear();g.pending.push(Pending{cast_id:0,source:1,map:2,target,skill,remaining:0.52,origin:(100.0,100.0),aim:None,
+            flight:Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)))});
+        let mut events=vec![];for _ in 0..100 {g.advance_attacks(&mut events);}
+        let hits:Vec<_>=events.iter().filter(|event|event.1==2&&event.3==target).collect();
+        assert_eq!(hits.len(),count,"pvp={pvp}, y={y}");
+        assert!(hits.iter().all(|hit|(hit.5-if pvp {20.0}else{100.0}).abs()<1e-5));
+        remove_fixture(g);
+    }}
+}
+
+#[test]
+fn bang_tung_two_to_five_missiles_keep_primary_and_lotus_damage() {
+    for count in [2,3,4,5] {
+        let mut g=piercing_fixture(&[(150.0,100.0)],100.0);
+        let target=g.rooms[&2].mobs[0].id;g.rooms.get_mut(&2).unwrap().mobs[0].hp=10000.0;
+        let p=&mut g.pending[0];p.skill.id=336;p.skill.missiles=count;p.skill.parts=[10.0,0.0,0.0,0.0,0.0];p.skill.crit=0.0;
+        p.skill.projectile.as_mut().unwrap().pierce=false;
+        p.skill.followups=vec![definitions::Followup{id:382,parts:[0.0,0.0,2.5,0.0,0.0],delay:0.0,targets:3,stun:0.0,crit:None}];
+        let mut events=vec![];for _ in 0..100 {g.advance_attacks(&mut events);}
+        assert_eq!(events.iter().filter(|event|event.1==2&&event.3==target&&event.4==336).count(),count as usize);
+        assert_eq!(events.iter().filter(|event|event.1==2&&event.3==target&&event.4==382).count(),count as usize);
+        assert_eq!(g.rooms[&2].mobs[0].hp,10000.0-count as f32*12.5);
+        remove_fixture(g);
+    }
+}
+
+#[test]
+fn ice_peacock_adds_five_ten_percent_shards_per_blade_without_primary_splash() {
+    for level in [10,11,28] {
+        let mut g=piercing_fixture(&[(150.0,100.0)],100.0);
+        let target=g.rooms[&2].mobs[0].id;g.rooms.get_mut(&2).unwrap().mobs[0].hp=10000.0;
+        let p=&mut g.pending[0];p.skill.id=1063;p.skill.level=level;p.skill.parts=[20.0,0.0,80.0,0.0,0.0];p.skill.crit=0.0;
+        p.skill.projectile.as_mut().unwrap().pierce=false;p.skill.projectile.as_mut().unwrap().area=0.0;
+        let mut events=vec![];for _ in 0..100 {g.advance_attacks(&mut events);}
+        assert_eq!(events.iter().filter(|event|event.1==2&&event.3==target&&event.4==1063).count(),3);
+        let shards:Vec<_>=events.iter().filter(|event|event.1==2&&event.3==target&&event.4==1064).collect();
+        assert_eq!(shards.len(),if level>=11 {15}else{0});assert!(shards.iter().all(|hit|hit.5==10.0));
+        assert_eq!(g.rooms[&2].mobs[0].hp,if level>=11 {9550.0}else{9700.0});
+        remove_fixture(g);
+    }
+}

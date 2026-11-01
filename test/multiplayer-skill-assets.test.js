@@ -112,3 +112,13 @@ test('GM overlay includes the private online cast world and clears after map res
   f.visuals.reset();ellipses.length=0;f.visuals.drawDamageAreas(context);
   assert.equal(ellipses.length,0,'stale map effects do not remain in the overlay');
 });
+
+test('Thuy Anh preloads the Bang Tam mist sheet before replaying its fairy and trail',async()=>{
+  const f=fixture();f.load();f.event.skill=1065;
+  f.game.T[1065]={};f.game.A0.f[1065]={c:1};f.game.A0.m[148]={fly:{f:'fx/mist.webp'}};
+  const mist=new EventTarget();mist.complete=false;const primary=f.game.bA();
+  f.game.bA=url=>url==='fx/mist.webp'?mist:primary;
+  const pending=f.visuals.play(f.event);assert.equal(f.calls.length,0);
+  mist.complete=true;mist.dispatchEvent(new Event('load'));await pending;
+  assert.equal(f.calls.length,1);f.visuals.reset();
+});

@@ -11128,6 +11128,10 @@
   });
   // Vô Ảnh Xuyên: double flight speed at every level (frames use this curve).
   skills[1069].attr.missle_speed_v = skills[1069].attr.missle_speed_v.map(speed => speed * 2);
+  // Preserve the level-1 endpoint and reach the approved level-28 balance.
+  const peacockLevels = Math.max(36, skills[1063].attr.physicsenhance_p.length);
+  skills[1063].attr.physicsenhance_p = Array.from({length:peacockLevels}, (_, i) => Math.round(90 + 160 * i / 27));
+  skills[1063].attr.colddamage_v = Array.from({length:peacockLevels}, (_, i) => [Math.round(60 + 340 * i / 27), 0, Math.round(300 + 300 * i / 27)]);
   Object.assign(window.JX.skills, skills);
   for (const skill of Object.values(skills)) {
     skill.book = skill.tier === 150 ? "bk150" : "bk120";

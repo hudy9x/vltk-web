@@ -7,6 +7,8 @@ import { resolveSpeed } from '../speed/runtime';
 import type { ResolvedSpeed } from '../speed/types';
 import { playSkillSound } from './audio/runtime';
 import { advancedSkillLayout } from '../render/skills-150';
+import { spawnSnowTrailVisual } from './snow-trail';
+import { configureIcePeacockImpact } from './skill-effects/bang-tuoc-hoat-ky';
 declare function actorAttackTiming(actor: CombatTarget, skill: CombatSkill): ResolvedSpeed;
 // Secondary fields created synchronously at release inherit the same tick remainder.
 let releaseStep: number | undefined;
@@ -26,12 +28,12 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
     actor,
     skill,
     ignoreTerrain: skillIgnoresTerrain(skill),
-    onHit: contact => {
+    onHit: (contact, ability) => {
       if (!impactSoundPlayed && !skill.ev2) {
         impactSoundPlayed = true;
         playSkillSound(contact, skill.id || 0, 'hit');
       }
-      onHit(contact);
+      onHit(contact, ability);
     },
     onImpact: options.onImpact,
     duration: options.duration,
@@ -50,6 +52,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
   };
   let impactSoundPlayed = false;
   if (blocked) return cast;
+  if (+skill.id! === 1063 && !skill.ev2) configureIcePeacockImpact(cast);
   if (+skill.id! === 1075 && !skill.ev2) {
     // Same fixed forward rectangle as Vân Long Kích. Keep the original
     // skill passed to G3 so Giang Hải still plays its own traveling wave.
@@ -117,7 +120,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
           ang: Y3(target.x - actor.x, target.y - actor.y),
           staticArea: !!area,
         };
-        const swords = !skill.ev2 && [328,1061].includes(Number(skill.id));
+        const swords = !skill.ev2 && [328,1061,1063].includes(Number(skill.id));
         const placements = swords ? advancedSkillLayout(Number(skill.id),actor,target) || [-22,0,22].map(side=>({
           x:actor.x-Math.sin(cast.direction)*side,
           y:actor.y-14+Math.cos(cast.direction)*side/2, angle:cast.direction,
@@ -128,6 +131,10 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
           (l.combatProjectiles || (l.combatProjectiles = [])).push(contact);
           if (!l.quiet && !options.hideFallbackVisual) l.fx.push(contact);
         }
+      }
+      if (+skill.id! === 1065 && !skill.ev2) {
+        const fairy = (l.combatProjectiles || []).find(effect => effect.combat === cast);
+        spawnSnowTrailVisual(cast, target, fairy?.k === 'jm' ? (fairy.spd || 24) * K3 : fairy?.k === 'contact' ? fairy.speed : 432);
       }
       // One sound per primary release, shared by world combat and arena.
       if (!skill.ev2) {

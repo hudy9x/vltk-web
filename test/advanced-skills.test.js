@@ -429,18 +429,21 @@ test('Băng Tước Hoạt Kỳ sends exactly three blades from one origin in a 
   }
 });
 
-test('Băng Tước Hoạt Kỳ splashes within 96 without multiplying damage from overlapping blades',()=>{
+test('Băng Tước Hoạt Kỳ keeps primary blades separate from five 10% secondary rays',()=>{
   for(const mode of ['normal','quiet','budget']) {
     const {s,skill}=advancedCombat(),target={x:140,y:0,hp:100,r:12};
-    const near={x:135,y:26,hp:100,r:12},far={x:140,y:110,hp:100,r:12},hits=[];
+    const near={x:156,y:26,hp:100,r:12},far={x:140,y:110,hp:100,r:12},hits=[],secondary=[];
     if(mode==='quiet')s.l.quiet=true;
     if(mode==='budget')for(let i=0;i<165;i++)s.l.fx.push({k:'boom',t:0,life:5,x:0,y:0});
-    const cast=s.queueSkillContact(s.v,target,skill(1063),hit=>hits.push(hit),{targets:()=>[target,near,far],windup:0});
-    assert.equal(cast.emitted,3);assert.equal(cast.skill.geo.area,96);assert.equal(hits.length,0);
+    const cast=s.queueSkillContact(s.v,target,skill(1063),(hit,ability)=> (ability?.ev2?secondary:hits).push(hit),{targets:()=>[target,near,far],windup:0});
+    assert.equal(cast.emitted,3);assert.equal(cast.skill.geo.area,0);assert.equal(hits.length,0);
     for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
-    assert.equal(hits.filter(hit=>hit===target).length,1,mode);
-    assert.equal(hits.filter(hit=>hit===near).length,1,mode);
+    assert.equal(hits.filter(hit=>hit===target).length,3,mode);
+    assert.equal(hits.filter(hit=>hit===near).length,0,mode);
     assert.equal(hits.filter(hit=>hit===far).length,0,mode);
+    assert.equal(secondary.filter(hit=>hit===target).length,15,mode);
+    assert.ok(secondary.some(hit=>hit===near));
+    assert.ok(!secondary.includes(far));
   }
 });
 
@@ -738,7 +741,7 @@ test('all 24 level-150 primary skills register physical contacts within their ca
     const target={x:45,y:0,hp:100,r:30}, def=s.T[entry.id];let hits=0;
     const skill=s.F2(stats,def,25);
     assert.ok(skill.tot>0,def.n);
-    const cast=s.queueSkillContact(s.v,target,skill,()=>{hits++;},{targets:()=>[target],windup:0});
+    const cast=s.queueSkillContact(s.v,target,skill,(_target,ability)=>{if(!ability?.ev2)hits++;},{targets:()=>[target],windup:0});
     assert.ok(cast.emitted>0,entry.name);
     assert.ok(s.l.combatProjectiles.filter(effect=>effect.combat===cast).every(effect=>effect.k==='jm'),entry.name);
     const missile=s.l.combatProjectiles[0];
@@ -748,8 +751,8 @@ test('all 24 level-150 primary skills register physical contacts within their ca
     if(entry.id===1078)assert.equal(cast.pulse,6,'seven Thái Thanh pulses');
     else if(entry.id===1081)assert.equal(cast.pulse,4,'five Thiên Lôi pulses');
     else if(entry.id===1076)assert.equal(cast.pulse,2,'three Tật Hỏa pulses');
-    else assert.equal(cast.hits.get(target),1,`${entry.id} ${def.n} primary quota`);
-    assert.equal(hits,entry.id===1078?7:entry.id===1081?5:entry.id===1076?3:1,`${entry.id} ${def.n}`);
+    else assert.equal(cast.hits.get(target),entry.id===1063?3:1,`${entry.id} ${def.n} primary quota`);
+    assert.equal(hits,entry.id===1078?7:entry.id===1081?5:entry.id===1076||entry.id===1063?3:1,`${entry.id} ${def.n}`);
   }
 });
 
@@ -940,7 +943,7 @@ test('actual startup normalization preserves all 82 support links and both direc
   const main=s.Kf(1063,25,0,25,25,0);
   assert.match(main,/Tầng 2: Băng Ngưng Hàn Yên/);assert.match(main,/Số tia: 5/);
   assert.match(main,/Được hỗ trợ/);assert.match(main,/Băng Tung Vô ảnh/);
-  assert.match(main,/Băng sát: 1370 đến 2383 điểm/);
+  assert.match(main,/Băng sát: 362 đến 567 điểm/);
   assert.doesNotMatch(main,/<table|<details|Cơ chế tham khảo/);
   const support=s.Kf(102,0,0,0,1,1);
   assert.match(support,/Hỗ trợ sát thương cho:/);assert.match(support,/Thủy Anh Man Tú: \+1%/);
@@ -1290,4 +1293,98 @@ test('Nga Mi overlapping swords also keep separate hits against the player body'
     for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
     assert.equal(s.l.life,100000-(id===328?3:5)*4000);
   }
+});
+
+test('Ice Peacock native damage stays whole on each of one, two or three blade contacts',()=>{
+  for(const [y,count] of [[0,3],[5,2],[12,1]])for(const mode of ['native','quiet','missing']) {
+    const {s,skill}=advancedCombat(),ability=skill(1063,25),target={x:150,y:0,hp:100000,r:1};
+    s.l.quiet=mode==='quiet';if(mode==='missing')delete s.A0.m[s.A0.f[1063].c];
+    const parts=JSON.stringify(ability.parts),damage=ability.tot;
+    const cast=s.queueSkillContact(s.v,target,ability,(t,ability)=>t.hp-=ability?Object.values(ability.parts).reduce((a,b)=>a+b,0):damage,{targets:()=>[target],windup:0,maxHits:()=>1});
+    finishAttackPose(s);target.y=y;
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.equal(cast.hits.get(target),count,`${y}/${mode}`);
+    assert.equal(JSON.stringify(cast.skill.parts),parts,'never divide per-blade native damage');
+    assert.ok(Math.abs(target.hp-(100000-count*damage*1.5))<1e-6);
+  }
+});
+
+test('Thuy Anh releases a fairy and the Bang Tam snow patches in eight fixed directions',()=>{
+  for(let dir=0;dir<8;dir++) {
+    const {s,skill}=advancedCombat();load(s,'src/client/data/status-effects-01.js');const caster={x:500,y:500,hp:100},angle=dir*Math.PI/4;
+    const target={x:caster.x+Math.cos(angle)*350,y:caster.y+Math.sin(angle)*175,hp:100000,r:12};
+    const cast=s.queueSkillContact(caster,target,skill(1065,25),()=>{},{targets:()=>[],windup:0});
+    finishAttackPose(s,caster);
+    const fairy=s.l.combatProjectiles.filter(e=>e.combat===cast);
+    const mist=s.l.fx.filter(e=>e.s===s.A0.m[148].fly);
+    assert.equal(fairy.length,1);assert.ok(mist.length>=4);
+    assert.equal(mist[0].x,caster.x);assert.equal(mist[0].y,caster.y-14);
+    assert.ok(Math.abs(mist[0].t)<1e-8);
+    assert.equal(mist.at(-1).x,target.x);assert.equal(mist.at(-1).y,target.y-14);
+    assert.ok(mist.every(e=>e.cosmetic&&!e.combat));
+    assert.ok(mist.slice(1).every((e,i)=>e.t<mist[i].t));
+    const positions=mist.map(e=>[e.x,e.y]);caster.x-=200;target.x+=200;
+    s.advanceSkillContacts(.2);
+    assert.deepEqual(mist.map(e=>[e.x,e.y]),positions);
+    for(let i=0;i<240;i++)s.advanceSkillContacts(1/60);
+    assert.ok(mist.every(e=>!s.l.fx.includes(e)),'all mist patches expire');
+  }
+});
+
+test('Thuy Anh keeps fairy damage with quiet, missing or budget-limited mist and cancels its visuals with the cast',()=>{
+  for(const mode of ['normal','quiet','budget','missingMist','missingFairy']) {
+    const {s,skill}=advancedCombat();load(s,'src/client/data/status-effects-01.js');const ability=skill(1065,25),target={x:250,y:0,hp:100000,r:12};
+    s.l.quiet=mode==='quiet';if(mode==='budget')s.l.fx=Array.from({length:1000},()=>({k:'ring'}));
+    if(mode==='missingMist')delete s.A0.m[148];
+    if(mode==='missingFairy')delete s.A0.m[s.A0.f[1065].c];
+    const damage=ability.tot,cast=s.queueSkillContact(s.v,target,ability,t=>t.hp-=damage,{targets:()=>[target],windup:0});
+    finishAttackPose(s);
+    assert.equal(JSON.stringify(cast.skill.parts),JSON.stringify(ability.parts));
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.ok(Math.abs(target.hp-(100000-damage))<1e-6,mode);
+  }
+  for(const mode of ['interrupted','zone','death']) {
+    const {s,skill}=advancedCombat();load(s,'src/client/data/status-effects-01.js');const ability=skill(1065,25),target={x:350,y:0,hp:100000,r:12};
+    delete ability.rate;delete ability.rawRate;
+    s.queueSkillContact(s.v,target,ability,()=>{},{targets:()=>[target],windup:.12});
+    const mist=s.l.fx.filter(e=>e.s===s.A0.m[148].fly);assert.ok(mist.length>1);
+    if(mode==='interrupted')s.v.actionRevision=(s.v.actionRevision||0)+1;
+    if(mode==='zone')s.l.zoneShown++;
+    if(mode==='death')s.l.deadT=1;
+    s.advanceSkillContacts(1/60);
+    assert.ok(mist.every(e=>!s.l.fx.includes(e)),mode);
+  }
+});
+
+test('world and SIM Ice Peacock apply three native hits plus fifteen independent 10% hits',()=>{
+  for(const sim of [false,true])for(const quiet of [false,true]) {
+    const {s,skill}=advancedCombat(),ability=skill(1063,28),target={x:140,y:0,hp:100000,r:12},hits=[];
+    const caster=sim?{x:0,y:0,hp:100}:s.v;ability.crit=37;s.l.quiet=quiet;
+    s._1=()=>[target];s.F5=()=>[];s.nD=()=>[];s.l8=()=>0;s.tD=()=>{};
+    s.hs=(a,t)=>{hits.push(a);const damage=Object.values(a.parts).reduce((x,y)=>x+y,0);t.hp-=damage;return damage;};s.Ls=()=>{};
+    if(sim) {
+      const {compileTypeScriptEntry}=require('../tools/build-app');
+      vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','CuiyanCast').code,s);
+      s.CuiyanCast.castSimulatorSkill(caster,target,ability,()=>true,()=>[target],s.hs,fn=>fn());
+    } else {
+      Object.assign(s,{hA:()=>true,iD:()=>target,Z9:()=>ability,gs:-1,aD:()=>0,S3:()=>false,tP:()=>false,
+        o4(){},G8(){},kn:()=>0,$1:()=>false,q0:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)});
+      s.l.manTgt=target;declaration(s,'src/client/core/state-and-save-01.js','oD');s.oD();
+    }
+    finishAttackPose(s,caster);for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.filter(a=>!a.ev2).length,3,`${sim}/${quiet}`);
+    const shards=hits.filter(a=>a.ev2);assert.equal(shards.length,15);
+    assert.ok(shards.every(a=>a.id===1064&&a.crit===37&&a.parts.phys===ability.parts.phys*.1&&a.parts.cold===ability.parts.cold*.1));
+    assert.equal(new Set(shards).size,3,'one secondary cast per primary blade');
+    assert.ok(Math.abs(target.hp-(100000-ability.tot*4.5))<1e-6);
+  }
+});
+
+test('stacked targets cannot trigger more than one five-ray package per Ice Peacock blade',()=>{
+  const {s,skill}=advancedCombat(),targets=Array.from({length:4},()=>({x:140,y:0,hp:100000,r:12})),shards=[];
+  s.queueSkillContact(s.v,targets[0],skill(1063,28),(_target,ability)=>{if(ability?.ev2)shards.push(ability);},
+    {targets:()=>targets,windup:0});finishAttackPose(s);
+  for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+  assert.equal(new Set(shards).size,3);
+  assert.equal(shards.length,15*targets.length);
 });

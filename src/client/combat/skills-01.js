@@ -54,7 +54,8 @@ var Y5 = (s, A) => {
 var l1 = {
   302: { n: "Truy Tinh Trục Điện", k: 0.15, el: "poison", max: 8 },
   339: { n: "Ngân Đao Xạ Nguyệt", col: 1, sid: 340, k: 0.8, el: "phys", max: 3 },
-  336: { n: "Băng Tâm Tuyết Liên", col: 1, sid: 382, k: 0.25, el: "cold", max: 3 },
+  336: { n: "Băng Tâm Tuyết Liên", col: 1, sid: 382, k: 0.25, el: "cold", max: 3,
+    tab: typeof window !== "undefined" && window.SK_EV && window.SK_EV[382] && window.SK_EV[382].a, std: 1 },
   353: { n: "Thiên Canh Độc Thủ", sid: 354, k: 0.3, el: "phys", poison: 0.1, max: 3 },
   362: { n: "Nghiệp Hỏa Phần Thành", sid: 363, k: 1, el: "fire", max: 5 },
   357: { n: "Long Chiến Vu Dã", col: 1, k: 1, el: "fire", max: 2 },

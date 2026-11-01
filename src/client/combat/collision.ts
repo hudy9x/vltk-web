@@ -9,7 +9,7 @@ function notifyProjectileImpact(effect: ContactEffect, target: CombatTarget): vo
   if (!effect.combat.onImpact || effect.impactTargets?.has(target) || target.dead ||
     (target === v ? l.life <= 0 : target.hp! <= 0)) return;
   (effect.impactTargets || (effect.impactTargets = new Set())).add(target);
-  effect.combat.onImpact(target, { x: target.x, y: target.y });
+  effect.combat.onImpact(target, { x: target.x, y: target.y }, effect);
 }
 
 // Chọn va chạm theo thứ tự trên đường đi, rồi mới gọi damage và tạo FX trúng.

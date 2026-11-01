@@ -10,6 +10,7 @@ use std::collections::BTreeSet;
 
 pub(super) struct Flight {
     swords: Option<Vec<Flight>>,
+    impacts: Vec<((f32,f32),f32)>,
     origin: (f32, f32),
     direction: (f32, f32),
     traveled: f32,
@@ -35,6 +36,7 @@ impl Flight {
         let length = dx.hypot(dy);
         Self {
             swords: None,
+            impacts: Vec::new(),
             origin,
             direction: if length > 0.001 {
                 (dx / length, dy / length)
@@ -46,10 +48,26 @@ impl Flight {
         }
     }
     /// Each sword has its own sweep and contact set, including shared victims.
-    pub(super) fn advance_swords(&mut self, id:u16, geometry:&LinearProjectile,
+    pub(super) fn advance_swords(&mut self, id:u16, count:u8, geometry:&LinearProjectile,
         nav:&Navigation, bodies:&[Body], dt:f32)->(bool,Vec<u32>) {
+        let base_angle=self.direction.1.atan2(self.direction.0);
         let rays=self.swords.get_or_insert_with(|| {
             let (c,s)=self.direction;
+            if id==336 {
+                let count=count.clamp(1,5) as usize;
+                let origin=(self.origin.0+c*24.0,self.origin.1+s*12.0);
+                return (0..count).map(|index| {
+                    let angle=base_angle+(index as f32-(count/2) as f32)*std::f32::consts::PI/16.0;
+                    Self::new(origin,(origin.0+angle.cos()*100.0,origin.1+angle.sin()*50.0))
+                }).collect();
+            }
+            if id==1063 {
+                let angle=s.atan2(c);
+                return [-0.1_f32,0.0,0.1].into_iter().map(|offset| {
+                    let direction=angle+offset;
+                    Self::new(self.origin,(self.origin.0+direction.cos()*100.0,self.origin.1+direction.sin()*50.0))
+                }).collect();
+            }
             let offsets:Vec<(f32,f32)>=if id==1061 {
                 vec![(48.0,0.0),(0.0,-42.0),(0.0,42.0),(-48.0,-84.0),(-48.0,84.0)]
             } else {vec![(0.0,-22.0),(0.0,0.0),(0.0,22.0)]};
@@ -59,12 +77,19 @@ impl Flight {
             }).collect()
         });
         let mut contacts=Vec::new();
+        let impacts=&mut self.impacts;
         rays.retain_mut(|ray| {
             let (alive,hits)=ray.advance_bodies(geometry,nav,bodies,dt);
+            if [336,1063].contains(&id) {
+                for id in hits.iter().take(if id==1063 {1}else{usize::MAX}) {
+                    if let Some(body)=bodies.iter().find(|body|body.id==*id) {impacts.push(((body.x,body.y),base_angle));}
+                }
+            }
             contacts.extend(hits);alive
         });
         (!rays.is_empty(),contacts)
     }
+    pub(super) fn take_impacts(&mut self)->Vec<((f32,f32),f32)> {std::mem::take(&mut self.impacts)}
     fn point(&self, distance: f32) -> (f32, f32) {
         (
             self.origin.0 + self.direction.0 * distance,

@@ -1395,23 +1395,23 @@
   "1063": {
     "name": "Băng Tước Hoạt Kỳ",
     "mechanics": [
-      "Tầng 1 (Băng Tước Phóng Xuất): Phóng ra chim Băng Tước lướt thẳng tới mục tiêu xé gió.",
-      "Tầng 2 (Băng Vũ Phân Thân): Khi chim băng va chạm mục tiêu sẽ bùng nổ phân tách thành 5 tia băng tiễn (ID 1064, num: 5) bay tỏa ra xung quanh tiêu diệt kẻ địch phụ cận."
+      "Tầng 1 (Băng Tước Phóng Xuất): Phóng 3 thanh đao từ cùng vị trí theo hình quạt hẹp. Mỗi đao gây một hit đầy đủ khi va chạm; 2 hoặc 3 đao cùng trúng một mục tiêu tạo 2 hoặc 3 hit.",
+      "Tầng 2: Mỗi đao trúng đích từ cấp 11 tạo 5 tia trong tầm 96; mỗi tia gây 10% vật lý và băng sát của một đao tầng 1, giữ chí mạng và cộng dồn khi va chạm. Cấp hiệu dụng 28: vật lý 250%, băng sát 400–600."
     ],
     "samples": [
       [
         "Tăng Vật công ngoại công (%)",
         "90",
-        "417",
-        "900",
-        "1380"
+        "143",
+        "203",
+        "232"
       ],
       [
         "Sát thương Băng sát (điểm)",
         "60 - 300",
-        "567 - 878",
-        "1050 - 1655",
-        "1370 - 2383"
+        "173 - 400",
+        "299 - 511",
+        "362 - 567"
       ],
       [
         "Tốc độ bay của chiêu",
@@ -1584,15 +1584,17 @@
         "tier": 2,
         "minLevel": 11,
         "trigger": "impact",
-        "count": 5
+        "count": 5,
+        "coefficient": 0.1,
+        "inheritParts": true
       }
     ]
   },
   "1065": {
     "name": "Thủy Anh Man Tú",
     "mechanics": [
-      "Tầng 1 (Tam Lãng Cuộn Trào): Song đao chém ra 3 đợt sóng nước cuồn cuộn song song (num: 3) lướt đi với tốc độ 630 px/s.",
-      "Đặc tính xuyên thấu: 3 luồng sóng nước quét xuyên qua nhiều hàng quái, gây hiệu ứng làm chậm diện rộng."
+      "Tầng 1 (Tiên nữ): Một tiên nữ bay thẳng tới mục tiêu, giữ nguyên sát thương và khả năng xuyên thấu của chiêu.",
+      "Dải sương theo sau: Các mảng sương của Băng Tâm Tiên Tử xuất hiện nối tiếp trên đường bay. Phần hiển thị này bổ sung cho tiên nữ, giữ nguyên sát thương hiện tại."
     ],
     "samples": [
       [

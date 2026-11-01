@@ -249,10 +249,10 @@ var hs = function (A, n) {
       X > c && ((c = X), (r = j)));
   }
   trace && trace("Tổng trực tiếp sau kháng", { damage: i, poisonTotal: d });
-  (y1(A.series, n.series) && (i += l.P.series5),
+  (y1(A.series, n.series) && (i += l.P.series5 * (A.hitScale == null ? 1 : A.hitScale)),
     a && (i *= 1.5),
     f && l.P.antiSorb && (i *= 1 + l.P.antiSorb / 100));
-  trace && trace("Cộng khắc hệ → chí mạng → xuyên hấp thụ boss", { seriesFlat: y1(A.series, n.series) ? l.P.series5 : 0, fatal: a, antiSorb: f ? l.P.antiSorb || 0 : 0, damage: i });
+  trace && trace("Cộng khắc hệ → chí mạng → xuyên hấp thụ boss", { seriesFlat: y1(A.series, n.series) ? l.P.series5 * (A.hitScale == null ? 1 : A.hitScale) : 0, fatal: a, antiSorb: f ? l.P.antiSorb || 0 : 0, damage: i });
   const p = y1(A.series, n.series),
     P = y1(n.series, A.series);
   (p ? (i *= 1 + Ct) : P && (i *= 1 - Ct),
@@ -877,9 +877,10 @@ var oD = function () {
   if (lotusEvent) e = Object.assign({}, e, { impactLotusHandled: true });
   if (+e.id === 339) e = Object.assign({}, e, { impactVisualTargets: new Set() });
   if (+e.id === 1081) e = Object.assign({}, e, { visualAnchor: { x: t.x, y: t.y - 14 } });
-  queueSkillContact(v, t, e, (target) => {
-    const damage = hs(e, target);
-    Ls(damage, e);
+  queueSkillContact(v, t, e, (target, ability = e) => {
+    const damage = hs(ability, target);
+    Ls(damage, ability);
+    if (ability.ev2) return;
     if (+e.id === 339 && damage > 0) showNhiepHonImpact(target, e);
     if (e.ev && !triggered && ![328, 1061].includes(+e.id)) {
       triggered = true;

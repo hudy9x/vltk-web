@@ -1,9 +1,45 @@
 import { queueSkillContact } from './casting';
 import { skillIgnoresTerrain } from './config';
-import type { CastOptions, CombatCast, CombatSkill, CombatTarget, ContactEffect, ContactHitHandler } from './types';
+import type { CastOptions, CombatCast, CombatSkill, CombatTarget, ContactEffect, ContactHitHandler, StationaryEffect, VisualEffect } from './types';
 
 // Same radius as the former Băng Tâm Tiên Tử secondary impact in eD.
 export const SNOW_TRAIL_RADIUS = 150;
+const visualTrails = new WeakMap<StationaryEffect, { owner: CombatCast; elapsed: number; firstStep?: number }>();
+
+/** Thủy Anh's mist follows the same fixed patches as Băng Tâm Tiên Tử.
+ * Its fairy keeps all primary damage; cosmetic patches never register hits. */
+export function spawnSnowTrailVisual(owner: CombatCast, target: CombatTarget, speed: number): void {
+  const sprite = A0.m[148]?.fly;
+  if (l.quiet || !sprite) return;
+  const start = { x: owner.actor.x, y: owner.actor.y };
+  const distance = Math.hypot(target.x - start.x, (target.y - start.y) * 2);
+  const segments = Math.max(1, Math.ceil(distance / (SNOW_TRAIL_RADIUS * QA * .75)));
+  for (let index = 0; index <= segments && l.fx.length < mf; index++) {
+    if (!distance && index) break;
+    const progress = index / segments;
+    const x = start.x + (target.x - start.x) * progress, y = start.y + (target.y - start.y) * progress;
+    if (!owner.ignoreTerrain && !mt(start.x, start.y, x, y)) break;
+    const effect: StationaryEffect = {
+      k: 'boom', s: sprite, sp: 2, x, y: y - 14,
+      t: -owner.windup - distance * progress / Math.max(1, speed), life: yn(sprite), dir: 0, cosmetic: true,
+    };
+    visualTrails.set(effect, { owner, elapsed: 0, firstStep: owner.firstStep });
+    l.fx.push(effect);
+  }
+}
+
+export function advanceSnowTrailVisual(effect: VisualEffect, dt: number): boolean | null {
+  if (effect.k !== 'boom') return null;
+  const state = visualTrails.get(effect);
+  if (!state) return null;
+  const { owner } = state, before = state.elapsed, step = state.firstStep ?? dt;
+  delete state.firstStep;
+  state.elapsed += step;
+  if (l.quiet || l.town || l.deadT > 0 || owner.zone !== l.zoneShown ||
+    (before < owner.windup && owner.actionRevision != null && owner.actionRevision !== (owner.actor.actionRevision || 0))) return false;
+  effect.t += step;
+  return effect.t < effect.life;
+}
 
 /** Fixed snow patches appear in order, beginning immediately at the caster.
  * All patches share one hit ledger: overlapping snow does not multiply damage.

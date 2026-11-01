@@ -1,4 +1,4 @@
-import type { CastOptions, CombatCast, WorldPoint } from '../combat/types';
+import type { CastOptions, CombatCast, CombatSkill, WorldPoint } from '../combat/types';
 import type { LegacyEntity, LegacyRecord, SimulatorActor, SimulatorSkill } from './types';
 
 declare function F5(skill: SimulatorSkill): LegacyRecord[];
@@ -7,7 +7,7 @@ declare function nD(skill: SimulatorSkill, target: LegacyEntity, targets: Legacy
 declare function l8(skill: SimulatorSkill, target: LegacyEntity, distance: number, count: number): number;
 declare function skillCastDistance(actor: LegacyEntity, target: LegacyEntity): number;
 declare function queueSkillContact(actor: LegacyEntity, target: LegacyEntity, skill: SimulatorSkill,
-  hit: (target: LegacyEntity) => void, options: CastOptions): CombatCast;
+  hit: (target: LegacyEntity, ability?: CombatSkill) => void, options: CastOptions): CombatCast;
 declare function spawnLotusImpact(actor: LegacyEntity, position: WorldPoint, skill: SimulatorSkill,
   hit: (target: LegacyEntity) => void, targets: () => LegacyEntity[]): CombatCast;
 declare function spawnSnowTrail(actor: LegacyEntity, target: LegacyEntity, skill: SimulatorSkill,
@@ -43,9 +43,11 @@ export function castSimulatorSkill(actor: SimulatorActor, target: LegacyEntity, 
   const extra = withContext(() => l8(skill, target, skillCastDistance(actor, target),
     1 + (skill.geo ? nD(skill, target, live()).length : 0)));
   let triggered = false;
-  const cast = queueSkillContact(actor, target, skill, contact => {
+  const cast = queueSkillContact(actor, target, skill, (contact, override) => {
     if (!valid() || !live().includes(contact)) return;
-    const amount = damage(skill, contact);
+    const ability = (override || skill) as SimulatorSkill;
+    const amount = damage(ability, contact);
+    if (ability.ev2) return;
     if (+skill.id! === 339 && amount > 0) withContext(() => showNhiepHonImpact(contact, skill));
     if (!triggered && ![328, 1061].includes(+skill.id!)) {
       triggered = true;

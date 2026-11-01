@@ -183,7 +183,7 @@ exports.buildCharacter = function (input, activeBuffs = [], activeAuras = null, 
       }),
       skills,
       // These attacks have damage-bearing secondary layers, not cosmetic-only FX.
-      followups: Object.fromEntries(skills.filter(skill=>[328,353,355,1061,1066,1067,1081].includes(+skill.id)).map(skill=>[
+      followups: Object.fromEntries(skills.filter(skill=>[328,336,353,355,1061,1066,1067,1081].includes(+skill.id)).map(skill=>[
         skill.id,scope.F5(skill).map(event=>({id:event.sid||skill.id,parts:scope.S5(skill,event),delay:event.delay||0.12,
           targets:[328,1061].includes(+skill.id)?32:scope.Qi(skill,event)||1,stun:event.stun||0,
           ...(skill.id===328?{crit:scope.F2(stats,scope.Xw(skill.id,event),skill.L).crit}:skill.id===1061?{crit:skill.crit}:{} )})),

@@ -148,9 +148,10 @@ impl Game {
                         flight.steer((target.x, target.y), step);
                     }
                 }
-                let (alive, contacts) = if [328,1061].contains(&p.skill.id) {
-                    flight.advance_swords(p.skill.id,geometry,&room.nav,&bodies,step)
+                let (alive, contacts) = if [328,336,1061,1063].contains(&p.skill.id) {
+                    flight.advance_swords(p.skill.id,p.skill.missiles,geometry,&room.nav,&bodies,step)
                 } else {flight.advance_bodies(geometry, &room.nav, &bodies, step)};
+                for (position,angle) in flight.take_impacts() {self.spawn_cuiyan_impact(&p,position,angle);}
                 for id in contacts {
                     self.contact(&mut p, id, events);
                 }
@@ -215,6 +216,31 @@ impl Game {
             }
         }
     }
+    // One secondary package per blade impact; it never replaces primary damage.
+    fn spawn_cuiyan_impact(&mut self, p:&Pending, position:(f32,f32), angle:f32) {
+        if p.skill.id==1063 && p.skill.level>=11 {
+            for index in 0..5 {
+                if self.pending.len()>=4096 {break;}
+                let direction=angle+index as f32*std::f32::consts::TAU/5.0;
+                let mut skill=p.skill.clone();skill.id=1064;skill.parts=skill.parts.map(|part|part*0.1);
+                skill.accuracy=None;skill.followups.clear();skill.travel=0.0;
+                if let Some(rules)=&mut skill.pve {rules.flat_series*=0.1;}
+                if let Some(projectile)=&mut skill.projectile {
+                    projectile.range=96.0*skill.geometry.as_ref().map_or(0.81,|g|g.scale);
+                    projectile.width=16.0;projectile.speed=432.0;projectile.pierce=true;projectile.area=0.0;projectile.homing=false;
+                }
+                self.pending.push(Pending{cast_id:0,source:p.source,map:p.map,target:p.target,skill,remaining:0.0,origin:position,aim:None,
+                    flight:Some(projectiles::Flight::new(position,(position.0+direction.cos()*100.0,position.1+direction.sin()*50.0)))});
+            }
+        } else if p.skill.id==336 {
+            let Some(lotus)=p.skill.followups.iter().find(|event|event.id==382) else {return;};
+            if self.pending.len()>=4096 {return;}
+            let mut skill=p.skill.clone();skill.id=382;skill.parts=lotus.parts;skill.crit=0.0;skill.accuracy=None;skill.followups.clear();
+            skill.projectile=None;skill.shape="spot".into();skill.targets=256;skill.radius=80.0*skill.geometry.as_ref().map_or(0.81,|g|g.scale);
+            skill.range=80.0;skill.travel=0.0;skill.stun=lotus.stun;
+            self.pending.push(Pending{cast_id:0,source:p.source,map:p.map,target:p.target,skill,remaining:0.0,origin:position,aim:Some(position),flight:None});
+        }
+    }
     fn contact(&mut self, p: &mut Pending, target: u32, events: &mut Vec<EventData>) {
         if p.cast_id != 0 {
             if let Some(gate) = self.contacts.get_mut(&p.cast_id) {
@@ -232,7 +258,7 @@ impl Game {
         if self.apply_curse(p,target){return;}
         let position=self.actors.get(&target).filter(|_|pvp::can_hit(self,p.source,target)).map(|a|(a.x,a.y))
             .or_else(||self.rooms.get(&p.map)?.mobs.iter().find(|m|m.id==target&&m.hp>0.0).map(|m|(m.x,m.y)));
-        if let Some(position)=position {
+        if let Some(position)=position.filter(|_|p.skill.id!=336) {
             let mut children=Vec::new();
             let parent=p.skill.clone();
             for followup in &mut p.skill.followups {

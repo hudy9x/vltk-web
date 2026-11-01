@@ -55,9 +55,9 @@ export interface CombatSkill {
 }
 
 /** Callback chạy sau va chạm: code cũ tiếp tục tính damage, debuff và log. */
-export type ContactHitHandler = (target: CombatTarget) => void;
+export type ContactHitHandler = (target: CombatTarget, ability?: CombatSkill) => void;
 /** Mỗi cặp đạn/mục tiêu phát một impact, độc lập giới hạn damage của cả cast. */
-export type ContactImpactHandler = (target: CombatTarget, position: WorldPoint) => void;
+export type ContactImpactHandler = (target: CombatTarget, position: WorldPoint, projectile?: ContactEffect) => void;
 export interface CastOptions {
   targets?: () => CombatTarget[];
   maxTargets?: number;

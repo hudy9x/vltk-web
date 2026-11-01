@@ -15,7 +15,10 @@ var skill150EffectRows = function (skill, level) {
     const damage = runtime && +runtime.sid === +effect.id && stats &&
       typeof F2 === 'function' && typeof S5 === 'function'
       ? S5(F2(stats, skill, level), runtime)[effect.element] : null;
-    if (Number.isFinite(damage)) {
+    if (+skill.id === 1063 && effect.coefficient != null) {
+      rows.push(['m',`Mỗi tia: ${Math.round(effect.coefficient*100)}% vật lý và băng sát của một đao tầng 1`]);
+      rows.push(['m','Giữ chí mạng; sát thương các tia cộng thêm vào tầng 1 khi va chạm']);
+    } else if (Number.isFinite(damage)) {
       if (+skill.id === 1061) {
         const physical = S5(F2(stats, skill, level), runtime).phys || 0;
         rows.push(['m',`Sát thương vật lý: ${Math.round(physical*0.85)} đến ${Math.round(physical*1.15)} điểm (trước kháng)`]);

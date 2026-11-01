@@ -6,6 +6,7 @@ import { beginContactFrame, endContactFrame } from './spatial/contact-query';
 import { advanceIronLotusVisual } from '../render/iron-lotus';
 import { spawnDragonFlame } from '../render/dragon-fire';
 import { advanceSwordFlowerVisual } from './skill-effects/kiem-hoa-van-tinh';
+import { advanceSnowTrailVisual } from './snow-trail';
 
 // dt luôn tính bằng giây. Riêng đạn sprite đổi sang frame bằng K3 như code cũ.
 export function advanceCombatMissile(effect: SpriteMissile & ContactEffect, dt: number): boolean {
@@ -92,6 +93,8 @@ export function advanceSkillContacts(dt: number): void {
       if (effect.contactAlive) l.combatProjectiles.push(effect);
     }
     l.fx = l.fx.filter(effect => {
+      const snow = advanceSnowTrailVisual(effect, dt);
+      if (snow !== null) return snow;
       const flower = advanceSwordFlowerVisual(effect, dt);
       if (flower !== null) return flower;
       if (effect.combat) return effect.contactAlive !== false;

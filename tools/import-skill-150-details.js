@@ -31,7 +31,7 @@ const EFFECT_NAMES = {
   1107:'Kiếm Minh Thương Khung',1108:'Phong Minh Ngọc Toái',1109:'Lôi Động Càn Khôn',1131:'Nộ Lan Bộc Hỏa',
 };
 const EFFECT_COEFFICIENTS = {
-  1057:[1085,.35,'phys',.2],1061:[1091,1.3,'cold',.2],1067:[1095,.35,'poison',.3],
+  1057:[1085,.35,'phys',.2],1061:[1091,1.3,'cold',.2],1063:[1064,.1,'cold',0],1067:[1095,.35,'poison',.3],
   1069:[1097,.15,'phys',.18],1070:[1098,.18,'phys',.3],1075:[1131,.15,'phys',.18],
   1079:[1107,.35,'light',.18],1080:[1108,.35,'light',.18],1081:[1109,.55,'light',.3],
 };
@@ -49,11 +49,12 @@ function effectLayers(id, advanced) {
     const entry={id:child,name:EFFECT_NAMES[child],tier:depth,minLevel:minimum,trigger};
     if(coefficient)Object.assign(entry,{coefficient:coefficient[1],element:coefficient[2],delay:coefficient[3]});
     else if(meta.num>1)entry.count=meta.num;
+    if(id===1063)Object.assign(entry,{count:5,inheritParts:true});
     layers.push(entry);
     for(const [key,kind]of [['es','start'],['ec','impact'],['ev','expire'],['ef','interval']])
       if(meta[key])add(meta[key],depth+1,kind);
   }
-  if(override)add(override[0],2,'secondary');
+  if(override)add(override[0],2,id===1063?'impact':'secondary');
   else for(const [key,kind]of [['sk','secondary'],['es','start'],['ec','impact'],['ef','interval'],['ev','expire']])
     if(fx[id]?.[key])add(fx[id][key],2,kind);
   return layers;
