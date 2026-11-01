@@ -33,3 +33,16 @@ exports.apply=function(p,action,capacity=60){
     store[key]--;
   }
 };
+
+// Collection uses the same durable mats.misc inventory and stack accounting as purchases.
+exports.collect=function(p,kind){
+  const {items}=catalog();
+  if(!Object.hasOwn(items.WAR_ITEMS,kind))throw new Error('Vật phẩm Quân Nhu không hợp lệ.');
+  const capacity=require('./runtime.cjs').withProgression(p,s=>s.INV_MAX);
+  p.mats||={};p.mats.misc||={};const store=p.mats.misc,key='tk_'+kind;
+  const count=store[key]||0;if(!Number.isSafeInteger(count)||count<0||!Number.isSafeInteger(count+1))throw new Error('Số lượng Quân Nhu không hợp lệ.');
+  const inventory=Object.fromEntries(Object.keys(items.WAR_ITEMS).map(k=>[k,store['tk_'+k]||0]));
+  const used=(p.inv||[]).length+['vlmt','ttk','rngua','ldt'].filter(k=>store[k]>0).length+items.warItemStacks(inventory).length;
+  if(count%items.WAR_STACK_SIZE===0&&used>=capacity)return false;
+  store[key]=count+1;return true;
+};

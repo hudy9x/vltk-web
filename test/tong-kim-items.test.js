@@ -98,3 +98,13 @@ test('native HUD renders consumable effects in a separate row after support skil
  assert.match(target.innerHTML,/support-effects.*Hỗ trợ.*war-effects.*data-war-buff="life"/);
  html='';render();assert.doesNotMatch(target.innerHTML,/war-effects/);assert.match(target.innerHTML,/support-effects/);
 });
+test('rank drop probabilities are rare for regular soldiers and configurable per rank without rerolling a death',()=>{
+ const defaults=require('../src/shared/war-drop-rates.json');
+ assert.ok(defaults.soldier<defaults.captain&&defaults.captain<defaults.commander&&defaults.commander<defaults.general&&defaults.general<defaults.grandGeneral&&defaults.grandGeneral<defaults.marshal);
+ function drops(title,probability){
+   const player={x:0,y:0},victim={hp:0,x:0,y:0,battlefieldMonster:true,battlefieldRank:title,battlefieldTeam:'jin'};
+   const host={player:()=>player,team:()=> 'song',running:()=>true,alive:()=>true,changed(){},...(probability===undefined?{}:{dropChance:()=>probability})};
+   const reward=createWarRewards(host,()=>.01);reward.record(player,victim);reward.killed(victim);reward.killed(victim);return reward.drops.length;
+ }
+ assert.equal(drops('Binh sĩ'),0);assert.equal(drops('Hiệu úy'),1);assert.equal(drops('Đại tướng',0),0);assert.equal(drops('Binh sĩ',1),1);
+});

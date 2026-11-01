@@ -90,3 +90,54 @@ test('online inventory dispatches use to persistence and never consumes a privat
  await click({target:{closest:()=>({dataset:{warItem:'drum'}})},stopPropagation(){}});
  assert.equal(local,0);assert.equal(refresh,1);assert.equal(commands[0].kind,'warItemUse');assert.equal(commands[0].item,'drum');
 });
+test('ground item delivery persists exactly once, preserves merit, respects stack space and keeps full drops retryable',()=>{
+ const db=new DatabaseSync(':memory:');db.exec('CREATE TABLE account_storage(account_id TEXT,key TEXT,value TEXT,PRIMARY KEY(account_id,key))');
+ db.prepare('INSERT INTO account_storage VALUES(?,?,?)').run('a','jxidle',JSON.stringify(profile()));
+ const store=createCharacters(db);try{
+   const before=store.read('a',0).profile;
+   const grant={id:'1700000000000-1-100-5',account:'a',slot:0,xp:0,gold:0,warItem:'drum'};
+   store.apply(grant);assert.equal(store.read('a',0).profile.mats.misc.tk_drum,1);
+   store.apply(grant);assert.equal(store.read('a',0).profile.mats.misc.tk_drum,1);
+   assert.equal(store.read('a',0).profile.mats.misc.tk_merit,before.mats.misc.tk_merit);
+   const p=store.read('a',0).profile,capacity=native.withProgression(p,s=>s.INV_MAX);
+   p.inv=Array.from({length:capacity-1},(_,i)=>({uid:i+1}));p.mats.misc.tk_drum=50;
+   db.prepare('UPDATE multiplayer_characters SET profile=? WHERE account=? AND slot=0').run(JSON.stringify(p),'a');
+   const next={...grant,id:'1700000000000-1-101-5'};
+   assert.equal(store.apply(next),false);assert.equal(store.read('a',0).profile.mats.misc.tk_drum,50);
+   assert.equal(db.prepare('SELECT 1 FROM multiplayer_rewards WHERE id=?').get(next.id),undefined);
+   p.mats.misc.tk_drum=49;db.prepare('UPDATE multiplayer_characters SET profile=? WHERE account=? AND slot=0').run(JSON.stringify(p),'a');
+   store.apply(next);assert.equal(store.read('a',0).profile.mats.misc.tk_drum,50,'existing partial stack accepts item even when slots are full');
+   p.inv.pop();db.prepare('UPDATE multiplayer_characters SET profile=? WHERE account=? AND slot=0').run(JSON.stringify(p),'a');
+   const fresh={...grant,id:'1700000000000-1-102-5'};store.apply(fresh);assert.equal(store.read('a',0).profile.mats.misc.tk_drum,50);
+   assert.throws(()=>store.apply({...grant,id:'1700000000000-1-103-5',warItem:'__proto__'}));
+   assert.equal(createCharacters(db).read('a',0).profile.mats.misc.tk_drum,50);
+ }finally{db.close();}
+});
+test('public drop polling retries a lost acknowledgement without awarding a second item',async()=>{
+ const {createServer:httpServer}=require('node:http'),{once}=require('node:events');
+ const oldUrl=process.env.MULTIPLAYER_WT_CONTROL_URL,oldSecret=process.env.MULTIPLAYER_SECRET;
+ let account='',acknowledged=false,attempts=0,refreshes=0;
+ const control=httpServer(async(req,res)=>{
+   let body='';for await(const chunk of req)body+=chunk;
+   res.setHeader('content-type','application/json');
+   if(req.url==='/battlefield/drops')res.end(JSON.stringify(account&&!acknowledged?[{id:'1700000000000-7-99-5',warItem:'drum',candidates:[{account,slot:0}]}]:[]));
+   else if(req.url==='/battlefield/drops/ack'){attempts++;if(attempts===1){res.statusCode=503;res.end('{}');}else{acknowledged=true;res.end('true');}}
+   else if(req.url==='/refresh'){refreshes++;res.end('true');}
+   else res.end('[]');
+ });
+ control.listen(0,'127.0.0.1');await once(control,'listening');
+ process.env.MULTIPLAYER_WT_CONTROL_URL=`http://127.0.0.1:${control.address().port}`;process.env.MULTIPLAYER_SECRET='test-drop-control-secret-01234567890';
+ const {openDatabase}=require('../src/server/database.ts'),{createServer}=require('../src/server/index.ts');
+ const db=openDatabase(':memory:'),{app}=createServer({db,downloadAssets:false,development:true});
+ try{
+   const registration=await app.inject({method:'POST',url:'/api/auth/register',payload:{username:'drop_retry',password:'secret123'}});account=registration.json().user.id;
+   db.prepare('INSERT INTO account_storage VALUES(?,?,?)').run(account,'jxidle',JSON.stringify(profile()));
+   const until=Date.now()+6000;while((!acknowledged||!refreshes)&&Date.now()<until)await new Promise(resolve=>setTimeout(resolve,30));
+   assert.equal(acknowledged,true);assert.ok(attempts>=2);assert.ok(refreshes>=1);
+   assert.equal(createCharacters(db).read(account,0).profile.mats.misc.tk_drum,1);
+ }finally{
+   await app.close();db.close();control.close();await once(control,'close');
+   if(oldUrl===undefined)delete process.env.MULTIPLAYER_WT_CONTROL_URL;else process.env.MULTIPLAYER_WT_CONTROL_URL=oldUrl;
+   if(oldSecret===undefined)delete process.env.MULTIPLAYER_SECRET;else process.env.MULTIPLAYER_SECRET=oldSecret;
+ }
+});

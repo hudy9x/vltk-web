@@ -7,6 +7,13 @@ pub struct Supplies {pub match_id:u32,pub starts:f64,pub bought:[BTreeMap<u16,u3
 pub const MAP: u32 = 9003;
 pub const WAIT_MAP: u32 = 9004;
 pub const DURATION: f64 = 1200.0;
+fn default_duration()->f64{DURATION}
+fn default_drop_rates()->BTreeMap<String,f64>{serde_json::from_str(include_str!("../../../shared/war-drop-rates.json")).expect("drop rates")}
+#[derive(Clone,Debug,Serialize)]
+pub struct ItemDrop{pub id:String,pub kind:String,pub team:u8,pub x:f32,pub y:f32,pub expires:f64}
+
+#[derive(Clone,Debug,Serialize)]
+pub struct KillNotice {pub id:u32,#[serde(skip_serializing)]pub owner:String,pub title:String,pub name:String,pub at:f64}
 // Deaths 1..: 5, 7, 10, 13, 15, 17, 20, 23, ... seconds.
 fn respawn_delay(deaths:u32)->f64 {
     let index=deaths.saturating_sub(1);
@@ -25,10 +32,10 @@ pub struct SimAppearance {pub sx:String,pub rows:BTreeMap<String,i32>,pub ride:u
 pub struct Template {#[serde(default)] pub appearance:Option<SimAppearance>,pub faction:String,pub name:String,pub sex:u8,pub skills:Vec<u16>,pub profile:Profile}
 #[derive(Clone,Debug,Deserialize)]
 #[serde(rename_all="camelCase")]
-pub struct Soldier {pub damage:f32,pub defense:f32,pub speed:f32,pub team:String,pub rank:String,pub name:String,pub skin:u32,pub x:f32,pub y:f32,pub hp:f32,pub respawn_seconds:f64,pub patrol_radius:f32,pub leash_radius:f32}
+pub struct Soldier {#[serde(default)]pub attack_skills:Vec<Skill>,pub damage:f32,pub defense:f32,pub speed:f32,pub team:String,pub rank:String,pub name:String,pub skin:u32,pub x:f32,pub y:f32,pub hp:f32,pub respawn_seconds:f64,pub patrol_radius:f32,pub leash_radius:f32}
 #[derive(Clone,Debug,Deserialize)]
 #[serde(rename_all="camelCase")]
-pub struct Definition {#[serde(default)] pub potions:Vec<WarPotion>,#[serde(default)] pub sim_support:Vec<SupportSkill>,pub templates:Vec<Template>,pub soldiers:Vec<Soldier>,pub camps:BTreeMap<String,Point>,pub army_spawns:BTreeMap<String,Vec<Point>>,pub marshals:BTreeMap<String,Point>}
+pub struct Definition {#[serde(default)]pub marshal_variants:BTreeMap<String,Vec<Profile>>,#[serde(default)]pub marshal_skins:Vec<u32>,#[serde(default="default_drop_rates")]pub drop_rates:BTreeMap<String,f64>,#[serde(default)]pub item_kinds:Vec<String>,#[serde(default="default_duration")]pub duration_seconds:f64,#[serde(default)]pub marshal_profiles:BTreeMap<String,Profile>,#[serde(default)] pub potions:Vec<WarPotion>,#[serde(default)] pub sim_support:Vec<SupportSkill>,pub templates:Vec<Template>,pub soldiers:Vec<Soldier>,pub camps:BTreeMap<String,Point>,pub army_spawns:BTreeMap<String,Vec<Point>>,pub marshals:BTreeMap<String,Point>}
 #[derive(Clone,Debug,Deserialize)]
 pub struct WarPotion {pub level:u16,pub hp:f32,pub mp:f32}
 #[derive(Clone)]
@@ -43,7 +50,7 @@ pub struct Unit {
     pub bought:[BTreeMap<u16,u32>;2],pub spent:[BTreeMap<u16,u32>;2],pub selected:[u16;2],pub potions:[u32;2],pub potion_at:[f64;2],pub last_hit:f64,pub last_source:u32,
 }
 #[derive(Default)]
-pub struct Battlefield {pub items:war_items::State,pub definition:Option<Definition>,pub id:u32,pub starts:f64,pub ends:f64,pub clock:f64,pub finished:bool,pub spawned:bool,pub marshals:bool,pub score:[u32;2],pub units:BTreeMap<u32,Unit>}
+pub struct Battlefield {pub kill_notices:Vec<KillNotice>,pub kill_sequence:u32,pub item_drops:Vec<ItemDrop>,pub active_definition:Option<Definition>,pub items:war_items::State,pub definition:Option<Definition>,pub id:u32,pub starts:f64,pub ends:f64,pub clock:f64,pub finished:bool,pub spawned:bool,pub marshals:bool,pub score:[u32;2],pub units:BTreeMap<u32,Unit>}
 pub fn rank(points:u32)->u32 { [3000,9000,18000,30000].iter().filter(|&&p|points>=p).count() as u32 }
 pub fn apply_profile(a:&mut Actor) {
     let Some(w)=a.war.filter(|w|w.kind<2) else{return;};
@@ -62,7 +69,16 @@ impl Game {
             // Keep a completed result until everyone has acknowledged/left it.
             ensure!(!self.actors.values().any(|a|a.war.is_some_and(|w|w.kind==0)),"previous battlefield awaiting departure");
             self.clear_battlefield();
-            self.battlefield.id=self.id();self.battlefield.starts=clock+5.0;self.battlefield.ends=clock+5.0+DURATION;
+            self.battlefield.active_definition=self.battlefield.definition.clone();
+            if let Some(definition)=self.battlefield.active_definition.as_mut(){
+                for team in ["song","jin"]{
+                    if let Some(variants)=definition.marshal_variants.get(team).filter(|v|v.len()==5){
+                        chance(&mut self.rng,0.0);let element=(self.rng%5) as usize;
+                        definition.marshal_profiles.insert(team.into(),variants[element].clone());
+                    }
+                }
+            }
+            self.battlefield.id=self.id();self.battlefield.starts=clock+5.0;self.battlefield.ends=clock+5.0+self.battlefield.active_definition.as_ref().unwrap().duration_seconds.clamp(10.0,7200.0);
             self.battlefield.clock=clock;
             self.battlefield.finished=false;self.battlefield.spawned=false;self.battlefield.marshals=false;
         }
@@ -126,10 +142,10 @@ impl Game {
     fn clear_battlefield(&mut self) {
         self.actors.retain(|_,a|a.war.is_none_or(|w|w.kind==0));
         self.pending.retain(|p|p.map!=MAP);self.contacts.retain(|_,g|g.map()!=MAP);self.events.retain(|e|e.map!=MAP);
-        self.battlefield.units.clear();self.battlefield.score=[0,0];self.battlefield.items=Default::default();
+        self.battlefield.kill_notices.clear();self.battlefield.kill_sequence=0;self.battlefield.item_drops.clear();self.battlefield.units.clear();self.battlefield.score=[0,0];self.battlefield.items=Default::default();
     }
     fn spawn_battlefield(&mut self,marshals:bool) {
-        let definition=self.battlefield.definition.clone().unwrap();
+        let definition=self.battlefield.active_definition.as_ref().or(self.battlefield.definition.as_ref()).unwrap().clone();
         let mut plans=Vec::new();
         if !marshals {
             for team in 0..2 {for (i,t) in definition.templates.iter().take(10).enumerate() {
@@ -141,13 +157,17 @@ impl Game {
                 let mut profile=definition.templates[0].profile.clone();profile.level=120;profile.hp=s.hp;profile.mp=0.0;profile.regen=0.0;profile.mana_regen=0.0;profile.speed=s.speed*(1.15+tier as f32*0.08);profile.timing=None;
                 profile.support=None;profile.ally_scaling=None;profile.protection=Default::default();profile.res=[35.0;5];profile.defense=s.defense;
                 profile.skills.truncate(1);let skill=&mut profile.skills[0];skill.id=0;skill.parts=[s.damage,0.0,0.0,0.0,0.0];skill.pve=None;skill.cost=0.0;skill.range=55.0;skill.geometry=None;skill.radius=0.0;skill.targets=1;skill.projectile=None;skill.attack_percent=None;skill.cooldown=(1.5*(0.85-tier as f32*0.1)).max(0.25);skill.crit=0.0;skill.leech=0.0;skill.mana_leech=0.0;skill.stun=0.0;skill.cold=0.0;skill.poison=0.0;skill.travel=0.0;
-                plans.push((u8::from(s.team=="jin"),2,tier,s.name,String::new(),0,s.skin,(s.x,s.y),profile,vec![0],s.respawn_seconds,s.patrol_radius,s.leash_radius));
+                if !s.attack_skills.is_empty(){profile.skills=s.attack_skills.clone();profile.ally_scaling=None;}
+                let skills=profile.skills.iter().map(|s|s.id).collect();
+                plans.push((u8::from(s.team=="jin"),2,tier,s.name,String::new(),0,s.skin,(s.x,s.y),profile,skills,s.respawn_seconds,s.patrol_radius,s.leash_radius));
             }
         } else {
             for team in 0..2 {
                 let p=&definition.marshals[if team==0{"song"}else{"jin"}];let mut profile=definition.templates[if team==0{6}else{4}].profile.clone();profile.hp=200_000.0;profile.regen=0.0;profile.support=None;profile.speed=0.0;profile.timing=None;
+                if let Some(configured)=definition.marshal_profiles.get(if team==0{"song"}else{"jin"}){profile=configured.clone();}
                 let skills=profile.skills.iter().filter(|s|s.id!=0).map(|s|s.id).collect();
-                plans.push((team,3,5,"Nguyên soái".into(),String::new(),0,if team==0{144}else{566},(p.x,p.y),profile,skills,0.0,0.0,650.0));
+                let skin=definition.marshal_skins.get(profile.series.max(0) as usize).copied().unwrap_or(if team==0{144}else{566});
+                plans.push((team,3,5,"Nguyên soái".into(),String::new(),0,skin,(p.x,p.y),profile,skills,0.0,0.0,650.0));
             }
         }
         for (team,kind,tier,name,faction,sex,skin,home,profile,skills,respawn_seconds,patrol,leash) in plans {
@@ -163,6 +183,7 @@ impl Game {
     pub(super) fn advance_battlefield(&mut self,clock:f64) {
         if self.battlefield.id==0{return;}
         self.battlefield.clock=clock;
+        self.battlefield.item_drops.retain(|drop|drop.expires>clock&&clock<self.battlefield.ends);
         self.advance_war_items(clock);
         for (&id,u) in &mut self.battlefield.units {
             if u.kind!=0{continue;}
@@ -178,7 +199,7 @@ impl Game {
         }
         if clock<self.battlefield.starts{return;}
         if !self.battlefield.spawned {self.battlefield.spawned=true;self.spawn_battlefield(false);}
-        if clock>=self.battlefield.starts+600.0&&!self.battlefield.marshals {self.battlefield.marshals=true;self.spawn_battlefield(true);}
+        if clock>=self.battlefield.starts+(self.battlefield.ends-self.battlefield.starts)/2.0&&!self.battlefield.marshals {self.battlefield.marshals=true;self.spawn_battlefield(true);}
         let ids:Vec<_>=self.battlefield.units.keys().copied().collect();
         for id in ids {
             let placement={let u=&self.battlefield.units[&id];self.actors.get(&id).filter(|a|a.war.is_some()&&clock>=u.ready_at&&u.kind<2&&((a.map!=MAP&&u.hp>0.0)||(u.counted&&u.respawn_at>0.0&&clock>=u.respawn_at))).map(|_|u.team)};
@@ -253,7 +274,7 @@ impl Game {
             let tier=if victim.kind>=2{victim.tier}else{rank(victim.points)};
             let points=if victim.kind==3{1000}else if victim.kind==2{50*(tier+1)}else{150*(tier+1)};
             let eligible=clock-victim.last_hit<=15.0&&self.battlefield.units.get(&source).is_some_and(|u|u.team!=victim.team&&u.kind<2);
-            let soldier=victim.kind==2;let human=victim.kind==0;
+            let soldier=victim.kind==2;let human=victim.kind<2;
             if eligible {
                 let scorer=&self.battlefield.units[&source];
                 if scorer.kind==0 {
@@ -261,6 +282,24 @@ impl Game {
                         let life=self.actors[&id].life;
                         if self.outbox.credit_merit(format!("{}-{id}-{life}-4",self.battlefield.id),account.into(),slot.parse().unwrap_or(0),points).is_err(){continue;}
                     }
+                }
+                if self.battlefield.units[&id].kind>=2 {
+                    let victim=&self.battlefield.units[&id];let team=self.battlefield.units[&source].team;
+                    let key=if victim.kind==3{"marshal"}else{["soldier","captain","commander","general","grandGeneral"][victim.tier.min(4) as usize]};
+                    let definition=self.battlefield.active_definition.as_ref().or(self.battlefield.definition.as_ref()).unwrap();
+                    let rate=*definition.drop_rates.get(key).unwrap_or(&0.0);
+                    if self.battlefield.item_drops.len()<40&&!definition.item_kinds.is_empty()&&chance(&mut self.rng,rate as f32){
+                        chance(&mut self.rng,0.0);let kind=definition.item_kinds[(self.rng as usize)%definition.item_kinds.len()].clone();
+                        let a=&self.actors[&id];
+                        let epoch=std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos();
+                        self.battlefield.item_drops.push(ItemDrop{id:format!("{epoch}-{}-{id}-5",self.battlefield.id),kind,team,x:a.x,y:a.y,expires:clock+90.0});
+                    }
+                }
+                if human&&self.battlefield.units[&source].kind==0{
+                    let victim=&self.battlefield.units[&id];
+                    self.battlefield.kill_sequence=self.battlefield.kill_sequence.saturating_add(1);
+                    if self.battlefield.kill_notices.len()>=64{self.battlefield.kill_notices.remove(0);}
+                    self.battlefield.kill_notices.push(KillNotice{id:self.battlefield.kill_sequence,owner:self.battlefield.units[&source].key.clone(),title:["Binh sĩ","Hiệu úy","Thống lĩnh","Phó tướng","Đại tướng"][rank(victim.points) as usize].into(),name:victim.name.clone(),at:clock});
                 }
                 let u=self.battlefield.units.get_mut(&source).unwrap();let old=rank(u.points);u.points=u.points.saturating_add(points);u.kills+=u32::from(soldier);u.player_kills+=u32::from(human);self.battlefield.score[u.team as usize]=self.battlefield.score[u.team as usize].saturating_add(points);
                 if let Some(a)=self.actors.get_mut(&source).filter(|a|a.war.is_some()){a.war.as_mut().unwrap().points=u.points;if rank(u.points)!=old{support::resolve(a);}}
@@ -274,6 +313,17 @@ impl Game {
         }
         for (&id,u) in &mut self.battlefield.units {if let Some(a)=self.actors.get(&id).filter(|a|a.war.is_some()) {if a.map==MAP{u.hp=a.hp;u.mp=a.mp;u.x=a.x;u.y=a.y;}}}
     }
+    pub fn battlefield_drop_candidates(&self)->Vec<serde_json::Value>{
+        if self.battlefield.finished||self.battlefield.clock>=self.battlefield.ends{return vec![];}
+        self.battlefield.item_drops.iter().filter(|d|d.expires>self.battlefield.clock).filter_map(|drop|{
+            let mut candidates:Vec<_>=self.actors.values().filter(|a|a.map==MAP&&a.hp>0.0&&a.war.is_some_and(|w|w.kind==0&&w.ready&&w.team==drop.team))
+                .map(|a|(((a.x-drop.x).powi(2)+(2.0*(a.y-drop.y)).powi(2)).sqrt(),a)).filter(|(distance,_)|*distance<=80.0).collect();
+            candidates.sort_by(|(x,a),(y,b)|x.total_cmp(y).then(a.account.cmp(&b.account)).then(a.slot.cmp(&b.slot)));
+            if candidates.is_empty(){return None;}
+            Some(serde_json::json!({"id":drop.id,"warItem":drop.kind,"candidates":candidates.iter().map(|(_,a)|serde_json::json!({"account":a.account,"slot":a.slot})).collect::<Vec<_>>()}))
+        }).collect()
+    }
+    pub fn acknowledge_battlefield_drops(&mut self,ids:&[String]){self.battlefield.item_drops.retain(|drop|!ids.contains(&drop.id));}
     pub(super) fn battlefield_potion(&mut self,id:u32,kind:usize)->bool {
         let clock=self.battlefield.clock;
         if kind>1{return false;}
@@ -291,7 +341,7 @@ impl Game {
 
     pub fn battlefield_snapshot(&self,id:u32)->Option<serde_json::Value> {
         let a=self.actors.get(&id)?;let w=a.war?;let own=self.battlefield.units.get(&id)?;let clock=self.battlefield.clock;
-        Some(serde_json::json!({"id":w.match_id,"starts":self.battlefield.starts,"ends":self.battlefield.ends,"now":clock,"itemBuffs":a.support.war_items.iter().map(|(k,t)|(k,(t-clock).max(0.0))).collect::<BTreeMap<_,_>>(),"itemTraps":self.battlefield.items.traps.iter().filter(|t|t.team==w.team).collect::<Vec<_>>(),"phase":if self.battlefield.finished{"finished"}else if clock<self.battlefield.starts{"waiting"}else{"running"},"score":self.battlefield.score,"team":w.team,"entryRemaining":(own.ready_at-clock).max(0.0),"respawnRemaining":(own.respawn_at-clock).max(0.0),"deaths":own.deaths,"potions":own.potions,"selected":own.selected,"inventory":(0..2).flat_map(|slot|own.bought[slot].iter().map(move |(&id,&bought)|serde_json::json!({"slot":slot,"id":id,"count":bought.saturating_sub(*own.spent[slot].get(&id).unwrap_or(&0))}))).collect::<Vec<_>>(),
+        Some(serde_json::json!({"id":w.match_id,"marshalsSpawned":self.battlefield.marshals,"killNotices":self.battlefield.kill_notices.iter().filter(|n|n.owner==own.key&&clock-n.at<=10.0).collect::<Vec<_>>(),"starts":self.battlefield.starts,"ends":self.battlefield.ends,"now":clock,"itemDrops":self.battlefield.item_drops.iter().filter(|d|d.team==w.team&&d.expires>clock).collect::<Vec<_>>(),"itemBuffs":a.support.war_items.iter().map(|(k,t)|(k,(t-clock).max(0.0))).collect::<BTreeMap<_,_>>(),"itemTraps":self.battlefield.items.traps.iter().filter(|t|t.team==w.team).collect::<Vec<_>>(),"phase":if self.battlefield.finished{"finished"}else if clock<self.battlefield.starts{"waiting"}else{"running"},"score":self.battlefield.score,"team":w.team,"entryRemaining":(own.ready_at-clock).max(0.0),"respawnRemaining":(own.respawn_at-clock).max(0.0),"deaths":own.deaths,"potions":own.potions,"selected":own.selected,"inventory":(0..2).flat_map(|slot|own.bought[slot].iter().map(move |(&id,&bought)|serde_json::json!({"slot":slot,"id":id,"count":bought.saturating_sub(*own.spent[slot].get(&id).unwrap_or(&0))}))).collect::<Vec<_>>(),
             "units":self.battlefield.units.values().filter(|u|u.kind<2||self.actors.contains_key(&u.id)).map(|u|serde_json::json!({"id":u.id,"name":u.name,"faction":u.faction,"sex":u.sex,"skin":u.skin,"appearance":u.appearance,"team":u.team,"kind":u.kind,"tier":u.tier,"points":u.points,"kills":u.kills,"playerKills":u.player_kills,"online":self.actors.get(&u.id).is_some_and(|a|a.war.is_some()),"ready":self.actors.get(&u.id).is_some_and(|a|a.war.is_some_and(|w|w.ready)),"moving":self.actors.get(&u.id).is_some_and(|a|!a.path.is_empty()),"level":if u.kind==2{120}else{200}})).collect::<Vec<_>>() }))
     }
 }
@@ -315,6 +365,40 @@ mod tests {
         let clock=now();g.battlefield.starts=clock-1.0;g.battlefield.ends=clock+DURATION;
         for u in g.battlefield.units.values_mut(){u.ready_at=clock-1.0;}
         g.advance_battlefield(clock);
+    }
+    #[test]
+    fn marshal_element_rolls_each_match_and_is_preserved_until_spawn(){
+        let mut g=fixture();let mut variants=vec![];
+        for series in 0..5{
+            let mut p=g.battlefield.definition.as_ref().unwrap().templates[0].profile.clone();
+            p.series=series;p.hp=654321.0;p.res=[11.0,22.0,33.0,44.0,55.0];p.skills.retain(|s|s.id!=0);variants.push(p);
+        }
+        for team in ["song","jin"]{g.battlefield.definition.as_mut().unwrap().marshal_variants.insert(team.into(),variants.clone());}
+        g.rng=1;let mut seen=std::collections::BTreeSet::new();
+        for _ in 0..20{
+            g.battlefield_join(1,0).unwrap();
+            let chosen=g.battlefield.active_definition.as_ref().unwrap().marshal_profiles["song"].series;seen.insert(chosen);
+            g.advance_battlefield(g.battlefield.starts+601.0);
+            let unit=g.battlefield.units.values().find(|u|u.kind==3&&u.team==0).unwrap();let actor=&g.actors[&unit.id];
+            assert_eq!(actor.profile.series,chosen);assert_eq!(actor.profile.hp,654321.0);assert_eq!(actor.profile.res,[11.0,22.0,33.0,44.0,55.0]);assert_eq!(unit.skills.len(),2);
+            g.advance_battlefield(g.battlefield.ends);g.battlefield_leave(1);
+        }
+        assert_eq!(seen.len(),5);
+    }
+    #[test]
+    fn configured_profiles_spawn_and_catalog_edits_wait_for_next_match() {
+        let mut g=fixture();
+        let mut profile=g.battlefield.definition.as_ref().unwrap().templates[0].profile.clone();
+        profile.hp=765432.0;profile.series=4;profile.res=[11.0,22.0,33.0,44.0,55.0];
+        profile.skills.retain(|s|s.id==150);
+        g.battlefield.definition.as_mut().unwrap().marshal_profiles.insert("song".into(),profile.clone());
+        start(&mut g);
+        g.battlefield.definition.as_mut().unwrap().marshal_profiles.get_mut("song").unwrap().hp=123.0;
+        g.advance_battlefield(g.battlefield.starts+601.0);
+        let marshal=g.battlefield.units.values().find(|u|u.kind==3&&u.team==0).unwrap();
+        let actor=&g.actors[&marshal.id];
+        assert_eq!(actor.profile.hp,765432.0);assert_eq!(actor.profile.series,4);
+        assert_eq!(actor.profile.res,[11.0,22.0,33.0,44.0,55.0]);assert_eq!(marshal.skills,vec![150]);
     }
     #[test]
     fn guards_patrol_independently_finish_legs_and_pause_between_them() {
@@ -475,6 +559,61 @@ mod tests {
         let due=g.battlefield.units[&3].ready_at;g.advance_battlefield(due);g.actors.get_mut(&3).unwrap().hp=0.0;g.battlefield_deaths();assert_eq!(g.battlefield.units[&3].respawn_at,due+23.0);
         assert!(g.battlefield_snapshot(3).unwrap()["units"].as_array().unwrap().iter().any(|u|u["id"]==3&&u["points"]==150));
         assert_eq!(g.outbox.pending.values().map(|g|g.merit).sum::<u32>(),150);assert!(g.outbox.pending.values().all(|g|g.death.is_none()&&g.xp==0&&g.gold==0));
+    }
+    #[test]
+    fn configured_duration_survives_next_catalog_and_scales_marshal_deadline() {
+        let mut g=fixture();
+        g.battlefield.definition.as_mut().unwrap().duration_seconds=20.0;
+        g.battlefield_join(1,0).unwrap();g.battlefield_join(2,1).unwrap();
+        let starts=g.battlefield.starts;
+        assert_eq!(g.battlefield.ends-starts,20.0);
+        g.battlefield.definition.as_mut().unwrap().duration_seconds=90.0;
+        g.advance_battlefield(starts+9.0);assert!(!g.battlefield.marshals);
+        g.advance_battlefield(starts+10.0);assert!(g.battlefield.marshals);
+        assert_eq!(g.battlefield.units.values().filter(|u|u.kind==3).count(),2);
+        g.advance_battlefield(starts+20.0);assert!(g.battlefield.finished);
+        assert_eq!(g.battlefield_snapshot(1).unwrap()["phase"],"finished");
+        g.battlefield_leave(1);g.battlefield_leave(2);
+        g.battlefield_join(1,0).unwrap();assert_eq!(g.battlefield.ends-g.battlefield.starts,90.0);
+    }
+    #[test]
+    fn quartermaster_drops_use_rank_rates_once_and_only_nearby_living_allies_can_collect(){
+        for (tier,rate,expected) in [(0,0.0,0),(1,100.0,1),(4,100.0,1)]{
+            let mut g=fixture();let def=g.battlefield.definition.as_mut().unwrap();
+            def.item_kinds=vec!["drum".into()];for value in def.drop_rates.values_mut(){*value=rate;}
+            start(&mut g);
+            for value in g.battlefield.definition.as_mut().unwrap().drop_rates.values_mut(){*value=0.0;}
+            let clock=g.battlefield.clock;let victim=g.battlefield.units.get_mut(&2).unwrap();
+            victim.kind=2;victim.tier=tier;victim.last_source=1;victim.last_hit=clock;
+            let dead=g.actors.get_mut(&2).unwrap();dead.war.as_mut().unwrap().kind=2;dead.hp=0.0;dead.x=500.0;dead.y=500.0;
+            let a=g.actors.get_mut(&1).unwrap();a.x=500.0;a.y=500.0;
+            g.battlefield_deaths();g.battlefield_deaths();assert_eq!(g.battlefield.item_drops.len(),expected);
+            if expected==0{continue;}
+            assert_eq!(g.battlefield_snapshot(1).unwrap()["itemDrops"].as_array().unwrap().len(),1);
+            assert!(g.battlefield_snapshot(2).unwrap()["itemDrops"].as_array().unwrap().is_empty());
+            assert_eq!(g.battlefield_drop_candidates().len(),1);
+            g.actors.get_mut(&1).unwrap().hp=0.0;assert!(g.battlefield_drop_candidates().is_empty());
+            g.actors.get_mut(&1).unwrap().hp=1000.0;g.actors.get_mut(&1).unwrap().x=900.0;assert!(g.battlefield_drop_candidates().is_empty());
+            g.actors.get_mut(&1).unwrap().x=500.0;g.actors.get_mut(&1).unwrap().war.as_mut().unwrap().team=1;assert!(g.battlefield_drop_candidates().is_empty());
+            g.actors.get_mut(&1).unwrap().war.as_mut().unwrap().team=0;
+            let id=g.battlefield.item_drops[0].id.clone();
+            g.acknowledge_battlefield_drops(&[id]);assert!(g.battlefield.item_drops.is_empty());
+        }
+    }
+    #[test]
+    fn sim_and_human_kills_share_counter_and_only_the_killer_gets_ranked_notices(){
+        let mut g=fixture();start(&mut g);let clock=g.battlefield.clock;
+        let sim=g.battlefield.units.values().find(|u|u.kind==1&&u.team==1).unwrap().id;
+        {let u=g.battlefield.units.get_mut(&sim).unwrap();u.name="Enemy SIM".into();u.points=3000;u.last_source=1;u.last_hit=clock;}
+        g.actors.get_mut(&sim).unwrap().hp=0.0;g.battlefield_deaths();g.battlefield_deaths();
+        assert_eq!(g.battlefield.units[&1].player_kills,1);assert_eq!(g.battlefield.units[&1].kills,0);
+        let notices=g.battlefield_snapshot(1).unwrap()["killNotices"].as_array().unwrap().clone();assert_eq!(notices.len(),1);assert_eq!(notices[0]["title"],"Hiệu úy");assert_eq!(notices[0]["name"],"Enemy SIM");
+        assert!(g.battlefield_snapshot(2).unwrap()["killNotices"].as_array().unwrap().is_empty());
+        {let u=g.battlefield.units.get_mut(&2).unwrap();u.last_source=1;u.last_hit=clock;}
+        g.actors.get_mut(&2).unwrap().hp=0.0;g.battlefield_deaths();
+        assert_eq!(g.battlefield.units[&1].player_kills,2);assert_eq!(g.battlefield.kill_notices.len(),2);
+        assert_eq!(g.battlefield_snapshot(1).unwrap()["units"].as_array().unwrap().iter().find(|u|u["id"]==1).unwrap()["playerKills"],2);
+        g.advance_battlefield(g.battlefield.starts+601.0);assert_eq!(g.battlefield_snapshot(1).unwrap()["marshalsSpawned"],true);
     }
     #[test]
     fn deadline_freezes_combat_and_marshals_spawn_only_once() {

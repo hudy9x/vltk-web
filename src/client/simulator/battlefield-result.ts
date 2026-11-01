@@ -6,7 +6,7 @@ function mountResultStyle() {
   const style=document.createElement('style');style.id='war-result-style';
   style.textContent=`
 @font-face{font-family:WarResultCharm;src:url('fonts/charm-bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap}
-#battlefield-result{position:fixed;inset:0;z-index:100010;background:#090b08c9;display:grid;place-items:center;padding:20px;box-sizing:border-box;overflow:auto;animation:war-result-shade .8s ease-out both}
+#battlefield-result{position:fixed;inset:0;z-index:100030;background:#090b08c9;display:grid;place-items:center;padding:20px;box-sizing:border-box;overflow:auto;animation:war-result-shade .8s ease-out both}
 #battlefield-result[hidden],#battlefield-result [hidden]{display:none!important}
 #battlefield-result .war-result-card{width:min(580px,100%);max-height:calc(100dvh - 40px);text-align:center;color:#e8dfbf;font:14px 'IBM Plex Mono',monospace;animation:war-result-reveal .95s cubic-bezier(.16,1,.3,1) .3s both}
 #battlefield-result .war-result-body{padding:0 20px;text-align:center}
@@ -41,7 +41,7 @@ function mountResultStyle() {
 }
 
 /** Acknowledgement is the only exit; keyboard and backdrop cannot dismiss it. */
-export function mountBattlefieldResult(acknowledge: () => void) {
+export function mountBattlefieldResult(acknowledge: () => void | boolean) {
   mountResultStyle();
   const overlay = document.createElement('section');
   overlay.id = 'battlefield-result'; overlay.hidden = true;
@@ -63,7 +63,7 @@ export function mountBattlefieldResult(acknowledge: () => void) {
     <footer class="war-result-actions"><button id="battlefield-result-accept" type="button">Đồng ý</button></footer>
   </div>`;
   const accept = overlay.querySelector<HTMLButtonElement>('#battlefield-result-accept')!;
-  accept.onclick=()=>{ if(overlay.hidden)return; acknowledge(); overlay.hidden=true; };
+  accept.onclick=()=>{ if(overlay.hidden)return; if(acknowledge()!==false)overlay.hidden=true; };
   document.addEventListener('keydown',event=>{
     if(overlay.hidden)return;
     event.stopImmediatePropagation();
@@ -87,6 +87,7 @@ export function mountBattlefieldResult(acknowledge: () => void) {
       }
       overlay.hidden=false; accept.focus();
     },
+    close(){overlay.hidden=true;},
     get isOpen(){return !overlay.hidden;},
   };
 }

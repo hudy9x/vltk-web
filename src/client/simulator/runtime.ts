@@ -1,3 +1,5 @@
+import { marshalLoadout } from './marshal-loadout';
+import { warDropProbability } from './war-drop-settings';
 import { createPotentialClient } from './potential-worker-client';
 import type { PotentialAllocation } from './potential-worker-client';
 import { drawWarTrap, triggerWarTrap, preloadWarTrap } from './war-trap-effects';
@@ -97,7 +99,7 @@ declare function Fa(sprite:LegacyRecord,direction:number,age:number,x:number,y:n
 declare function d_(trap:{c:number;x:number;y:number}):void;
 declare function $(): void;
 declare const INV_MAX: number;
-declare const OnlineBattlefield:{state?:{itemBuffs?:Partial<Record<keyof typeof WAR_ITEMS,number>>}};
+declare const OnlineBattlefield:{marshalSettings?:Partial<Record<'song'|'jin',{hp:number;res:number[]}>>;leave():boolean;state?:{itemBuffs?:Partial<Record<keyof typeof WAR_ITEMS,number>>}};
 declare function k(message: string): void;
 declare function ma(id: number | string): unknown;
 declare function j2(id: number): number;
@@ -242,7 +244,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       const boss = battlefield?.active && target.battlefieldBoss;
       const resistance = target.res, anti = l.P.anti, antiMax = l.P.antiMax, breakTime = target.resBrkT;
       if (boss) {
-        const floor = y1(skill.series, target.series) ? 50 : 25;
+        const floor = target.battlefieldConfiguredRes ? -100 : y1(skill.series, target.series) ? 50 : 25;
         const curseResistance = typeof Rn === 'function' ? Rn(target)?.res : undefined;
         target.res = Object.fromEntries(Object.keys(resistance).map(key => [key, Math.max(floor, resistance[key]) + Math.max(0, -(curseResistance?.[key] || 0))]));
         l.P.anti = {}; l.P.antiMax = 0; target.resBrkT = 0;
@@ -719,9 +721,9 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     if (actor.curse && typeof WP === "function") WP(context, actor, Jn);
     if (actor.stFx && typeof ZP === "function") ZP(context, actor, height ? Math.min(height, 110) : 50, Jn, dt);
     const earned = battlefield?.active ? warRewards.rank(actor) : null;
-    const actorName = actor.n;
-    const title=actor.battlefieldBoss?'<Nguyên soái>':earned?`<${earned.name}>`:'';
-    const color = actor.battlefieldTeam === 'song' ? '#ffcc00' : actor.battlefieldTeam === 'jin' ? '#c77bff' : '#6ee7e0';
+    const actorName = actor.battlefieldBoss ? `${actor.battlefieldTeam === 'song' ? 'Tống' : 'Kim'} Nguyên soái` : actor.n;
+    const title=actor.battlefieldBoss?'<Nguyên soái>':earned?`<${actor.battlefieldTeam === 'song' ? 'Tống' : 'Kim'} ${earned.name}>`:'';
+    const color = actor.battlefieldBoss ? '#ffffff' : actor.battlefieldTeam === 'song' ? '#ffb347' : actor.battlefieldTeam === 'jin' ? '#c77bff' : '#6ee7e0';
     L3(actor.x, actor.y - nameplateOffset(look?.anim, Jn, 1, 0, 55), actorName, color, 12, actor.hp / actor.max, actor.battlefieldTeam && battlefield?.active ? battlefieldHealthColor(actor.battlefieldTeam, battlefield.state.team) : color, title, battlefieldTitleColor(actor.battlefieldBoss ? 'Nguyên soái' : earned?.name || 'Binh sĩ'));
   }
   function text(simOnly = false) { return JSON.stringify({ format: "arena-damage-v1", exportedAt: new Date().toISOString(), oneDamage: sandbox.oneDamage,
@@ -1048,15 +1050,20 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
   }
   interface PreparedBattleActor { profile: SimulatorProfile; deck: SimulatorProfile[] }
   function prepareBattleActor(build: ArmyBuild, bossElement?: number): PreparedBattleActor | Promise<PreparedBattleActor> {
-    const profile = battleProfile(build, build.faction, bossElement !== undefined);
+    let profile:SimulatorProfile;
     const deck: SimulatorProfile[] = [];
-    if (bossElement !== undefined) for (const faction of ELEMENT_FACTIONS[bossElement]) {
-      const source = battleProfile(build, faction, true);
-      for (const id of I[faction].skills.filter(id => source.sk[id] && UA(T[id]) && [90,150].includes(T[id].tier))) {
-        const entry = battleProfile(build,faction,true,id); entry.main = id; entry.slots = [id]; deck.push(entry);
-      }
-    }
-    if (bossElement !== undefined && !deck.length) throw new Error('Boss không có kỹ năng 90/150 phù hợp.');
+    if (bossElement !== undefined){
+      const loadout=marshalLoadout(T,Object.values(I),bossElement,UA,wn,j1);
+      const createLoadout=(id:number)=>{
+        const entry=battleProfile({...build,faction:loadout.faction},loadout.faction,true,id);
+        const learned=new Set([...loadout.attacks,loadout.support]);
+        for(const key of Object.keys(entry.sk))if(!learned.has(+key)){delete entry.sk[key];delete entry.skL[key];}
+        entry.main=id;entry.slots=[...loadout.attacks];entry.skPts=0;
+        return entry;
+      };
+      profile=createLoadout(loadout.attacks[0]);
+      for(const id of loadout.attacks)deck.push(createLoadout(id));
+    }else profile=battleProfile(build,build.faction,false);
     const profiles = [profile,...deck];
     // Start only one new profile at a time. A cancelled match stops queueing work.
     const epoch = creationEpoch;
@@ -1109,6 +1116,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       });
       fighter.res=fighter.stats.res;
     },
+    playerKilled(title,name) { k(`Bạn đã giết ${title.toLocaleLowerCase('vi-VN')} <${name}>`); },
     event(message,kind) { if(kind!=='kill'&&kind!=='sim-kill')return; warEvents.push({message,sim:kind==='sim-kill'}); if(warEvents.length>300)warEvents.shift(); },
     bonusesChanged() {
       battlefieldWorld.dirty=true;
@@ -1121,6 +1129,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       }
     },
     storage: () => { o.mats ||= {}; o.mats.misc ||= {}; return o.mats.misc; },
+    dropChance: target => warDropProbability(target,battlefield!.state.dropRates),
     canCollect(kind) {
       const inventory=warRewards.state.inventory;
       return inventory[kind]%WAR_STACK_SIZE!==0 || o.inv.length + ['vlmt','ttk','rngua','ldt'].filter(key=>(o.mats?.misc?.[key]||0)>0).length + warItemStacks(inventory).length < INV_MAX;
@@ -1194,19 +1203,24 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     const supplyCamp = CAMPS[battlefield.state.team];
     context.fillStyle='#ffdf9788';context.beginPath();context.ellipse(supplyCamp.x,supplyCamp.y,SUPPLY_RADIUS,SUPPLY_RADIUS/2,0,0,Math.PI*2);context.strokeStyle='#ffdf97';context.stroke();
     context.fillText('Điểm tập trung · Tiếp tế',supplyCamp.x,supplyCamp.y-55);
-    for(const drop of warRewards.drops) {
-      context.fillStyle='#0008';context.beginPath();context.ellipse(drop.x,drop.y+3,12,5,0,0,Math.PI*2);context.fill();
-      const icon=bA(WAR_ITEMS[drop.kind].icon) as HTMLImageElement | null;
-      if(icon?.complete && icon.naturalWidth)context.drawImage(icon,drop.x-12,drop.y-24,24,24);
-      else { context.fillStyle=WAR_ITEMS[drop.kind].color;context.beginPath();context.arc(drop.x,drop.y-8,7,0,Math.PI*2);context.fill(); }
-      context.fillStyle=WAR_ITEMS[drop.kind].color;context.fillText(WAR_ITEMS[drop.kind].name,drop.x,drop.y-28);
-    }
+    for(const drop of warRewards.drops) drawWarItemDrop(context,drop);
     for(const trap of warRewards.traps) {
       const drawn=typeof A0!=='undefined' && typeof Fa==='function' && drawWarTrap(context,trap,A0,Fa);
       if(!drawn) { context.strokeStyle=WAR_ITEMS[trap.kind].color;context.beginPath();context.ellipse(trap.x,trap.y,24,12,0,0,Math.PI*2);context.stroke(); }
       context.fillStyle=WAR_ITEMS[trap.kind].color;context.fillText(WAR_ITEMS[trap.kind].name,trap.x,trap.y-18);
     }
     context.restore();
+  }
+  function drawWarItemDrop(context:CanvasRenderingContext2D,drop:{kind:string;x:number;y:number}) {
+      if(!Object.prototype.hasOwnProperty.call(WAR_ITEMS,drop.kind))return;
+      const item=WAR_ITEMS[drop.kind as keyof typeof WAR_ITEMS];
+      context.save();context.textAlign='center';context.font='11px sans-serif';
+      context.fillStyle='#0008';context.beginPath();context.ellipse(drop.x,drop.y+3,12,5,0,0,Math.PI*2);context.fill();
+      const icon=bA(item.icon) as HTMLImageElement | null;
+      if(icon?.complete && icon.naturalWidth)context.drawImage(icon,drop.x-12,drop.y-24,24,24);
+      else { context.fillStyle=item.color;context.beginPath();context.arc(drop.x,drop.y-8,7,0,Math.PI*2);context.fill(); }
+      context.fillStyle=item.color;context.fillText(item.name,drop.x,drop.y-28);
+      context.restore();
   }
   function receiveSoldierHit(target: LegacyEntity,source: LegacyEntity) {
     if(!battlefield?.canHit(source,target))return;
@@ -1237,6 +1251,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       resultDialog.open(result,points,battlefield!.state.team);
     },
     marshalHP: () => roadMonsters.configuration.marshal.hp,
+    marshalSettings: () => typeof OnlineBattlefield!=='undefined'?OnlineBattlefield.marshalSettings:undefined,
     inAttackRange(actor, target) {
       const preferred = actor.stats.main;
       const skill = !preferred.costLife && actor.mana < (preferred.cost || 0) ? actor.stats.basic : preferred;
@@ -1310,13 +1325,16 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     finally { Dn=previousEquipment; }
   }) : undefined);
   const leaderboard=mountWarLeaderboard(()=>buildWarStandings([
-    {id:'player',name:previousField?.name||o.name,team:battlefield!.state.team,points:warRewards.rank(battlefieldHero).points,title:warRewards.rank(battlefieldHero).name,soldierKills:warRewards.rank(battlefieldHero).soldierKills,player:true},
-    ...actors.filter(actor=>actor.battlefieldTeam&&!actor.battlefieldBoss).map(actor=>({id:actor.simId,name:actor.n,team:actor.battlefieldTeam,points:warRewards.rank(actor).points,title:warRewards.rank(actor).name,soldierKills:warRewards.rank(actor).soldierKills,player:false})),
+    {id:'player',name:previousField?.name||o.name,team:battlefield!.state.team,points:warRewards.rank(battlefieldHero).points,title:warRewards.rank(battlefieldHero).name,soldierKills:warRewards.rank(battlefieldHero).soldierKills,playerKills:warRewards.rank(battlefieldHero).playerKills,player:true},
+    ...actors.filter(actor=>actor.battlefieldTeam&&!actor.battlefieldBoss).map(actor=>({id:actor.simId,name:actor.n,team:actor.battlefieldTeam,points:warRewards.rank(actor).points,title:warRewards.rank(actor).name,soldierKills:warRewards.rank(actor).soldierKills,playerKills:warRewards.rank(actor).playerKills,player:false})),
   ]),D,()=>warRewards.totals,()=>battlefield!.state,(id,tab)=>{
     const actor=actors.find(actor=>actor.simId===id && actor.battlefieldTeam && !actor.battlefieldBoss);
     return actor ? inspection.html(actor,tab) : null;
   });
-  const resultDialog = mountBattlefieldResult(() => battlefield!.acknowledgeResult());
+  const resultDialog = mountBattlefieldResult(() => {
+    if(typeof OnlineBattlefield!=='undefined'&&OnlineBattlefield.state)return OnlineBattlefield.leave();
+    battlefield!.acknowledgeResult();
+  });
   const battlePanel=mountBattlefieldPanel(battlefield,Object.values(I),D,warRewards,supplies,{configureSoldiers: (configuration,applyNow=false) => {
       const available = soldierSkillOptions(T,Object.values(I),UA);
       for (const settings of Object.values(configuration)) for (const id of settings.skills || []) {
@@ -1352,6 +1370,6 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
   updateWarNpcs();
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (arenaEnabled && typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { nearestMonsterTarget: arenaTargets.nearestTarget, battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, warBuffs: () => typeof OnlineBattlefield!=='undefined'&&OnlineBattlefield.state?.itemBuffs ? warBuffHud(OnlineBattlefield.state.itemBuffs) : battlefield?.running ? warBuffHud(warRewards.state.buffs) : '', pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, advanceAnimation, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  return { nearestMonsterTarget: arenaTargets.nearestTarget, battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, marshalNotice, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, warBuffs: () => typeof OnlineBattlefield!=='undefined'&&OnlineBattlefield.state?.itemBuffs ? warBuffHud(OnlineBattlefield.state.itemBuffs) : battlefield?.running ? warBuffHud(warRewards.state.buffs) : '', pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, drawWarItemDrop, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, advanceAnimation, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }

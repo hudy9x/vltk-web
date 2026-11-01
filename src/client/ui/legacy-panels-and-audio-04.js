@@ -129,12 +129,13 @@ var Rv = function () {
     window.addEventListener("keydown", (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || e.target.isContentEditable) return;
       const a = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (["w", "a", "s", "d"].includes(a)) return;
       if (typeof gameMultiplayer !== "undefined" && gameMultiplayer.active &&
-          ["w", "a", "s", "d", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(a)) {
+          ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(a)) {
         e.preventDefault(); return;
       }
       ((Y.keys[a] = !0),
-        ["w", "a", "s", "d", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(a) &&
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(a) &&
           !$1() &&
           Y.prioritizeMovement(),
         !e.repeat &&
@@ -212,8 +213,8 @@ var Y = {
     if (Y.active && Y.moved) return Math.hypot(Y.x - Y.ox, Y.y - Y.oy) >= 6;
     if (typeof T1 !== "undefined" && (T1.v[0] || T1.v[1])) return true;
     const keys = Y.keys || {};
-    const dx = +(!!(keys.ArrowRight || keys.d)) - +(!!(keys.ArrowLeft || keys.a));
-    const dy = +(!!(keys.ArrowDown || keys.s)) - +(!!(keys.ArrowUp || keys.w));
+    const dx = +(!!(keys.ArrowRight)) - +(!!(keys.ArrowLeft));
+    const dy = +(!!(keys.ArrowDown)) - +(!!(keys.ArrowUp));
     return !!(dx || dy || (Y.target && Math.hypot(Y.target.x - v.x, Y.target.y - v.y) >= 6));
   },
   prioritizeMovement() {

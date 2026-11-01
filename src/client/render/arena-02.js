@@ -241,11 +241,11 @@ var NP = function (A) {
         v.x,
         x,
         `${o.name || (I[o.fac] && I[o.fac].n) || ""}${o.name && typeof Rh == "function" ? Rh(o.name) : ""}${hf({ slowT: l.slowT, poison: l.hpDotT, stun: l.stunT })}`,
-        (typeof gameMultiplayer!=='undefined'&&gameMultiplayer.pve&&OnlinePvp.nameColor(onlineWorld.state)) || (l.battlefield && typeof arenaSimulator !== "undefined" && arenaSimulator ? (arenaSimulator.battlefield.state.team === "song" ? "#ffcc00" : "#c77bff") : typeof o2 == "function" ? o2(o.name, o.fac) : Ps.hero),
+        (typeof gameMultiplayer!=='undefined'&&gameMultiplayer.pve&&OnlinePvp.nameColor(onlineWorld.state)) || (l.battlefield && typeof arenaSimulator !== "undefined" && arenaSimulator ? (arenaSimulator.battlefield.state.team === "song" ? "#ffb347" : "#c77bff") : typeof o2 == "function" ? o2(o.name, o.fac) : Ps.hero),
         12,
         l.life / Math.max(1, l.P.life),
         typeof gameMultiplayer!=='undefined'&&gameMultiplayer.pve?OnlinePvp.healthColor(onlineWorld.state):"#4fd04f",
-        typeof OnlineBattlefield!=="undefined"&&OnlineBattlefield.state?OnlineBattlefield.rankTitle(onlineWorld.state?.self):l.battlefield && typeof arenaSimulator!=="undefined" && arenaSimulator ? `<${arenaSimulator.warRewards.rank(v).name}>` : p ? `«${Ns(p)}»` : "",
+        typeof OnlineBattlefield!=="undefined"&&OnlineBattlefield.state?OnlineBattlefield.rankTitle(onlineWorld.state?.self):l.battlefield && typeof arenaSimulator!=="undefined" && arenaSimulator ? `<${arenaSimulator.battlefield.state.team === "song" ? "Tống" : "Kim"} ${arenaSimulator.warRewards.rank(v).name}>` : p ? `«${Ns(p)}»` : "",
         typeof OnlineBattlefield!=="undefined"&&OnlineBattlefield.state?"#8de1cf":l.battlefield && typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.battlefieldTitleColor(arenaSimulator.warRewards.rank(v).name) : p ? r2[p[3]].c : "",
       ),
         !w &&
@@ -315,9 +315,9 @@ var NP = function (A) {
     L3(
       a.x,
       d,
-      GP(a) + (crowd.counts.has(a) ? ` ×${crowd.counts.get(a)}` : "") +
+      (a.battlefieldTeam ? `${a.battlefieldTeam === "song" ? "Tống" : "Kim"} ${a.battlefieldRank || GP(a)}` : GP(a)) + (crowd.counts.has(a) ? ` ×${crowd.counts.get(a)}` : "") +
         (typeof combatSandbox !== "undefined" && combatSandbox ? combatSandbox.healthLabel(a) : ""),
-      a.battlefieldTeam === 'song' ? '#ffcc00' : a.battlefieldTeam === 'jin' ? '#c77bff' : a.goldBoss ? Ps.gold : Ps[a.cls] || Ps.normal,
+      a.battlefieldTeam ? '#ffffff' : a.goldBoss ? Ps.gold : Ps[a.cls] || Ps.normal,
       a.cls === "boss" ? 12 : 11,
       a.hp / a.max,
       a.battlefieldTeam && typeof arenaSimulator !== "undefined" && arenaSimulator

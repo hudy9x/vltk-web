@@ -1,6 +1,7 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
+import { createPublicBattlefieldSettings } from '../persistence/battlefield-settings.ts';
 import { createCharacters } from '../persistence/characters.ts';
 import gameMasterConfig from '../../../shared/game-master.json' with { type: 'json' };
 import progressionFields from '../../../shared/multiplayer/progression-fields.json' with { type: 'json' };
@@ -32,6 +33,7 @@ export function registerMultiplayerWebTransport(
   gameMasterMode: GameMasterMode = (process.env.GAME_MASTER_MODE ?? gameMasterConfig.mode) === 'development' ? 'development' : 'all',
 ): void {
   const characters = db ? createCharacters(db) : undefined;
+  const battlefieldSettings=db?createPublicBattlefieldSettings(db):undefined;
   let polling: Promise<void> | undefined;
   const stopped = new AbortController();
   async function controlCall(path: string, body?: unknown) {
@@ -67,6 +69,14 @@ export function registerMultiplayerWebTransport(
           if(deathDrop)await controlCall('/deaths/ack',deathDrop);
           else ids.push(grant.id);
         }
+        const drops=await controlCall('/battlefield/drops');
+        const picked:string[]=[];
+        for(const drop of drops){
+          for(const candidate of drop.candidates){
+            if(characters.apply({id:drop.id,account:candidate.account,slot:candidate.slot,xp:0,gold:0,warItem:drop.warItem})!==false){picked.push(drop.id);break;}
+          }
+        }
+        if(picked.length)await controlCall('/battlefield/drops/ack',picked);
         await refreshProfiles();
         if (ids.length) await controlCall('/rewards/ack', ids);
       } catch (error) {
@@ -82,6 +92,21 @@ export function registerMultiplayerWebTransport(
     clearInterval(timer);
     stopped.abort();
     await polling;
+  });
+  app.get('/api/multiplayer/battlefield-settings',(request,reply)=>{
+    requireUser(request);
+    if(!battlefieldSettings)return sendJson(reply,503,{error:'Online storage unavailable'});
+    return sendJson(reply,200,{settings:battlefieldSettings.read(),...battlefieldSettings.options(),editable:development||gameMasterMode==='all'});
+  });
+  app.post('/api/multiplayer/battlefield-settings',async(request,reply)=>{
+    requireUser(request);
+    if(!battlefieldSettings||!characters)return sendJson(reply,503,{error:'Online storage unavailable'});
+    if(!development&&gameMasterMode!=='all')return sendJson(reply,403,{error:'Cần quyền GM để cài đặt chiến trường chung.'});
+    let settings;
+    try{settings=battlefieldSettings.save(parseJsonBody(request.body),characters.world());}
+    catch(error){return sendJson(reply,400,{error:(error as Error).message});}
+    if(process.env.MULTIPLAYER_WT_CONTROL_URL)await controlCall('/catalog',battlefieldSettings.world(characters.world()));
+    return sendJson(reply,200,{settings});
   });
   app.get('/api/multiplayer/character', (request, reply) => {
     const user = requireUser(request);
@@ -151,7 +176,7 @@ export function registerMultiplayerWebTransport(
       return sendJson(reply, 400, { error: 'Ô nhân vật không hợp lệ.' });
     if (characters) {
       const saved = characters.read(String(user.id), slot);
-      await controlCall('/catalog', characters.world());
+      await controlCall('/catalog', battlefieldSettings!.world(characters.world()));
       ticket = issueMultiplayerTicket(String(user.id), secret);
       await controlCall('/admit', {
         nonce: ticket.subarray(21, 37).toString('hex'),

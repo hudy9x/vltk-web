@@ -1,3 +1,5 @@
+import { DEFAULT_WAR_DROP_RATES, validateWarDropRates } from './war-drop-settings';
+import type { WarDropRates } from './war-drop-settings';
 import { DEFAULT_DEPLOYMENT, PLAYER_DEATH_PENALTY_THRESHOLD, validateDeploymentSettings } from './deployment-settings';
 import type { DeploymentSettings } from './deployment-settings';
 import { DEFAULT_SOLDIERS } from './soldier-config';
@@ -35,6 +37,7 @@ export interface BattlefieldHost {
   teamPoints?(): Record<Team,number>;
   finished?(result: string, points: Record<Team,number>): void;
   marshalHP?(): number;
+  marshalSettings?(): Partial<Record<Team,{hp:number;res:number[]}>> | undefined;
   marshalAppeared?(side: Team): void;
   inAttackRange?(actor: SimulatorActor, target: LegacyEntity): boolean;
   prepare?(build: ArmyBuild, bossElement?: number): unknown | Promise<unknown>;
@@ -52,10 +55,12 @@ export interface BattlefieldHost {
 /** Match state is transient, separate from character saves and training spawns. */
 export function createBattlefield(host: BattlefieldHost) {
   let phase: 'idle' | 'running' | 'finished' = 'idle';
+  let duration = BATTLE_DURATION, dropRates = {...DEFAULT_WAR_DROP_RATES};
   let elapsed = 0, team: Team = 'song', playerDue: number | null = null;
   let generation = 0, adding = false;
   let nextDeployment = validateDeploymentSettings(DEFAULT_DEPLOYMENT), deployment = { ...nextDeployment }, playerDeaths = 0;
   let marshalHP = DEFAULT_SOLDIERS.marshal.hp;
+  let marshalSettings:Partial<Record<Team,{hp:number;res:number[]}>>={};
   let result = '', elements = { song: 3, jin: 2 };
   const score = { song: 0, jin: 0 };
   let finalScore: Record<Team,number> | null = null;
@@ -186,13 +191,21 @@ export function createBattlefield(host: BattlefieldHost) {
     score.song = score.jin = 0; finalScore = null;
     host.leave();
   }
-  function start(playerTeam: Team, bossElements = { song: 3, jin: 2 }, mapId: number = BATTLE_MAP) {
+  function start(playerTeam: Team, bossElements?: {song:number;jin:number}, mapId: number = BATTLE_MAP, durationSeconds: number = BATTLE_DURATION, configuredDropRates: WarDropRates = DEFAULT_WAR_DROP_RATES) {
+    if(!Number.isSafeInteger(durationSeconds)||durationSeconds<10||durationSeconds>7200)throw new Error('Thời lượng trận: từ 10 đến 7.200 giây.');
     if (!BATTLEFIELD_MAPS.some(map=>map.id===mapId)) throw new Error('Chiến trường không hợp lệ.');
-    if (!isTeam(playerTeam) || ![bossElements.song, bossElements.jin].every(value => Number.isInteger(value) && value >= 0 && value <= 4)) throw new Error('Phe hoặc hệ boss không hợp lệ.');
+    const selectedElements=bossElements??{song:Math.floor(Math.random()*5),jin:Math.floor(Math.random()*5)};
+    if (!isTeam(playerTeam) || ![selectedElements.song, selectedElements.jin].every(value => Number.isInteger(value) && value >= 0 && value <= 4)) throw new Error('Phe hoặc hệ boss không hợp lệ.');
+    const validatedDrops=validateWarDropRates(configuredDropRates);
+    const settings=host.marshalSettings?.(),snapshot:typeof marshalSettings={};
+    for(const side of ['song','jin'] as const){const row=settings?.[side];if(row){
+      if(!Number.isSafeInteger(row.hp)||row.hp<1||row.hp>1e12||!Array.isArray(row.res)||row.res.length!==5||row.res.some(n=>!Number.isFinite(n)||n< -100||n>100))throw new Error('Máu hoặc kháng Nguyên soái không hợp lệ.');
+      snapshot[side]={hp:row.hp,res:[...row.res]};
+    }}
     const configuredMarshalHP = host.marshalHP?.() ?? DEFAULT_SOLDIERS.marshal.hp;
     if (!Number.isSafeInteger(configuredMarshalHP) || configuredMarshalHP < 1 || configuredMarshalHP > 1_000_000_000_000) throw new Error("HP Nguyên soái không hợp lệ.");
-    reset(); deployment = { ...nextDeployment };
-    team = playerTeam; elements = { ...bossElements }; marshalHP = configuredMarshalHP;
+    reset(); dropRates=validatedDrops; duration = durationSeconds; deployment = { ...nextDeployment };
+    team = playerTeam; elements = { ...selectedElements }; marshalHP = configuredMarshalHP; marshalSettings=snapshot;
     try {
       host.enter(team); phase = 'running'; prepareMarshals();
     } catch (error) { reset(); throw error; }
@@ -202,7 +215,14 @@ export function createBattlefield(host: BattlefieldHost) {
       const actor = host.create(marshalBuild(side), elements[side], marshalRecipes.get(side));
       actor.battlefieldTeam = side; actor.battlefieldBoss = true;
       actor.n = `Hoàng Kim · ${actor.n}`;
-      actor.max = actor.hp = actor.stats.life = marshalHP;
+      actor.max = actor.hp = actor.stats.life = marshalSettings[side]?.hp??marshalHP;
+      const configured=marshalSettings[side];
+      if(configured){
+        actor.battlefieldConfiguredRes=true;
+        const res=Object.fromEntries(['phys','poison','cold','fire','light'].map((key,i)=>[key,configured.res[i]]));
+        actor.res=actor.stats.res={...res};
+        for(const entry of actor.battlefieldDeck||[]){entry.stats.res={...res};entry.stats.life=actor.max;}
+      }
       bosses.set(side, actor); place(actor);
       host.marshalAppeared?.(side);
     }
@@ -227,10 +247,10 @@ export function createBattlefield(host: BattlefieldHost) {
   }
   function tick(dt: number) {
     if (phase !== 'running' || !Number.isFinite(dt) || dt <= 0) return;
-    elapsed = Math.min(BATTLE_DURATION, elapsed + dt);
+    elapsed = Math.min(duration, elapsed + dt);
     for (const actor of host.actors().filter(owns)) if (!alive(actor)) died(actor);
     if (!host.playerAlive() && playerDue === null) playerDied();
-    if (elapsed >= BATTLE_DURATION) {
+    if (elapsed >= duration) {
       phase = 'finished';
       finalScore = { ...(host.teamPoints?.() || score) };
       result = finalScore.song === finalScore.jin ? 'Hòa · Hai phe bằng quân trạng' : `${finalScore.song > finalScore.jin ? 'Tống' : 'Kim'} thắng · Tổng quân trạng`;
@@ -238,7 +258,7 @@ export function createBattlefield(host: BattlefieldHost) {
       host.finished?.(result, {...finalScore});
       return;
     }
-    if (elapsed >= MARSHAL_APPEARANCE_SECONDS && bosses.size === 0 && !marshalPreparing && !preparationError) spawnMarshals();
+    if (elapsed >= duration / 2 && bosses.size === 0 && !marshalPreparing && !preparationError) spawnMarshals();
     for (const [actor, due] of respawns) if (elapsed + 1e-9 >= due) {
       if (host.actors().includes(actor)) { host.restore(actor); actor.battlefieldDeathCounted = false; place(actor); }
       respawns.delete(actor);
@@ -249,7 +269,7 @@ export function createBattlefield(host: BattlefieldHost) {
   return { acknowledgeResult() { if (phase === "finished") reset(true); }, configureDeployment, start, reset, add, addAsync, addBothAsync, targets, canHit, died, playerDied, tick, owns,
     get prepared() { return preparation; },
     get active() { return phase !== 'idle'; }, get running() { return phase === 'running'; },
-    get state() { return { mapId: BATTLE_MAP, camps: {song:{...CAMPS.song},jin:{...CAMPS.jin}}, deployment: { ...deployment }, playerDeaths, monsters: { count: host.monsterCount?.() ?? (host.monsters?.().length || 0), alive: (host.monsters?.() || []).filter(alive).length }, phase, elapsed, marshalPreparing, preparationError, remaining: BATTLE_DURATION - elapsed, team, result, score: { ...(finalScore || host.teamPoints?.() || score) }, elements: { ...elements }, playerRespawn: playerDue === null ? 0 : Math.max(0, playerDue - elapsed),
+    get state() { return { mapId: BATTLE_MAP, camps: {song:{...CAMPS.song},jin:{...CAMPS.jin}}, deployment: { ...deployment }, playerDeaths, monsters: { count: host.monsterCount?.() ?? (host.monsters?.().length || 0), alive: (host.monsters?.() || []).filter(alive).length }, phase, elapsed, marshalPreparing, preparationError, dropRates:{...dropRates}, duration, remaining: duration - elapsed, team, result, score: { ...(finalScore || host.teamPoints?.() || score) }, elements: { ...elements }, playerRespawn: playerDue === null ? 0 : Math.max(0, playerDue - elapsed),
       armies: Object.fromEntries((['song', 'jin'] as const).map(side => [side, { count: host.actors().filter(a => a.battlefieldTeam === side && !a.battlefieldBoss).length, alive: host.actors().filter(a => a.battlefieldTeam === side && !a.battlefieldBoss && alive(a)).length, bossHP: Math.max(0, bosses.get(side)?.hp || 0), bossMax: bosses.get(side)?.max || 0 }])) }; },
   };
 }

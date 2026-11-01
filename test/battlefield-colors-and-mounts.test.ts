@@ -173,10 +173,12 @@
       }));
       game.NP(0.016);
       const hero = labels.find((row) => row[2] === "hero")!;
+      assert.equal(hero[3], playerTeam === "song" ? "#ffb347" : "#c77bff");
       assert.equal(hero[6], "#4fd04f");
       assert.equal(hero[8], colors.battlefieldTitleColor("Tướng quân"));
       for (const team of ["song", "jin"]) {
-        const row = labels.find((row) => row[2] === team)!;
+        const row = labels.find((row) => row[2] === (team === "song" ? "Tống Binh sĩ" : "Kim Nguyên soái"))!;
+        assert.equal(row[3], "#ffffff");
         assert.equal(row[6], team === playerTeam ? "#4fd04f" : "#ff6038");
         assert.equal(
           row[8],
@@ -239,6 +241,7 @@
         actor.look = { anim: "sim-body" };
         simulator.draw({}, actor, 0.016);
         const row = labels.at(-1)!;
+        assert.equal(row[3], actor.battlefieldBoss ? "#ffffff" : actor.battlefieldTeam === "song" ? "#ffb347" : "#c77bff");
         assert.equal(
           row[6],
           actor.battlefieldTeam === playerTeam ? "#4fd04f" : "#ff6038",

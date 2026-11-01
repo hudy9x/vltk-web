@@ -1,6 +1,8 @@
 // Public-room presentation. Commands express intent; only server snapshots change the match.
 var OnlineBattlefield=(()=>{
   let state=null,world=null,sender=()=>0,panel=null,hud=null,table=null,summary={},lastAt=0,requestAt=0,leaving=false,preferPlayers=true,preferenceSent=null,controlsActive=false,recruitment=null,shop=null,shopSlot=0,shopStamp='',shopBusy=false,shopMessage='',respawnNotice=null;
+  let shownResult=null,configuredDrops,configuredMarshals;
+  let lastKillNotice=0,marshalAnnounced=false,announcementAt=0;
   const bodies=new Map();
   const rank=p=>['Binh sĩ','Hiệu úy','Thống lĩnh','Phó tướng','Đại tướng'][[3000,9000,18000,30000].filter(n=>p>=n).length];
   const key=()=>`__tongkim_public:${window.localGameAuth?.user?.id||''}:${m0}`;
@@ -35,7 +37,7 @@ body.tongkim-controls #public-war-prefer{display:flex}
     for(const key of ['status','teams','personal','potions']){const line=document.createElement('p');line.id=`public-war-${key}`;summary[key]=line;content.appendChild(line);}
     const scroll=document.createElement('div');scroll.className='war-table';table=document.createElement('table');scroll.appendChild(table);content.appendChild(scroll);
     const hint=document.createElement('p');hint.textContent='Top 10 quân trạng và hạng của bạn · Phím ` để bật/tắt · Esc để đóng';content.appendChild(hint);
-    const actions=document.createElement('div');actions.className='war-actions';const leave=document.createElement('button');leave.id='public-war-leave';leave.textContent='Rời chiến trường';leave.onclick=()=>api.leave();actions.appendChild(leave);content.appendChild(actions);
+    const actions=document.createElement('div');actions.className='war-actions';const leave=document.createElement('button');leave.id='public-war-leave';leave.textContent='Rời chiến trường';leave.onclick=()=>api.leave();actions.appendChild(leave);const settings=document.createElement('button');settings.textContent='Cài đặt Tống Kim · lưu server';settings.onclick=openSettings;actions.appendChild(settings);content.appendChild(actions);
     panel.append(header,content);document.body.appendChild(panel);
     const control=document.createElement('label');control.id='public-war-prefer';control.className='chip';control.title='Ưu tiên người chơi và SIM đối phương trước binh sĩ';
     const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=true;checkbox.onchange=()=>{preferPlayers=checkbox.checked;if(l.battlefield){o.preferPKSim=preferPlayers;l.tgt=null;l.dirty=true;}};control.append(checkbox,'Đánh người');document.getElementById('topCtl')?.appendChild(control);
@@ -45,7 +47,11 @@ body.tongkim-controls #public-war-prefer{display:flex}
     if(!hud)return;hud.hidden=!state;if(!state)return;
     const elapsed=Math.max(0,clock()-state.now),entry=Math.max(0,state.entryRemaining-elapsed),respawn=Math.max(0,state.respawnRemaining-elapsed);
     const phase=state.phase==='finished'?(state.score[0]===state.score[1]?'Hòa':`${state.score[0]>state.score[1]?'Tống':'Kim'} thắng`):entry>0?`Nhập trận sau ${Math.ceil(entry)} giây`:respawn>0?`Tái xuất sau ${Math.ceil(respawn)} giây`:'Đang giao chiến';
-    hud.textContent=time(state.ends-clock());
+    hud.textContent=entry>0?`Phòng chờ · Vào trận sau ${Math.ceil(entry)} giây`:time(state.ends-clock());
+    hud.style.fontSize=entry>0?'40px':'20px';
+    const now=performance.now();
+    if(typeof arenaSimulator!=='undefined')arenaSimulator?.marshalNotice?.tick(Math.max(0,(now-announcementAt)/1000),state.phase==='running');
+    announcementAt=now;
     const self=world?.actors.find(a=>a.id===world.self);
     respawnNotice.hidden=state.phase==='finished'||!(self?.hp<=0&&respawn>0);
     const notice=`Tái xuất chiến sau ${Math.ceil(respawn)} giây`;
@@ -56,7 +62,7 @@ body.tongkim-controls #public-war-prefer{display:flex}
     for(const [team,name,color] of [[0,'Tống','#ffcc00'],[1,'Kim','#c77bff']]){const span=document.createElement('span');span.style.color=color;span.textContent=`${name}: ${state.score[team].toLocaleString('vi-VN')}`;summary.teams.append(span,team===0?' · ':' quân trạng');}
     summary.potions.textContent=`Thuốc còn lại: ${state.potions[0]} HP / ${state.potions[1]} MP`;
     table.replaceChildren();
-    const head=document.createElement('tr');for(const label of ['Hạng','Nhân vật','Phe','Danh hiệu','Binh sĩ hạ','Người chơi hạ','Điểm']){const cell=document.createElement('th');cell.textContent=label;head.appendChild(cell);}table.appendChild(head);
+    const head=document.createElement('tr');for(const label of ['Hạng','Nhân vật','Phe','Danh hiệu','Binh sĩ hạ','Người chơi/SIM hạ','Điểm']){const cell=document.createElement('th');cell.textContent=label;head.appendChild(cell);}table.appendChild(head);
     const rows=state.units.filter(u=>u.kind<2).sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name,'vi')||a.id-b.id);
     const own=rows.findIndex(row=>row.id===world.self),player=rows[own];
     summary.personal.textContent=player?`Bạn: ${player.name} · Hạng ${own+1}/${rows.length} · ${player.points.toLocaleString('vi-VN')} điểm · <${rank(player.points)}>`:'';
@@ -66,8 +72,95 @@ body.tongkim-controls #public-war-prefer{display:flex}
     }
   }
 
+  function resetAnnouncements(){
+    lastKillNotice=0;marshalAnnounced=false;announcementAt=performance.now();
+    if(state&&typeof arenaSimulator!=='undefined')arenaSimulator?.marshalNotice?.reset();
+  }
+  function announce(previous){
+    if(!previous||previous.id!==state.id)resetAnnouncements();
+    for(const notice of state.killNotices||[]){
+      if(notice.id<=lastKillNotice)continue;
+      lastKillNotice=notice.id;
+      if(state.now-notice.at>10)continue;
+      const message=`Bạn đã giết ${notice.title.toLocaleLowerCase('vi-VN')} <${notice.name}>`;
+      if(typeof k==='function')k(message);
+      if(typeof combatLog!=='undefined')combatLog?.war?.(message,true);
+    }
+    const spawned=state.marshalsSpawned??state.units.some(unit=>unit.kind===3);
+    if(spawned&&!marshalAnnounced&&state.phase==='running'){
+      const notice=typeof arenaSimulator!=='undefined'?arenaSimulator?.marshalNotice:null;
+      if(!notice)return;
+      marshalAnnounced=true;
+      if(previous||state.now-(state.starts+(state.ends-state.starts)/2)<=6){
+        const viewer=state.team===0?'song':'jin';notice.show('song',viewer);notice.show('jin',viewer);announcementAt=performance.now();
+      }
+    }
+  }
+  function showResult(){
+    if(state?.phase!=='finished'||leaving||shownResult===state.id)return;
+    const dialog=typeof arenaSimulator!=='undefined'?arenaSimulator?.resultDialog:null;
+    if(!dialog)return;
+    const result=state.score[0]===state.score[1]?'Hòa · Hai phe bằng quân trạng':`${state.score[0]>state.score[1]?'Tống':'Kim'} thắng · Tổng quân trạng`;
+    if(panel)panel.hidden=true;if(shop)shop.hidden=true;recruitment?.remove();
+    if(typeof Y!=='undefined')Object.assign(Y,{keys:{},target:null,active:false,moved:false,mouse:false});
+    Object.assign(l,{moveTo:null,pickTarget:null,manTgt:null,tgt:null,clickHold:false,dash:null,dashTrail:null});
+    dialog.open(result,{song:state.score[0],jin:state.score[1]},state.team===0?'song':'jin');
+    shownResult=state.id;
+  }
+  function closeResult(){
+    if(shownResult!==null&&typeof arenaSimulator!=='undefined')arenaSimulator?.resultDialog?.close();
+    shownResult=null;
+  }
   function openRanking(){mount();panel.hidden=false;render();}
+  async function openSettings(){
+    mount();
+    let dialog=document.getElementById('public-war-settings');
+    if(dialog){dialog.hidden=false;return;}
+    dialog=document.createElement('section');dialog.id='public-war-settings';dialog.className='war-dialog';dialog.style.zIndex='100022';dialog.setAttribute('role','dialog');
+    dialog.innerHTML='<header><h2>Cài đặt Tống Kim · lưu server</h2><button class="war-close" aria-label="Đóng cài đặt">×</button></header><div class="war-content"><p>Đang tải cấu hình từ server…</p></div>';
+    dialog.querySelector('.war-close').onclick=()=>dialog.remove();document.body.appendChild(dialog);
+    const content=dialog.querySelector('.war-content');
+    try{
+      const response=await fetch('/api/multiplayer/battlefield-settings');const data=await response.json();if(!response.ok)throw new Error(data.error);
+      const value=data.settings,escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const input=(label,path,v,min,max)=>`<label>${label}<input data-setting="${path}" type="number" step="any" min="${min}" max="${max}" value="${v}"></label>`;
+      const skills=(path,ids,available)=>[0,1].map(slot=>`<label>Chiêu ${slot+1}<select data-setting="${path}.skills.${slot}"><option value="0">${path.startsWith('marshals')?'Mặc định theo hệ':'Đánh thường'}</option>${available.map(skill=>`<option value="${skill.id}" ${ids[slot]===skill.id?'selected':''}>${escape(skill.name)} · cấp ${skill.level}</option>`).join('')}</select></label>`).join('');
+      content.innerHTML=`<p>Cấu hình chung lưu tại server, dùng cho các trận mới. Trận đang chạy giữ cấu hình lúc bắt đầu. Nguyên soái xuất hiện ở nửa thời lượng trận.</p><div class="war-grid">${input('Thời lượng PvP (phút)','durationSeconds',(value.durationSeconds??1200)/60,1/6,120)}${input('Thời lượng trận riêng (phút)','privateDurationSeconds',(value.privateDurationSeconds??1200)/60,1/6,120)}</div>`;
+      const rates=document.createElement('div');rates.className='war-card';
+      rates.innerHTML=`<h3>Tỉ lệ rơi vật phẩm Quân Nhu (%)</h3><p>Áp dụng cho PvP và trận riêng từ trận mới. Tự nhặt khi đến gần; túi đầy thì vật phẩm ở lại trên đất tối đa 90 giây.</p><div class="war-grid">${[...data.ranks,'marshal'].map((rank,index)=>input(index<data.titles.length?data.titles[index]:'Nguyên soái','dropRates.'+rank,value.dropRates[rank],0,100)).join('')}</div>`;content.appendChild(rates);
+      for(const [index,rank]of data.ranks.entries()){
+        const row=value.soldiers[rank],path='soldiers.'+rank,card=document.createElement('div');card.className='war-card';
+        card.innerHTML=`<h3>${escape(data.titles[index])}</h3><div class="war-grid">${input('Tổng hai phe',path+'.count',row.count,0,100)}${input('Máu',path+'.hp',row.hp,1,1e12)}<label>Hồi sinh<select data-setting="${path}.respawnSeconds">${[10,20,30].map(n=>`<option ${n===row.respawnSeconds?'selected':''}>${n}</option>`).join('')}</select></label>${input('Tuần tra',path+'.patrolRadius',row.patrolRadius,40,1200)}${input('Truy đuổi',path+'.leashRadius',row.leashRadius,40,1600)}${skills(path,row.skills,data.skills.filter(s=>s.level>=50&&s.level<=70))}</div>`;content.appendChild(card);
+      }
+      for(const team of ['song','jin']){
+        const row=value.marshals[team],path='marshals.'+team,card=document.createElement('div');card.className='war-card';
+        card.innerHTML=`<h3>Nguyên soái ${team==='song'?'Tống':'Kim'}</h3><p>Ngũ hành ngẫu nhiên mỗi trận · 1 chiêu cấp 80, 1 chiêu cấp 150 và 1 phụ trợ cùng hệ.</p><div class="war-grid">${input('Máu',path+'.hp',row.hp,1,1e12)}${['Vật lí','Độc','Băng','Hỏa','Lôi'].map((name,i)=>input('Kháng '+name+' (%)',path+'.res.'+i,row.res[i],-100,100)).join('')}</div>`;
+        content.appendChild(card);
+      }
+      const save=document.createElement('button');save.textContent='Lưu cấu hình lên server';save.disabled=!data.editable;const message=document.createElement('p');message.setAttribute('role','status');
+      save.onclick=async()=>{
+        save.disabled=true;message.textContent='Đang lưu…';
+        try{
+          for(const field of content.querySelectorAll('[data-setting]')){
+            const parts=field.dataset.setting.split('.');let target=value;for(const part of parts.slice(0,-1))target=target[part];target[parts.at(-1)]=['durationSeconds','privateDurationSeconds'].includes(field.dataset.setting)?Math.round(Number(field.value)*60):Number(field.value);
+          }
+          for(const row of Object.values(value.soldiers))row.skills=row.skills.filter(Boolean);
+          const response=await fetch('/api/multiplayer/battlefield-settings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(value)}),saved=await response.json();if(!response.ok)throw new Error(saved.error);
+          message.textContent='Đã lưu trên server. Áp dụng từ trận mới.';
+        }catch(error){message.textContent=error.message;}finally{save.disabled=false;}
+      };content.append(save,message);
+    }catch(error){content.textContent=error.message;}
+  }
   const api={
+    settings:openSettings,
+    get marshalSettings(){return configuredMarshals;},
+    get dropRates(){return configuredDrops;},
+    async matchDuration(mode='public'){
+      const response=await fetch('/api/multiplayer/battlefield-settings'),data=await response.json();
+      if(!response.ok)throw new Error(data.error||'Không tải được thời lượng trận từ server.');
+      configuredDrops=data.settings.dropRates;configuredMarshals=data.settings.marshals;
+      return data.settings[mode==='private'?'privateDurationSeconds':'durationSeconds']??1200;
+    },
     get active(){return !!state||!!read();},
     get state(){return state;},
     join(team,send=sender){
@@ -99,10 +192,10 @@ body.tongkim-controls #public-war-prefer{display:flex}
         const image=document.createElement('img');image.src=potion.ic;image.alt='';const select=document.createElement('button');select.className='war-product';select.textContent=`${potion.n} · ${Ot(potion).toLocaleString('vi-VN')} lượng · còn ${state.inventory?.find(i=>i.slot===shopSlot&&i.id===id)?.count||0}`;
         const submit=async(kind,quantity)=>{if(shopBusy)return;shopBusy=true;shopMessage='Đang lưu giao dịch…';api.renderShop();try{await OnlineProgression.run({kind,potion:potion.kind,tier:potion.tier,slot:shopSlot,...(quantity?{quantity}:{})});shopMessage=quantity?'Đã mua thuốc và chọn vào ô.':'Đã chọn thuốc.';}catch(error){shopMessage=error.message;}finally{shopBusy=false;shopStamp='';api.renderShop();}};
         select.disabled=shopBusy;select.onclick=()=>submit('warPotionSelect');row.append(image,select);
-        for(const quantity of [1,20]){const buy=document.createElement('button');buy.textContent=quantity===1?'Mua':'Mua ×20';buy.disabled=shopBusy||state.potions[shopSlot]>=40;buy.dataset.buy=String(id);buy.dataset.quantity=String(quantity);buy.onclick=()=>submit('warPotionBuy',quantity);row.appendChild(buy);}products.appendChild(row);
+        for(const quantity of [1,20]){const buy=document.createElement('button');buy.textContent=quantity===1?'Mua':'Mua ×20';buy.disabled=shopBusy;buy.dataset.buy=String(id);buy.dataset.quantity=String(quantity);buy.onclick=()=>submit('warPotionBuy',quantity);row.appendChild(buy);}products.appendChild(row);
       }
     },
-    rankTitle(id){const unit=state?.units.find(u=>u.id===id);return unit&&unit.kind<2?`<${rank(unit.points)}>`:'';},
+    rankTitle(id){const unit=state?.units.find(u=>u.id===id);return unit&&unit.kind<2?`<${unit.team===0?'Tống':'Kim'} ${rank(unit.points)}>`:'';},
     ranking:openRanking,
     recruit(team){
       if(![0,1].includes(team))return;
@@ -111,7 +204,7 @@ body.tongkim-controls #public-war-prefer{display:flex}
       const header=document.createElement('header'),title=document.createElement('h2');title.textContent=team===0?'Tống Quốc Chiêu Binh quan':'Kim Quốc Chiêu Binh quan';
       const close=document.createElement('button');close.className='war-close';close.textContent='×';close.setAttribute('aria-label','Đóng');close.onclick=()=>recruitment.remove();header.append(title,close);
       const content=document.createElement('div');content.className='war-content';const description=document.createElement('p');description.textContent=`Gia nhập phe ${team===0?'Tống':'Kim'} · PvP · Chiến trường chung. Chờ 5 giây tại khu chờ trước khi nhập trận.`;
-      const join=document.createElement('button');join.id='public-war-recruit-join';join.textContent=`Gia nhập phe ${team===0?'Tống':'Kim'}`;join.onclick=()=>{if(api.join(team))recruitment.remove();else description.textContent='Đang chờ kết nối máy chủ. Vui lòng thử lại.';};content.append(description,join);recruitment.append(header,content);document.body.appendChild(recruitment);
+      const join=document.createElement('button');join.id='public-war-recruit-join';join.textContent=`Gia nhập phe ${team===0?'Tống':'Kim'}`;join.onclick=()=>{if(api.join(team))recruitment.remove();else description.textContent='Đang chờ kết nối máy chủ. Vui lòng thử lại.';};const settings=document.createElement('button');settings.textContent='Cài đặt Tống Kim · lưu server';settings.onclick=openSettings;content.append(description,join,settings);recruitment.append(header,content);document.body.appendChild(recruitment);
     },
     controls(){
       const active=!!state||!!l.battlefield;
@@ -120,22 +213,23 @@ body.tongkim-controls #public-war-prefer{display:flex}
       if(state&&world?.actors.find(a=>a.id===world.self)?.battlefieldReady&&preferenceSent!==preferPlayers&&sender(9,{skill:0,target:+preferPlayers}))preferenceSent=preferPlayers;
     },
     handleKey(event){
+      if(state?.phase==='finished')return false;
       const toggle=event.code==='Backquote'||event.key==='`',escape=event.key==='Escape';
       if(!state||(!toggle&&(!escape||!panel||panel.hidden))||event.ctrlKey||event.metaKey||event.altKey||event.isComposing||/TEXTAREA|SELECT/.test(event.target?.tagName)||(event.target?.tagName==='INPUT'&&!['checkbox','radio','button','submit'].includes(event.target.type))||event.target?.isContentEditable)return false;
       event.preventDefault();event.stopImmediatePropagation();
       if(!event.repeat){if(toggle&&panel.hidden)openRanking();else panel.hidden=true;}return true;
     },
-    reset(){state=null;world=null;requestAt=0;preferenceSent=null;controlsActive=false;document.body.classList.remove('tongkim-controls');recruitment?.remove();if(shop)shop.hidden=true;bodies.clear();if(hud)hud.hidden=true;if(respawnNotice)respawnNotice.hidden=true;if(panel)panel.hidden=true;},
+    reset(){resetAnnouncements();closeResult();leaving=false;state=null;world=null;requestAt=0;preferenceSent=null;controlsActive=false;document.body.classList.remove('tongkim-controls');recruitment?.remove();if(shop)shop.hidden=true;bodies.clear();if(hud)hud.hidden=true;if(respawnNotice)respawnNotice.hidden=true;if(panel)panel.hidden=true;},
     sync(next,send){
       sender=send;world=next;
       if(!next.battlefield){if(shop)shop.hidden=true;
-        if(state){state=null;bodies.clear();if(hud)hud.hidden=true;if(respawnNotice)respawnNotice.hidden=true;if(panel)panel.hidden=true;}
+        if(state){resetAnnouncements();closeResult();state=null;bodies.clear();if(hud)hud.hidden=true;if(respawnNotice)respawnNotice.hidden=true;if(panel)panel.hidden=true;}
         const intent=read();if(intent&&!leaving){if(intent.until<Date.now()){remember(null);return;}if(!requestAt||performance.now()-requestAt>10000){requestAt=performance.now();send(19,{target:intent.team});}}
         return;
       }
       const previous=state;state=next.battlefield;if(!previous){preferPlayers=true;preferenceSent=null;}if(!previous||String(previous.potions)!==String(state.potions)){R=true;l.dirty=true;}lastAt=performance.now();mount();
       remember({team:state.team,until:Date.now()+Math.max(0,state.ends-state.now)*1000});
-      if(state.phase==='finished'&&previous?.phase!=='finished')openRanking();render();api.renderShop();
+      announce(previous);showResult();render();api.renderShop();
     },
     potion(kind,send=sender,quiet=false){
       if(!state||state.phase!=='running'||state.entryRemaining>0||state.respawnRemaining>0)return false;
@@ -165,16 +259,18 @@ body.tongkim-controls #public-war-prefer{display:flex}
         result.push({remotePlayer:body,x:body.x,y:body.y});
       }
       for(const id of bodies.keys())if(!ids.has(id))bodies.delete(id);
+      for(const drop of next.battlefield.itemDrops||[])result.push({remotePlayer:{...drop,battlefieldUnit:true,warDrop:true},x:drop.x,y:drop.y});
       for(const trap of next.battlefield.itemTraps||[])result.push({remotePlayer:{...trap,battlefieldUnit:true,warTrap:true},x:trap.x,y:trap.y});
       return result;
     },
     draw(ctx,actor,next){
+      if(actor.warDrop){if(typeof arenaSimulator!=='undefined')arenaSimulator?.drawWarItemDrop(ctx,actor);return;}
       if(actor.warTrap){
         const skill=({freezeTrap:345,stunTrap:349,slowTrap:343})[actor.kind],code=A0.f?.[skill]?.c,sprite=A0.m?.[code]?.fly;
         if(!(sprite&&Fa(sprite,0,Math.max(0,30-(actor.expires-clock())),actor.x,actor.y,true))){ctx.strokeStyle='#83dcff';ctx.beginPath();ctx.ellipse(actor.x,actor.y,24,12,0,0,7);ctx.stroke();}
         return;
       }
-      const color=actor.team===0?'#ffcc00':'#c77bff',pose=onlineWorld.pose(actor.id);
+      const color=actor.kind>=2?'#ffffff':actor.team===0?'#ffb347':'#c77bff',pose=onlineWorld.pose(actor.id);
       const definition=actor.kind===1?Jt(actor.f,actor.s):r0[actor.skin],anim=definition?.anim;
       let elapsed=actor.actT;
       if(actor.act==='at'&&pose?.atD>0){elapsed=(1-pose.atT/pose.atD)*(ws(anim,'at')||.4);if(Number.isFinite(pose.dir))actor.dir=pose.dir;}
@@ -190,7 +286,7 @@ body.tongkim-controls #public-war-prefer{display:flex}
         if(!asset||!M8(asset,definition.sz,actor.x,actor.y,1,false,actor.dead ? .35 : 1)){ctx.fillStyle=color;ctx.beginPath();ctx.arc(actor.x,actor.y-18,12,0,7);ctx.fill();}
       }
       effects('over');
-      L3(actor.x,actor.y-(typeof nameplateOffset==='function'?nameplateOffset(anim,scale,.9,6,58):65),actor.name,color,12,actor.hp/actor.maxHp,OnlinePvp.healthColor(next,actor),actor.kind<2?`<${rank(actor.points)}>`:undefined,'#8de1cf');
+      L3(actor.x,actor.y-(typeof nameplateOffset==='function'?nameplateOffset(anim,scale,.9,6,58):65),(actor.kind>=2?`${actor.team===0?'Tống':'Kim'} ${actor.name}`:actor.name),color,12,actor.hp/actor.maxHp,OnlinePvp.healthColor(next,actor),actor.kind<2?`<${actor.team===0?'Tống':'Kim'} ${rank(actor.points)}>`:undefined,'#8de1cf');
     },
   };
   return api;

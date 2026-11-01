@@ -1,3 +1,4 @@
+import { warDropProbability } from './war-drop-settings';
 import type { LegacyEntity, LegacyRecord } from './types';
 import type { Team } from './battlefield';
 export const WAR_RANKS = [
@@ -50,9 +51,9 @@ export function warItemStacks(inventory: Partial<Record<WarItem, number>>) {
 }
 export function warRank(points: number) { return [...WAR_RANKS].reverse().find(rank => points >= rank.points)!; }
 interface Credit { source: LegacyEntity; at: number; player: boolean; team: Team }
-export function createWarRewards(host: { player(): LegacyEntity; team(): Team; running(): boolean; alive(): boolean; changed(): void; earned?(points:number):void; bonusesChanged?(): void; promoted?(actor: LegacyEntity): void; event?(message: string, kind?: 'kill' | 'sim-kill'): void; name?(actor: LegacyEntity): string; storage?(): Record<string,number>; canCollect?(kind:WarItem): boolean; actors?(): LegacyEntity[]; trapPlaced?(kind:WarItem):void; trapTriggered?(trap:{kind:WarItem;x:number;y:number;age:number;expires:number}):void; trap?(actor:LegacyEntity, kind:WarItem): void }, random = () => Math.random()) {
+export function createWarRewards(host: { player(): LegacyEntity; team(): Team; running(): boolean; alive(): boolean; changed(): void; earned?(points:number):void; bonusesChanged?(): void; promoted?(actor: LegacyEntity): void; playerKilled?(title:string,name:string):void; event?(message: string, kind?: 'kill' | 'sim-kill'): void; name?(actor: LegacyEntity): string; storage?(): Record<string,number>; canCollect?(kind:WarItem): boolean; dropChance?(target:LegacyEntity):number; actors?(): LegacyEntity[]; trapPlaced?(kind:WarItem):void; trapTriggered?(trap:{kind:WarItem;x:number;y:number;age:number;expires:number}):void; trap?(actor:LegacyEntity, kind:WarItem): void }, random = () => Math.random()) {
   let elapsed=0, nextId=0, credits=new WeakMap<LegacyEntity,Credit>(), defeated=new WeakSet<LegacyEntity>();
-  let merits=new WeakMap<LegacyEntity,number>(), soldierKills=new WeakMap<LegacyEntity,number>();
+  let merits=new WeakMap<LegacyEntity,number>(), soldierKills=new WeakMap<LegacyEntity,number>(),playerKills=new WeakMap<LegacyEntity,number>();
   const totals: Record<Team,number> = {song:0,jin:0};
   const inventory = Object.fromEntries(itemKinds.map(kind => [kind,0])) as Record<WarItem,number>;
   function stock(kind:WarItem, value?:number) {
@@ -65,7 +66,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
   const traps: {kind:WarItem;x:number;y:number;age:number;expires:number}[] = [];
   const drops: { id:number; kind:WarItem; x:number; y:number; expires:number }[] = [];
   function reset() {
-    elapsed=0; nextId=0; credits=new WeakMap(); defeated=new WeakSet(); merits=new WeakMap(); soldierKills=new WeakMap(); totals.song=totals.jin=0; drops.length=0; traps.length=0; shared=new Map();
+    elapsed=0; nextId=0; credits=new WeakMap(); defeated=new WeakSet(); merits=new WeakMap(); soldierKills=new WeakMap(); playerKills=new WeakMap(); totals.song=totals.jin=0; drops.length=0; traps.length=0; shared=new Map();
     for(const kind of Object.keys(WAR_ITEMS) as WarItem[]) { until[kind]=0; if(!host.storage)inventory[kind]=0; }
     host.changed();
   }
@@ -86,7 +87,10 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     const before = merits.get(credit.source)||0, points = target.battlefieldBoss ? 1000 : (target.battlefieldMonster ? 50 : 150) * tier;
     merits.set(credit.source,before+points); totals[credit.team]+=points;
     if(target.battlefieldMonster) soldierKills.set(credit.source,(soldierKills.get(credit.source)||0)+1);
+    const playerVictim=!target.battlefieldMonster&&!target.battlefieldBoss;
+    if(playerVictim)playerKills.set(credit.source,(playerKills.get(credit.source)||0)+1);
     const name = (actor:LegacyEntity) => host.name?.(actor) || actor.n || (actor===host.player()?'Người chơi':'SIM');
+    if(credit.player&&playerVictim)host.playerKilled?.(victimTitle,name(target));
     if (credit.player || target === host.player()) {
       const opponent = credit.player ? target : credit.source;
       const sim = opponent.arenaSim && !opponent.battlefieldBoss && !opponent.battlefieldMonster;
@@ -98,7 +102,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
       host.event?.(`${name(credit.source)} đạt danh hiệu mới: <${title}> (${before+points} quân trạng · +${Math.round(warRank(before+points).bonus*100)}% sát thương vật lý ngoại/nội công, tốc độ đánh và kháng)`);
     }
     if(credit.player) { host.earned?.(points);host.changed(); }
-    if(target.battlefieldMonster && random()<.35 && credit.team===host.team()) {
+    if((target.battlefieldMonster||target.battlefieldBoss) && random()<(host.dropChance?.(target)??warDropProbability(target)) && credit.team===host.team()) {
       const kinds=Object.keys(WAR_ITEMS) as WarItem[], kind=kinds[Math.floor(random()*kinds.length)];
       if(drops.length>=40)drops.shift();
       drops.push({id:++nextId,kind,x:target.x,y:target.y,expires:elapsed+90});
@@ -176,7 +180,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
 
   }
   return {reset,record,killed,tick,use,apply,get totals(){return {...totals};},revived(actor:LegacyEntity){defeated.delete(actor);credits.delete(actor);}, get traps(){return traps.map(trap=>({...trap}));}, get drops(){return drops.map(drop=>({...drop}));},
-    rank(actor:LegacyEntity){const points=merits.get(actor)||0;return{...warRank(points),points,soldierKills:soldierKills.get(actor)||0,next:WAR_RANKS.find(rank=>rank.points>points)?.points||null};},
+    rank(actor:LegacyEntity){const points=merits.get(actor)||0;return{...warRank(points),points,soldierKills:soldierKills.get(actor)||0,playerKills:playerKills.get(actor)||0,next:WAR_RANKS.find(rank=>rank.points>points)?.points||null};},
     get state(){const points=merits.get(host.player())||0;return{points,title:warRank(points).name,next:WAR_RANKS.find(rank=>rank.points>points)?.points||null,inventory:Object.fromEntries(itemKinds.map(kind=>[kind,stock(kind)])) as Record<WarItem,number>,buffs:Object.fromEntries(itemKinds.map(kind=>[kind,Math.max(0,Math.max(until[kind],shared.get(host.player())?.[kind]||0)-elapsed)])) as Record<WarItem,number>};} };
 }
 export type WarRewards = ReturnType<typeof createWarRewards>;

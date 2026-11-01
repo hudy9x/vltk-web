@@ -65,7 +65,7 @@ export interface PartyMember {id:number;map:number;hp:number;maxHp:number;alignm
 export interface PartyInvitation {id:number;from:number;remaining:number;name:string}
 export interface PartyState {leader:number;reply:{seq:number;code:number};members:PartyMember[];invitations:PartyInvitation[]}
 export interface BattlefieldUnit {appearance?:{sx:'m'|'f';rows:{helm:number;armor:number;weapon:number;horse:number};ride:number;mg:boolean};id:number;name:string;faction:string;sex:number;skin:number;team:number;kind:number;tier:number;points:number;kills:number;playerKills?:number;online:boolean;moving:boolean;ready:boolean;level:number}
-export interface BattlefieldState {itemBuffs?:Record<string,number>;itemTraps?:{kind:string;x:number;y:number;team:number;expires:number}[];id:number;starts:number;ends:number;now:number;phase:'waiting'|'running'|'finished';score:number[];team:number;entryRemaining:number;respawnRemaining:number;deaths:number;potions:number[];selected?:number[];inventory?:{id:number;slot:number;count:number}[];units:BattlefieldUnit[]}
+export interface BattlefieldState {marshalsSpawned?:boolean;killNotices?:{id:number;title:string;name:string;at:number}[];itemDrops?:{id:string;kind:string;x:number;y:number;team:number;expires:number}[];itemBuffs?:Record<string,number>;itemTraps?:{kind:string;x:number;y:number;team:number;expires:number}[];id:number;starts:number;ends:number;now:number;phase:'waiting'|'running'|'finished';score:number[];team:number;entryRemaining:number;respawnRemaining:number;deaths:number;potions:number[];selected?:number[];inventory?:{id:number;slot:number;count:number}[];units:BattlefieldUnit[]}
 export interface WorldState {
   battlefield?:BattlefieldState;
   death?:{killer:number;name:string;player:boolean};
@@ -109,7 +109,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
   if (bytes.length < 43) throw new Error('Truncated world');
   const counts = [18, 20, 22, 24].map((o) => v.getUint16(o, true));
   if (
-    counts[0] > 128 ||
+    counts[0] > 320 ||
     counts[1] > 64 ||
     counts[2] > 64 ||
     counts[3] > 128 ||
@@ -250,9 +250,13 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
       ![s.starts,s.ends,s.now,s.entryRemaining,s.respawnRemaining].every(Number.isFinite)||s.ends<=s.starts||s.entryRemaining<0||s.respawnRemaining<0||
       ![0,1].includes(s.team)||!Array.isArray(s.score)||s.score.length!==2||s.score.some(n=>!Number.isSafeInteger(n)||n<0)||
       !Array.isArray(s.potions)||s.potions.length!==2||s.potions.some(n=>!Number.isSafeInteger(n)||n<0||n>40)||
-      !Array.isArray(s.units)||s.units.length>160||new Set(s.units.map(u=>u.id)).size!==s.units.length||
+      !Array.isArray(s.units)||s.units.length>320||new Set(s.units.map(u=>u.id)).size!==s.units.length||
       s.units.some(u=>!Number.isSafeInteger(u.id)||u.id<1||typeof u.name!=='string'||u.name.length>96||typeof u.faction!=='string'||
-        ![0,1].includes(u.team)||![0,1,2,3].includes(u.kind)||!Number.isSafeInteger(u.points)||u.points<0||typeof u.ready!=='boolean'))throw new Error('Invalid battlefield state');
+        ![0,1].includes(u.team)||![0,1,2,3].includes(u.kind)||!Number.isSafeInteger(u.points)||u.points<0||(u.playerKills!==undefined&&(!Number.isSafeInteger(u.playerKills)||u.playerKills<0))||typeof u.ready!=='boolean'))throw new Error('Invalid battlefield state');
+    if(s.marshalsSpawned!==undefined&&typeof s.marshalsSpawned!=='boolean')throw new Error('Invalid marshal announcement');
+    if(s.killNotices&&(!Array.isArray(s.killNotices)||s.killNotices.length>64||s.killNotices.some(n=>!Number.isSafeInteger(n.id)||n.id<1||!Number.isFinite(n.at)||typeof n.name!=='string'||n.name.length>96||!['Binh sĩ','Hiệu úy','Thống lĩnh','Phó tướng','Đại tướng'].includes(n.title))))throw new Error('Invalid kill notices');
+    if(s.itemDrops&&(!Array.isArray(s.itemDrops)||s.itemDrops.length>40||s.itemDrops.some(d=>
+      typeof d.id!=='string'||d.id.length>100||typeof d.kind!=='string'||d.kind.length>32||![d.x,d.y,d.expires].every(Number.isFinite)||d.team!==s.team)))throw new Error('Invalid item drops');
     if(s.itemBuffs&&(typeof s.itemBuffs!=='object'||Object.values(s.itemBuffs).some(t=>!Number.isFinite(t)||t<0||t>180)))throw new Error('Invalid item buffs');
     if(s.itemTraps&&(!Array.isArray(s.itemTraps)||s.itemTraps.length>128||s.itemTraps.some(t=>
       !['freezeTrap','stunTrap','slowTrap'].includes(t.kind)||![t.x,t.y,t.expires].every(Number.isFinite)||t.team!==s.team)))throw new Error('Invalid item traps');

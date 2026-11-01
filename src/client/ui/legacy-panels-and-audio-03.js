@@ -485,10 +485,10 @@ var Qv = function () {
   const A = Y.keys;
   let n = 0,
     t = 0;
-  ((A.ArrowLeft || A.a) && (n -= 1),
-    (A.ArrowRight || A.d) && (n += 1),
-    (A.ArrowUp || A.w) && (t -= 1),
-    (A.ArrowDown || A.s) && (t += 1));
+  ((A.ArrowLeft) && (n -= 1),
+    (A.ArrowRight) && (n += 1),
+    (A.ArrowUp) && (t -= 1),
+    (A.ArrowDown) && (t += 1));
   const e = Math.hypot(n, t);
   if (e) return ((Y.target = null), [n / e, t / e]);
   if (Y.target) {

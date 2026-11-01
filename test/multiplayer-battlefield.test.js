@@ -14,7 +14,8 @@ test('public battlefield targets obey camps instead of alignment and PK toggle',
   const s={o:{mode:'farm'},l:{town:false},GameWebTransport:{newer:()=>false}};vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/pvp.js','utf8'),s);
   const actor=(id,team,alignment,ready=true)=>({id,x:id*10,y:10,hp:100,alignment,pk:false,battlefieldTeam:team,battlefieldReady:ready});
   const state={self:1,battlefield:{phase:'running'},actors:[actor(1,0,0),actor(2,1,0),actor(3,0,2),actor(4,1,0,false)]};
-  assert.deepEqual(Array.from(s.OnlinePvp.targets(state),a=>a.id),[2]);assert.equal(s.OnlinePvp.nameColor(state),'#ffcc00');
+  assert.deepEqual(Array.from(s.OnlinePvp.targets(state),a=>a.id),[2]);assert.equal(s.OnlinePvp.nameColor(state),'#ffb347');
+  for(const kind of [0,1,2,3])for(const team of [0,1])assert.equal(s.OnlinePvp.nameColor(state,{battlefieldTeam:team,battlefieldKind:kind}),kind>=2?'#ffffff':team===0?'#ffb347':'#c77bff');
   state.battlefield.phase='finished';assert.equal(s.OnlinePvp.targets(state).length,0);
 });
 test('wire accepts explicit join/leave commands but rejects invalid kinds',()=>{
@@ -38,9 +39,12 @@ function worldPacket(count=1,patch={}){
   const json=Buffer.from(JSON.stringify(state)),header=Buffer.alloc(5);header[0]=0xe1;header.writeUInt32LE(json.length,1);return Buffer.concat([base,header,json]);
 }
 test('public snapshots carry more than 32 combatants and reject malformed room state',()=>{
-  const b=worldPacket(94),state=protocol.decodeWorld(b);assert.equal(state.actors.length,94);assert.equal(state.battlefield.ends-state.battlefield.now,780);assert.equal(state.actors[1].battlefieldTeam,1);
+  const b=worldPacket(94),state=protocol.decodeWorld(b);assert.equal(protocol.decodeWorld(worldPacket(254)).actors.length,254,'full configured patrol plus SIMs and players must not disappear');assert.equal(state.actors.length,94);assert.equal(state.battlefield.ends-state.battlefield.now,780);assert.equal(state.actors[1].battlefieldTeam,1);
   assert.throws(()=>protocol.decodeWorld(b.subarray(0,-1)),/battlefield size/);
   assert.throws(()=>protocol.decodeWorld(worldPacket(1,{score:[-1,0]})),/battlefield state/);
+  const drop={id:'1700000000000-1-100-5',kind:'drum',team:0,x:100,y:100,expires:500};
+  assert.equal(protocol.decodeWorld(worldPacket(1,{itemDrops:[drop]})).battlefield.itemDrops.length,1);
+  assert.throws(()=>protocol.decodeWorld(worldPacket(1,{itemDrops:[{...drop,team:1}]})),/item drops/);
   assert.throws(()=>protocol.decodeWorld(worldPacket(1,{potions:[41,30]})),/battlefield state/);
   assert.throws(()=>protocol.decodeWorld(worldPacket(1,{units:[{id:500,team:3}]})),/battlefield state/);
 });
@@ -119,4 +123,37 @@ test('SIM support visuals clear when a snapshot omits expired shared support and
   next.actors[0].supports=[{skill:92,active:true,shared:true,aura:true}];
   draw();assert.equal(effects.length,2,'receiving support again restores the FX');
   next.actors[0].supports=[];draw();assert.equal(effects.length,2);
+});
+test('finished PvP snapshots show the shared outcome once, including reconnect, and clear it after leaving',()=>{
+  const nodes=new Map(),opened=[],commands=[];let closed=0;
+  const element=()=>({children:[],style:{},hidden:false,classList:{remove(){},toggle(){}},setAttribute(){},append(...items){this.children.push(...items);for(const child of items)if(child?.id)nodes.set(child.id,child);},appendChild(child){this.append(child);},remove(){nodes.delete(this.id);}});
+  const s={performance:{now:()=>0},document:{createElement:element,head:element(),body:element(),getElementById:id=>nodes.get(id)},window:{},sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},m0:0,l:{},R:false,Y:{keys:{w:true}},arenaSimulator:{resultDialog:{open:(...args)=>opened.push(args),close:()=>closed++}}};
+  vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/battlefield.js','utf8'),s);
+  const next={map:9003,self:1,actors:[{id:1,hp:100}],battlefield:{id:10,now:100,ends:100,phase:'finished',team:1,score:[0,50],potions:[0,0],units:[],entryRemaining:0,respawnRemaining:0,deaths:0}};
+  const send=kind=>(commands.push(kind),1);
+  s.OnlineBattlefield.sync(next,send);s.OnlineBattlefield.sync(next,send);
+  assert.equal(opened.length,1);assert.equal(opened[0][0],'Kim thắng · Tổng quân trạng');assert.equal(opened[0][2],'jin');assert.equal(Object.keys(s.Y.keys).length,0);
+  assert.equal(nodes.get('public-war-ranking').hidden,true);
+  assert.equal(s.OnlineBattlefield.leave(),true);assert.equal(commands.at(-1),20);
+  s.OnlineBattlefield.sync(next,send);assert.equal(opened.length,1,'pending departure does not reopen result');
+  delete next.battlefield;s.OnlineBattlefield.sync(next,send);assert.equal(closed,1);
+  s.OnlineBattlefield.reset();next.battlefield={id:11,now:100,ends:100,phase:'finished',team:0,score:[0,0],potions:[0,0],units:[],entryRemaining:0,respawnRemaining:0,deaths:0};
+  s.OnlineBattlefield.sync(next,send);assert.equal(opened.at(-1)[0],'Hòa · Hai phe bằng quân trạng');
+});
+test('public waiting countdown uses the server deadline, kill notices deduplicate, and marshal announcements follow snapshots',()=>{
+ const nodes=new Map(),messages=[],shows=[],ticks=[];let now=0,resets=0;
+ const element=()=>({children:[],style:{},hidden:false,classList:{remove(){},toggle(){}},setAttribute(){},append(...items){this.children.push(...items);for(const child of items)if(child?.id)nodes.set(child.id,child);},appendChild(child){this.append(child);},remove(){nodes.delete(this.id);}});
+ const s={performance:{now:()=>now},document:{createElement:element,head:element(),body:element(),getElementById:id=>nodes.get(id)},window:{},sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},m0:0,l:{},R:false,k:message=>messages.push(message),arenaSimulator:{marshalNotice:{show:(...args)=>shows.push(args),tick:(...args)=>ticks.push(args),reset:()=>resets++}}};
+ vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/battlefield.js','utf8'),s);
+ const state={id:1,starts:105,now:100,ends:125,phase:'waiting',team:0,score:[0,0],potions:[0,0],units:[],entryRemaining:5,respawnRemaining:0,deaths:0,marshalsSpawned:false};
+ const next={map:9004,self:1,actors:[{id:1,hp:100}],battlefield:state};
+ s.OnlineBattlefield.sync(next,()=>1);assert.equal(nodes.get('public-war-hud').textContent,'Phòng chờ · Vào trận sau 5 giây');
+ now=2100;s.OnlineBattlefield.entities(next);assert.equal(nodes.get('public-war-hud').textContent,'Phòng chờ · Vào trận sau 3 giây');
+ now=5100;s.OnlineBattlefield.sync({...next,battlefield:{...state,phase:'running',now:105,entryRemaining:0,killNotices:[{id:1,title:'Hiệu úy',name:'SIM Kim',at:105}]}},()=>1);
+ assert.equal(messages[0],'Bạn đã giết hiệu úy <SIM Kim>');
+ s.OnlineBattlefield.sync({...next,battlefield:{...state,phase:'running',now:115,entryRemaining:0,marshalsSpawned:true,killNotices:[{id:1,title:'Hiệu úy',name:'SIM Kim',at:105}]}},()=>1);
+ assert.equal(messages.length,1);assert.equal(shows.length,2);assert.equal(shows[0][0],'song');assert.equal(shows[1][0],'jin');
+ s.OnlineBattlefield.sync({...next,battlefield:{...state,phase:'running',now:116,entryRemaining:0,marshalsSpawned:true}},()=>1);assert.equal(shows.length,2);
+ now+=6000;s.OnlineBattlefield.entities(next);assert.ok(ticks.at(-1)[0]>=6);
+ s.OnlineBattlefield.sync({map:1,self:1,actors:[]},()=>1);assert.ok(resets>=2);assert.equal(nodes.get('public-war-hud').hidden,true);
 });

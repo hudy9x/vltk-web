@@ -503,8 +503,9 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     assert.equal(await page.locator('#u20txt').inputValue(),'qwertp');assert.equal((await page.evaluate(()=>window.__onlineTest.dialogState())).win,false);
     await page.locator('#u20txt').fill('');await page.locator('#u20txt').evaluate(e=>e.blur());
     await page.keyboard.press('p');await page.waitForFunction(isOpen,'party');
+    await page.keyboard.press('Escape');await page.waitForFunction(()=>!window.__onlineTest.dialogState().party);
+    assert.equal((await page.evaluate(()=>window.__onlineTest.dialogState())).win,false);
     await page.keyboard.press('Escape');await page.waitForFunction(isOpen,'more');
-    assert.equal((await page.evaluate(()=>window.__onlineTest.dialogState())).party,false);
     assert.match(await page.locator('#u20wt').innerText(),/Hệ thống/);
     await page.screenshot({path:path.join(root,'output/multiplayer/hotkeys-system.png')});
     await page.keyboard.press('Escape');await page.waitForFunction(()=>!window.__onlineTest.dialogState().win);

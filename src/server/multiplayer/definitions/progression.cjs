@@ -46,10 +46,12 @@ exports.apply=function(input,action,development=false,gameMasterMode){
         const bag=p.warSupplies,slot=action.slot;
         if(kind==='warPotionBuy'){
           let quantity=action.quantity;if(!integer(quantity,1,20)||!Array.isArray(action.spent)||!integer(action.spent[slot],0,1000000))fail('Số lượng không hợp lệ.');
-          const total=Object.values(bag.bought[slot]).reduce((a,b)=>a+b,0)-action.spent[slot];
+          const replacing=Object.entries(bag.bought[slot]).some(([key,count])=>+key!==id&&count>(action.spentById?.[slot]?.[key]||0));
+          const total=replacing?0:Object.values(bag.bought[slot]).reduce((a,b)=>a+b,0)-action.spent[slot];
           quantity=Math.min(quantity,Math.max(0,40-total));
-          if(!quantity)fail('Mỗi ô chỉ chứa tối đa 40 bình.');
+          if(!quantity)break;
           const price=s.Ot(potion)*quantity;if(!Number.isSafeInteger(price)||price<=0||p.gold<price)fail('Không đủ ngân lượng mua thuốc.');
+          if(replacing)bag.bought[slot]={...(action.spentById?.[slot]||{})};
           p.gold-=price;bag.bought[slot][id]=(bag.bought[slot][id]||0)+quantity;
         }
         bag.selected[slot]=id;break;

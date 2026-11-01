@@ -26,7 +26,8 @@
     sim.leaderboard.open();const ranking=game.simNodes.find((node:any)=>node.id==='war-leaderboard');
     assert.match(ranking.querySelector('tbody').innerHTML,/aria-current="true"/);
     assert.match(ranking.querySelector('tbody').innerHTML,/\(Bạn\)/);
-    assert.match(ranking.querySelector('tbody').innerHTML,/<td>10<\/td><td>4300<\/td>/);
+    assert.equal(sim.warRewards.rank(hero).playerKills,1);
+    assert.match(ranking.querySelector('tbody').innerHTML,/<td>10<\/td><td>1<\/td><td>4300<\/td>/);
     assert.match(ranking.querySelector('#war-team-totals').innerHTML,/Tống: 4.300/);
     assert.match(ranking.querySelector('#war-team-totals').innerHTML,/Kim: 3.500/);
     assert.equal(game.simNodes.some((node:any)=>node.id==='battlefield-hud'),false);

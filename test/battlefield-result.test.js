@@ -48,3 +48,48 @@ test('finish clears held input and pending movement, freezes SIMs/NPCs/player, a
  panel.querySelector('#battlefield-result-accept').onclick();
  for(const actor of units)assert.equal(actor.battlefieldFrozen,undefined);
 });
+test('PvP uses the same result dialog and acknowledgement leaves online instead of resetting the private match',()=>{
+ const game=createHeadlessGame(process.cwd()),dialog=game.arenaSimulator.resultDialog;
+ const panel=game.simNodes.find(node=>node.id==='battlefield-result');let sent=0,accepted=false;
+ game.OnlineBattlefield={state:{phase:'finished'},leave:()=>{sent++;return accepted;}};
+ dialog.open('Kim thắng · Tổng quân trạng',{song:20,jin:40},'song');
+ assert.equal(panel.querySelector('#battlefield-result-title').textContent,'Thất bại');
+ panel.querySelector('#battlefield-result-accept').onclick();assert.equal(dialog.isOpen,true,'failed leave can be retried');
+ accepted=true;panel.querySelector('#battlefield-result-accept').onclick();assert.equal(sent,2);assert.equal(dialog.isOpen,false);
+ assert.equal(game.arenaSimulator.battlefield.active,false);
+});
+test('short private match uses the configured duration, spawns marshals halfway and ends with the existing result screen',()=>{
+ const game=createHeadlessGame(process.cwd()),sim=game.arenaSimulator;
+ sim.battlefield.start('song',{song:3,jin:2},9003,20);
+ assert.equal(sim.battlefield.state.remaining,20);
+ sim.battlefield.tick(9);assert.equal(sim.actors.filter(actor=>actor.battlefieldBoss).length,0);
+ sim.battlefield.tick(1);assert.equal(sim.actors.filter(actor=>actor.battlefieldBoss).length,2);
+ sim.battlefield.tick(10);assert.equal(sim.battlefield.state.phase,'finished');assert.equal(sim.resultDialog.isOpen,true);
+ const panel=game.simNodes.find(node=>node.id==='battlefield-result');panel.querySelector('#battlefield-result-accept').onclick();
+ sim.battlefield.start('song');assert.equal(sim.battlefield.state.remaining,1200,'default duration does not inherit the previous short match');
+});
+test('recruitment reads the saved private duration from server before starting a match',async()=>{
+ const game=createHeadlessGame(process.cwd());let requests=0;
+ game.OnlineBattlefield={active:false,matchDuration:async mode=>{assert.equal(mode,'private');requests++;return 30;}};
+ game.arenaSimulator.openSettings();
+ const panel=game.simNodes.find(node=>node.id==='battlefield-panel');
+ for(const [field,value]of Object.entries({player:'song','boss-song':'3','boss-jin':'2',map:'9003'}))panel.querySelector('#battlefield-'+field).value=value;
+ panel.querySelector('#battlefield-start').onclick();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(requests,1);assert.equal(game.arenaSimulator.battlefield.state.duration,30);
+ assert.equal(game.arenaSimulator.battlefield.running,true);
+});
+test('private marshals roll elements per match and use the server HP/resistance snapshot',()=>{
+ const game=createHeadlessGame(process.cwd()),sim=game.arenaSimulator;let roll=0;
+ game.Math.random=()=>[0,.99][roll++%2];
+ game.OnlineBattlefield={marshalSettings:{song:{hp:432100,res:[11,12,13,14,15]},jin:{hp:543200,res:[21,22,23,24,25]}}};
+ sim.battlefield.start('song');const elements=sim.battlefield.state.elements;
+ assert.equal(elements.song,0);assert.equal(elements.jin,4);
+ game.OnlineBattlefield.marshalSettings.song.hp=999;
+ sim.battlefield.tick(600);
+ for(const boss of sim.actors.filter(actor=>actor.battlefieldBoss)){
+   const song=boss.battlefieldTeam==='song';assert.equal(boss.max,song?432100:543200);
+   assert.equal(boss.res.fire,song?14:24);assert.equal(boss.res.poison,song?12:22);
+   assert.equal(boss.battlefieldDeck.length,2);
+ }
+});

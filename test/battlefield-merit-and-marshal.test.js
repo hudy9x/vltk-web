@@ -29,7 +29,7 @@ test('NPC and SIM merit follow all five victim tiers on both teams, with live SI
  }
 });
 
-test('marshals spawn once at 50%, retain match-start HP, and notify only the opposing player until timeout/reset',()=>{
+test('marshals spawn once at 50%, retain match-start HP, and announce both teams at 40px until timeout/reset',()=>{
  for(const team of ['song','jin']) for(const map of [9003]) {
   const game=createHeadlessGame(process.cwd()),sim=game.arenaSimulator,match=sim.battlefield;
   match.start(team,{song:3,jin:2},map);
@@ -41,7 +41,8 @@ test('marshals spawn once at 50%, retain match-start HP, and notify only the opp
   const bosses=sim.actors.filter(actor=>actor.battlefieldBoss);
   assert.equal(bosses.length,2);assert.ok(bosses.every(actor=>actor.hp===200000));
   assert.equal(notice.hidden,false);
-  assert.equal(notice.textContent,`Nguyên soái phe ${team==='song'?'Kim':'Tống'} xuất hiện`);
+  assert.equal(notice.textContent,'Nguyên soái hai phe Tống và Kim xuất hiện');
+  assert.match(notice.style.cssText,/font:700 40px/);
   assert.match(notice.style.cssText,/left:50%/);assert.match(notice.style.cssText,/WarCalligraphy/);
   sim.tick(5.99);assert.equal(notice.hidden,false);sim.tick(.01);assert.equal(notice.hidden,true);
   match.tick(1);assert.equal(sim.actors.filter(actor=>actor.battlefieldBoss).length,2);
@@ -68,4 +69,30 @@ test('Đại tướng NPC can be configured and respawns with its rank and +250 
  sim.roadMonsters.tick(10,true);
  const revived=sim.roadMonsters.actors.find(actor=>actor.battlefieldTeam==='jin');
  assert.notEqual(revived,victim);assert.equal(revived.battlefieldRank,'Đại tướng');assert.equal(revived.hp,120000);
+});
+test('human and SIM victims share player-kill statistics and show the victim rank and name only for own kills',()=>{
+ const player={x:0,y:0,hp:100,n:'Hero'},notifications=[];
+ const reward=scope.Rewards.createWarRewards({player:()=>player,team:()=> 'song',running:()=>true,alive:()=>true,changed(){},playerKilled:(title,name)=>notifications.push({title,name})},()=>1);
+ const enemySim={arenaSim:true,battlefieldTeam:'jin',hp:100,n:'Đối thủ SIM'};
+ for(let i=0;i<60;i++){
+   const npc={battlefieldMonster:true,battlefieldTeam:'song',hp:0,x:0,y:0};reward.record(enemySim,npc);reward.killed(npc);
+ }
+ const promoted=reward.rank(enemySim).name;assert.equal(promoted,'Hiệu úy');
+ reward.record(player,enemySim);enemySim.hp=0;reward.killed(enemySim);reward.killed(enemySim);
+ assert.equal(reward.rank(player).playerKills,1);assert.equal(reward.rank(player).soldierKills,0);
+ assert.deepEqual(notifications,[{title:promoted,name:'Đối thủ SIM'}]);
+ const npc={battlefieldMonster:true,battlefieldTeam:'jin',hp:0,x:0,y:0};reward.record(player,npc);reward.killed(npc);
+ assert.equal(reward.rank(player).playerKills,1);assert.equal(reward.rank(player).soldierKills,1);assert.equal(notifications.length,1);
+ reward.revived(enemySim);enemySim.hp=100;reward.record(enemySim,player);player.hp=0;reward.killed(player);
+ assert.equal(reward.rank(enemySim).playerKills,1);assert.equal(notifications.length,1);
+ reward.reset();assert.equal(reward.rank(player).playerKills,0);
+});
+test('private kill toast and leaderboard display the player/SIM victim count',()=>{
+ const game=createHeadlessGame(process.cwd()),sim=game.arenaSimulator,messages=[];game.k=message=>messages.push(message);
+ sim.battlefield.start('song');const [enemy]=sim.battlefield.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
+ sim.warRewards.record(game.v,enemy);enemy.hp=0;sim.warRewards.killed(enemy);
+ assert.ok(messages.includes(`Bạn đã giết binh sĩ <${enemy.n}>`));
+ sim.leaderboard.open();const panel=game.simNodes.find(node=>node.id==='war-leaderboard');
+ assert.match(panel.innerHTML,/Người chơi\/SIM hạ/);
+ assert.match(panel.querySelector('tbody').innerHTML,/<td>0<\/td><td>1<\/td><td>150<\/td>/);
 });

@@ -11,6 +11,7 @@ export interface WarStanding {
   team: string;
   points: number;
   soldierKills?: number;
+  playerKills?: number;
   title: string;
   player: boolean;
   position: number;
@@ -43,7 +44,7 @@ export function mountWarLeaderboard(
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-label", "Bảng xếp hạng Tống Kim");
   panel.innerHTML =
-    '<header><h2>Bảng xếp hạng · Tống Kim</h2><button class="war-close" aria-label="Đóng bảng xếp hạng">×</button></header><div class="war-content" id="war-ranking-content"><p id="war-match-status"></p><p id="war-team-totals"></p><p id="war-personal-rank"></p><p id="war-personal-bonus"></p><table><thead><tr><th>Hạng</th><th>Nhân vật</th><th>Phe</th><th>Danh hiệu</th><th>Binh sĩ hạ</th><th>Điểm</th></tr></thead><tbody></tbody></table><p>Top 10 quân trạng · Esc để đóng</p><details><summary>Mốc quân hàm và chỉ số thưởng (tối đa 20%)</summary><div id="war-rank-guide"></div><p>Thưởng theo quân hàm hiện tại, không cộng dồn. Kháng tăng theo tỷ lệ trên giá trị dương hiện có; 50% kháng → 60% ở Đại tướng. Giữ thưởng qua hồi sinh, hết hiệu lực khi rời trận. Boss doanh trại mang danh hiệu Nguyên soái.</p></details></div>';
+    '<header><h2>Bảng xếp hạng · Tống Kim</h2><button class="war-close" aria-label="Đóng bảng xếp hạng">×</button></header><div class="war-content" id="war-ranking-content"><p id="war-match-status"></p><p id="war-team-totals"></p><p id="war-personal-rank"></p><p id="war-personal-bonus"></p><table><thead><tr><th>Hạng</th><th>Nhân vật</th><th>Phe</th><th>Danh hiệu</th><th>Binh sĩ hạ</th><th>Người chơi/SIM hạ</th><th>Điểm</th></tr></thead><tbody></tbody></table><p>Top 10 quân trạng · Esc để đóng</p><details><summary>Mốc quân hàm và chỉ số thưởng (tối đa 20%)</summary><div id="war-rank-guide"></div><p>Thưởng theo quân hàm hiện tại, không cộng dồn. Kháng tăng theo tỷ lệ trên giá trị dương hiện có; 50% kháng → 60% ở Đại tướng. Giữ thưởng qua hồi sinh, hết hiệu lực khi rời trận. Boss doanh trại mang danh hiệu Nguyên soái.</p></details></div>';
   panel.innerHTML += '<section id="war-sim-inspector" hidden aria-label="Thông tin SIM">'+ '<div class="war-content"><button type="button" id="war-inspect-back">← Bảng xếp hạng</button><h3 id="war-inspect-name"></h3></div><div class="war-tabs" role="tablist" aria-label="Thông tin SIM">'+
     Object.entries(INSPECTION_TABS).map(([tab,name])=>`<button type="button" id="war-inspect-tab-${tab}" role="tab" aria-controls="war-inspect-content" data-inspect-tab="${tab}" aria-selected="false">${name}</button>`).join('')+
     '</div><div class="war-content" id="war-inspect-content" role="tabpanel"></div></section>';
@@ -105,10 +106,10 @@ export function mountWarLeaderboard(
         (next ? ` · Còn ${(next.points-player!.points).toLocaleString("vi-VN")} điểm để đạt ${next.name}` : " · Quân hàm cao nhất")
       : "";
     panel.querySelector("tbody")!.innerHTML = rows
-      .slice(0, 10)
+      .filter((row,index)=>index<10||row.player)
       .map(
         (row) =>
-          `<tr class="${row.player ? "war-self" : ""}" ${row.player ? 'aria-current="true"' : ""}><td>${row.position}</td><td style="color:${row.team === "song" ? "#ffcc00" : "#c77bff"}">${row.player ? `<strong style="color:#fff4ad;font-weight:700;text-shadow:0 0 6px #b99b36">${escape(row.name)} <small>(Bạn)</small></strong>` : inspect ? `<button type="button" class="war-inspect-name" data-inspect-id="${escape(row.id)}" aria-label="Xem thông tin ${escape(row.name)}" style="color:inherit">${escape(row.name)}</button>` : escape(row.name)}</td><td>${row.team === "song" ? "Tống" : "Kim"}</td><td class="war-title" style="color:${battlefieldTitleColor(row.title)}">&lt;${escape(row.title)}&gt;</td><td>${row.soldierKills || 0}</td><td>${row.points}</td></tr>`,
+          `<tr class="${row.player ? "war-self" : ""}" ${row.player ? 'aria-current="true"' : ""}><td>${row.position}</td><td style="color:${row.team === "song" ? "#ffcc00" : "#c77bff"}">${row.player ? `<strong style="color:#fff4ad;font-weight:700;text-shadow:0 0 6px #b99b36">${escape(row.name)} <small>(Bạn)</small></strong>` : inspect ? `<button type="button" class="war-inspect-name" data-inspect-id="${escape(row.id)}" aria-label="Xem thông tin ${escape(row.name)}" style="color:inherit">${escape(row.name)}</button>` : escape(row.name)}</td><td>${row.team === "song" ? "Tống" : "Kim"}</td><td class="war-title" style="color:${battlefieldTitleColor(row.title)}">&lt;${escape(row.title)}&gt;</td><td>${row.soldierKills || 0}</td><td>${row.playerKills || 0}</td><td>${row.points}</td></tr>`,
       )
       .join("");
   }

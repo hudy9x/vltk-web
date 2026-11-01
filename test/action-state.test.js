@@ -90,7 +90,7 @@ test('manual movement immediately interrupts automatic buff locks in both modes 
   declaration(s,'src/client/gameplay/shop-and-books-01.js','A6');
   s.A6(.5);assert.ok(s.v.castT>0);assert.equal(s.l.mana,990);
   if(input==='ground')s.Y.moveTarget(300,0);
-  if(input==='keyboard')s.Y.keys.d=true;
+  if(input==='keyboard')s.Y.keys.ArrowRight=true;
   if(input==='joystick')Object.assign(s.Y,{active:true,moved:true,ox:0,oy:0,x:45,y:0});
   if(input==='gamepad')s.T1.v=[1,0];
   for(let tick=0;tick<4;tick++) {
@@ -145,4 +145,13 @@ test('hurt blocks keyboard, joystick and path movement until recovery',()=>{
  run(s,.51);s.wa(s.v,300,0,100);assert.equal(s.v.x,100);
  assert.equal(s.Ah(.1),true);assert.equal(s.v.x,115);
  s.Mw(s.v,300,0,100);assert.ok(s.v.x>115);assert.ok(!(s.v.hurtT>0));
+});
+test('WASD never creates locomotion or interrupts casts; arrow keys still move the player',()=>{
+ const s=world();s.T1={v:[0,0]};s.hA=()=>true;
+ declaration(s,'src/client/ui/legacy-panels-and-audio-04.js','Y');
+ declaration(s,'src/client/ui/legacy-panels-and-audio-03.js','Qv');
+ for(const key of ['w','a','s','d']){
+   s.Y.keys={[key]:true};assert.equal(s.Y.hasMovementInput(),false,key);assert.deepEqual(Array.from(s.Qv()),[0,0],key);
+ }
+ s.Y.keys={ArrowRight:true};assert.equal(s.Y.hasMovementInput(),true);assert.deepEqual(Array.from(s.Qv()),[1,0]);
 });

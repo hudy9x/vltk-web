@@ -129,7 +129,7 @@ test('manual movement overrides casts even in empty fields, for mouse, keyboard 
     const s=game();s.l.spawnT=10;s.l.clickHold=true;
     Object.assign(s.v,{castT:.4,atT:.4,actionRevision:2});
     if(input==='ground')s.Y.moveTarget(240,100);
-    if(input==='keyboard')s.Y.keys.d=true;
+    if(input==='keyboard')s.Y.keys.ArrowRight=true;
     if(input==='gamepad')s.T1.v=[1,0];
     ticks(s,1/60);
     assert.ok(s.v.x>0,input);assert.equal(s.v.castT,0);assert.equal(s.v.actionRevision,3);
@@ -137,9 +137,9 @@ test('manual movement overrides casts even in empty fields, for mouse, keyboard 
 });
 
 test('automatic attacks cannot re-lock movement toward a selected monster while movement input is held',()=>{
-  const s=game(),e=enemy(s);s.l.manTgt=e;s.Y.keys.d=true;
+  const s=game(),e=enemy(s);s.l.manTgt=e;s.Y.keys.ArrowRight=true;
   ticks(s,.2);assert.ok(s.v.x>0);assert.equal(s.casts,0);
-  s.Y.keys.d=false;ticks(s,.2);assert.ok(s.casts>0,'attack resumes after movement input stops');
+  s.Y.keys.ArrowRight=false;ticks(s,.2);assert.ok(s.casts>0,'attack resumes after movement input stops');
 });
 
 test('auto buffs wait for the ground command to finish, while expired buffs still expire', () => {

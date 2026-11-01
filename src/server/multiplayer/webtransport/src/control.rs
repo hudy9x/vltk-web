@@ -39,11 +39,10 @@ pub fn routes(world: Arc<Mutex<World>>, secret: String) -> Router {
             post(
                 |State(s): State<Control>, h: HeaderMap, Json(d): Json<Definitions>| async move {
                     authorize(&h, &s)?;
-                    s.world
-                        .lock()
-                        .unwrap()
-                        .game
-                        .install(d)
+                    let mut world=s.world.lock().unwrap();
+                    // Keep the current match snapshot; newly admitted matches use this catalog.
+                    if !world.game.rooms.is_empty(){world.game.battlefield.definition=d.battlefield.clone();}
+                    world.game.install(d)
                         .map_err(|_| StatusCode::BAD_REQUEST)?;
                     Ok::<_, StatusCode>(Json(true))
                 },
@@ -81,12 +80,20 @@ pub fn routes(world: Arc<Mutex<World>>, secret: String) -> Router {
                 },
             ),
         )
+        .route("/battlefield/drops",get(|State(s):State<Control>,h:HeaderMap|async move{
+            authorize(&h,&s)?;let w=s.world.lock().unwrap();
+            Ok::<_,StatusCode>(Json(w.game.battlefield_drop_candidates()))
+        }))
+        .route("/battlefield/drops/ack",post(|State(s):State<Control>,h:HeaderMap,Json(ids):Json<Vec<String>>|async move{
+            authorize(&h,&s)?;s.world.lock().unwrap().game.acknowledge_battlefield_drops(&ids);
+            Ok::<_,StatusCode>(Json(true))
+        }))
         .route("/battlefield/shop",post(|State(s):State<Control>,h:HeaderMap,Json(a):Json<serde_json::Value>|async move{
             authorize(&h,&s)?;let w=s.world.lock().unwrap();
             let (id,actor)=w.game.actors.iter().find(|(_,p)|p.account==a["account"].as_str().unwrap_or("")&&p.slot as u64==a["slot"].as_u64().unwrap_or(99)&&p.war.is_some()).ok_or(StatusCode::BAD_REQUEST)?;
             let u=w.game.battlefield.units.get(id).ok_or(StatusCode::BAD_REQUEST)?;
             if w.game.battlefield.finished{return Err(StatusCode::BAD_REQUEST);}
-            Ok::<_,StatusCode>(Json(serde_json::json!({"matchId":w.game.battlefield.id,"starts":w.game.battlefield.starts,"now":w.game.battlefield.clock,"ready":actor.war.is_some_and(|w|w.ready),"alive":actor.hp>0.0,"map":actor.map,"x":actor.x,"y":actor.y,"team":u.team,"spent":u.spent.iter().map(|m|m.values().sum::<u32>()).collect::<Vec<_>>() })))
+            Ok::<_,StatusCode>(Json(serde_json::json!({"matchId":w.game.battlefield.id,"starts":w.game.battlefield.starts,"now":w.game.battlefield.clock,"ready":actor.war.is_some_and(|w|w.ready),"alive":actor.hp>0.0,"map":actor.map,"x":actor.x,"y":actor.y,"team":u.team,"spentById":u.spent,"spent":u.spent.iter().map(|m|m.values().sum::<u32>()).collect::<Vec<_>>() })))
         }))
         .route(
             "/rewards",

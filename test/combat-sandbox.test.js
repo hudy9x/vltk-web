@@ -902,6 +902,8 @@ function battlefieldGame(arena=true, nativeMonsters=false, options) {
   const catalog={};catalog.window=catalog;
   vm.runInNewContext(fs.readFileSync(path.join(ROOT,'public/data.js'),'utf8'),catalog);
   s.S=catalog.JX; s.m=()=>null;
+  for(const name of ['pw','UA'])loadDeclaration(s,'src/client/core/helpers-and-config-01.js',name);
+  for(const name of ['B7','wn'])loadDeclaration(s,'src/client/gameplay/shop-and-books-01.js',name);
   const sprites={MapsEngine:{createLegacyCatalog:()=>({})}};sprites.window=sprites;
   for(let i=1;i<=4;i++)vm.runInNewContext(fs.readFileSync(path.join(ROOT,`src/client/data/monsters-and-zones-0${i}.js`),'utf8'),sprites);
   s.r0={...sprites.JW.mon,...s.r0};
@@ -964,7 +966,7 @@ test('production recruitment NPC works on arbitrary maps and the game loop advan
     assert.equal(s.combatSandbox,null);
   }
 });
-test('Hoàng Kim boss decks include active 90 and 150 skills from both same-element factions',()=>{
+test('Hoàng Kim boss decks contain exactly one native level-80 attack, one level-150 attack and one support',()=>{
   const s=battlefieldGame(),match=s.arenaSimulator.battlefield;
   for(let element=0;element<5;element++) {
     match.start('song',{song:element,jin:element});match.tick(600);
@@ -974,10 +976,12 @@ test('Hoàng Kim boss decks include active 90 and 150 skills from both same-elem
       assert.equal(boss.goldBoss,true);assert.equal(boss.cls,'boss');assert.equal(boss.series,element);
       assert.equal(boss.max,200_000);
       const deck=boss.battlefieldDeck;
-      assert.ok(deck.length>=2);
-      const factions=new Set(deck.map(entry=>entry.profile.fac));assert.equal(factions.size,2);
-      for(const faction of factions) for(const tier of [90,150]) {
-        assert.ok(deck.some(entry=>entry.profile.fac===faction && s.T[entry.profile.main].tier===tier),`${element}/${faction}/${tier}`);
+      assert.equal(deck.length,2);
+      assert.deepEqual(Array.from(deck,entry=>s.T[entry.profile.main].req),[80,150]);
+      for(const entry of deck){
+        const learned=Object.keys(entry.profile.sk).map(id=>s.T[id]);
+        assert.equal(learned.filter(row=>['buff','aura'].includes(s.wn(row))).length,1);
+        assert.equal(learned.length,3);
       }
     }
   }
@@ -1013,16 +1017,15 @@ test('Tống Kim SIMs fight the opposing side, cancel old contacts on death and 
   assert.equal(s.l.deadT,0);assert.equal(s.v.x,match.state.camps.song.x);assert.equal(s.v.y,match.state.camps.song.y);
 });
 
-test('Tống Kim bosses actually rotate both factions 90/150 casts with boss HP in each captured loadout',()=>{
-  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.combatLog.simulatorLog.enabled=true;s.arenaSimulator.tick(5);match.tick(600);
+test('Tống Kim bosses rotate only the level-80 and level-150 attacks with boss HP in each captured loadout',()=>{
+  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song',{song:3,jin:2});s.combatLog.simulatorLog.enabled=true;s.arenaSimulator.tick(5);match.tick(600);
   const boss=s.arenaSimulator.actors.find(actor=>actor.battlefieldBoss&&actor.battlefieldTeam==='song');
   const [target]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
   target.hp=target.max=1_000_000_000;target.x=boss.x+10;target.y=boss.y;
   const seen=new Set();
   for(let i=0;i<80;i++) {s.arenaSimulator.tick(.1);advanceSimulator(s,.1);if(boss.lastCast)seen.add(+boss.lastCast.id);}
-  for(const faction of ['gaibang','tianren']) for(const tier of [90,150]) {
-    assert.ok([...seen].some(id=>s.I[faction].skills.includes(id)&&s.T[id].tier===tier),`${faction} ${tier} was cast`);
-  }
+  for(const level of [80,150])assert.ok([...seen].some(id=>s.T[id].req===level),`level ${level} was cast`);
+  assert.equal(seen.size,2);
   assert.ok(boss.casts>=4);assert.ok(target.hp<target.max);
   const event=s.arenaSimulator.events.find(event=>event.simId===boss.simId&&event.steps.some(step=>step.values.stats));
   assert.ok(event);assert.equal(event.steps.find(step=>step.values.stats).values.stats.life,boss.max);
@@ -1154,7 +1157,7 @@ test('Tống Kim soldiers have curated team skins, reject allied hits, and hosti
 });
 
 test('Tống Kim player soldier kills grant merit and collectible pills; allied poison never grants credit',()=>{
- const s=battlefieldGame(),match=s.arenaSimulator.battlefield;s.INV_MAX=60;match.start('song');s.arenaSimulator.tick(5);s.Math.random=()=>.01;
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;s.INV_MAX=60;match.start('song',{song:3,jin:2},9003,1200,{...require('../src/shared/war-drop-rates.json'),soldier:100});s.arenaSimulator.tick(5);s.Math.random=()=>.01;
  const enemy=s.l.enemies.find(actor=>actor.battlefieldMonster&&actor.battlefieldTeam==='jin');Object.assign(enemy,{x:s.v.x+20,y:s.v.y,res:{...s.l.P.res},def:0,series:0,hp:50});
  s.hs({parts:{phys:100},crit:0,series:0,series5:0},enemy);s.arenaSimulator.tick(.1);
  assert.equal(s.arenaSimulator.warRewards.state.points,50);assert.equal(s.arenaSimulator.warRewards.drops.length,1);
