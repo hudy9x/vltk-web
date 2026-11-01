@@ -127,6 +127,7 @@ pub fn snapshot(game: &Game, id: u32) -> Option<Vec<u8>> {
     if let Some(state)=game.battlefield_snapshot(id){
         let json=serde_json::to_vec(&state).ok()?;b.push(0xe1);b.extend((json.len() as u32).to_le_bytes());b.extend(json);
     }
+    if let Some(state)=game.training_snapshot(id){let json=serde_json::to_vec(&state).ok()?;b.push(0xe2);b.extend((json.len() as u32).to_le_bytes());b.extend(json);}
     Some(b)
 }
 pub fn command(bytes: &[u8]) -> Result<Command> {

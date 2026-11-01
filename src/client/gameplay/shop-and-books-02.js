@@ -220,6 +220,8 @@ var xa = (s) => pn(s) + N("misc", s) < XA(s);
 var ns = (s) => Math.max(0, pn(s) + N("misc", s) - XA(s));
 
 var J0 = [
+  {k:'sim_token',n:'Lệnh bài SIM',ic:'img/ep/sim-token.png',hide:1,d:'Mở bảng SIM online. Không tiêu hao.'},
+  {k:'test_token',n:'Lệnh bài Test',ic:'img/ep/test-token.png',hide:1,d:'Đổi phái, chọn chiêu và tạo mục tiêu test trên server online. Không tiêu hao.'},
   { k: "newbie_token", n: "Lệnh bài tân thủ", ic: "img/ep/newbie-token.png", hide: 1, d: "Mở hỗ trợ tân thủ. Không thể bán, giao dịch hoặc tiêu hao." },
   {
     k: "knb",

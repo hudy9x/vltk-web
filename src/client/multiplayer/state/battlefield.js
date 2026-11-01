@@ -239,9 +239,9 @@ body.tongkim-controls #public-war-prefer{display:flex}
       if(!send(7,{skill:index===1?100:0}))return false;l.potCd||={life:0,mana:0};l.potCd[kind]=.3;return true;
     },
     entities(next){
-      render();if(!next?.battlefield||next.map!==9003){bodies.clear();return [];}
+      render();if(!next?.training&&(!next?.battlefield||next.map!==9003)){bodies.clear();return [];}
       const ids=new Set(),result=[],now=performance.now();
-      for(const unit of next.battlefield.units){
+      for(const unit of [...(next.training?.units||[]),...(next.map===9003?next.battlefield?.units||[]:[])]){
         if(!unit.kind||!unit.online)continue;
         const actor=next.actors.find(a=>a.id===unit.id);if(!actor||actor.hp<=0)continue;ids.add(unit.id);
         let body=bodies.get(unit.id);
@@ -259,8 +259,8 @@ body.tongkim-controls #public-war-prefer{display:flex}
         result.push({remotePlayer:body,x:body.x,y:body.y});
       }
       for(const id of bodies.keys())if(!ids.has(id))bodies.delete(id);
-      for(const drop of next.battlefield.itemDrops||[])result.push({remotePlayer:{...drop,battlefieldUnit:true,warDrop:true},x:drop.x,y:drop.y});
-      for(const trap of next.battlefield.itemTraps||[])result.push({remotePlayer:{...trap,battlefieldUnit:true,warTrap:true},x:trap.x,y:trap.y});
+      for(const drop of next.battlefield?.itemDrops||[])result.push({remotePlayer:{...drop,battlefieldUnit:true,warDrop:true},x:drop.x,y:drop.y});
+      for(const trap of next.battlefield?.itemTraps||[])result.push({remotePlayer:{...trap,battlefieldUnit:true,warTrap:true},x:trap.x,y:trap.y});
       return result;
     },
     draw(ctx,actor,next){
@@ -286,7 +286,7 @@ body.tongkim-controls #public-war-prefer{display:flex}
         if(!asset||!M8(asset,definition.sz,actor.x,actor.y,1,false,actor.dead ? .35 : 1)){ctx.fillStyle=color;ctx.beginPath();ctx.arc(actor.x,actor.y-18,12,0,7);ctx.fill();}
       }
       effects('over');
-      L3(actor.x,actor.y-(typeof nameplateOffset==='function'?nameplateOffset(anim,scale,.9,6,58):65),(actor.kind>=2?`${actor.team===0?'Tống':'Kim'} ${actor.name}`:actor.name),color,12,actor.hp/actor.maxHp,OnlinePvp.healthColor(next,actor),actor.kind<2?`<${actor.team===0?'Tống':'Kim'} ${rank(actor.points)}>`:undefined,'#8de1cf');
+      L3(actor.x,actor.y-(typeof nameplateOffset==='function'?nameplateOffset(anim,scale,.9,6,58):65),(actor.kind>=2?`${actor.team===0?'Tống':'Kim'} ${actor.name}`:actor.name),color,12,actor.hp/actor.maxHp,OnlinePvp.healthColor(next,actor),!actor.training&&actor.kind<2?`<${actor.team===0?'Tống':'Kim'} ${rank(actor.points)}>`:undefined,'#8de1cf');
     },
   };
   return api;

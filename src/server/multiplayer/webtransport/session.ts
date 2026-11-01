@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { createHmac, randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
@@ -32,6 +33,7 @@ export function registerMultiplayerWebTransport(
   development = false,
   gameMasterMode: GameMasterMode = (process.env.GAME_MASTER_MODE ?? gameMasterConfig.mode) === 'development' ? 'development' : 'all',
 ): void {
+  const training = createRequire(import.meta.url)('../definitions/training.cjs');
   const characters = db ? createCharacters(db) : undefined;
   const battlefieldSettings=db?createPublicBattlefieldSettings(db):undefined;
   let polling: Promise<void> | undefined;
@@ -92,6 +94,27 @@ export function registerMultiplayerWebTransport(
     clearInterval(timer);
     stopped.abort();
     await polling;
+  });
+  app.get('/api/multiplayer/training', (request,reply)=>{
+    requireUser(request);if(!(development||gameMasterMode==='all'))return sendJson(reply,403,{error:'GM chỉ dùng trong development.'});
+    return sendJson(reply,200,{factions:training.options()});
+  });
+  app.post('/api/multiplayer/training',async(request,reply)=>{
+    const user=requireUser(request);
+    if(!(development||gameMasterMode==='all'))return sendJson(reply,403,{error:'GM chỉ dùng trong development.'});
+    if(!characters||!process.env.MULTIPLAYER_WT_CONTROL_URL)return sendJson(reply,503,{error:'Cần chạy dev:online.'});
+    const body=parseJsonBody(request.body) as Record<string,any>;
+    if(!body||!Number.isInteger(body.slot)||body.slot<0||body.slot>2||!['sim','simMode','monster','dummy','clearSims','pin','finish'].includes(body.action))return sendJson(reply,400,{error:'Thao tác test không hợp lệ.'});
+    const saved=characters.read(String(user.id),body.slot),token=['sim','simMode','clearSims'].includes(body.action)?'sim_token':'test_token';
+    if(!saved.profile.inv?.some((i:any)=>i.ktc?.k===token&&i.ktc.c===1))return sendJson(reply,403,{error:'Cần lệnh bài trong hành trang.'});
+    const command:Record<string,unknown>={account:String(user.id),slot:body.slot,action:body.action};
+    if(body.action==='sim'||body.action==='simMode'){
+      if((body.attackPlayers!==undefined&&typeof body.attackPlayers!=='boolean')||(body.attackMonsters!==undefined&&typeof body.attackMonsters!=='boolean'))return sendJson(reply,400,{error:'Chế độ SIM không hợp lệ.'});
+      Object.assign(command,{attackPlayers:body.attackPlayers??false,attackMonsters:body.attackMonsters??true});
+    }
+    if(body.action==='sim')Object.assign(command,training.sim(body.faction,body.skill,body.hp,body.equipped));
+    if(body.action==='monster'||body.action==='dummy')command.monster=training.monster(body.hp,body.action==='dummy');
+    return sendJson(reply,200,await controlCall('/training',command));
   });
   app.get('/api/multiplayer/battlefield-settings',(request,reply)=>{
     requireUser(request);

@@ -47,7 +47,7 @@ function game(enabled=true, entries=new Map()) {
   loadCombatEngine(s);
   for(const name of ['I3','Yd','bn','t1'])loadDeclaration(s,'src/client/core/state-and-save-03.js',name);
   for(const name of ['ee','SA'])loadDeclaration(s,'src/client/gameplay/shop-and-books-01.js',name);
-  vm.runInContext(fs.readFileSync(path.join(ROOT,'src/client/dev/combat-sandbox-01.js'),'utf8'),s);
+  vm.runInContext(fs.readFileSync(path.join(ROOT,'test/helpers/legacy-combat-sandbox.js'),'utf8'),s);
   s.entries=entries;s.fields=fields;return s;
 }
 test('arena creates ten independent level 150 profiles with 500 skill points and saves their progress across swaps/restarts',()=>{
@@ -85,12 +85,12 @@ test('ordinary mode does not create profiles or replace combat functions',()=>{
   const s=game(false);assert.equal(s.combatSandbox,null);assert.equal(s.entries.size,0);
   s.U9({});assert.equal(s.originalDamage,1);
 });
-test('arena config is advertised only when development and arena mode are both enabled',async()=>{
+test('removed arena config is never advertised',async()=>{
   for(const development of [true,false]){
     const db=openDatabase(':memory:');const {app,server}=createServer({db,development,combatSandbox:true,downloadAssets:false});
     await app.ready();
-    await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-    try{const config=await(await fetch(`http://127.0.0.1:${server.address().port}/api/config`)).json();assert.equal(config.development,development);assert.equal(config.combatSandbox,development?true:undefined);}
+    await app.listen({port:0,host:'127.0.0.1'});
+    try{const config=await(await fetch(`http://127.0.0.1:${server.address().port}/api/config`)).json();assert.equal(config.development,development);assert.equal(config.combatSandbox,undefined);}
     finally{await app.close();db.close();}
   }
 });
@@ -304,7 +304,7 @@ test('every active 9x skill is mastered, cast with its own id and records contac
     sim.x=monster.x;sim.y=monster.y;sim.stats.main.cost=10;
     assert.equal(sim.profile.sk[id],s.T[id].max);
     s.arenaSimulator.setFarm(true);s.arenaSimulator.tick(.01);
-    assert.equal(sim.casts,1);assert.equal(sim.lastCast.id,id);assert.equal(sim.mana,100);
+    assert.equal(sim.casts,1);assert.equal(sim.lastCast.id,id);assert.equal(sim.mana,90);
     advanceSimulator(s,.5);assert.equal(s.l.combatProjectiles[0].combat.skill.id,id);
     advanceSimulator(s);
     assert.ok(s.arenaSimulator.events.some(event=>event.source===sim.n&&event.skillInput.id===id&&event.steps.some(row=>row.values.actualLoss>0)),`${faction} ${id} must cause damage through skill contact`);
@@ -371,11 +371,12 @@ test('toggling PK on one SIM invalidates only its own cast and does not alter an
   a.combat.onHit(s.v);assert.equal(s.l.life,1000);
   b.combat.onHit(s.v);assert.equal(s.l.life,900);assert.equal(two.pk,true);
 });
-test('SIM keeps casting with empty mana and high mana costs while HP stays finite',()=>{
-  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang');
+test('SIM falls back to basic attacks while regenerating insufficient mana and HP stays finite',()=>{
+  const s=simulatorGame(),actor=s.arenaSimulator.create('wudang',s.I.wudang.skills.find(id=>s.UA(s.T[id])));
   actor.stats.main.cost=999999;actor.mana=0;s.arenaSimulator.setFarm(true);
   for(let i=0;i<8;i++){s.arenaSimulator.tick(.6);advanceSimulator(s);}
-  assert.equal(actor.casts,8);assert.equal(actor.mana,actor.stats.mana);
+  assert.equal(actor.casts,8);assert.equal(actor.mana,48);
+  assert.equal(actor.lastCast.id || 0,0);
   actor.hp=0;s.arenaSimulator.tick(.1);assert.equal(s.arenaSimulator.actors.length,0);
 });
 test('monster-style pursuit keeps a target, attacks after approaching and tracks a moving PK target',()=>{

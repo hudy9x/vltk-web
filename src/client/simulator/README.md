@@ -45,8 +45,8 @@ người chơi đã hoán đổi tạm thời.
   sân** chọn đối tượng để sửa điểm, đổi chiêu, bật/tắt đánh quái hoặc PK.
 - SIM giữ mục tiêu, di chuyển/kiểm tra đường nhìn và hồi chiêu theo nhịp tương tự
   quái. Đánh quái loại các SIM khỏi danh sách mục tiêu.
-- Mana luôn sẵn có, kỹ năng không tiêu hao MP. HP, độc, choáng và chiêu tiêu hao
-  sinh lực vẫn được xử lý; chết thì SIM bị xóa khỏi sân.
+- SIM tiêu hao MP theo chiêu, hồi HP/MP theo chỉ số và dùng đòn thường khi thiếu MP.
+  HP, độc, choáng và chiêu tiêu hao sinh lực vẫn được xử lý; chết thì SIM bị xóa khỏi sân.
 - SIM dùng chung khóa hành động của `CombatEngine`: dừng di chuyển khi ra chiêu.
   Sát thương lớn không gây khựng hoặc hủy chiêu đang chuẩn bị. Độc, băng sát và
   choáng vẫn được xử lý theo hiệu ứng riêng.
@@ -87,3 +87,15 @@ trình duyệt. Benchmark cũng kiểm tra địa hình và khoảng cách trán
 `test/path-worker.test.js` kiểm tra batching, lỗi/timeout, hủy và kết quả lỗi thời;
 `test/nameplates.test.js` kiểm tra culling; `test/combat-sandbox.test.js` kiểm tra
 log và vòng đời trận.
+
+## Công cụ test online thay thế Arena
+
+Chế độ `dev:arena` và panel Test room cũ đã bỏ. Hai lệnh bài SIM/Test dùng
+`dev/online-training-01.js`, API `/api/multiplayer/training` và Rust
+`domain/training.rs`. Tạo SIM bằng cùng builder native/trang bị Tống Kim, sau đó
+đưa actor vào runtime Rust thông thường. Không dùng buff giả định hoặc damage
+client cho các thực thể test online. Renderer của quân Tống Kim được dùng lại
+để nội suy snapshot SIM.
+
+Các test private Tống Kim còn dùng fixture `test/helpers/legacy-combat-sandbox.js`;
+fixture này không được bundle hoặc chạy trong game.

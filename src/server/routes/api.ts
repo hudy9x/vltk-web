@@ -11,7 +11,7 @@ export function registerApiRoutes(app: FastifyInstance, services: ServerServices
   const storage = registerAccounts(app, db);
   registerMultiplayerWebTransport(app, storage.requireUser, db, development, gameMasterMode);
   app.get('/api/config', (_request, reply) => sendJson(reply, 200,
-    { development, ...(!development && gameMasterMode === 'development' ? { gameMasterMode } : {}), ...(process.env.MULTIPLAYER_WT_CONTROL_URL&&(process.env.MULTIPLAYER_SECRET||'').length>=32&&!combatSandbox?{onlineProgression:true,progressionFields}:{}), ...(development && combatSandbox ? { combatSandbox: true } : {}) }));
+    { development, ...(!development && gameMasterMode === 'development' ? { gameMasterMode } : {}), ...(process.env.MULTIPLAYER_WT_CONTROL_URL&&(process.env.MULTIPLAYER_SECRET||'').length>=32?{onlineProgression:true,progressionFields}:{}) }));
   app.get('/api/health', (_request, reply) => sendJson(reply, 200, { ok: true, database: 'sqlite', mode: 'local' }));
   app.get('/api/assets', (_request, reply) => sendJson(reply, 200, assets.report()));
   app.get('/api/storage', (request, reply) => sendJson(reply, 200, storage.read(request)));

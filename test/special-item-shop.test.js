@@ -25,3 +25,15 @@ test('purchase limit survives element reset, profile reload and idempotent retri
   assert.throws(()=>buy({...reset,inv:[],gold:200000}),/chỉ được mua 1/);
  }finally{db.close();}
 });
+
+test('special merchant sells SIM and Test tokens for 10 van each with their supplied icons',()=>{
+ let p={...base(),gold:200000};
+ for(const [key,icon]of [['sim_token','sim-token.png'],['test_token','test-token.png']]){
+  const before=p.gold;
+  p=progression.apply(p,{kind:'specialItemBuy',item:key},false,'development');
+  const token=p.inv.find(item=>item.ktc?.k===key);
+  assert.equal(p.gold,before-100000);assert.equal(token.ktc.c,1);assert.equal(token.lock,true);assert.equal(token.ic,'img/ep/'+icon);
+  assert.throws(()=>progression.apply({...p,gold:100000},{kind:'specialItemBuy',item:key},false,'development'),/chỉ được mua 1/);
+ }
+ assert.equal(p.gold,0);
+});

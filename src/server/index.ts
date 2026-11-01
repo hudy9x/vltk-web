@@ -25,14 +25,14 @@ function resolveGameMasterMode(value: unknown = process.env.GAME_MASTER_MODE ?? 
 export function createServer({
   db = openDatabase(), downloadAssets = true,
   development = process.env.NODE_ENV === 'development',
-  combatSandbox = process.env.COMBAT_SANDBOX === '1',
+  combatSandbox = false,
   gameMasterMode = resolveGameMasterMode(),
 }: ServerOptions = {}) {
   const resolvedGameMasterMode = resolveGameMasterMode(gameMasterMode);
   const bundle = buildApp();
   seedCatalog(db);
   const services: ServerServices = {
-    db, assets: createAssetCache({ root: PUBLIC_ROOT }), development, combatSandbox,
+    db, assets: createAssetCache({ root: PUBLIC_ROOT }), development, combatSandbox: false,
     gameMasterMode: resolvedGameMasterMode, downloadAssets,
     moduleFiles: new Set(bundle.map.sources.map(file => 'app/' + file)),
   };

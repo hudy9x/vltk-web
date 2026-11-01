@@ -52,7 +52,13 @@ export function createCharacters(db: DatabaseSync) {
       );
       row = { profile: JSON.stringify(profile), revision: 0 };
     }
-    return { profile: JSON.parse(String(row.profile)), revision: Number(row.revision) };
+    const profile=JSON.parse(String(row.profile));
+    // Normalize early test-token icons on read; subsequent mutations persist the catalog paths.
+    for(const item of profile.inv||[]) {
+      if(item.ktc?.k==='sim_token')item.ic='img/ep/sim-token.png';
+      if(item.ktc?.k==='test_token')item.ic='img/ep/test-token.png';
+    }
+    return { profile, revision: Number(row.revision) };
   }
   function apply(grant: Reward) {
     if (

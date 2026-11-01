@@ -82,7 +82,7 @@ impl Game {
         }
     }
     pub fn checkpoint(&mut self) -> Result<()> {
-        for a in self.actors.values().filter(|a|a.war.is_none()) {
+        for a in self.actors.values().filter(|a|a.war.is_none()&&a.test_owner.is_none()) {
             self.checkpoints.data.actors.insert(
                 format!("{}:{}", a.account, a.slot),
                 SavedActor {

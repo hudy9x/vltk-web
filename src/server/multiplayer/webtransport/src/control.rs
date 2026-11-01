@@ -34,6 +34,10 @@ fn authorize(h: &HeaderMap, s: &Control) -> Result<(), StatusCode> {
 }
 pub fn routes(world: Arc<Mutex<World>>, secret: String) -> Router {
     Router::new()
+        .route("/training",post(|State(s):State<Control>,h:HeaderMap,Json(r):Json<crate::domain::training::Request>|async move{
+            authorize(&h,&s)?;let id=s.world.lock().unwrap().game.training_command(r).map_err(|_|StatusCode::BAD_REQUEST)?;
+            Ok::<_,StatusCode>(Json(serde_json::json!({"id":id})))
+        }))
         .route(
             "/catalog",
             post(

@@ -156,14 +156,18 @@ if (
 
 
 // The same catalog and purchase rules run in the browser and trusted server runtime.
-var specialItemOffers = [{ key: 'newbie_token', price: 100000, limit: 1 }];
+var specialItemOffers = [
+  { key: 'newbie_token', price: 100000, limit: 1 },
+  { key: 'sim_token', price: 100000, limit: 1 },
+  { key: 'test_token', price: 100000, limit: 1 },
+];
 
 var specialItemShopBuy = function (key) {
   const offer = specialItemOffers.find(row => row.key === key);
   if (!offer) throw new Error('Vật phẩm không được bán tại cửa hàng này.');
-  if ((o.specialPurchases?.[key] || 0) >= offer.limit) throw new Error('Mỗi nhân vật chỉ được mua 1 Lệnh bài tân thủ.');
+  if ((o.specialPurchases?.[key] || 0) >= offer.limit) throw new Error('Mỗi nhân vật chỉ được mua 1 lệnh bài loại này.');
   const owned = [...o.inv, ...Object.values(o.eq || {}), ...(o.epBox || []), ...(o.stable || []), ...(o.ground || []).map(drop => drop?.it)];
-  if (owned.some(item => item?.ktc?.k === key)) throw new Error('Nhân vật đã có Lệnh bài tân thủ.');
+  if (owned.some(item => item?.ktc?.k === key)) throw new Error('Nhân vật đã có lệnh bài này.');
   if (!Number.isSafeInteger(o.gold) || o.gold < offer.price) throw new Error('Không đủ 10 vạn lượng.');
   if (o.inv.length >= INV_MAX) throw new Error('Hành trang đầy.');
   if (!B4(key, 1)) throw new Error('Không thể thêm vật phẩm vào hành trang.');
@@ -186,7 +190,7 @@ var openSpecialItemShop = function () {
           await OnlineProgression.run({kind:'specialItemBuy', item:button.dataset.specialItem});
           await window.localGameStorage.flush();
         } else specialItemShopBuy(button.dataset.specialItem);
-        $(); V(); k('Đã mua Lệnh bài tân thủ với giá 10 vạn lượng.'); openSpecialItemShop();
+        $(); V(); k(`Đã mua ${J0.find(item => item.k === button.dataset.specialItem)?.n || 'lệnh bài'} với giá 10 vạn lượng.`); openSpecialItemShop();
       } catch (error) { k(error.message); button.disabled = false; }
     });
   });

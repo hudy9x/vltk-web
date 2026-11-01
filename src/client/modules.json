@@ -2881,9 +2881,10 @@
       "lines": 61
     },
     {
-      "file": "dev/combat-sandbox-01.js",
+      "file": "dev/online-training-01.js",
       "symbols": [
-        "combatSandbox"
+        "combatSandbox",
+        "OnlineTraining"
       ],
       "lines": 1
     },
@@ -2947,11 +2948,15 @@
     {
       "file": "multiplayer/party/index.ts",
       "global": "OnlineParty",
-      "symbols": ["OnlineParty"]
+      "symbols": [
+        "OnlineParty"
+      ]
     },
     {
       "file": "multiplayer/state/battlefield.js",
-      "symbols": ["OnlineBattlefield"]
+      "symbols": [
+        "OnlineBattlefield"
+      ]
     },
     {
       "file": "multiplayer/state/pvp.js"
@@ -2967,11 +2972,15 @@
     },
     {
       "file": "ui/keyboard-shortcuts-01.js",
-      "symbols": ["dialogHotkeys"]
+      "symbols": [
+        "dialogHotkeys"
+      ]
     },
     {
       "file": "ui/secondary-skill-01.js",
-      "symbols": ["secondarySkill"]
+      "symbols": [
+        "secondarySkill"
+      ]
     },
     {
       "file": "multiplayer/webtransport/legacy-bridge.js",

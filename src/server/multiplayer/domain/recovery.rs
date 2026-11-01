@@ -34,7 +34,7 @@ impl Game {
             life&&*a.cooldowns.get(&65000).unwrap_or(&0.0)>0.0 ||
             mana&&*a.cooldowns.get(&65001).unwrap_or(&0.0)>0.0 {return Ok(());}
         let spent=p.spent.checked_add(1).ok_or_else(||anyhow::anyhow!("potion counter overflow"))?;
-        self.outbox.consume(a.account.clone(),a.slot,outbox::PotionDebit{id:p.id,spent})?;
+        if a.test_owner.is_none(){self.outbox.consume(a.account.clone(),a.slot,outbox::PotionDebit{id:p.id,spent})?;}
         let before=(a.hp,a.mp);
         a.hp=(a.hp+p.hp.max(0.0)).min(a.profile.hp);
         a.mp=(a.mp+p.mp.max(0.0)).min(a.profile.mp);

@@ -1652,3 +1652,117 @@ fn iron_lotus_impact_is_narrower_and_raised_without_changing_cast_distance(){
     assert!(combat_range::can_cast(&skill,(100.0,100.0),(500.0,100.0)));
     g.actors.get_mut(&1).unwrap().profile.skills=vec![skill];remove_fixture(g);
 }
+
+fn training_request(g:&Game,action:&str)->training::Request {
+ serde_json::from_value(serde_json::json!({"account":"account-a","slot":0,"action":action,"profile":g.actors[&1].profile,"skill":1,"faction":"wudang","name":"SIM","monster":{"id":if action=="dummy"{999001}else{602},"name":"Target","level":150,"hp":1000,"damage":10,"defense":0,"speed":if action=="dummy"{0}else{54},"res":[0,0,0,0,0],"xp":0,"gold":0}})).unwrap()
+}
+#[test]
+fn training_sims_use_online_pvp_damage_movement_and_owner_controls(){
+ let mut g=game();field(&mut g);g.rooms.get_mut(&2).unwrap().mobs.clear();
+ let mut request=training_request(&g,"sim");request.attack_players=true;
+ let id=g.training_command(request).unwrap();g.actors.get_mut(&1).unwrap().pvp.enabled=true;
+ assert_eq!(g.actors[&id].test_owner,Some(1));assert!(pvp::can_hit(&g,id,1));assert!(pvp::can_hit(&g,1,id));assert!(pvp::can_hit(&g,id,2));
+ let x=g.actors[&id].x;g.actors.get_mut(&id).unwrap().profile.skills[0].range=10.0;
+ g.step();assert!(g.actors[&id].x!=x||!g.actors[&id].path.is_empty());
+ let before=g.actors[&id].hp;let skill=g.actors[&1].profile.skills[0].clone();let mut events=vec![];pvp::hit(&mut g,1,id,&skill,&mut events);assert!(g.actors[&id].hp<before);
+ let mut clear=training_request(&g,"clearSims");clear.account="account-b".into();g.training_command(clear).unwrap();assert!(g.actors.contains_key(&id));
+ g.training_command(training_request(&g,"clearSims")).unwrap();assert!(!g.actors.contains_key(&id));
+}
+#[test]
+fn training_dummy_is_stationary_and_respawns_at_home_after_two_seconds(){
+ let mut g=game();field(&mut g);g.rooms.get_mut(&2).unwrap().mobs.clear();
+ let id=g.training_command(training_request(&g,"dummy")).unwrap();let home=g.rooms[&2].mobs[0].home;
+ let hp=g.actors[&1].hp;for _ in 0..10{g.step();}let m=&g.rooms[&2].mobs[0];assert_eq!((m.x,m.y),home);assert_eq!(g.actors[&1].hp,hp);
+ g.rooms.get_mut(&2).unwrap().mobs[0].hp=0.0;g.step();assert_eq!(g.rooms[&2].mobs[0].respawn,2.0);
+ for _ in 0..39{g.step();}assert_eq!(g.rooms[&2].mobs[0].hp,0.0);g.step();
+ let m=&g.rooms[&2].mobs[0];assert_eq!(m.id,id);assert_eq!(m.hp,1000.0);assert_eq!((m.x,m.y),home);
+ assert!(g.rooms[&2].loot.is_empty());
+}
+#[test]
+fn training_pins_map_and_revives_in_place_without_death_drops(){
+ let mut g=game();field(&mut g);g.training_command(training_request(&g,"pin")).unwrap();
+ g.command(1,cmd(2,1,1,0,0,0.0,0.0)).unwrap();assert_eq!(g.actors[&1].map,2);
+ let position=(g.actors[&1].x,g.actors[&1].y);g.actors.get_mut(&1).unwrap().hp=0.0;g.step();let a=&g.actors[&1];
+ assert_eq!(a.hp,a.profile.hp);assert_eq!((a.x,a.y),position);assert!(a.death_notice.is_none());
+ g.training_command(training_request(&g,"finish")).unwrap();g.command(1,cmd(3,1,1,0,0,0.0,0.0)).unwrap();assert_eq!(g.actors[&1].map,1);
+}
+#[test]
+fn training_entities_survive_disconnect_and_rebind_same_account_slot(){
+ let mut g=game();field(&mut g);let sim=g.training_command(training_request(&g,"sim")).unwrap();let dummy=g.training_command(training_request(&g,"dummy")).unwrap();
+ let profile=g.actors[&1].base_profile.clone();g.checkpoint().unwrap();
+ g.actors.remove(&1);g.step();assert!(g.actors.contains_key(&sim));assert!(g.actors[&sim].path.is_empty());assert!(!g.actors[&sim].farming);
+ assert!(g.rooms[&2].mobs.iter().any(|m|m.id==dummy));
+ g.join(3,"account-a".into(),0,profile).unwrap();assert_eq!(g.training.units[&sim].owner,3);assert_eq!(g.actors[&sim].test_owner,Some(3));assert_eq!(g.training.mobs[&dummy].0,3);assert!(g.training.pinned.contains_key(&3));assert_eq!(g.actors[&3].map,2);
+ g.training_command(serde_json::from_value(serde_json::json!({"account":"account-a","slot":0,"action":"clearSims"})).unwrap()).unwrap();assert!(!g.actors.contains_key(&sim));
+}
+
+#[test]
+fn training_sims_initialize_native_auras_and_can_be_cleared_from_town(){
+ let mut g=game();field(&mut g);
+ let mut r=training_request(&g,"sim");r.profile=Some(support_fixture("wudang"));
+ let id=g.training_command(r).unwrap();let a=&g.actors[&id];
+ let enabled:Vec<_>=a.base_profile.support.as_ref().unwrap().skills.iter().filter(|s|s.aura&&s.enabled).map(|s|s.id).collect();
+ assert!(!enabled.is_empty());for skill in enabled{assert!(a.support.auras.contains(&skill));}
+ g.training_command(training_request(&g,"finish")).unwrap();
+ g.command(1,cmd(2,1,1,0,0,0.0,0.0)).unwrap();assert_eq!(g.actors[&1].map,1);
+ g.training_command(training_request(&g,"clearSims")).unwrap();assert!(!g.actors.contains_key(&id));
+}
+
+#[test]
+fn training_sim_modes_defaults_live_switch_idle_and_single_replacement(){
+ let mut g=game();field(&mut g);g.actors.remove(&2);
+ let id=g.training_command(training_request(&g,"sim")).unwrap();
+ assert!(!g.training.units[&id].attack_players);assert!(g.training.units[&id].attack_monsters);
+ assert!(!pvp::can_hit(&g,id,1));assert!(!pvp::can_hit(&g,1,id));
+ g.actors.get_mut(&1).unwrap().pvp.enabled=true;assert!(pvp::can_hit(&g,1,id));
+ g.step();assert!(g.pending.iter().any(|p|p.source==id&&g.rooms[&2].mobs.iter().any(|m|m.id==p.target))||g.events.iter().any(|e|e.source==id&&e.kind==1));
+ for (people,monsters) in [(true,false),(true,true),(false,true),(false,false)]{
+  let mut mode=training_request(&g,"simMode");mode.attack_players=people;mode.attack_monsters=monsters;
+  g.training_command(mode).unwrap();assert_eq!(g.training.units.len(),1);assert_eq!(g.actors[&id].pvp.enabled,people);
+  assert!(g.pending.iter().all(|p|p.source!=id));
+  assert_eq!(pvp::can_hit(&g,id,1),people);
+  g.advance_training();
+  if people{assert_eq!(g.actors[&id].target,1);}
+  else if !monsters{let a=&g.actors[&id];assert_eq!(a.target,0);assert!(!a.farming);assert!(a.path.is_empty());}
+ }
+ let position=(g.actors[&id].x,g.actors[&id].y);for _ in 0..20{g.step();}assert_eq!((g.actors[&id].x,g.actors[&id].y),position);
+ let next=g.training_command(training_request(&g,"sim")).unwrap();assert_ne!(id,next);assert!(!g.actors.contains_key(&id));assert_eq!(g.training.units.len(),1);
+}
+
+#[test]
+fn training_sim_casts_really_damage_monsters_and_players_without_client_confirmation(){
+ for people in [false,true]{
+  let mut g=game();field(&mut g);g.actors.remove(&2);
+  let mut request=training_request(&g,"sim");request.attack_players=people;request.attack_monsters=!people;
+  let id=g.training_command(request).unwrap();
+  let position=(g.actors[&id].x,g.actors[&id].y);
+  if people{let a=g.actors.get_mut(&1).unwrap();a.x=position.0;a.y=position.1;g.rooms.get_mut(&2).unwrap().mobs.clear();}
+  else{let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];m.x=position.0;m.y=position.1;m.hp=1000.0;m.def.hp=1000.0;}
+  let before=if people{g.actors[&1].hp}else{g.rooms[&2].mobs[0].hp};
+  for _ in 0..16{g.step();}
+  let after=if people{g.actors[&1].hp}else{g.rooms[&2].mobs[0].hp};
+  assert!(after<before,"SIM must deal real damage, people={people}, before={before}, after={after}");
+ }
+}
+
+#[test]
+fn training_dummy_each_click_adds_one_at_exact_player_position(){
+ let mut g=game();field(&mut g);g.rooms.get_mut(&2).unwrap().mobs.clear();
+ let mut ids=vec![];
+ for (x,y) in [(150.0,180.0),(150.0,180.0),(260.0,210.0)]{
+  let a=g.actors.get_mut(&1).unwrap();a.x=x;a.y=y;
+  let id=g.training_command(training_request(&g,"dummy")).unwrap();ids.push(id);
+  let m=g.rooms[&2].mobs.iter().find(|m|m.id==id).unwrap();assert_eq!((m.x,m.y),(x,y));assert_eq!(m.home,(x,y));
+ }
+ assert_eq!(g.rooms[&2].mobs.len(),3);assert_eq!(g.training.mobs.len(),3);
+ g.rooms.get_mut(&2).unwrap().mobs[0].hp=0.0;g.step();for _ in 0..40{g.step();}
+ assert_eq!(g.rooms[&2].mobs.len(),3);let m=g.rooms[&2].mobs.iter().find(|m|m.id==ids[0]).unwrap();assert!(m.hp>0.0);assert_eq!((m.x,m.y),(150.0,180.0));
+}
+
+#[test]
+fn training_sim_uses_mana_potions_with_normal_cooldown_without_debiting_player(){
+ let mut g=game();field(&mut g);let sim=g.training_command(training_request(&g,"sim")).unwrap();
+ let a=g.actors.get_mut(&sim).unwrap();a.mp=0.0;a.profile.potions=vec![serde_json::from_value(serde_json::json!({"id":100,"kind":"mana","tier":0,"level":1,"hp":0,"mp":20,"count":3,"spent":0})).unwrap()];
+ let player_mp=g.actors[&1].mp;g.advance_training();assert_eq!(g.actors[&sim].mp,20.0);assert_eq!(g.actors[&sim].profile.potions[0].count,2);
+ g.actors.get_mut(&sim).unwrap().mp=0.0;g.advance_training();assert_eq!(g.actors[&sim].mp,0.0);assert_eq!(g.actors[&sim].profile.potions[0].count,2);assert_eq!(g.actors[&1].mp,player_mp);assert!(g.outbox.pending.values().all(|r|r.potion.is_none()));
+}

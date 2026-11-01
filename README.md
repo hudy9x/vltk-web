@@ -159,7 +159,7 @@ bao gồm Côn Lôn và Võ Đang. Người dùng yêu cầu ghi nhận, tạm t
 Hệ số `BATTLEFIELD_PVP_DAMAGE` trong
 [`src/client/simulator/balance.ts`](src/client/simulator/balance.ts) dùng để cân bằng
 sát thương giữa **người chơi và SIM, hoặc SIM với SIM trong Tống Kim**.
-**Giá trị hiện tại là `0.2` (20%)**, dùng chung cho game thường và `dev:arena`.
+**Giá trị hiện tại là `0.2` (20%)**, dùng chung cho PvP online và Tống Kim.
 Đây là tham số cân bằng của dự án, không phải công thức VLTK/VNG gốc đã được xác minh.
 Boss và binh sĩ NPC không chịu hệ số giảm PvP này.
 
@@ -276,44 +276,28 @@ Factory trả `{ app, server, db }`: `app` là Fastify instance (dùng `inject`,
 tiếp, gọi `await app.ready()` trước `server.listen`; sau đó `await app.close()`
 và đóng `db` do caller quản lý.
 
-## Phòng test 10 môn phái
+## Công cụ test online
 
-```sh
-npm run dev:arena
-# http://127.0.0.1:3002
-```
+Chạy `npm run dev:online`, đăng nhập và vào bãi luyện công. Trong GM bấm
+**Nhận Lệnh bài SIM + Test (online)**. Hai lệnh bài không tiêu hao; dùng trong hành trang.
 
-Phòng test tự tạo 10 nhân vật độc lập, mỗi phái một nhân vật **cấp 150**,
-**500 điểm kỹ năng chưa phân bổ**. Dùng database riêng
-`database/combat-arena.sqlite`, không thay đổi save game chính. Không cần đăng nhập.
+- **SIM**: chọn phái, chiêu học cấp 80 (nhóm 9x) hoặc 150, HP và có/không mặc
+  trang bị Tống Kim. Vũ khí được chọn tự động. SIM cấp 200 dùng profile,
+  buff, MP, tốc độ, navigation và combat server giống nhân vật online;
+  mặc định đánh quái, không đánh người. Hai checkbox đổi ngay chế độ của SIM hiện có;
+  bật cả hai ưu tiên đánh người, tắt cả hai đứng yên. Mỗi nhân vật có một SIM; tạo
+  lại thay SIM cũ. Người chơi bật Đồ sát có thể đánh SIM. Nút xóa chỉ xóa SIM của bạn.
+- **Test**: đổi phái và chiêu chính trên nhân vật hiện tại (thay đổi lưu thật,
+  cấp tối thiểu 150). Xóa trang bị đang mặc, chỉ tạo vũ khí mới theo chiêu.
+  Mục tiêu mặc định là Phiến Khách ID 602 cấp 150, chỉ chỉnh HP, sát thương gốc.
+- **Bao cát**: sprite đi kèm, đứng yên, không đánh; HP do bạn chọn, chết hồi sinh
+  đúng 2 giây tại vị trí tạo. Mục tiêu test không cấp XP/loot.
+- Khi bắt đầu Test, server khóa map hiện tại, chặn dịch chuyển/Thổ Địa Phù và
+  hồi sinh người chơi tại chỗ. **Kết thúc test** mở lại chuyển map.
+- SIM render qua snapshot và nội suy online như quân Tống Kim. Client không tự
+  tính damage hoặc vị trí thực. Công cụ GM/Tống Kim hiện có vẫn giữ nguyên.
 
-- Bấm nút tên phái trong bảng **Phòng test** ở góc trên trái để đổi ngay;
-  điểm đã phân bổ, trang bị và tiến độ từng nhân vật được giữ khi đổi phái/reload.
-- Chiêu 90 luôn được nâng tối đa theo dữ liệu từng chiêu, kể cả nhân vật test
-  đã lưu trước đây; không tiêu hao 500 điểm kỹ năng. Chiêu tổng hợp vẫn theo điều kiện kỹ năng nền
-  của game. Bấm nút chiêu để chọn và tự trang bị đúng loại vũ khí; dùng GM để
-  nhận thêm điểm nếu cần.
-- Lọc quái theo tên/ID, **cấp** và **độ hiếm: Thường / Boss / Hoàng Kim**.
-  Cấp lọc theo khoảng xuất hiện gốc trong dữ liệu bản đồ; bỏ trống để xem tất cả.
-  Chọn loại và số lượng **1–20**, rồi bấm **Tạo lại quái**. Quái được tạo ở cấp
-  đã lọc, hoặc cấp thấp nhất trong khoảng xuất hiện nếu không lọc cấp.
-  Quái chưa có thông tin cấp trong bản đồ chỉ xuất hiện khi không lọc cấp và
-  dùng cấp 150 khi tạo trong phòng test.
-  Mỗi con có **100.000 HP**; mỗi đòn chạm nhân vật gây đúng **1 sát thương**.
-- Có checkbox **Quái đứng yên**, nút **Xóa quái**, và có thể thu gọn bảng bằng
-  cách bấm tiêu đề. Đổi phái tạo lại loại quái đã chọn và xóa hiệu ứng cũ.
-- Checkbox **Hiển thị HP cạnh tên quái** hiện sinh lực hiện tại/tối đa và được
-  lưu lại. Quái chết tự hồi sinh sau **3 giây** tại vị trí tạo ban đầu, đúng
-  loại/cấp/độ hiếm và số lượng đã chọn. Xóa quái, tạo lại hoặc đổi phái hủy lịch cũ.
-- Trong chi tiết kỹ năng có **Cộng tối đa** (dùng điểm còn lại, theo giới hạn
-  cấp học) và **Xóa hết điểm** (hoàn lại điểm kỹ năng đã cộng). Chiêu 90 luôn
-  tối đa trong phòng test nên các nút thay đổi điểm của chiêu 90 được khóa.
-- Phòng test dùng combat, va chạm và vật cản hiện tại; không tự sinh đợt quái,
-  nhận XP hay loot khi giết quái. Sinh lực tối đa nhân vật tính theo chỉ số gốc
-  của game; tạo lại quái giữ nguyên sinh lực/nội lực đang có, không tự hồi đầy.
-
-Chế độ này chỉ được bật bởi `COMBAT_SANDBOX=1` cùng môi trường development;
-`npm start` và `npm run dev:combat` giữ luồng chơi thông thường.
+Chế độ `dev:arena` đã bỏ; `COMBAT_SANDBOX` không còn bật runtime khác.
 
 ## Tạo nhân vật local để test combat
 

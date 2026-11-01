@@ -1,4 +1,5 @@
 pub mod battlefield;
+pub mod training;
 mod attacks;
 mod combat_range;
 pub mod lifecycle;
@@ -44,6 +45,7 @@ pub struct Rules {
     pub max_loot_per_map: usize,
 }
 pub struct Actor {
+    pub test_owner: Option<u32>,
     pub war: Option<battlefield::Membership>,
     pub death_notice: Option<lifecycle::DeathNotice>,
     pub last_attacker: u32,
@@ -82,6 +84,7 @@ impl Actor {
     fn new(account:String,slot:u8,profile:Profile,map:u32,position:(f32,f32))->Self {
         let (x,y)=position;let skill=profile.skills.first().map_or(0,|s|s.id);
         Self {
+                test_owner: None,
                 death_notice: None,
                 last_attacker: 0,
                 last_attacker_name: String::new(),
@@ -202,6 +205,7 @@ struct Pending {
     flight: Option<projectiles::Flight>,
 }
 pub struct Game {
+    pub training: training::Training,
     pub battlefield: battlefield::Battlefield,
     checkpoints: lifecycle::Checkpoints,
     contacts: BTreeMap<u32, attacks::ContactGate>,
@@ -231,6 +235,7 @@ impl Game {
         let checkpoints=lifecycle::Checkpoints::open(path.with_extension("state.json"))?;
         let next=checkpoints.next();
         Ok(Self {
+            training: Default::default(),
             battlefield: Default::default(),
             checkpoints,
             contacts: BTreeMap::new(),
@@ -367,6 +372,7 @@ impl Game {
         );
         support::initialize(self.actors.get_mut(&id).unwrap());
         self.restore_actor(id);
+        self.reconnect_training(id);
         Ok(())
     }
     pub fn command(&mut self, id: u32, c: Command) -> Result<()> {
@@ -378,6 +384,7 @@ impl Game {
             return Ok(());
         }
         a.seq = c.seq;
+        if self.training.pinned.contains_key(&id) && matches!(c.kind,1|17|19) {return Ok(());}
         if c.kind==19 { if c.target>1||c.map!=a.map{return Ok(());}if let Err(error)=self.battlefield_join(id,c.target as u8){eprintln!("battlefield admission: {error}");}return Ok(()); }
         if c.kind==20 {self.battlefield_leave(id);return Ok(());}
         if a.war.is_some() {
@@ -529,7 +536,9 @@ impl Game {
     }
     fn event(&mut self, map: u32, kind: u8, source: u32, target: u32, skill: u16, value: f32, hit: u8) {
         let id = self.id();
-        if kind == 1 && map != battlefield::MAP {
+        // Server-owned SIMs have no client connection to confirm their contacts.
+        // Their projectile/geometry validation runs in advance_attacks, like Tống Kim.
+        if kind == 1 && map != battlefield::MAP && self.actors.get(&source).is_none_or(|a|a.test_owner.is_none()) {
             if let Some(p) = self.pending.iter_mut().rev().find(|p| p.cast_id == 0 && p.source == source && p.skill.id == skill && p.map == map) {
                 p.cast_id = id;
                 self.contacts.insert(id, attacks::ContactGate::new(source, map, p.skill.clone(), self.tick));
@@ -588,6 +597,7 @@ impl Game {
         self.tick = self.tick.wrapping_add(1);
         self.events.retain(|e| self.tick.wrapping_sub(e.tick) < 20);
         self.advance_battlefield(battlefield::now());
+        self.advance_training();
         let mut events = vec![];
         self.advance_pvp_status(&mut events);
         self.advance_curses(&mut events);
@@ -602,6 +612,7 @@ impl Game {
         self.resolve_contacts(&mut events);
         let deaths = self.advance_monsters(&mut events);
         self.battlefield_deaths();
+        self.training_respawn();
         self.finalize_deaths();
         self.commit_rewards(&mut events, deaths);
         for (map, kind, source, target, skill, value, hit) in events {

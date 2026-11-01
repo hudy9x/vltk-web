@@ -13,7 +13,7 @@ impl Game {
                 if m.hp <= 0.0 {
                     if m.respawn > 0.0 {
                         m.respawn -= dt;
-                        if m.respawn <= 0.0 {
+                        if m.respawn <= 0.000001 {
                             m.life = m.life.wrapping_add(1);
                             m.hp = m.def.hp;
                             (m.x, m.y) = m.home;
@@ -54,6 +54,7 @@ impl Game {
                     deaths.push((map, m.id, m.killer));
                     continue;
                 }
+                if self.training.mobs.get(&m.id).is_some_and(|v|v.1) {continue;}
                 if m.stun > 0.0 || m.hurt > 0.0 {
                     continue;
                 }

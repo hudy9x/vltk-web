@@ -15,6 +15,7 @@ pub struct PvpState {
 }
 #[derive(Clone, Copy)]
 pub(super) struct Peer {
+    pub test_owner: Option<u32>,
     pub id: u32,
     pub map: u32,
     pub x: f32,
@@ -29,6 +30,7 @@ pub(super) fn peers(game: &Game) -> Vec<Peer> {
         .iter()
         .map(|(&id, a)| Peer {
             id,
+            test_owner:a.test_owner,
             map: a.map,
             x: a.x,
             y: a.y,
@@ -40,6 +42,7 @@ pub(super) fn peers(game: &Game) -> Vec<Peer> {
         .collect()
 }
 pub(super) fn hostile(id: u32, a: &Actor, b: &Peer, town: bool) -> bool {
+    if a.test_owner.is_some()||b.test_owner.is_some(){return !town&&a.war.is_none()&&b.war.is_none()&&a.map==b.map&&a.hp>0.0&&b.hp>0.0&&a.pvp.enabled&&!(a.test_owner.is_some()&&b.test_owner.is_some());}
     if a.war.is_some()||b.war.is_some(){
         return a.war.zip(b.war).is_some_and(|(x,y)|x.ready&&y.ready&&x.match_id==y.match_id&&x.team!=y.team)&&id!=b.id&&a.hp>0.0&&b.hp>0.0&&a.map==b.map;
     }
@@ -61,6 +64,7 @@ pub(super) fn can_hit(game: &Game, source: u32, target: u32) -> bool {
         a,
         &Peer {
             id: target,
+            test_owner:b.test_owner,
             map: b.map,
             x: b.x,
             y: b.y,

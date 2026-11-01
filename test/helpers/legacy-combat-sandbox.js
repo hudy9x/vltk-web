@@ -2,6 +2,7 @@
 var combatSandbox = (function () {
   const config = window.localGameConfig;
   if (!config || !config.development || !config.combatSandbox) return null;
+  const arenaMap = AA(1);
   const key = "jxidle_arena_profiles";
   const selectionKey = "jxidle_arena_selected";
   const optionsKey = "jxidle_arena_options";
@@ -157,7 +158,7 @@ var combatSandbox = (function () {
     activeFaction = faction;
     Object.assign(l, { town: false, dg: null, tower: false, mounted: false, unvoid: 0 });
     window.NO_FIELD = true;
-    const map = AA(o.stage);
+    const map = arenaMap;
     ma(map.id); l.bgImg = map.bg ? bA(map.bg) : null;
     [v.x, v.y] = X0(O0.w / 2, O0.h / 2);
     v.act = "st"; v.actT = 0; v.px = v.x; v.py = v.y;

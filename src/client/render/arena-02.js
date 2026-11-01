@@ -311,7 +311,8 @@ var NP = function (A) {
           i * Ua,
         ),
       a.hitT > 0 && (a.hitT -= A));
-    const d = a.y - nameplateOffset(a.animKey, i * Ua, 0.85, 8, a.r * 2 + 8);
+    // Static training dummy has no animation bounds; anchor its label above the frame.
+    const d = a.y - (a.tid === 999001 ? (a.sz?.[3] || 100) * i + 10 : nameplateOffset(a.animKey, i * Ua, 0.85, 8, a.r * 2 + 8));
     L3(
       a.x,
       d,

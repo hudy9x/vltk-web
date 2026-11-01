@@ -250,7 +250,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
         l.P.anti = {}; l.P.antiMax = 0; target.resBrkT = 0;
       }
       const scale = pvpDamageScale(v, target), flat = l.P.series5, proxy = target.hurtProxy;
-      const defendedSim = battlefield?.active && target.arenaSim && !target.battlefieldBoss;
+      const defendedSim = target.arenaSim && !target.battlefieldBoss;
       if (defendedSim) target.hurtProxy = true;
       let result;
       try {
@@ -260,7 +260,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
         result = originalHit(boss ? { ...ability, series5: 0 } : ability, target);
       }
       finally { target.hurtProxy = proxy; l.P.series5 = flat; if (boss) { target.res = resistance; l.P.anti = anti; l.P.antiMax = antiMax; target.resBrkT = breakTime; } }
-      if (battlefield?.active && target.arenaSim && !target.battlefieldBoss) {
+      if (defendedSim) {
         const defender = target as SimulatorActor, defense = defender.stats;
         const resolved = skillDefense(Math.max(0, before - defender.hp), defense, defender.mana, v.series, Jr);
         defender.mana = resolved.mana; defender.hp = Math.max(0, before - resolved.damage);
@@ -313,7 +313,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     l = Object.assign({}, world, { P: actor.battlefieldBoss && loadout ? { ...loadout.stats, life: actor.max } : loadout?.stats || actor.stats || world.P, life: actor.hp, mana: actor.mana, sim: true, quiet, mounted: !!actor.mounted && !actor.battlefieldBoss && !actor.battlefieldMonster,
       buffs: {}, skCd: {}, look: null, jx: null, ignoreEqt: null, buffAssume: true });
     try { return action(); }
-    finally { actor.hp = l.life; actor.mana = actor.battlefieldTeam && !actor.battlefieldBoss ? l.mana : actor.stats.mana; o = player; l = world; v = hero; }
+    finally { actor.hp = l.life; actor.mana = l.mana; o = player; l = world; v = hero; }
   }
   function equipSkill(profile: SimulatorProfile, id: SkillId) {
     if (profile.battlefieldBuild) return;
@@ -609,7 +609,10 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       actor.hp = Math.min(actor.max, actor.hp + (actor.stats.regen || 0) * dt);
       actor.mana = Math.min(actor.stats.mana, actor.mana + (actor.stats.manaRegen || 0) * dt);
       recoverSimulator(actor, dt, S.potions || [], typeof be === 'undefined' ? {} : be, typeof ao === 'undefined' ? 1 : ao);
-    } else actor.mana = actor.stats.mana;
+    } else {
+      actor.hp = Math.min(actor.max, actor.hp + (actor.stats.regen || 0) * dt);
+      actor.mana = Math.min(actor.stats.mana, actor.mana + (actor.stats.manaRegen || 0) * dt);
+    }
     const stunned = actor.stun > 0;
     actor.stun = Math.max(0, (actor.stun || 0) - dt);
     actor.slowT = Math.max(0, (actor.slowT || 0) - dt);
@@ -640,7 +643,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     }
     const loadout = actor.battlefieldLoadout as { profile: SimulatorProfile; stats: SimulatorStats } | undefined;
     const preferred = loadout?.stats.main || actor.stats.main;
-    const recovering = actor.battlefieldTeam && !actor.battlefieldBoss && !preferred.costLife && actor.mana < (preferred.cost || 0);
+    const recovering = !actor.battlefieldBoss && !preferred.costLife && actor.mana < (preferred.cost || 0);
     // Keep fighting with the equipped weapon while MP recovers, rather than
     // standing still until the expensive primary skill is affordable again.
     let skill = recovering ? actor.stats.basic : preferred;
@@ -673,10 +676,10 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     if (distance() > reach + 4 || !actor.see || actor.cooldown > 0) return;
     const cost = skill.cost || 0;
     if (skill.costLife && actor.hp <= cost) { actor.waiting = "Chưa đủ sinh lực để ra chiêu"; return; }
-    if (actor.battlefieldTeam && !actor.battlefieldBoss && !skill.costLife && actor.mana < cost) { actor.waiting = "Chờ hồi nội lực để ra chiêu"; return; }
+    if (!actor.battlefieldBoss && !skill.costLife && actor.mana < cost) { actor.waiting = "Chờ hồi nội lực để ra chiêu"; return; }
     actor.waiting = recovering ? "Đánh thường trong lúc hồi nội lực" : "";
     if (skill.costLife) actor.hp -= cost;
-    else if (actor.battlefieldTeam && !actor.battlefieldBoss) actor.mana -= cost;
+    else if (!actor.battlefieldBoss) actor.mana -= cost;
     actor.cooldown = Math.max(actorAttackTiming(actor, skill).cycleSeconds, skill.cd || 0);
     const token = actor.generation;
     castSimulatorSkill(actor, target, skill,
@@ -850,7 +853,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
   function updateInfo() {
     const rosterHTML = renderSimulatorRoster(actors, sim?.simId, D);
     if (field("sim-list").innerHTML !== rosterHTML) field("sim-list").innerHTML = rosterHTML;
-    field("sim-info").textContent = sim ? `${actors.length} SIM trên sân · ${sim.n} · HP ${Math.ceil(Math.max(0, sim.hp))}/${Math.ceil(sim.max)} · MP ${sim.battlefieldTeam ? Math.ceil(sim.mana) + "/" + Math.ceil(sim.stats.mana) : "∞"} · Chiêu ${T[sim.profile.main]?.tier === 90 ? "9x · " : ""}${sim.stats.main.n || "Đánh thường"} cấp ${sim.stats.main.L || 1} · Đã tung ${sim.casts} lần${sim.waiting ? " · " + sim.waiting : ""} · Điểm KN ${sim.profile.skPts} / TN ${sim.profile.attrPts} · ${sim.pk ? "PK" : sim.farm ? "Đánh quái" : "Đứng chờ"}` : `${actors.length} SIM trên sân. Chọn cấu hình rồi bấm Tạo thêm SIM.`;
+    field("sim-info").textContent = sim ? `${actors.length} SIM trên sân · ${sim.n} · HP ${Math.ceil(Math.max(0, sim.hp))}/${Math.ceil(sim.max)} · MP ${Math.ceil(sim.mana) + "/" + Math.ceil(sim.stats.mana)} · Chiêu ${T[sim.profile.main]?.tier === 90 ? "9x · " : ""}${sim.stats.main.n || "Đánh thường"} cấp ${sim.stats.main.L || 1} · Đã tung ${sim.casts} lần${sim.waiting ? " · " + sim.waiting : ""} · Điểm KN ${sim.profile.skPts} / TN ${sim.profile.attrPts} · ${sim.pk ? "PK" : sim.farm ? "Đánh quái" : "Đứng chờ"}` : `${actors.length} SIM trên sân. Chọn cấu hình rồi bấm Tạo thêm SIM.`;
   }
   field("sim-faction").value = I[o.fac] && !I[o.fac].novice ? o.fac : Object.values(I).find(faction => !faction.novice && faction.skills?.length)!.key;
   function applySelectedSkill() {

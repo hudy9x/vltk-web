@@ -2,6 +2,7 @@
 export interface SupportState {shared?:boolean;level?:number;skill:number;remaining:number;cooldown:number;active:boolean;aura:boolean}
 export interface CurseState {skill:number;level:number;remaining:number}
 export interface ActorState {
+  trainingOwner?:number;
   battlefieldTeam?:number; battlefieldKind?:number; battlefieldReady?:boolean;
   curses?:CurseState[];
   supports?:SupportState[];
@@ -67,6 +68,7 @@ export interface PartyState {leader:number;reply:{seq:number;code:number};member
 export interface BattlefieldUnit {appearance?:{sx:'m'|'f';rows:{helm:number;armor:number;weapon:number;horse:number};ride:number;mg:boolean};id:number;name:string;faction:string;sex:number;skin:number;team:number;kind:number;tier:number;points:number;kills:number;playerKills?:number;online:boolean;moving:boolean;ready:boolean;level:number}
 export interface BattlefieldState {marshalsSpawned?:boolean;killNotices?:{id:number;title:string;name:string;at:number}[];itemDrops?:{id:string;kind:string;x:number;y:number;team:number;expires:number}[];itemBuffs?:Record<string,number>;itemTraps?:{kind:string;x:number;y:number;team:number;expires:number}[];id:number;starts:number;ends:number;now:number;phase:'waiting'|'running'|'finished';score:number[];team:number;entryRemaining:number;respawnRemaining:number;deaths:number;potions:number[];selected?:number[];inventory?:{id:number;slot:number;count:number}[];units:BattlefieldUnit[]}
 export interface WorldState {
+  training?:{pinned:boolean;units:(BattlefieldUnit&{owner:number;training:true;attackPlayers?:boolean;attackMonsters?:boolean})[]};
   battlefield?:BattlefieldState;
   death?:{killer:number;name:string;player:boolean};
   party?:PartyState;
@@ -243,7 +245,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
   let battlefield:BattlefieldState|undefined;
   if(at<bytes.length&&bytes[at]===0xe1){
     at++;if(at+4>bytes.length)throw new Error('Invalid battlefield size');
-    const size=u32();if(size>100000||at+size!==bytes.length)throw new Error('Invalid battlefield size');
+    const size=u32();if(size>100000||at+size>bytes.length)throw new Error('Invalid battlefield size');
     battlefield=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes.subarray(at,at+size)));at+=size;
     const s=battlefield;
     if(!s||!Number.isSafeInteger(s.id)||s.id<1||!['waiting','running','finished'].includes(s.phase)||
@@ -262,6 +264,15 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
       !['freezeTrap','stunTrap','slowTrap'].includes(t.kind)||![t.x,t.y,t.expires].every(Number.isFinite)||t.team!==s.team)))throw new Error('Invalid item traps');
     for(const actor of actors){const u=s.units.find(u=>u.id===actor.id);if(u)Object.assign(actor,{battlefieldTeam:u.team,battlefieldKind:u.kind,battlefieldReady:u.ready});}
   }
+  let training:WorldState['training'];
+  if(at<bytes.length&&bytes[at]===0xe2){
+    at++;if(at+4>bytes.length)throw new Error('Invalid training size');const size=u32();
+    if(size>100000||at+size>bytes.length)throw new Error('Invalid training size');
+    training=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes.subarray(at,at+size)));at+=size;
+    if(!training||typeof training.pinned!=='boolean'||!Array.isArray(training.units)||training.units.length>320||
+      new Set(training.units.map(u=>u.id)).size!==training.units.length||training.units.some(u=>!Number.isSafeInteger(u.id)||!Number.isSafeInteger(u.owner)||!actors.some(a=>a.id===u.id)||typeof u.name!=='string'||u.name.length>96||typeof u.faction!=='string'||u.kind!==1||u.training!==true))throw new Error('Invalid training state');
+    for(const u of training.units){const a=actors.find(a=>a.id===u.id);if(a)Object.assign(a,{trainingOwner:u.owner});}
+  }
   if(at!==bytes.length)throw new Error('Invalid world size');
   const self=v.getUint32(10,true);
   if((leader===0)!==(members.length===0)||members.length===1||
@@ -278,6 +289,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
   return {
     type: 'world',
     ...(battlefield?{battlefield}:{}),
+    ...(training?{training}:{}),
     ...(death?{death}:{}),
     party,
     movement,

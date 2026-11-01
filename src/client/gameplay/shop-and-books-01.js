@@ -556,6 +556,7 @@ var B4 = function (A, n) {
 };
 
 var c6 = function (A) {
+  if (['sim_token','test_token'].includes(A?.ktc?.k)&&o.inv.includes(A)) {OnlineTraining.open(A.ktc.k);return true;}
   if (A?.ktc?.k === "newbie_token" && o.inv.includes(A)) { openNewbieSupport(); return true; }
   const n = A && A.ktc && J0.find((a) => a.k === A.ktc.k);
   if (!n || !o.inv.includes(A)) return !1;
@@ -689,6 +690,7 @@ var O7 = function (A, n) {
 };
 
 var f6 = function s(A) {
+  if (['sim_token','test_token'].includes(A?.ktc?.k)&&o.inv.includes(A)) return OnlineTraining.open(A.ktc.k);
   if (A?.ktc?.k === "newbie_token" && o.inv.includes(A)) return openNewbieSupport();
   const n = J0.find((e) => e.k === A.ktc.k) || { n: A.n, d: "" },
     t = A.ktc.c;

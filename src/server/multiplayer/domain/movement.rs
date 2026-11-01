@@ -31,7 +31,7 @@ impl Game {
                 a.pickup = 0;
                 a.path.clear();
             }
-            if a.farming && a.secondary.is_none()
+            if a.test_owner.is_none() && a.farming && a.secondary.is_none()
                 && !a.pvp.enabled
                 && a.target == 0
                 && a.pickup == 0
@@ -64,7 +64,7 @@ impl Game {
                     })
                     .map_or(0, |p| p.id);
             }
-            if a.farming && a.secondary.is_none() && !a.pvp.enabled && a.target == 0 && a.pickup == 0 {
+            if a.farming && a.secondary.is_none() && (!a.pvp.enabled || a.test_owner.is_some()) && a.target == 0 && a.pickup == 0 {
                 a.target = room
                     .mobs
                     .iter()

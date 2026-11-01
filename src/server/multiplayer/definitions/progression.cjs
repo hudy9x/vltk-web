@@ -9,6 +9,11 @@ const resolveGmMode=(mode=process.env.GAME_MASTER_MODE||gmConfig.mode)=>{
 exports.apply=function(input,action,development=false,gameMasterMode){
   if(!action||typeof action!=='object'||Array.isArray(action))fail('Thao tác không hợp lệ.');
   const gmMode=resolveGmMode(gameMasterMode);
+  if(action.kind==='gm'&&action.action==='testFaction'){
+    if(gmMode!=='all'&&!development)throw Object.assign(new Error('GM chỉ dùng trong development.'),{status:403});
+    if(!input.inv?.some(i=>i.ktc?.k==='test_token'&&i.ktc.c===1))fail('Cần Lệnh bài Test.');
+    return require('./training.cjs').configure(input,action.faction,action.skill,true,true);
+  }
   return native.withProgression(input,s=>{
     const p=s.o,kind=action.kind==='newbie'?'gm':action.kind,integer=(n,min,max)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
     if(action.kind==='newbie'){
@@ -108,7 +113,8 @@ exports.apply=function(input,action,development=false,gameMasterMode){
       case 'gm':{
         if(action.kind!=='newbie'&&gmMode!=='all'&&!development)throw Object.assign(new Error('GM chỉ dùng trong development.'),{status:403});
         const name=action.action;
-        if(name==='level150'){
+        if(name==='trainingTokens'){require('./training.cjs').tokens(p,s);}
+        else if(name==='level150'){
           const levels=Math.max(0,150-p.lvl);p.lvl+=levels;p.xp=levels?0:p.xp;p.attrPts+=levels*s.z2;p.skPts+=levels*s.x5;
         }else if(name==='xp'){
           if(p.lvl>=200)fail('Nhân vật đã đạt giới hạn cấp 200.');
@@ -149,7 +155,7 @@ exports.apply=function(input,action,development=false,gameMasterMode){
         }else if(name==='quickSale'){
           const item=Number.isSafeInteger(action.uid)&&p.inv.find(row=>row.uid===action.uid);
           if(!item)fail('Không tìm thấy vật phẩm để bán.');
-          if(item.ktc?.k==='newbie_token')fail('Lệnh bài tân thủ không thể bán.');
+          if(['newbie_token','sim_token','test_token'].includes(item.ktc?.k))fail('Lệnh bài tân thủ không thể bán.');
           delete item.lock;
           if(!Number.isSafeInteger((p.gold||0)+s.x0(item)))fail('Số dư vượt giới hạn số nguyên an toàn.');
           s.Ef(item);

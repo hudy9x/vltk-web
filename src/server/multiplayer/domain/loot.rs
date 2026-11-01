@@ -4,7 +4,8 @@ impl Game {
         for (map, id, owner) in deaths {
             let room = self.rooms.get_mut(&map).unwrap();
             let m = room.mobs.iter_mut().find(|m| m.id == id).unwrap();
-            if let Some(a) = self.actors.get(&owner).filter(|a| a.map == map) {
+            if self.training.mobs.contains_key(&id){m.respawn=2.0;events.push((map,3,owner,id,0,0.0,0));continue;}
+            if let Some(a) = self.actors.get(&owner).filter(|a| a.map == map && a.test_owner.is_none()) {
                 // Do not finalize a death until its reward has reached the durable journal.
                 if self
                     .outbox

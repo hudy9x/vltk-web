@@ -3,7 +3,7 @@ var OnlinePvp=(()=>{
   let initialized=false,pending=0,wanted=false;
   const self=state=>state?.actors.find(a=>a.id===state.self);
   const color=actor=>actor?.alignment;
-  function hostile(state,other){const me=self(state);if(state?.battlefield)return state.battlefield.phase==='running'&&!!me&&!!other&&other.id!==me.id&&me.hp>0&&other.hp>0&&me.battlefieldReady&&other.battlefieldReady&&me.battlefieldTeam!==other.battlefieldTeam&&other.battlefieldTeam!==undefined;return !!me&&!!other&&other.id!==me.id&&me.hp>0&&other.hp>0&&color(me)!==color(other)&&(me.pk||other.pk)&&!l.town;}
+  function hostile(state,other){const me=self(state);if(other?.trainingOwner!==undefined)return !!me&&!!me.pk&&me.hp>0&&other.hp>0&&!l.town;if(state?.battlefield)return state.battlefield.phase==='running'&&!!me&&!!other&&other.id!==me.id&&me.hp>0&&other.hp>0&&me.battlefieldReady&&other.battlefieldReady&&me.battlefieldTeam!==other.battlefieldTeam&&other.battlefieldTeam!==undefined;return !!me&&!!other&&other.id!==me.id&&me.hp>0&&other.hp>0&&color(me)!==color(other)&&(me.pk||other.pk)&&!l.town;}
   function targets(state){return (state?.actors||[]).filter(a=>hostile(state,a)).map(a=>({...a,onlinePlayer:true,max:a.maxHp,dead:a.hp<=0,r:17,n:'Người chơi'}));}
   function select(enabled,send){const seq=send(10,{target:+enabled});if(!seq)return false;wanted=enabled;pending=seq;o.mode=enabled?'slaughter':'farm';if(typeof cg==='function')cg();return true;}
   return {targets,hostile,
