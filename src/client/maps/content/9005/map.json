@@ -1,0 +1,652 @@
+{
+  "schemaVersion": 1,
+  "id": 9005,
+  "name": "Khoái Hoạt Lâm",
+  "status": "available",
+  "size": {
+    "width": 4352,
+    "height": 2560
+  },
+  "entry": {
+    "x": 2051,
+    "y": 1388
+  },
+  "layers": [
+    {
+      "id": "ground",
+      "type": "ground",
+      "image": "./assets/default.jpg"
+    },
+    {
+      "id": "world",
+      "type": "world",
+      "objects": []
+    }
+  ],
+  "navigation": {
+    "kind": "open"
+  },
+  "spawns": [
+    {
+      "id": "preview-2",
+      "position": {
+        "x": 3870.382675424218,
+        "y": 1898.01369688008
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-3",
+      "position": {
+        "x": 3803.206981344149,
+        "y": 1836.700520108454
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-4",
+      "position": {
+        "x": 3796.656880581751,
+        "y": 1856.8176027378067
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-5",
+      "position": {
+        "x": 3498.4671949259937,
+        "y": 1501.2213136041537
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "elite",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-6",
+      "position": {
+        "x": 3558.1879928931594,
+        "y": 1477.96309150476
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-7",
+      "position": {
+        "x": 3564.6213376559317,
+        "y": 1491.8778436640278
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-8",
+      "position": {
+        "x": 3546.017846003175,
+        "y": 1505.7118605272844
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-9",
+      "position": {
+        "x": 2130.568639772013,
+        "y": 2231.7767437985167
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-10",
+      "position": {
+        "x": 2122.6678253486753,
+        "y": 2193.899940208532
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-11",
+      "position": {
+        "x": 2104.0697586871684,
+        "y": 2225.754093353637
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-12",
+      "position": {
+        "x": 2544.806096514687,
+        "y": 1191.744409113191
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-13",
+      "position": {
+        "x": 2537.252675432712,
+        "y": 1204.808524348773
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-14",
+      "position": {
+        "x": 2542.6576120853424,
+        "y": 1212.1175562860444
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-15",
+      "position": {
+        "x": 2559.9665897600353,
+        "y": 1179.755937174894
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-16",
+      "position": {
+        "x": 538.0439164415002,
+        "y": 1753.5098510505632
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-17",
+      "position": {
+        "x": 471.08137494139373,
+        "y": 1738.8755722334608
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-18",
+      "position": {
+        "x": 541.2350484374911,
+        "y": 1704.9012270746753
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-19",
+      "position": {
+        "x": 469.7760024871677,
+        "y": 1747.8249498968944
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-20",
+      "position": {
+        "x": 3681.637407533824,
+        "y": 614.5801960686222
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-21",
+      "position": {
+        "x": 3592.6393854077905,
+        "y": 594.9125941200182
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-22",
+      "position": {
+        "x": 3622.896044926718,
+        "y": 550.6240396341309
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-23",
+      "position": {
+        "x": 3275.549651576206,
+        "y": 2011.2054821951317
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "elite",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-24",
+      "position": {
+        "x": 3212.7713637389243,
+        "y": 1993.468071279116
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-25",
+      "position": {
+        "x": 3239.8928103744984,
+        "y": 1973.044718668796
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-26",
+      "position": {
+        "x": 3204.8866559527814,
+        "y": 1985.5314336465672
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-27",
+      "position": {
+        "x": 3558.0619492363185,
+        "y": 2404.9881406417117
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "elite",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-28",
+      "position": {
+        "x": 3530.2144038937986,
+        "y": 2371.7413859004155
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-29",
+      "position": {
+        "x": 3547.744225718081,
+        "y": 2363.744624105282
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-30",
+      "position": {
+        "x": 855.4546519313008,
+        "y": 1916.6734919613227
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "elite",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-31",
+      "position": {
+        "x": 872.2039415445179,
+        "y": 1923.4495560927317
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-32",
+      "position": {
+        "x": 845.7844972927123,
+        "y": 1908.183614118956
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-33",
+      "position": {
+        "x": 822.3446658384055,
+        "y": 1916.91272606235
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-34",
+      "position": {
+        "x": 4258.685559524223,
+        "y": 2266.425917598419
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "elite",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-35",
+      "position": {
+        "x": 4185.026272261515,
+        "y": 2263.3473422294483
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-36",
+      "position": {
+        "x": 4215.5828791912645,
+        "y": 2261.0371867520735
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-37",
+      "position": {
+        "x": 341.89790886826813,
+        "y": 836.0693805580959
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-38",
+      "position": {
+        "x": 427.5404407456517,
+        "y": 845.2933017099276
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-39",
+      "position": {
+        "x": 410.0851609744131,
+        "y": 851.5565691860393
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-40",
+      "position": {
+        "x": 378.91128554940224,
+        "y": 842.5614794055
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-41",
+      "position": {
+        "x": 1815.940992232412,
+        "y": 582.7494486095384
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "elite",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-42",
+      "position": {
+        "x": 1769.0646507088095,
+        "y": 605.3247038340196
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-43",
+      "position": {
+        "x": 1717.9956014510244,
+        "y": 539.7952150059864
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-44",
+      "position": {
+        "x": 2790.961601726711,
+        "y": 1752.187096168287
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-45",
+      "position": {
+        "x": 2846.7308880966157,
+        "y": 1759.024015716277
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-46",
+      "position": {
+        "x": 2746.255242789164,
+        "y": 1768.9207843048498
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-47",
+      "position": {
+        "x": 2804.146732857451,
+        "y": 1788.4243332138285
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-48",
+      "position": {
+        "x": 2192.399255864322,
+        "y": 466.08343438152224
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "elite",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-49",
+      "position": {
+        "x": 2177.028888452798,
+        "y": 465.5940341325477
+      },
+      "encounterId": "map-9005-sample-monster-38",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-50",
+      "position": {
+        "x": 2158.779847815633,
+        "y": 450.9740875819698
+      },
+      "encounterId": "map-9005-sample-monster-34",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "preview-51",
+      "position": {
+        "x": 2181.226346742362,
+        "y": 474.1496956991032
+      },
+      "encounterId": "map-9005-sample-monster-42",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-ebb202be",
+      "position": {
+        "x": 1489,
+        "y": 1240
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-e48134d3",
+      "position": {
+        "x": 1854,
+        "y": 1561
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-ea2a39b5",
+      "position": {
+        "x": 1999,
+        "y": 1811
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-aa50a88c",
+      "position": {
+        "x": 2349,
+        "y": 1629
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-ad469b64",
+      "position": {
+        "x": 2047,
+        "y": 1038
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-7a00620d",
+      "position": {
+        "x": 2565,
+        "y": 788
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-55777af2",
+      "position": {
+        "x": 2974,
+        "y": 1038
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-524e31ed",
+      "position": {
+        "x": 2974,
+        "y": 1302
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-737568ea",
+      "position": {
+        "x": 3310,
+        "y": 1215
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-6fccb7bd",
+      "position": {
+        "x": 870,
+        "y": 1235
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-bf1087b7",
+      "position": {
+        "x": 1043,
+        "y": 1456
+      },
+      "encounterId": "map-9005",
+      "rank": "normal",
+      "initialDelaySeconds": 0
+    },
+    {
+      "id": "spawn-00daa3f5",
+      "position": {
+        "x": 1412,
+        "y": 1662
+      },
+      "encounterId": "map-9005",
+      "rank": "boss",
+      "initialDelaySeconds": 0
+    }
+  ],
+  "spawnMode": "fixed"
+}

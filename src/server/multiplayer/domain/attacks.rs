@@ -103,6 +103,21 @@ impl Game {
                     self.pending.push(p);
                     continue;
                 }
+                if [328,1061].contains(&p.skill.id) {
+                    for followup in std::mem::take(&mut p.skill.followups) {
+                        let mut skill=p.skill.clone();
+                        // Damage events must identify the ring, not a primary sword.
+                        skill.id=followup.id;
+                        skill.parts=followup.parts;skill.projectile=None;skill.shape="self".into();
+                        skill.radius=170.0*skill.geometry.as_ref().map_or(0.81,|g|g.scale);
+                        skill.range=170.0;skill.targets=256;skill.stun=followup.stun;skill.accuracy=None;
+                        skill.crit=followup.crit.unwrap_or(0.0);
+                        if let Some(g)=&mut skill.geometry {g.impact_y_scale=1.0/0.6;g.impact_offset_y=None;}
+                        self.pending.push(Pending{cast_id:0,source:p.source,map:p.map,target:p.target,
+                            skill,remaining:(if p.skill.id==1061 {0.2} else {0.0})-step,
+                            origin:p.origin,aim:None,flight:None});
+                    }
+                }
                 let Some(room) = self.rooms.get(&p.map) else {
                     continue;
                 };
@@ -133,7 +148,9 @@ impl Game {
                         flight.steer((target.x, target.y), step);
                     }
                 }
-                let (alive, contacts) = flight.advance_bodies(geometry, &room.nav, &bodies, step);
+                let (alive, contacts) = if [328,1061].contains(&p.skill.id) {
+                    flight.advance_swords(p.skill.id,geometry,&room.nav,&bodies,step)
+                } else {flight.advance_bodies(geometry, &room.nav, &bodies, step)};
                 for id in contacts {
                     self.contact(&mut p, id, events);
                 }

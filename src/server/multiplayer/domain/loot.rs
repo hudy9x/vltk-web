@@ -40,7 +40,7 @@ impl Game {
                     });
                 }
             }
-            m.respawn = self.rules.respawn_seconds;
+            m.respawn = m.def.respawn_seconds.unwrap_or(self.rules.respawn_seconds);
             events.push((map, 3, owner, id, 0, 0.0, 0));
         }
         let mut picked_knb = false;

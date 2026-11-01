@@ -582,10 +582,29 @@ var eD = function (A, n, t, e, a, context) {
   // the temporary player globals in delayed contact callbacks.
   const caster = context ? context.actor : v;
   const draw = action => context ? context.visual(action) : action();
-  // Both secondaries keep delayed, independent damage for paired recipients.
-  // Kunlun draws one storm at its chosen target; Emei draws ice at each recipient.
+  if ([328, 1061].includes(+A.id)) {
+    const ability = Object.assign({}, A, {
+      parts: S5(A, a), ev: false, ev2: true, useAR: false,
+      crit: +A.id === 328 ? (a.tab ? F2(l.P, Xw(A.id, a), A.L).crit : A.crit) : 0, stun: a.stun || 0,
+      geo: { k: "self", r: 170, pierce: true },
+    });
+    queueSkillContact(caster, caster, ability, target => {
+      const damage = context ? context.hit(ability, target) : hs(ability, target);
+      if (!context) Ls(damage, ability);
+    }, {
+      windup: +A.id === 1061 ? .2 : 0, duration: .1,
+      targets: context ? context.targets : () => _1(), maxTargets: Infinity,
+      hideFallbackVisual: true,
+      visual: () => {
+        if (+A.id === 328 && typeof Be === "function") draw(() => Be(caster, A, a.n, null, a));
+      },
+    });
+    return;
+  }
+  // Kunlun keeps delayed, independent damage for paired recipients and draws
+  // one storm at its chosen target.
   const thunder = +A.id === 1081 && +a.sid === 1109;
-  if (thunder || (+A.id === 1061 && +a.sid === 1091)) {
+  if (thunder) {
     const castAnchor = A.visualAnchor || { x: n.x, y: n.y - 14 };
     const recipients = [...new Set(e || [n])].filter(target => target && !target.dead && target.hp > 0 &&
       (!thunder || contactFraction(castAnchor.x, castAnchor.y, castAnchor.x, castAnchor.y, target, 150 * QA) != null)
@@ -862,7 +881,7 @@ var oD = function () {
     const damage = hs(e, target);
     Ls(damage, e);
     if (+e.id === 339 && damage > 0) showNhiepHonImpact(target, e);
-    if (e.ev && !triggered) {
+    if (e.ev && !triggered && ![328, 1061].includes(+e.id)) {
       triggered = true;
       const live = _1();
       tD(e, target, live, [target].concat(e.geo ? nD(e, target, live) : []));
@@ -878,7 +897,9 @@ var oD = function () {
         if (!lotusEvent.chance || Math.random() < lotusEvent.chance) Ls(hs(lotusSkill, target), lotusSkill);
       });
     } : undefined,
-    afterRelease: snowEvent ? () => {
+    afterRelease: [328, 1061].includes(+e.id) ? () => {
+      if (e.ev) for (const event of F5(e)) eD(e, t, _1(), [], event);
+    } : snowEvent ? () => {
     const snowSkill = Object.assign({}, e, {
       parts: S5(e, snowEvent), stun: snowEvent.stun || 0, useAR: false, ev2: true, crit: 0,
     });

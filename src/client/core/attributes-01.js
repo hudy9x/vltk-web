@@ -438,6 +438,7 @@ var Tw = function (A, n) {
 };
 
 var S5 = function (A, n) {
+  if (+A.id === 1061 && +n.sid === 1091) return { cold: (A.parts.cold || 0) * 1.3 };
   if (n.tab && typeof l < "u" && l.P) {
     const a = F2(l.P, Xw(A.id, n), n.std ? A.L : Math.min(A.L, 20)).parts || {};
     return n.std ? Object.assign({}, a) : { [n.el]: a[n.el] || 0 };

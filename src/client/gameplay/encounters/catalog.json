@@ -880,5 +880,214 @@
       20,
       20
     ]
+  },
+  {
+    "id": "map-9005",
+    "mapId": 9005,
+    "name": "Khoái Hoạt Lâm",
+    "levelRange": [
+      150,
+      170
+    ],
+    "monsterIds": [
+      148,
+      588,
+      156,
+      52
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-9005-sample-boss-31",
+    "mapId": 9005,
+    "name": "Khoái Hoạt Lâm · boss-31",
+    "levelRange": [
+      1,
+      10
+    ],
+    "monsterIds": [
+      34,
+      42,
+      38
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-9005-sample-monster-34",
+    "mapId": 9005,
+    "name": "Khoái Hoạt Lâm · monster-34",
+    "levelRange": [
+      1,
+      10
+    ],
+    "monsterIds": [
+      34
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-9005-sample-monster-42",
+    "mapId": 9005,
+    "name": "Khoái Hoạt Lâm · monster-42",
+    "levelRange": [
+      1,
+      10
+    ],
+    "monsterIds": [
+      42
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-9005-sample-monster-38",
+    "mapId": 9005,
+    "name": "Khoái Hoạt Lâm · monster-38",
+    "levelRange": [
+      1,
+      10
+    ],
+    "monsterIds": [
+      38
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-9006",
+    "mapId": 9006,
+    "name": "Tẩy Tủy Đảo",
+    "levelRange": [
+      1,
+      10
+    ],
+    "monsterIds": [
+      34,
+      42,
+      38
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-9006-sample-boss-31",
+    "mapId": 9006,
+    "name": "Tẩy Tủy Đảo · boss-31",
+    "levelRange": [
+      1,
+      10
+    ],
+    "monsterIds": [
+      34,
+      42,
+      38
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-9006-sample-monster-38",
+    "mapId": 9006,
+    "name": "Tẩy Tủy Đảo · monster-38",
+    "levelRange": [
+      1,
+      10
+    ],
+    "monsterIds": [
+      38
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-9006-sample-monster-42",
+    "mapId": 9006,
+    "name": "Tẩy Tủy Đảo · monster-42",
+    "levelRange": [
+      1,
+      10
+    ],
+    "monsterIds": [
+      42
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "id": "map-9006-sample-monster-34",
+    "mapId": 9006,
+    "name": "Tẩy Tủy Đảo · monster-34",
+    "levelRange": [
+      1,
+      10
+    ],
+    "monsterIds": [
+      34
+    ],
+    "bossId": 31,
+    "equipmentElementWeights": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
   }
 ]

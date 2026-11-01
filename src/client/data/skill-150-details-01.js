@@ -1073,8 +1073,8 @@
   "1061": {
     "name": "Kiếm Hoa Vãn Tinh",
     "mechanics": [
-      "Tầng 1 (Ngũ Hoa Kiếm Khí): Phóng ra 5 đóa kiếm hoa bay tỏa hình nan quạt (num: 5) với tốc độ 576 px/s.",
-      "Hiệu ứng mở đầu: Sự kiện 1089 phát 8 tia kiếm quanh nhân vật ngay lúc xuất chiêu; khi tia kết thúc, sự kiện 1091 phát băng trụ. Từ cấp kỹ năng 11, đòn phụ Lưu Phong Hồi Tuyết Băng Trụ gây 30% sát thương chiêu chính dưới dạng băng sát, trễ 0,22 giây, tối đa 3 mục tiêu."
+      "Tầng 1 (Ngũ Hoa Kiếm Khí): Phóng 5 tia kiếm theo đội hình mũi tên. Mỗi tia gây sát thương độc lập khi va chạm, kể cả khi nhiều tia cùng trúng một mục tiêu.",
+      "Từ cấp kỹ năng 11, tầng 2 tạo một vòng tròn sát thương quanh người xuất chiêu sau 0,2 giây. Mỗi mục tiêu trong vòng nhận một hit băng sát bằng 130% băng sát tầng 1. Hiệu ứng 8 tia mở đầu và vòng tụ khí chỉ hiển thị, không tính thêm sát thương tầng 1."
     ],
     "samples": [
       [
@@ -1241,9 +1241,9 @@
         "tier": 2,
         "minLevel": 11,
         "trigger": "secondary",
-        "coefficient": 0.3,
+        "coefficient": 1.3,
         "element": "cold",
-        "delay": 0.22
+        "delay": 0.2
       }
     ]
   },

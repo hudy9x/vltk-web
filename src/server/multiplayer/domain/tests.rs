@@ -1730,6 +1730,39 @@ fn training_sim_modes_defaults_live_switch_idle_and_single_replacement(){
 }
 
 #[test]
+fn authored_population_empty_positions_delay_and_respawn() {
+    let mut g = game();
+    let town = g.rooms[&1].definition.clone();
+    let mut field = g.rooms[&2].definition.clone();
+    field.spawns = Some(vec![]);
+    g.rooms.clear();
+    g.install(Definitions { version:1, town:1, battlefield:None, maps:vec![town.clone(),field.clone()] }).unwrap();
+    assert!(g.rooms[&2].mobs.is_empty());
+    let mut monster = field.monsters[0].clone();
+    monster.respawn_seconds = Some(180.0);
+    field.spawns = Some(vec![definitions::SpawnDefinition {
+        id:"authored".into(), position:definitions::Point{x:333.0,y:444.0},
+        initial_delay_seconds:0.1, monsters:vec![monster],
+    }]);
+    g.rooms.clear();
+    g.install(Definitions { version:1, town:1, battlefield:None, maps:vec![town.clone(),field.clone()] }).unwrap();
+    assert_eq!(g.rooms[&2].mobs.len(),1);
+    let m=&g.rooms[&2].mobs[0];
+    assert_eq!(m.home,(333.0,444.0)); assert_eq!(m.hp,0.0);
+    assert!(g.advance_monsters(&mut vec![]).is_empty());
+    assert_eq!(g.rooms[&2].mobs[0].hp,0.0);
+    assert!(g.advance_monsters(&mut vec![]).is_empty());
+    assert_eq!(g.rooms[&2].mobs[0].hp,20.0);
+    let id=g.rooms[&2].mobs[0].id;
+    g.rooms.get_mut(&2).unwrap().mobs[0].hp=0.0;
+    g.commit_rewards(&mut vec![],vec![(2,id,0)]);
+    assert_eq!(g.rooms[&2].mobs[0].respawn,180.0);
+    field.spawns.as_mut().unwrap()[0].position.x=-1.0;
+    g.rooms.clear();
+    assert!(g.install(Definitions { version:1,town:1,battlefield:None,maps:vec![town,field] }).is_err());
+}
+
+#[test]
 fn training_sim_casts_really_damage_monsters_and_players_without_client_confirmation(){
  for people in [false,true]{
   let mut g=game();field(&mut g);g.actors.remove(&2);
@@ -1765,4 +1798,59 @@ fn training_sim_uses_mana_potions_with_normal_cooldown_without_debiting_player()
  let a=g.actors.get_mut(&sim).unwrap();a.mp=0.0;a.profile.potions=vec![serde_json::from_value(serde_json::json!({"id":100,"kind":"mana","tier":0,"level":1,"hp":0,"mp":20,"count":3,"spent":0})).unwrap()];
  let player_mp=g.actors[&1].mp;g.advance_training();assert_eq!(g.actors[&sim].mp,20.0);assert_eq!(g.actors[&sim].profile.potions[0].count,2);
  g.actors.get_mut(&sim).unwrap().mp=0.0;g.advance_training();assert_eq!(g.actors[&sim].mp,0.0);assert_eq!(g.actors[&sim].profile.potions[0].count,2);assert_eq!(g.actors[&1].mp,player_mp);assert!(g.outbox.pending.values().all(|r|r.potion.is_none()));
+}
+
+#[test]
+fn emei_swords_each_damage_the_same_monster_on_their_own_contact() {
+    for (id,y,expected) in [(328,100.0,3),(1061,110.5,2)] {
+        let mut g=piercing_fixture(&[(250.0,y)],100.0);
+        let p=&mut g.pending[0];p.skill.id=id;
+        p.flight=Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)));
+        for _ in 0..80 {g.advance_attacks(&mut vec![]);}
+        assert_eq!(g.rooms[&2].mobs[0].hp,100.0-expected as f32*10.0,"skill {id}");
+        assert!(g.pending.is_empty());remove_fixture(g);
+    }
+}
+
+#[test]
+fn emei_ring_is_independent_of_missed_swords_and_uses_delayed_cold_damage() {
+    let mut g=piercing_fixture(&[(350.0,100.0),(60.0,100.0)],100.0);
+    let p=&mut g.pending[0];p.skill.id=1061;
+    p.skill.followups=vec![definitions::Followup{id:1091,parts:[0.0,0.0,13.0,0.0,0.0],delay:0.2,targets:32,stun:0.0,crit:None}];
+    for _ in 0..5 {g.advance_attacks(&mut vec![]);}
+    assert_eq!(g.rooms[&2].mobs[1].hp,100.0,"ring must respect its delay");
+    for _ in 0..75 {g.advance_attacks(&mut vec![]);}
+    assert_eq!(g.rooms[&2].mobs[1].hp,87.0,"one 130% cold ring hit, no sword contacts");
+    remove_fixture(g);
+}
+
+#[test]
+fn emei_overlapping_swords_also_register_independent_pvp_hits() {
+    for (id,y,count) in [(328,100.0,3),(1061,110.5,2)] {
+        let mut g=pvp_fixture();g.rooms.get_mut(&2).unwrap().mobs.clear();
+        {let a=g.actors.get_mut(&2).unwrap();a.x=250.0;a.y=y;}
+        let mut skill=g.actors[&1].profile.skills[0].clone();skill.id=id;
+        skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.stun=0.0;skill.cold=0.0;skill.travel=0.4;
+        skill.projectile=Some(LinearProjectile{range:300.0,width:16.0,speed:100.0,ignore_terrain:false,pierce:false,area:0.0,homing:false});
+        g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),aim:None,
+            flight:Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)))});
+        for _ in 0..80 {g.advance_attacks(&mut vec![]);}
+        assert_eq!(g.actors[&2].hp,200.0-20.0*count as f32,"skill {id}");
+        remove_fixture(g);
+    }
+}
+
+#[test]
+fn emei_secondary_ring_damage_keeps_its_own_skill_id() {
+    for (primary,secondary) in [(328,329),(1061,1091)] {
+        let mut g=piercing_fixture(&[(350.0,100.0),(60.0,100.0)],100.0);
+        let p=&mut g.pending[0];p.skill.id=primary;
+        p.skill.followups=vec![definitions::Followup{id:secondary,parts:[0.0,0.0,13.0,0.0,0.0],delay:0.2,targets:32,stun:0.0,crit:None}];
+        let recipient=g.rooms[&2].mobs[1].id;
+        let mut events=vec![];for _ in 0..80 {g.advance_attacks(&mut events);}
+        let hits:Vec<_>=events.iter().filter(|event|event.1==2&&event.3==recipient).collect();
+        assert_eq!(hits.len(),1);assert_eq!(hits[0].4,secondary);
+        assert_eq!(hits[0].5,13.0,"attribution must not change the damage formula");
+        remove_fixture(g);
+    }
 }

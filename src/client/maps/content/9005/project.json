@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "mapId": 9005,
+  "paintedNavigation": {
+    "kind": "open"
+  },
+  "colliders": {},
+  "imageRevision": "530e7be5-a8eb-4832-b867-5d8331e6dd26",
+  "originalImages": {
+    "ground": "./assets/default.jpg"
+  }
+}

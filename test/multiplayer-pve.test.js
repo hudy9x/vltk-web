@@ -94,3 +94,20 @@ test('projectile DTO preserves native movement, piercing level gates and station
   const skill=profile.skills.find(s=>s.id===318);assert.ok(skill.projectile);assert.equal(skill.projectile.width,16);
   assert.equal(profile.skills.find(s=>s.id===0).projectile,null);
 });
+
+test('online world preserves every authored spawn, including fixed empty maps',()=>{
+  const fs=require('node:fs');
+  const encounters=JSON.parse(fs.readFileSync('src/client/gameplay/encounters/catalog.json'));
+  for(const map of catalog.world().maps){
+    const authored=JSON.parse(fs.readFileSync(`src/client/maps/content/${map.id}/map.json`));
+    if(authored.spawnMode!=='fixed'&&!authored.spawns.length){assert.equal(map.spawns,null);continue;}
+    assert.equal(map.spawns.length,authored.spawns.length,`map ${map.id}`);
+    map.spawns.forEach((spawn,i)=>{
+      const point=authored.spawns[i],profile=encounters.find(e=>e.id===point.encounterId);
+      assert.deepEqual(spawn.position,point.position);assert.equal(spawn.initialDelaySeconds,point.initialDelaySeconds);
+      assert.deepEqual(spawn.monsters.map(m=>m.id),point.rank==='boss'?[profile.bossId]:profile.monsterIds);
+      for(const monster of spawn.monsters)assert.equal(monster.hp,native.monsterStats(profile.levelRange[0],point.rank).hp);
+    });
+  }
+  assert.deepEqual(catalog.world().maps.find(m=>m.id===9006).spawns,[]);
+});

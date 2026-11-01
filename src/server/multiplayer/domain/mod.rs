@@ -279,8 +279,9 @@ impl Game {
             let entry = nav.nearest(map.entry.x, map.entry.y);
             ensure!(nav.stand(entry.0, entry.1), "map has no usable spawn");
             let mut mobs = vec![];
-            if !map.town && !map.monsters.is_empty() {
-                for i in 0..self.rules.monsters_per_map {
+            if !map.town && (map.spawns.is_some() || !map.monsters.is_empty()) {
+                let count = map.spawns.as_ref().map_or(self.rules.monsters_per_map, |s| s.len());
+                for i in 0..count {
                     let angle = i as f32 * 2.399963;
                     let radius = if i < 6 {
                         130.0 + i as f32 * 35.0
@@ -291,12 +292,21 @@ impl Game {
                         (map.entry.x + angle.cos() * radius).clamp(24.0, map.width - 24.0),
                         (map.entry.y + angle.sin() * radius).clamp(34.0, map.height - 24.0),
                     );
-                    let def = map.monsters[i % map.monsters.len()].clone();
+                    let (x, y, def, delay) = if let Some(spawns) = &map.spawns {
+                        let spawn = &spawns[i];
+                        ensure!(nav.stand(spawn.position.x, spawn.position.y), "map {}: blocked spawn {}", map.id, spawn.id);
+                        ensure!(spawn.initial_delay_seconds.is_finite() && spawn.initial_delay_seconds >= 0.0 && !spawn.monsters.is_empty(), "invalid authored spawn");
+                        self.rng ^= self.rng << 13; self.rng ^= self.rng >> 7; self.rng ^= self.rng << 17;
+                        let def = spawn.monsters[self.rng as usize % spawn.monsters.len()].clone();
+                        (spawn.position.x, spawn.position.y, def, spawn.initial_delay_seconds)
+                    } else {
+                        (x, y, map.monsters[i % map.monsters.len()].clone(), 0.0)
+                    };
                     mobs.push(Mob {
                         curses:Default::default(),
                         life: 0,
                         id: self.id(),
-                        hp: def.hp,
+                        hp: if delay > 0.0 { 0.0 } else { def.hp },
                         def,
                         x,
                         y,
@@ -314,7 +324,7 @@ impl Game {
                         dir: 0,
                         moving: false,
                         killer: 0,
-                        respawn: 0.0,
+                        respawn: delay,
                         cd: 1.0,
                         path: vec![],
                     });

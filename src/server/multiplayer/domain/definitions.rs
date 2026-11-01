@@ -50,7 +50,8 @@ pub struct Skill {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Accuracy {pub rating:f32,pub ignore:f32}
 #[derive(Clone,Debug,Deserialize,Serialize)]
-pub struct Followup {pub id:u16,pub parts:[f32;5],pub delay:f32,pub targets:usize,pub stun:f32}
+pub struct Followup {pub id:u16,pub parts:[f32;5],pub delay:f32,pub targets:usize,pub stun:f32,
+    #[serde(default)] pub crit:Option<f32>}
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PveDamage {
@@ -150,6 +151,16 @@ pub struct MonsterDefinition {
     pub gold: u32,
     #[serde(default, rename = "goldMin")]
     pub gold_min: Option<u32>,
+    #[serde(default, rename = "respawnSeconds")]
+    pub respawn_seconds: Option<f32>,
+}
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpawnDefinition {
+    pub id: String,
+    pub position: Point,
+    pub initial_delay_seconds: f32,
+    pub monsters: Vec<MonsterDefinition>,
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct MapDefinition {
@@ -161,6 +172,8 @@ pub struct MapDefinition {
     pub entry: Point,
     pub grid: Grid,
     pub monsters: Vec<MonsterDefinition>,
+    #[serde(default)]
+    pub spawns: Option<Vec<SpawnDefinition>>,
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct Definitions {

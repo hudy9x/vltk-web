@@ -683,7 +683,7 @@ mod tests {
         for id in [1,2]{let a=g.actors.get_mut(&id).unwrap();a.x=100.0;a.y=100.0;}
         let mut skill=g.actors[&1].profile.skills[0].clone();
         skill.id=1081;skill.parts=[0.0,0.0,0.0,0.0,100.0];
-        skill.followups=vec![definitions::Followup{id:1109,parts:[0.0,0.0,0.0,0.0,200.0],delay:0.3,targets:2,stun:0.0}];
+        skill.followups=vec![definitions::Followup{id:1109,parts:[0.0,0.0,0.0,0.0,200.0],delay:0.3,targets:2,stun:0.0,crit:None}];
         g.pending.push(Pending{cast_id:0,source:1,map:MAP,target:2,skill,remaining:0.0,origin:(100.0,100.0),aim: None, flight:None});
         let mut events=vec![];g.advance_attacks(&mut events);
         assert_eq!(g.actors[&2].hp,980.0);assert_eq!(g.pending.len(),1);
@@ -708,7 +708,7 @@ mod tests {
         let mut g=fixture();start(&mut g);g.actors.retain(|id,_|*id<=2);
         for id in [1,2]{let a=g.actors.get_mut(&id).unwrap();a.x=100.0;a.y=100.0;}
         let mut skill=g.actors[&1].profile.skills[0].clone();skill.id=353;skill.parts=[0.0,1000.0,0.0,0.0,0.0];skill.poison=3.0;
-        skill.followups=vec![definitions::Followup{id:354,parts:[300.0,100.0,0.0,0.0,0.0],delay:0.12,targets:3,stun:0.0}];
+        skill.followups=vec![definitions::Followup{id:354,parts:[300.0,100.0,0.0,0.0,0.0],delay:0.12,targets:3,stun:0.0,crit:None}];
         g.pending.push(Pending{cast_id:0,source:1,map:MAP,target:2,skill,remaining:0.0,origin:(100.0,100.0),aim: None, flight:None});
         let mut events=vec![];for _ in 0..5{g.advance_attacks(&mut events);}
         assert_eq!(g.actors[&2].hp,940.0);assert!(g.actors[&2].pvp.poison>0.0);

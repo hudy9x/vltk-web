@@ -90,6 +90,7 @@ exports.world = function () {
   const states = JSON.parse(
     fs.readFileSync(path.join(root, 'src/client/maps/availability.json')),
   ).maps;
+  const encounters = JSON.parse(fs.readFileSync(path.join(root, "src/client/gameplay/encounters/catalog.json")));
   const maps = [];
   const add = (id, zone) => {
     if (states[id] !== 'available') return;
@@ -106,6 +107,26 @@ exports.world = function () {
       height: map.size.height,
       entry: map.entry,
       grid: map.navigation,
+      // null means procedural; [] is an intentionally empty authored population.
+      spawns: map.spawnMode === 'fixed' || map.spawns?.length ? map.spawns.map(spawn => {
+        const encounter = encounters.find(e => e.id === spawn.encounterId);
+        if (!encounter) throw new Error(`Map ${id}: unknown encounter ${spawn.encounterId}`);
+        const rank = spawn.rank, spawnLevel = Math.max(1, encounter.levelRange[0]);
+        const spawnStats = native.monsterStats(spawnLevel, rank);
+        const ids = rank === 'boss' ? [encounter.bossId] : encounter.monsterIds;
+        if (!ids.length) throw new Error(`Map ${id}: empty spawn pool ${spawn.id}`);
+        return {id:spawn.id, position:spawn.position, initialDelaySeconds:spawn.initialDelaySeconds,
+          monsters:ids.map(monsterId => {
+            const monster=source.monsters[monsterId];
+            if (!monster) throw new Error(`Map ${id}: unknown monster ${monsterId}`);
+            return {id:monsterId,name:monster.n,level:spawnLevel,series:native.monsterSeries(monsterId),
+              hp:spawnStats.hp,damage:spawnStats.dmg*(rank==='normal'?.75:1),defense:spawnStats.def,
+              speed:30+(monster.run||6)*4,res:elements.map(()=>Math.min(75,spawnLevel*.35)),
+              xp:Math.max(1,spawnLevel*rules.rewards.xpPerMonsterLevel),
+              gold:goldDropRange(spawnLevel).max,goldMin:goldDropRange(spawnLevel).min,
+              respawnSeconds:rank==='boss'?180:undefined};
+          })};
+      }) : null,
       monsters: (zone?.m || [])
         .filter((id) => source.monsters[id])
         .map((id) => ({
