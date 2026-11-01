@@ -21,7 +21,7 @@ export function createArmyEquipment(source: GearSource, options: { sex: number; 
   };
   for (const [slot, kind] of Object.entries(SLOTS)) {
     const candidates = catalog.filter(item => (slot === 'weapon' ? item.d === options.weapon[0] && item.k === options.weapon[1] : item.d === kind) &&
-      item.req.every(([type, value]: number[]) => value < 0 || (type === 36 ? options.level >= value : type === 39 ? options.factionId === value : type === 37 ? series[slot] === options.series : true)));
+      item.req.every(([type, value]: number[]) => value < 0 || (type === 36 ? options.level >= value : type === 39 ? options.factionId === value : true)));
     // Keep equipment requirements attainable by the character's available potential pool.
     const fits = (item: LegacyRecord) => {
       const next = { ...required };

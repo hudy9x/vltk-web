@@ -288,7 +288,7 @@ var tp = function (A, n) {
           : A === 35
             ? c1("eng") >= n
             : A === 37
-              ? n < 0 || !I[o.fac] || F0() === n
+              ? !0
               : A === 38
                 ? n < 0 || (o.sex || 0) === n
                 : A === 39
@@ -370,7 +370,7 @@ var ap = function (A) {
     n.push(["b", i1(w, [x, 0, x])]);
   }
   for (const [h, g] of A.req)
-    !S6[h] ||
+    h === 37 || !S6[h] ||
       ((h === 37 || h === 38 || h === 39) && g < 0) ||
       (h !== 37 && h !== 38 && h !== 39 && !(g > 0)) ||
       n.push([tp(h, g) ? "b" : "rq", ep(h, g)]);
@@ -612,7 +612,7 @@ var x6 = function (A) {
   for (const [t, e] of A.req || [])
     if (
       (t === 36 && e > GA() + 10) ||
-      ((t === 37 || t === 39) && e >= 0 && I[o.fac] && (t === 37 ? F0() !== e : I[o.fac].id !== e))
+      (t === 39 && e >= 0 && I[o.fac] && I[o.fac].id !== e)
     )
       return !1;
   const n = I[o.fac];
@@ -746,10 +746,7 @@ var mA = function (A) {
     for (const [e, a] of A.req || [])
       if (
         (e === 36 && a > GA() + 5) ||
-        ((e === 37 || e === 39) &&
-          a >= 0 &&
-          I[o.fac] &&
-          (e === 37 ? F0() !== a : I[o.fac].id !== a))
+        (e === 39 && a >= 0 && I[o.fac] && I[o.fac].id !== a)
       )
         return !1;
   }

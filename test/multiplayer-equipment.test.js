@@ -90,3 +90,33 @@ test('online compatible kit persists selected alternative templates and rejects 
   assert.deepEqual(store.read('one',0).profile,before);
  }finally{db.close();}
 });
+
+test('element requirements never block wearing while hidden-line activation still follows generating elements',()=>{
+ for(let element=0;element<5;element++){
+  const profile=native.withProgression(base,s=>{
+   const trader=s.equipmentTrader,item=trader.blueCatalog(0,1).find(item=>item.d===5);
+   const gear=trader.preview({kind:'blue',sex:0,level:1,item:item.key,series:element,lines:[trader.affixes(item,element,0)[0].a]})[0];
+   gear.req=gear.req.filter(([id])=>id!==37);gear.req.push([37,element]);gear.uid=900;
+   assert.equal(s.tp(37,element),true);
+   assert.equal(s.p0(gear),true);
+   assert.equal(s.x6(gear),true);
+   assert.ok(!s.vt(gear).some(text=>text.includes('Chỉ hệ')));
+   assert.ok(!JSON.stringify(s.ap(gear)).includes('Thuộc tính ngũ hành:'));
+   const expected=s.s4(s.F0(),element)?1:0;
+   assert.equal(s.Dt(gear,{boot:gear}),expected);
+   const wrongLevel={...gear,req:[[36,999]]};
+   assert.equal(s.p0(wrongLevel),false);
+   const wrongFaction={...gear,req:[[39,s.I[base.fac].id+1]]};
+   assert.equal(s.p0(wrongFaction),false);
+   return {...base,uid:901,inv:[gear],eq:{}};
+  });
+  const equipped=progression.apply(profile,{kind:'equip',uid:900});
+  assert.equal(equipped.eq.boot.uid,900);
+  native.withProgression(equipped,s=>{
+   const gear=s.o.eq.boot,expected=s.s4(s.F0(),element)?1:0;
+   assert.equal(s.p0(gear),true);
+   assert.equal(s.Dt(gear,s.o.eq),expected);
+   return true;
+  });
+ }
+});

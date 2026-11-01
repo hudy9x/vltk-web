@@ -193,7 +193,6 @@ var p0 = function (A) {
       (n === 33 && c1("dex") < t) ||
       (n === 34 && c1("vit") < t) ||
       (n === 35 && c1("eng") < t) ||
-      (n === 37 && t >= 0 && I[o.fac] && F0() !== t) ||
       (n === 39 && t >= 0 && I[o.fac] && I[o.fac].id !== t)
     )
       return !1;
@@ -315,7 +314,7 @@ var Lw = function () {
             t.d <= 1 &&
             o1(t) &&
             (t.req || []).every(([e, a]) => e !== 36 || GA() >= a) &&
-            !(t.req || []).some(([e, a]) => (e === 37 || e === 39) && a >= 0 && !p0(t)),
+            !(t.req || []).some(([e, a]) => e === 39 && a >= 0 && !p0(t)),
         )
         .sort((t, e) => Da(e) - Da(t))[0]) ||
     null
@@ -332,9 +331,7 @@ var vt = function (A) {
     } else
       t === 38 && e >= 0 && (o.sex || 0) !== e
         ? n.push(`Chỉ dành cho ${e ? "nữ" : "nam"} (nhân vật của bạn là ${o.sex ? "nữ" : "nam"})`)
-        : t === 37 && e >= 0 && I[o.fac] && F0() !== e
-          ? n.push(`Chỉ hệ ${g0[e]} (bạn hệ ${g0[F0()]})`)
-          : t === 39 &&
+        : t === 39 &&
             e >= 0 &&
             I[o.fac] &&
             I[o.fac].id !== e &&
