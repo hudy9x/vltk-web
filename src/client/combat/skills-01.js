@@ -58,8 +58,7 @@ var l1 = {
   353: { n: "Thiên Canh Độc Thủ", sid: 354, k: 0.3, el: "phys", poison: 0.1, max: 3 },
   362: { n: "Nghiệp Hỏa Phần Thành", sid: 363, k: 1, el: "fire", max: 5 },
   357: { n: "Long Chiến Vu Dã", col: 1, k: 1, el: "fire", max: 2 },
-  328: { n: "Ngọc Tuyền Tẩy Trần", sid: 329, self: !0, k: 0.35, el: "phys", max: Infinity,
-    tab: typeof window !== "undefined" && window.SK_EV && window.SK_EV[329] && window.SK_EV[329].a, std: 1 },
+  328: { n: "Ngọc Tuyền Tẩy Trần", sid: 329, self: !0, k: 0.35, el: "phys", max: 3 },
   380: {
     n: "Kim Đỉnh Phật Quang",
     sid: 331,
@@ -73,7 +72,7 @@ var l1 = {
   375: { n: "Bình Địa Hám Lôi", col: 1, k: 0.35, el: "light", max: 3 },
   372: { n: "Khiếu Phong Tam Liên Kích", col: 1, sid: 373, k: 0.35, el: "light", max: 3 },
   1081: { n: "Lôi Động Càn Khôn", sid: 1109, k: 0.55, el: "light", max: 2, delay: 0.3 },
-  1061: { n: "Lưu Phong Hồi Tuyết Băng Trụ", sid: 1091, k: 1.3, el: "cold", self: true, max: Infinity, delay: 0.2 },
+  1061: { n: "Lưu Phong Hồi Tuyết Băng Trụ", sid: 1091, k: 0.3, el: "cold", max: 3, delay: 0.22 },
 };
 
 var Vw = Array.from({ length: 20 }, (s, A) => [4 + 7 * (A + 1), 0, 296 + 59 * (A + 1)]);

@@ -183,10 +183,9 @@ exports.buildCharacter = function (input, activeBuffs = [], activeAuras = null, 
       }),
       skills,
       // These attacks have damage-bearing secondary layers, not cosmetic-only FX.
-      followups: Object.fromEntries(skills.filter(skill=>[328,353,355,1061,1066,1067,1081].includes(+skill.id)).map(skill=>[
+      followups: Object.fromEntries(skills.filter(skill=>[353,355,1066,1067,1081].includes(+skill.id)).map(skill=>[
         skill.id,scope.F5(skill).map(event=>({id:event.sid||skill.id,parts:scope.S5(skill,event),delay:event.delay||0.12,
-          targets:[328,1061].includes(+skill.id)?32:scope.Qi(skill,event)||1,stun:event.stun||0,
-          ...(skill.id===328?{crit:scope.F2(stats,scope.Xw(skill.id,event),skill.L).crit}:{} )})),
+          targets:scope.Qi(skill,event)||1,stun:event.stun||0})),
       ])),
       attackTimings: skills.map(skill=>scope.actorAttackTiming(scope.v,skill)),
       timing: { runPercent: 100 * (scope.l.mounted ? stats.speed : stats.speedFoot ?? stats.speed), config: scope.CombatEngine.SPEED_CONFIG },

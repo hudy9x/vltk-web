@@ -9,7 +9,6 @@ pub(super) struct Body {
 use std::collections::BTreeSet;
 
 pub(super) struct Flight {
-    swords: Option<Vec<Flight>>,
     origin: (f32, f32),
     direction: (f32, f32),
     traveled: f32,
@@ -34,7 +33,6 @@ impl Flight {
         let dy = (aim.1 - origin.1) * 2.0;
         let length = dx.hypot(dy);
         Self {
-            swords: None,
             origin,
             direction: if length > 0.001 {
                 (dx / length, dy / length)
@@ -44,26 +42,6 @@ impl Flight {
             traveled: 0.0,
             hits: BTreeSet::new(),
         }
-    }
-    /// Each sword has its own sweep and contact set, including shared victims.
-    pub(super) fn advance_swords(&mut self, id:u16, geometry:&LinearProjectile,
-        nav:&Navigation, bodies:&[Body], dt:f32)->(bool,Vec<u32>) {
-        let rays=self.swords.get_or_insert_with(|| {
-            let (c,s)=self.direction;
-            let offsets:Vec<(f32,f32)>=if id==1061 {
-                vec![(48.0,0.0),(0.0,-42.0),(0.0,42.0),(-48.0,-84.0),(-48.0,84.0)]
-            } else {vec![(0.0,-22.0),(0.0,0.0),(0.0,22.0)]};
-            offsets.into_iter().map(|(forward,side)| {
-                let origin=(self.origin.0+c*forward-s*side,self.origin.1+(s*forward+c*side)/2.0);
-                Self::new(origin,(origin.0+c*100.0,origin.1+s*50.0))
-            }).collect()
-        });
-        let mut contacts=Vec::new();
-        rays.retain_mut(|ray| {
-            let (alive,hits)=ray.advance_bodies(geometry,nav,bodies,dt);
-            contacts.extend(hits);alive
-        });
-        (!rays.is_empty(),contacts)
     }
     fn point(&self, distance: f32) -> (f32, f32) {
         (

@@ -47,7 +47,7 @@ export function castSimulatorSkill(actor: SimulatorActor, target: LegacyEntity, 
     if (!valid() || !live().includes(contact)) return;
     const amount = damage(skill, contact);
     if (+skill.id! === 339 && amount > 0) withContext(() => showNhiepHonImpact(contact, skill));
-    if (!triggered && ![328, 1061].includes(+skill.id!)) {
+    if (!triggered) {
       triggered = true;
       const available = live();
       const collided = [contact, ...(skill.geo ? withContext(() => nD(skill, contact, available)) : [])];
@@ -64,9 +64,7 @@ export function castSimulatorSkill(actor: SimulatorActor, target: LegacyEntity, 
         if (!lotus.chance || Math.random() < lotus.chance) damage(flower, contact);
       }, live));
     } : undefined,
-    afterRelease: [328, 1061].includes(+skill.id!) ? () => {
-      for (const event of events) withContext(() => eD(skill, target, live(), [], event, context));
-    } : snow ? () => withContext(() => {
+    afterRelease: snow ? () => withContext(() => {
     const ability = { ...skill, parts: S5(skill, snow), stun: snow.stun || 0, useAR: false, ev2: true, crit: 0 };
     spawnSnowTrail(actor, target, ability, contact => {
       if (!snow.chance || Math.random() < snow.chance) damage(ability, contact);

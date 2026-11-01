@@ -6,7 +6,6 @@ import { defaultCombatTargets } from './spatial/contact-query';
 import { resolveSpeed } from '../speed/runtime';
 import type { ResolvedSpeed } from '../speed/types';
 import { playSkillSound } from './audio/runtime';
-import { advancedSkillLayout } from '../render/skills-150';
 declare function actorAttackTiming(actor: CombatTarget, skill: CombatSkill): ResolvedSpeed;
 // Secondary fields created synchronously at release inherit the same tick remainder.
 let releaseStep: number | undefined;
@@ -112,22 +111,13 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
           x: melee || area ? target.x : actor.x,
           y: (melee || area ? target.y : actor.y) - 14,
           x2: target.x, y2: target.y - 14,
-          age: area && !giangHai && !(skill.ev2 && +skill.id! === 1061) ? 0 : -cast.windup, life: area ? cast.duration || 0.3 : melee ? 0.1 : 2,
+          age: area && !giangHai ? 0 : -cast.windup, life: area ? cast.duration || 0.3 : melee ? 0.1 : 2,
           melee, speed: 360, color: Hi[Object.keys(skill.parts || {})[0]] || "#ffd24a",
           ang: Y3(target.x - actor.x, target.y - actor.y),
           staticArea: !!area,
         };
-        const swords = !skill.ev2 && [328,1061].includes(Number(skill.id));
-        const placements = swords ? advancedSkillLayout(Number(skill.id),actor,target) || [-22,0,22].map(side=>({
-          x:actor.x-Math.sin(cast.direction)*side,
-          y:actor.y-14+Math.cos(cast.direction)*side/2, angle:cast.direction,
-        })) : null;
-        for (const placement of placements || [null]) {
-          const contact = placement ? { ...effect, contactHits:new Set<CombatTarget>(),
-            x:placement.x,y:placement.y,ang:placement.angle,melee:false,life:2 } : effect;
-          (l.combatProjectiles || (l.combatProjectiles = [])).push(contact);
-          if (!l.quiet && !options.hideFallbackVisual) l.fx.push(contact);
-        }
+        (l.combatProjectiles || (l.combatProjectiles = [])).push(effect);
+        if (!l.quiet && !options.hideFallbackVisual) l.fx.push(effect);
       }
       // One sound per primary release, shared by world combat and arena.
       if (!skill.ev2) {

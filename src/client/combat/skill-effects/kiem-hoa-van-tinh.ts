@@ -1,4 +1,4 @@
-import type { CombatCast, SpriteMetadata, InterpolatedMissile, StationaryEffect, VisualEffect } from '../types';
+import type { CombatCast, CombatTarget, ContactEffect, SpriteMetadata, InterpolatedMissile, StationaryEffect, VisualEffect } from '../types';
 
 // Cùng bán kính 170 với các đòn phụ quanh người của engine hiện tại.
 export const SWORD_FLOWER_CHARGE_RADIUS = 170;
@@ -53,17 +53,30 @@ export function advanceSwordFlowerVisual(effect: VisualEffect, dt: number): bool
   return true;
 }
 
-/** Tụ khí p6 is cosmetic. eD owns the delayed tier-2 field and its damage. */
+/** Tụ khí p6 của Kiếm Hoa (JFX.f[1061].pre), theo docs/SKILL_SPRITES.md.
+ * Một vùng riêng, một lượt
+ * sát thương mỗi mục tiêu. Không nhân vùng theo năm kiếm khí của chiêu chính.
+ * Giữ actor/targets/onHit của cast để game và SIM dùng đúng ngữ cảnh damage.
+ */
 export function spawnSwordFlowerCharge(parent: CombatCast | null, sprite?: SpriteMetadata): CombatCast | null {
   if (!parent || +parent.skill.id! !== 1061 || parent.skill.ev2) return null;
-  const effect: StationaryEffect = {
-    k: 'boom', s: sprite, x: parent.origin.x, y: parent.origin.y,
-    t: -parent.windup, life: sprite ? yn(sprite) : CHARGE_DURATION, dir: 0,
-    cosmetic: true,
+  const cast: CombatCast = {
+    ...parent,
+    skill: { ...parent.skill, ev2: true, melee: false,
+      geo: { k: 'self', r: SWORD_FLOWER_CHARGE_RADIUS, pierce: true } },
+    hits: new Map(), targetPulses: new Map(), maxTargets: Infinity, maxHits: () => 1,
+    onImpact: undefined, emitted: 1, elapsed: 0, interval: 0,
+    duration: sprite ? yn(sprite) : CHARGE_DURATION,
+    origin: { ...parent.origin },
   };
-  // Tier-2 damage is scheduled by eD at release; this pre-cast sheet is visual.
-  openingStates.set(effect, { owner: parent, elapsed: 0, phase: 2 });
+  const effect: ContactEffect = {
+    k: 'boom', s: sprite, x: cast.origin.x, y: cast.origin.y,
+    t: -cast.windup, life: cast.duration!, dir: 0, staticArea: true,
+    combat: cast, contactHits: new Set<CombatTarget>(),
+  };
+  (l.combatProjectiles || (l.combatProjectiles = [])).push(effect);
+  // FX budget only controls visuals; physical damage still runs in quiet mode.
   if (!l.quiet && sprite && l.fx.length <= 160) l.fx.push(effect);
   spawnSwordFlowerOpening(parent);
-  return parent;
+  return cast;
 }

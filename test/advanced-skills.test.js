@@ -749,7 +749,7 @@ test('all 24 level-150 primary skills register physical contacts within their ca
     else if(entry.id===1081)assert.equal(cast.pulse,4,'five Thiên Lôi pulses');
     else if(entry.id===1076)assert.equal(cast.pulse,2,'three Tật Hỏa pulses');
     else assert.equal(cast.hits.get(target),1,`${entry.id} ${def.n} primary quota`);
-    assert.equal(hits,entry.id===1078?7:entry.id===1081?5:entry.id===1076?3:1,`${entry.id} ${def.n}`);
+    assert.equal(hits,entry.id===1078?7:entry.id===1081?5:entry.id===1076?3:entry.id===1061?2:1,`${entry.id} ${def.n}`);
   }
 });
 
@@ -786,16 +786,42 @@ test('Kiếm Hoa launches exactly five swords in a rotated arrow formation and k
   }
 });
 
-test('Kiếm Hoa pre-cast charge is cosmetic and never duplicates tier-1 damage',()=>{
-  for(const mode of ['normal','quiet','missing','budget']) {
-    const {s,skill}=advancedCombat();s.l.quiet=mode==='quiet';
+test('Kiếm Hoa charge damages around the actual caster once, including quiet, low FX and missing sprites',()=>{
+  for(const mode of ['normal','quiet','lowFx','missing','budget']) {
+    const {s,skill}=advancedCombat();
+    s.l.quiet=mode==='quiet';s.o.lowFx=mode==='lowFx';
     if(mode==='missing')delete s.JFX.c['advanced-6'];
     if(mode==='budget')s.l.fx=Array.from({length:170},()=>({k:'ring'}));
-    const caster={x:500,y:500,hp:100},near={x:500,y:555,hp:100,r:1},far={x:800,y:500,hp:100,r:1};
-    const cast=s.queueSkillContact(caster,far,skill(1061),hit=>hit.hp-=10,{targets:()=>[near,far],windup:0});
-    assert.ok(s.l.combatProjectiles.every(fx=>fx.combat===cast));
+    const caster={x:500,y:500,hp:100},near={x:500,y:555,hp:100,r:1},
+      far={x:800,y:500,hp:100,r:1},outside={x:500,y:650,hp:100,r:1};
+    const hits=new Map(),cast=s.queueSkillContact(caster,far,skill(1061),hit=>{
+      hits.set(hit,(hits.get(hit)||0)+1);hit.hp-=10;
+    },{targets:()=>[near,far,outside],windup:0});
+    const areas=s.l.combatProjectiles.filter(fx=>fx.combat!==cast);
+    assert.equal(areas.length,1);
+    const area=areas[0];assert.equal(area.k,'boom');assert.equal(area.combat.actor,caster);
+    assert.equal(area.x,caster.x);assert.equal(area.y,caster.y-14);
+    assert.equal(area.combat.skill.geo.k,'self');assert.equal(area.combat.skill.geo.r,170);
+    assert.equal(area.combat.skill.ev2,true);
+    assert.equal(s.l.fx.includes(area),!['quiet','missing','budget'].includes(mode));
     for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
-    assert.equal(near.hp,100,mode);assert.equal(far.hp,90,mode);
+    assert.equal(hits.get(near),1,mode);assert.equal(hits.get(far),1,mode);
+    assert.equal(hits.get(outside),undefined,mode);
+    assert.equal(area.combat.hits.get(near),1);assert.equal(cast.hits.get(near),undefined);
+    assert.equal(near.hp,90);assert.equal(far.hp,90);assert.equal(outside.hp,100);
+    assert.ok(!s.l.combatProjectiles.includes(area),'charge must expire');
+  }
+});
+
+test('Kiếm Hoa charge and main sword have independent hit quotas and obey terrain and cast cancellation',()=>{
+  for(const mode of ['normal','terrain','interrupted']) {
+    const {s,skill}=advancedCombat(),target={x:100,y:0,hp:100,r:1};let hits=0;
+    if(mode==='terrain')s.mt=()=>false;
+    const cast=s.queueSkillContact(s.v,target,skill(1061),()=>hits++,{targets:()=>[target],windup:.12});
+    if(mode==='interrupted')s.v.actionRevision=(s.v.actionRevision||0)+1;
+    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits,mode==='normal'?2:0,mode);
+    assert.equal(cast.hits.get(target),mode==='normal'?1:undefined);
   }
 });
 
@@ -805,7 +831,7 @@ test('Kiếm Hoa uses the documented p6 charge once, not the secondary missile i
   declaration(s,'src/client/render/arena-01.js','Ya');
   const caster={x:500,y:500,hp:100},target={x:800,y:500,hp:100,r:1};
   const cast=s.queueSkillContact(caster,target,skill(1061),()=>{},{targets:()=>[],windup:0});
-  const charge=s.l.fx.find(fx=>fx.s?.f==='fx/advanced/p6.webp');
+  const charge=s.l.combatProjectiles.find(fx=>fx.combat!==cast);
   assert.equal(charge.s.f,'fx/advanced/p6.webp');
   assert.equal(charge.s,s.JFX.c[s.JFX.f[1061].pre]);
   assert.equal(charge.s.n,5);assert.equal(charge.life,5*56/1000);
@@ -1151,7 +1177,7 @@ test('Kiếm Hoa plays eight cosmetic opening rays then ice pillars at every ski
     const rays=s.l.fx.filter(fx=>fx.s===s.A0.m['advanced-325'].fly);
     assert.equal(rays.length,8,'opening event 1089 is independent of damage-tier unlock');
     assert.ok(rays.every(fx=>fx.cosmetic&&!fx.combat&&fx.x1===caster.x&&fx.y1===caster.y-20));
-    assert.equal(s.l.combatProjectiles.filter(fx=>fx.combat!==cast).length,0,'opening adds no damaging fields');
+    assert.equal(s.l.combatProjectiles.filter(fx=>fx.combat!==cast).length,1,'opening adds no damaging fields');
     for(let i=0;i<12;i++)s.advanceSkillContacts(1/60);
     assert.equal(s.l.fx.filter(fx=>fx.s===s.A0.m['advanced-353'].fly).length,8);
     for(let i=0;i<75;i++)s.advanceSkillContacts(1/60);
@@ -1172,7 +1198,7 @@ test('Kiếm Hoa opening obeys windup, interruption, quiet, FX budget and zone c
   }
 });
 
-test('Kiếm Hoa tier-2 ring hits every nearby body once after 0.2s with 130% primary cold',()=>{
+test('Kiếm Hoa registers tier 1091 from level 11 and applies one delayed 30% cold hit per paired recipient',()=>{
   for(const level of [10,11,25])for(const quiet of [false,true]) {
     const {s,skill}=advancedCombat();
     for(const name of ['l1','l4','d4','A7','Uw','Jw','F5','f4','n7','Qi'])declaration(s,'src/client/combat/skills-01.js',name);
@@ -1183,14 +1209,14 @@ test('Kiếm Hoa tier-2 ring hits every nearby body once after 0.2s with 130% pr
     assert.equal(events.length,level<11?0:1);
     if(level<11)continue;
     assert.equal(events[0].sid,1091);
-    const targets=[20,40,60,80].map(x=>({x,y:0,hp:10000,r:10})),hits=[];
+    const targets=[180,200,220,240].map(x=>({x,y:100,hp:10000,r:10})),hits=[];
     s._1=()=>targets;s.hs=(a,t)=>{hits.push({a,t});return 1;};s.Ls=()=>{};
     s.eD(ability,targets[0],targets,targets,events[0]);
-    for(let i=0;i<11;i++)s.advanceSkillContacts(1/60);
-    assert.equal(hits.length,0,'respect the 0.2s secondary delay');
+    for(let i=0;i<12;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.length,0,'respect the 0.22s secondary delay');
     for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
-    assert.equal(hits.length,4,'one ring hits all nearby recipients once');
-    assert.ok(hits.every(({a})=>a.ev2&&Math.abs(a.parts.cold/ability.parts.cold-1.3)<1e-9));
+    assert.equal(hits.length,3,'secondary hits at most three paired targets once');
+    assert.ok(hits.every(({a})=>a.ev2&&a.id===1091&&Math.abs(a.parts.cold/ability.tot-.3)<1e-9));
   }
 });
 
@@ -1224,70 +1250,4 @@ test('Thiết Liên narrowed and raised field hits near bodies and excludes form
   assert.ok(Math.abs(cast.skill.geo.r*s.QA-45)<1e-8);
   assert.deepEqual(targets.map(t=>t.hp),[990,990,1000,990,1000],mode);
  }
-});
-
-test('Nga Mi swords apply a full independent hit per physical ray, including hidden and missing FX',()=>{
-  for(const id of [328,1061])for(const mode of ['normal','quiet','missing']) {
-    const {s,skill}=advancedCombat(),ability=skill(id,25),target={x:200,y:0,hp:100000,r:110};
-    s.l.quiet=mode==='quiet';if(mode==='missing')delete s.A0.m[s.A0.f[id].c];
-    const cast=s.queueSkillContact(s.v,target,ability,hit=>hit.hp-=4000,
-      {targets:()=>[target],windup:0,maxHits:()=>1});
-    finishAttackPose(s);
-    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
-    const count=id===328?3:5;
-    assert.equal(cast.hits.get(target),count,`${id}/${mode}`);
-    assert.equal(target.hp,100000-count*4000,`${id}/${mode}: each ray keeps its complete damage`);
-    for(let i=0;i<60;i++)s.advanceSkillContacts(1/60);
-    assert.equal(target.hp,100000-count*4000,'one ray never hits the same body again');
-  }
-});
-
-test('Nga Mi rings release even when swords miss, using separate tier-2 damage in world and SIM',()=>{
-  for(const id of [328,1061])for(const sim of [false,true])for(const quiet of [false,true]) {
-    const {s,skill}=advancedCombat();s.SK_STD={};load(s,'src/client/data/skill-tables-55.js');
-    for(const name of ['l1','l4','d4','A7','Uw','Jw','F5','f4','n7','Qi','Xw'])declaration(s,'src/client/combat/skills-01.js',name);
-    for(const name of ['Tw','I5','S5'])declaration(s,'src/client/core/attributes-01.js',name);
-    declaration(s,'src/client/core/state-and-save-01.js','eD');
-    s.l.P=supportStats(s,{});s.l.quiet=quiet;
-    const ability=skill(id,25),caster=sim?{x:0,y:0,hp:100}:s.v;
-    const selected={x:350,y:0,hp:100000,r:1};
-    const near=[20,40,60,80].map(x=>({x,y:40,hp:100000,r:1}));
-    const far={x:0,y:200,hp:100000,r:1},targets=[selected,...near,far],hits=[];
-    s._1=()=>targets;s.hs=(a,t)=>{hits.push({a,t});return 1;};s.Ls=()=>{};
-    s.nD=()=>[];s.l8=()=>0;
-    if(sim) {
-      const {compileTypeScriptEntry}=require('../tools/build-app');
-      vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','EmeiCast').code,s);
-      s.EmeiCast.castSimulatorSkill(caster,selected,ability,()=>true,()=>targets,s.hs,fn=>fn());
-    } else {
-      Object.assign(s,{hA:()=>true,iD:()=>selected,Z9:()=>ability,gs:-1,aD:()=>0,S3:()=>false,tP:()=>false,
-        o4(){},G8(){},kn:()=>0,$1:()=>false,q0:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)});
-      s.l.manTgt=selected;declaration(s,'src/client/core/state-and-save-01.js','oD');s.oD();
-    }
-    finishAttackPose(s,caster);
-    if(id===1061) {
-      for(let i=0;i<10;i++)s.advanceSkillContacts(1/60);
-      assert.equal(hits.filter(h=>h.a.ev2).length,0,'ring waits 0.2 seconds after release');
-    }
-    for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
-    const rings=hits.filter(h=>h.a.ev2);
-    assert.equal(rings.length,near.length,`${id}/${sim}/${quiet}`);
-    assert.ok(rings.every(h=>near.includes(h.t)));
-    if(id===1061)assert.ok(rings.every(h=>Math.abs(h.a.parts.cold/ability.parts.cold-1.3)<1e-9));
-    else {
-      const event=s.F5(ability)[0],secondary=s.F2(s.l.P,s.Xw(id,event),ability.L);
-      assert.ok(rings.every(h=>h.a.parts.phys>0&&h.a.crit===secondary.crit),JSON.stringify({parts:rings[0].a.parts,crit:rings[0].a.crit,expected:secondary.crit,tab:!!event.tab}));
-    }
-  }
-});
-
-test('Nga Mi overlapping swords also keep separate hits against the player body',()=>{
-  for(const id of [328,1061]) {
-    const {s,skill}=advancedCombat();s.v.x=200;s.v.y=0;s.v.r=110;s.l.life=100000;
-    const caster={x:0,y:0,hp:100},ability=skill(id,25);
-    s.queueSkillContact(caster,s.v,ability,()=>s.l.life-=4000,{targets:()=>[s.v],windup:0});
-    finishAttackPose(s,caster);
-    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
-    assert.equal(s.l.life,100000-(id===328?3:5)*4000);
-  }
 });
