@@ -15,7 +15,9 @@ export function applyContactHit(effect: ContactEffect, target: CombatTarget): bo
   }
   effect.contactHits.add(target);
   const count = cast.hits.get(target) || 0;
-  if ((!count && cast.hits.size >= cast.maxTargets) || count >= cast.maxHits(target)) return false;
+  // Nga Mi swords own their contacts; another sword cannot spend this one's hit.
+  const independentSword = !cast.skill.ev2 && [328, 1061].includes(Number(cast.skill.id));
+  if (!independentSword && ((!count && cast.hits.size >= cast.maxTargets) || count >= cast.maxHits(target))) return false;
   cast.hits.set(target, count + 1);
   cast.onHit(target);
   return true;

@@ -10,14 +10,18 @@ var skill150EffectRows = function (skill, level) {
       continue;
     }
     rows.push(['ev',`Tầng ${effect.tier}: ${effect.name}`]);
-    const runtime = +skill.id === 1081 && typeof l1 !== 'undefined' && l1[skill.id];
+    const runtime = [1061,1081].includes(+skill.id) && typeof l1 !== 'undefined' && l1[skill.id];
     const stats = typeof l !== 'undefined' && l.P;
     const damage = runtime && +runtime.sid === +effect.id && stats &&
       typeof F2 === 'function' && typeof S5 === 'function'
       ? S5(F2(stats, skill, level), runtime)[effect.element] : null;
     if (Number.isFinite(damage)) {
+      if (+skill.id === 1061) {
+        const physical = S5(F2(stats, skill, level), runtime).phys || 0;
+        rows.push(['m',`Sát thương vật lý: ${Math.round(physical*0.85)} đến ${Math.round(physical*1.15)} điểm (trước kháng)`]);
+      }
       rows.push(['m',`${labels[effect.element]}: ${Math.round(damage*0.85)} đến ${Math.round(damage*1.15)} điểm (trước kháng)`]);
-      rows.push(['m','Đã gồm chỉ số nhân vật và hỗ trợ tầng 2 hiện tại']);
+      rows.push(['m',+skill.id === 1061 ? 'Giữ vật lý và chí mạng tầng 1; băng sát tầng 2 bằng 130% băng sát tầng 1' : 'Đã gồm chỉ số nhân vật và hỗ trợ tầng 2 hiện tại']);
     } else if (effect.coefficient != null) rows.push(['m',`${labels[effect.element]}: ${Math.round(effect.coefficient*100)}% sát thương chiêu chính`]);
     if (effect.count) rows.push(['m',`Số tia: ${effect.count}`]);
     if (effect.delay) rows.push(['m',`Độ trễ: ${effect.delay} giây`]);

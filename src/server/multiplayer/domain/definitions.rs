@@ -50,7 +50,8 @@ pub struct Skill {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Accuracy {pub rating:f32,pub ignore:f32}
 #[derive(Clone,Debug,Deserialize,Serialize)]
-pub struct Followup {pub id:u16,pub parts:[f32;5],pub delay:f32,pub targets:usize,pub stun:f32}
+pub struct Followup {pub id:u16,pub parts:[f32;5],pub delay:f32,pub targets:usize,pub stun:f32,
+    #[serde(default)] pub crit:Option<f32>}
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PveDamage {
