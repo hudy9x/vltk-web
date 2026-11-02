@@ -280,6 +280,7 @@ và đóng `db` do caller quản lý.
 
 Chạy `npm run dev:online`, đăng nhập và vào bãi luyện công. Trong GM bấm
 **Nhận Lệnh bài SIM + Test (online)**. Hai lệnh bài không tiêu hao; dùng trong hành trang.
+Chỉ hoạt động trong development: production ẩn nút nhận và chặn cả hai lệnh bài ở API, kể cả khi GM ở chế độ `all` hoặc hành trang đã có lệnh bài.
 
 - **SIM**: chọn phái, chiêu học cấp 80 (nhóm 9x) hoặc 150, HP và có/không mặc
   trang bị Tống Kim. Vũ khí được chọn tự động. SIM cấp 200 dùng profile,

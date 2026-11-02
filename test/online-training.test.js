@@ -93,7 +93,7 @@ test('SIM token defaults to monsters and applies checkbox changes immediately wi
  const vm=require('node:vm'),fs=require('node:fs'),fields=new Map(),posts=[];
  const field=id=>{if(!fields.has(id))fields.set(id,{value:'100000',checked:false,textContent:'',innerHTML:''});return fields.get(id);};
  const panel={querySelector:field,querySelectorAll:()=>[],setAttribute(){},innerHTML:'',hidden:true};
- const s={AbortSignal,r0:{},T:{1:{ic:'img/s/1.png'}},o:{fac:'wudang',main:1},l:{town:false},m0:0,k:msg=>{throw Error(msg);},D:String,
+ const s={window:{localGameConfig:{development:true}},AbortSignal,r0:{},T:{1:{ic:'img/s/1.png'}},o:{fac:'wudang',main:1},l:{town:false},m0:0,k:msg=>{throw Error(msg);},D:String,
   onlineWorld:{state:{self:10}},OnlineProgression:{enabled:()=>true,flush:async()=>{}},
   document:{createElement:tag=>tag==='section'?panel:{},body:{appendChild(){}},head:{appendChild(){}},addEventListener(){}},
   fetch:async(_url,options)=>{if(options)posts.push(JSON.parse(options.body));return {ok:true,json:async()=>options?{id:20}:{factions:[{key:'wudang',name:'Võ Đang',skills:[{id:1,name:'Chiêu',tier:90,required:80}]}]}};}
@@ -106,4 +106,23 @@ test('SIM token defaults to monsters and applies checkbox changes immediately wi
  assert.equal(posts[1].action,'simMode');assert.equal(posts[1].attackPlayers,false);assert.equal(posts[1].attackMonsters,false);
  s.onlineWorld.state.training={units:[{owner:10,attackPlayers:true,attackMonsters:false}]};await s.api.open('sim_token');
  assert.equal(field('#training-players').checked,true);assert.equal(field('#training-monsters').checked,false);
+});
+
+
+test('production blocks training APIs and token actions even with GM all and existing tokens',async()=>{
+ const {createServer}=require('../src/server/index.ts'),{openDatabase}=require('../src/server/database.ts');
+ const raw=progression.apply({fac:'wudang',lvl:150},{kind:'gm',action:'trainingTokens'},true);
+ for(const mode of ['all','development']){
+  for(const action of [{kind:'gm',action:'trainingTokens'},{kind:'gm',action:'testFaction',faction:'emei',skill:1060}])
+   assert.throws(()=>progression.apply(raw,action,false,mode),{status:403});
+  const db=openDatabase(':memory:'),{app}=createServer({db,development:false,gameMasterMode:mode,downloadAssets:false});
+  try{
+   const auth=await app.inject({method:'POST',url:'/api/auth/register',payload:{username:'prod_training',password:'secret123'}});
+   const cookie=auth.headers['set-cookie'].split(';')[0];
+   db.prepare('INSERT INTO account_storage VALUES(?,?,?)').run(auth.json().user.id,'jxidle',JSON.stringify(raw));
+   assert.equal((await app.inject({url:'/api/multiplayer/training',headers:{cookie}})).statusCode,403);
+   for(const action of ['sim','simMode','monster','dummy','clearSims','pin','finish'])
+    assert.equal((await app.inject({method:'POST',url:'/api/multiplayer/training',headers:{cookie},payload:{slot:0,action}})).statusCode,403,action);
+  }finally{await app.close();db.close();}
+ }
 });

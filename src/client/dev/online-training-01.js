@@ -82,6 +82,7 @@ var OnlineTraining=(()=>{
 @media(max-width:440px){#online-training .training-factions{gap:4px}#online-training .training-faction{padding:4px}#online-training .training-faction img{height:48px}#online-training .training-faction span{font-size:10px}#online-training .training-skill{padding:6px;gap:6px}#online-training .training-skill img{width:30px;height:30px}}
 `;document.head.appendChild(style);
   return {async open(token){try{
+    if(!window.localGameConfig?.development)throw new Error('Lệnh bài SIM/Test chỉ dùng trong development.');
     if(!OnlineProgression.enabled())throw new Error('Lệnh bài này cần chế độ online.');
     if(busy)return;kind=token;
     if(!factions.length){const response=await fetch('/api/multiplayer/training');const result=await response.json();if(!response.ok)throw new Error(result.error);factions=result.factions;}

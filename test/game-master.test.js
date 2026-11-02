@@ -500,3 +500,10 @@ test('newbie rewards remain available when production hides the GM toolbar', () 
   s.newbieGrant('gold');
   assert.equal(s.o.gold, 1_000_000_000_007);
 });
+
+
+test('production hides training-token grants and rejects direct grants even with GM all',()=>{
+ const s=game(false,'all'),panel=s.nodes.find(node=>node.id==='gm-panel');
+ assert.doesNotMatch(panel.innerHTML,/data-gm="trainingTokens"/);
+ assert.throws(()=>s.gameMaster.grant('trainingTokens'),/chỉ dùng trong development/);
+});

@@ -96,12 +96,12 @@ export function registerMultiplayerWebTransport(
     await polling;
   });
   app.get('/api/multiplayer/training', (request,reply)=>{
-    requireUser(request);if(!(development||gameMasterMode==='all'))return sendJson(reply,403,{error:'GM chỉ dùng trong development.'});
+    requireUser(request);if(!development)return sendJson(reply,403,{error:'Lệnh bài SIM/Test chỉ dùng trong development.'});
     return sendJson(reply,200,{factions:training.options()});
   });
   app.post('/api/multiplayer/training',async(request,reply)=>{
     const user=requireUser(request);
-    if(!(development||gameMasterMode==='all'))return sendJson(reply,403,{error:'GM chỉ dùng trong development.'});
+    if(!development)return sendJson(reply,403,{error:'Lệnh bài SIM/Test chỉ dùng trong development.'});
     if(!characters||!process.env.MULTIPLAYER_WT_CONTROL_URL)return sendJson(reply,503,{error:'Cần chạy dev:online.'});
     const body=parseJsonBody(request.body) as Record<string,any>;
     if(!body||!Number.isInteger(body.slot)||body.slot<0||body.slot>2||!['sim','simMode','monster','dummy','clearSims','pin','finish'].includes(body.action))return sendJson(reply,400,{error:'Thao tác test không hợp lệ.'});

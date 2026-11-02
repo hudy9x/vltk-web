@@ -98,6 +98,7 @@ var gameMaster = (function () {
 
   const amounts = { gold: 1_000_000_000_000, knb: 100_000, xp: 100_000_000, chest: 100, level150: 150, learn90: 1, learn120: 1, learn150: 1, max90: 1, potential: 3000, warMerit: 10000 };
   function grant(action) {
+    if(action==='trainingTokens'&&!window.localGameConfig?.development)throw new Error('Lệnh bài SIM/Test chỉ dùng trong development.');
     if(action==='trainingTokens'&&!(typeof OnlineProgression!=='undefined'&&OnlineProgression.enabled()))throw new Error('Cần chạy dev:online.');
     if(typeof OnlineProgression!=='undefined'&&window.localGameStorage)
       return OnlineProgression.run({kind:'gm',action}).then(async()=>{await window.localGameStorage.flush();return 'Đã áp dụng GM và lưu trên máy chủ.';});
@@ -237,7 +238,7 @@ var gameMaster = (function () {
     <label id="gm-range-label"><input type="checkbox" id="gm-show-range">Hiển thị tầm tung chiêu (xanh)</label>
     <label><input type="checkbox" id="gm-pvp-damage" ${typeof pvpDamageDisplay!=="undefined"&&pvpDamageDisplay.enabled?"checked":""}>Hiển thị sát thương người chơi / SIM (chỉ máy này)</label>
     <label id="gm-damage-label" title="Vùng màu cam: vùng va chạm của chiêu đang hoạt động, gồm cả SIM. Chưa cộng kích thước thân mục tiêu."><input type="checkbox" id="gm-show-damage">Hiển thị vùng sát thương (cam)</label>
-    <button type="button" data-gm="trainingTokens">Nhận Lệnh bài SIM + Test (online)</button>
+    ${window.localGameConfig?.development?'<button type="button" data-gm="trainingTokens">Nhận Lệnh bài SIM + Test (online)</button>':''}
     <button type="button" data-gm="level150">Tăng nhân vật lên cấp 150</button>
     <button type="button" data-gm="learn90">Học tất cả chiêu cấp 90 của môn phái</button>
     <button type="button" data-gm="learn120">Học tất cả chiêu cấp 120 của môn phái</button>

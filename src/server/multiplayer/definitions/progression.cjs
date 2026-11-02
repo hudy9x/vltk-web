@@ -9,6 +9,8 @@ const resolveGmMode=(mode=process.env.GAME_MASTER_MODE||gmConfig.mode)=>{
 exports.apply=function(input,action,development=false,gameMasterMode){
   if(!action||typeof action!=='object'||Array.isArray(action))fail('Thao tác không hợp lệ.');
   const gmMode=resolveGmMode(gameMasterMode);
+  if(action.kind==='gm'&&['trainingTokens','testFaction'].includes(action.action)&&!development)
+    throw Object.assign(new Error('Lệnh bài SIM/Test chỉ dùng trong development.'),{status:403});
   if(action.kind==='gm'&&action.action==='testFaction'){
     if(gmMode!=='all'&&!development)throw Object.assign(new Error('GM chỉ dùng trong development.'),{status:403});
     if(!input.inv?.some(i=>i.ktc?.k==='test_token'&&i.ktc.c===1))fail('Cần Lệnh bài Test.');
