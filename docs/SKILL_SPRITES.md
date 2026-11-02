@@ -287,3 +287,4 @@
 
 
 - Hào Hùng Trảm: lớp nở đất `fx/advanced/m330_fly.webp` (6 frames, 65 ms/frame); tia đầu bay thẳng; 3 tia tầng 2 xòe từ cùng điểm va chạm (giữa và ±22,5°).
+- Thủy Anh Man Tú: dải hiệu ứng sau tiên nữ dùng `fx/advanced/m355_fly.webp` (7 frames, 56 ms/frame), chỉ hình ảnh.

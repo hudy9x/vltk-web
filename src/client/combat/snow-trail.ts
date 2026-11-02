@@ -6,10 +6,10 @@ import type { CastOptions, CombatCast, CombatSkill, CombatTarget, ContactEffect,
 export const SNOW_TRAIL_RADIUS = 150;
 const visualTrails = new WeakMap<StationaryEffect, { owner: CombatCast; elapsed: number; firstStep?: number }>();
 
-/** Thủy Anh's mist follows the same fixed patches as Băng Tâm Tiên Tử.
+/** Thủy Anh uses m355 mist in fixed patches behind its fairy.
  * Its fairy keeps all primary damage; cosmetic patches never register hits. */
 export function spawnSnowTrailVisual(owner: CombatCast, target: CombatTarget, speed: number): void {
-  const sprite = A0.m[148]?.fly;
+  const sprite = A0.m['advanced-355']?.fly;
   if (l.quiet || !sprite) return;
   const start = { x: owner.actor.x, y: owner.actor.y };
   const distance = Math.hypot(target.x - start.x, (target.y - start.y) * 2);
@@ -20,7 +20,7 @@ export function spawnSnowTrailVisual(owner: CombatCast, target: CombatTarget, sp
     const x = start.x + (target.x - start.x) * progress, y = start.y + (target.y - start.y) * progress;
     if (!owner.ignoreTerrain && !mt(start.x, start.y, x, y)) break;
     const effect: StationaryEffect = {
-      k: 'boom', s: sprite, sp: 2, x, y: y - 14,
+      k: 'boom', s: sprite, sp: 1, x, y: y - 14,
       t: -owner.windup - distance * progress / Math.max(1, speed), life: yn(sprite), dir: 0, cosmetic: true,
     };
     visualTrails.set(effect, { owner, elapsed: 0, firstStep: owner.firstStep });

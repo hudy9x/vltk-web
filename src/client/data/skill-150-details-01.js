@@ -1597,7 +1597,7 @@
     "name": "Thủy Anh Man Tú",
     "mechanics": [
       "Tầng 1 (Tiên nữ): Một tiên nữ bay thẳng tới mục tiêu, giữ nguyên sát thương và khả năng xuyên thấu của chiêu.",
-      "Dải sương theo sau: Các mảng sương của Băng Tâm Tiên Tử xuất hiện nối tiếp trên đường bay. Phần hiển thị này bổ sung cho tiên nữ, giữ nguyên sát thương hiện tại."
+      "Dải sương theo sau: Các mảng sương mới xuất hiện nối tiếp dưới đường bay của tiên nữ. Phần hiển thị này bổ sung cho tiên nữ, giữ nguyên sát thương hiện tại."
     ],
     "samples": [
       [

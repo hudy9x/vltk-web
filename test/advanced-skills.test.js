@@ -1309,15 +1309,17 @@ test('Ice Peacock native damage stays whole on each of one, two or three blade c
   }
 });
 
-test('Thuy Anh releases a fairy and the Bang Tam snow patches in eight fixed directions',()=>{
+test('Thuy Anh releases a fairy and m355 mist patches in eight fixed directions',()=>{
   for(let dir=0;dir<8;dir++) {
     const {s,skill}=advancedCombat();load(s,'src/client/data/status-effects-01.js');const caster={x:500,y:500,hp:100},angle=dir*Math.PI/4;
     const target={x:caster.x+Math.cos(angle)*350,y:caster.y+Math.sin(angle)*175,hp:100000,r:12};
     const cast=s.queueSkillContact(caster,target,skill(1065,25),()=>{},{targets:()=>[],windup:0});
     finishAttackPose(s,caster);
     const fairy=s.l.combatProjectiles.filter(e=>e.combat===cast);
-    const mist=s.l.fx.filter(e=>e.s===s.A0.m[148].fly);
+    const mist=s.l.fx.filter(e=>e.s===s.A0.m['advanced-355'].fly);
     assert.equal(fairy.length,1);assert.ok(mist.length>=4);
+    assert.equal(s.A0.m['advanced-355'].fly.f,'fx/advanced/m355_fly.webp');
+    assert.ok(mist.every(e=>e.sp===1),'play the new mist once at its native frame rate');
     assert.equal(mist[0].x,caster.x);assert.equal(mist[0].y,caster.y-14);
     assert.ok(Math.abs(mist[0].t)<1e-8);
     assert.equal(mist.at(-1).x,target.x);assert.equal(mist.at(-1).y,target.y-14);
@@ -1335,7 +1337,7 @@ test('Thuy Anh keeps fairy damage with quiet, missing or budget-limited mist and
   for(const mode of ['normal','quiet','budget','missingMist','missingFairy']) {
     const {s,skill}=advancedCombat();load(s,'src/client/data/status-effects-01.js');const ability=skill(1065,25),target={x:250,y:0,hp:100000,r:12};
     s.l.quiet=mode==='quiet';if(mode==='budget')s.l.fx=Array.from({length:1000},()=>({k:'ring'}));
-    if(mode==='missingMist')delete s.A0.m[148];
+    if(mode==='missingMist')delete s.A0.m['advanced-355'];
     if(mode==='missingFairy')delete s.A0.m[s.A0.f[1065].c];
     const damage=ability.tot,cast=s.queueSkillContact(s.v,target,ability,t=>t.hp-=damage,{targets:()=>[target],windup:0});
     finishAttackPose(s);
@@ -1347,7 +1349,7 @@ test('Thuy Anh keeps fairy damage with quiet, missing or budget-limited mist and
     const {s,skill}=advancedCombat();load(s,'src/client/data/status-effects-01.js');const ability=skill(1065,25),target={x:350,y:0,hp:100000,r:12};
     delete ability.rate;delete ability.rawRate;
     s.queueSkillContact(s.v,target,ability,()=>{},{targets:()=>[target],windup:.12});
-    const mist=s.l.fx.filter(e=>e.s===s.A0.m[148].fly);assert.ok(mist.length>1);
+    const mist=s.l.fx.filter(e=>e.s===s.A0.m['advanced-355'].fly);assert.ok(mist.length>1);
     if(mode==='interrupted')s.v.actionRevision=(s.v.actionRevision||0)+1;
     if(mode==='zone')s.l.zoneShown++;
     if(mode==='death')s.l.deadT=1;
