@@ -168,8 +168,9 @@
     "icon": "img/s/1058.png",
     "assets": [
       "img/s/1058.png",
-      "fx/advanced/m320_fly.webp",
-      "fx/advanced/m320_hit.webp"
+      "fx/advanced/m320_directional.webp",
+      "fx/advanced/m320_hit.webp",
+      "fx/advanced/m330_fly.webp"
     ]
   },
   "1059": {

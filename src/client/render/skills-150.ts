@@ -39,6 +39,8 @@ export function spawnAdvancedCastVisual(id: number, caster: WorldPoint,
 
 /** null giữ bộ phát cũ; một phần tử = một animation nguyên vẹn tại một tâm. */
 export function advancedSkillLayout(id: number, caster: WorldPoint, target: WorldPoint): SkillSpritePlacement[] | null {
+  if (id === 1058) return [{ x: caster.x, y: caster.y - 14,
+    angle: Math.atan2((target.y - caster.y) * 2, target.x - caster.x), kind: 1 }];
   if (id === 1069) {
     const y = caster.y - 8; // Lower the old caster.y - 20 release by 12px.
     return [{ x: caster.x, y, angle: Math.atan2((target.y - 14 - y) * 2, target.x - caster.x), kind: 1 }];
@@ -94,6 +96,7 @@ export function configureAdvancedSkillImpact(id: number, cast: CombatCast | null
   if (id === 1073 || id === 1074) configureBeggarImpact(cast);
   if (id === 1063) configureIcePeacockImpact(cast);
   if (id === 1058 || id === 1059 || id === 1060) configureTianwangImpact(cast);
+  if (id === 1058 && cast) return true; // Hào Hùng owns its contact FX, including hidden-sprite fallback.
   if (id === 1055 || id === 1057) configureShaolinImpact(cast);
   if (id === 1069) configureVanishingDartSplash(cast);
   const impact = id === 1069 ? A0.m['advanced-359']?.fly : sprite;

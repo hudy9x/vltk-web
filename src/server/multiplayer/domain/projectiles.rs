@@ -89,6 +89,8 @@ impl Flight {
         });
         (!rays.is_empty(),contacts)
     }
+    pub(super) fn impact_position(&self)->(f32,f32) {self.point(self.traveled)}
+    pub(super) fn angle(&self)->f32 {self.direction.1.atan2(self.direction.0)}
     pub(super) fn take_impacts(&mut self)->Vec<((f32,f32),f32)> {std::mem::take(&mut self.impacts)}
     fn point(&self, distance: f32) -> (f32, f32) {
         (

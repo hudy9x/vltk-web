@@ -151,7 +151,13 @@ impl Game {
                 let (alive, contacts) = if [328,336,1061,1063].contains(&p.skill.id) {
                     flight.advance_swords(p.skill.id,p.skill.missiles,geometry,&room.nav,&bodies,step)
                 } else {flight.advance_bodies(geometry, &room.nav, &bodies, step)};
-                for (position,angle) in flight.take_impacts() {self.spawn_cuiyan_impact(&p,position,angle);}
+                // The primary blade stops once; stacked bodies still produce one package.
+                let hao_hung = if p.skill.id == 1058 && !contacts.is_empty() {
+                    Some((flight.impact_position(), flight.angle()))
+                } else { None };
+                let impacts = flight.take_impacts();
+                if let Some((position, angle)) = hao_hung { self.spawn_hao_hung_rays(&p, position, angle); }
+                for (position,angle) in impacts {self.spawn_cuiyan_impact(&p,position,angle);}
                 for id in contacts {
                     self.contact(&mut p, id, events);
                 }
@@ -214,6 +220,22 @@ impl Game {
             for id in targets.into_iter().take(p.skill.targets) {
                 self.contact(&mut p, id, events);
             }
+        }
+    }
+    fn spawn_hao_hung_rays(&mut self, p: &Pending, position: (f32, f32), angle: f32) {
+        for offset in [-std::f32::consts::FRAC_PI_8, 0.0, std::f32::consts::FRAC_PI_8] {
+            if self.pending.len() >= 4096 { break; }
+            let origin = position;
+            let angle = angle + offset;
+            let mut skill = p.skill.clone();
+            skill.id = 1084; skill.accuracy = None; skill.followups.clear(); skill.travel = 0.0;
+            if let Some(projectile) = &mut skill.projectile {
+                projectile.range = p.skill.range * skill.geometry.as_ref().map_or(0.81, |g| g.scale);
+                projectile.pierce = true; projectile.area = 0.0; projectile.homing = false;
+            }
+            self.pending.push(Pending { cast_id: 0, source: p.source, map: p.map, target: p.target,
+                skill, remaining: 0.0, origin, aim: None,
+                flight: Some(projectiles::Flight::new(origin, (origin.0+angle.cos()*100.0, origin.1+angle.sin()*50.0))) });
         }
     }
     // One secondary package per blade impact; it never replaces primary damage.

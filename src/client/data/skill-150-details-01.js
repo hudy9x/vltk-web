@@ -507,8 +507,8 @@
   "1058": {
     "name": "Hào Hùng Trảm",
     "mechanics": [
-      "Tầng 1 (Trảm kích vũ bão): Tung đao pháp Hào Hùng chém chớp nhoáng vào điểm yếu đối thủ.",
-      "Tầng 2 (Hào Hùng Bạo Kích): Kích hoạt hiệu ứng bộc phá đao khí (ID 1084) kéo dài 2 nhịp sát thương liên tiếp gây suy yếu đối phương."
+      "Tầng 1 (Trảm kích vũ bão): Một tia đao bay thẳng ở mặt đất tới mục tiêu, tầm đánh 480; nhịp đánh và tốc độ đạn theo Phá Thiên Trảm (322).",
+      "Tầng 2 (Hào Hùng Bạo Kích): Khi tia đầu va chạm, tạo 3 tia xòe về phía trước từ cùng điểm va chạm (giữa và ±22,5°) (ID 1084), mỗi tia gây sát thương riêng, cộng dồn với tia đầu. Không yêu cầu độ chính xác."
     ],
     "samples": [
       [
@@ -541,10 +541,10 @@
       ],
       [
         "Tầm đánh hiệu quả (pixels)",
-        "280",
-        "280",
-        "280",
-        "280"
+        "480",
+        "480",
+        "480",
+        "480"
       ],
       [
         "Nội lực tiêu hao (Mana)",
@@ -561,11 +561,11 @@
         "8"
       ],
       [
-        "Tăng Độ chính xác (%)",
-        "35",
-        "120",
-        "215",
-        "290"
+        "Kiểm tra độ chính xác",
+        "Không",
+        "Không",
+        "Không",
+        "Không"
       ]
     ],
     "support": [
@@ -688,7 +688,10 @@
         "name": "Hào Hùng Bạo Kích",
         "tier": 2,
         "minLevel": 1,
-        "trigger": "secondary"
+        "trigger": "impact",
+        "element": "phys",
+        "coefficient": 1,
+        "count": 3
       }
     ]
   },
@@ -715,10 +718,10 @@
       ],
       [
         "Tốc độ bay của chiêu",
-        "32",
-        "32",
-        "32",
-        "32"
+        "30",
+        "30",
+        "30",
+        "30"
       ],
       [
         "Tầm đánh hiệu quả (pixels)",
@@ -911,10 +914,10 @@
       ],
       [
         "Tốc độ bay của chiêu",
-        "36",
-        "36",
-        "36",
-        "36"
+        "30",
+        "30",
+        "30",
+        "30"
       ],
       [
         "Tầm đánh hiệu quả (pixels)",

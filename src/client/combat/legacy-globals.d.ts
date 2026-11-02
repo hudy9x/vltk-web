@@ -19,7 +19,7 @@ declare global {
   var A0: {
     f?: Record<string, { c?: number }>;
     s?: Record<string, number>;
-    m: Record<string, { fly?: SpriteMetadata | null; hit?: SpriteMetadata; spd?: number; life?: number }>;
+    m: Record<string, { fly?: SpriteMetadata | null; hit?: SpriteMetadata; ground?: SpriteMetadata; spd?: number; life?: number }>;
   };
   function _1(): CombatTarget[];
   function E(value: number, min: number, max: number): number;

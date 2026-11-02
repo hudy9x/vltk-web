@@ -48,7 +48,7 @@
 - **tên skill**: Hào Hùng Trảm (Cấp 150 - Công kích ngoại công)
 - **path**:
   - Icon: `img/s/1058.png`
-  - Sprite đòn chính: `fx/advanced/m320_fly.webp` | Hit FX: `fx/advanced/m320_hit.webp`
+  - Sprite đòn chính: `fx/advanced/m320_directional.webp` (tia vàng 16 hướng, đóng gói từ `m320_fly.webp` bằng `tools/prepare-hao-hung-sprite.py`) | Hit FX: `fx/advanced/m320_hit.webp`
   - Sprite đòn phụ: `Không có`
   - Sprite tụ khí: `Không có`
 
@@ -285,3 +285,5 @@
 
 ---
 
+
+- Hào Hùng Trảm: lớp nở đất `fx/advanced/m330_fly.webp` (6 frames, 65 ms/frame); tia đầu bay thẳng; 3 tia tầng 2 xòe từ cùng điểm va chạm (giữa và ±22,5°).

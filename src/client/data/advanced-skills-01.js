@@ -1761,7 +1761,7 @@
   "1058": {
     "id": 1058,
     "n": "Hào Hùng Trảm",
-    "d": "Trảm Thiên Phá Địa, Bác Mệnh Nhi Kích, Thiên Vương Đại Thừa Đao Pháp, sau khi đánh trúng đối phương sẽ tỏa ra ba hướng.",
+    "d": "Trảm Thiên Phá Địa, Bác Mệnh Nhi Kích, Thiên Vương Đại Thừa Đao Pháp, sau khi đánh trúng đối phương sẽ phát ra ba tia đao xòe về phía trước.",
     "prop": "Công kích ngoại công",
     "f": "tianwang",
     "series": 0,
@@ -11132,6 +11132,14 @@
   const peacockLevels = Math.max(36, skills[1063].attr.physicsenhance_p.length);
   skills[1063].attr.physicsenhance_p = Array.from({length:peacockLevels}, (_, i) => Math.round(90 + 160 * i / 27));
   skills[1063].attr.colddamage_v = Array.from({length:peacockLevels}, (_, i) => [Math.round(60 + 340 * i / 27), 0, Math.round(300 + 300 * i / 27)]);
+  // Tianwang 150 keeps its damage/formation but uses the matching 8x missile speed.
+  for (const [id, parent] of [[1058,322],[1059,323],[1060,325]]) {
+    const source = window.SK_STD?.[parent]?.a?.missle_speed_v || window.JX.skills[parent].attr.missle_speed_v;
+    skills[id].attr.missle_speed_v = source.map(row => Array.isArray(row) ? row.slice() : row);
+  }
+  delete skills[1058].attr.attackrating_p;
+  skills[1058].radius = 480;
+  skills[1058].attr.skill_attackradius = skills[1058].attr.skill_attackradius.map(() => 480);
   Object.assign(window.JX.skills, skills);
   for (const skill of Object.values(skills)) {
     skill.book = skill.tier === 150 ? "bk150" : "bk120";
@@ -12050,6 +12058,15 @@
   // Correct the two crossed Thiên Vương animation mappings.
   effects.f[1059].c = "advanced-350";
   effects.f[1060].c = "advanced-349";
+  // The archived sheet contains 16 directions horizontally, then one empty tile.
+  // Repacked losslessly by tools/prepare-hao-hung-sprite.py for Fa's vertical rows.
+  effects.m["advanced-320"].fly = {
+    f: 'fx/advanced/m320_directional.webp', n: 1, d: 16, w: 200, h: 185, ax: 111, ay: 121, ms: 52,
+  };
+  effects.m["advanced-320"].spd = 36 * 18;
+  effects.m["advanced-320"].ground = {
+    f: 'fx/advanced/m330_fly.webp', n: 6, d: 1, w: 180, h: 130, ax: 90, ay: 76, ms: 65,
+  };
   effects.m["advanced-331"].spd *= 2;
   // Vi Đà: use the same wider radius in tooltips, targeting and collision.
   skills[1056].radius = 256;

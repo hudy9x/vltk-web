@@ -38,6 +38,7 @@ var F2 = function (A, n, t) {
   const d = (b0(n, "skill_attackradius", t) || [n.radius || 60])[0] || 60,
     f = d * (1 + (A.vision || 0) / 100),
     h = h4[n.id],
+    cadence = h || h4[({1058:322,1059:323,1060:325})[n.id]],
     g = h ? i7(h) : null,
     u = h ? (g ? L5(g) : 1) : Cw(n, t, f),
     w = r4(n, t),
@@ -57,7 +58,7 @@ var F2 = function (A, n, t) {
       t,
     ),
     j = Math.max(Fw[n.id] || 0, G ? G[0] : 0) / 18,
-    rawRate = h ? o7(h) : (n.phys ? A.aspdP ?? A.aspd : A.aspdC ?? A.aspd * 0.9),
+    rawRate = cadence ? o7(cadence) : (n.phys ? A.aspdP ?? A.aspd : A.aspdC ?? A.aspd * 0.9),
     X = Math.min(rawRate, j ? 1 / j : Infinity),
     $0 = (T0) => {
       const aA = b0(n, Rr[T0], t);

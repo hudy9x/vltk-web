@@ -6,6 +6,7 @@ import { beginContactFrame, endContactFrame } from './spatial/contact-query';
 import { advanceIronLotusVisual } from '../render/iron-lotus';
 import { spawnDragonFlame } from '../render/dragon-fire';
 import { advanceSwordFlowerVisual } from './skill-effects/kiem-hoa-van-tinh';
+import { collideHaoHungFlight } from './skill-effects/thien-vuong-impact';
 import { advanceSnowTrailVisual } from './snow-trail';
 
 // dt luôn tính bằng giây. Riêng đạn sprite đổi sang frame bằng K3 như code cũ.
@@ -35,9 +36,13 @@ export function advanceCombatMissile(effect: SpriteMissile & ContactEffect, dt: 
       }
       effect.traveled += Math.min(distance, remaining);
     }
-    if (!effect.combat.ignoreTerrain && Z0.g && effect.kind && (!R2(effect.x, effect.y + 14) || !mt(x, y + 14, effect.x, effect.y + 14))) return false;
-    spawnDragonFlame(effect, step);
-    if (!(effect.za && effect.z > 20) && collideCombatEffect(effect, x, y, effect.x, effect.y - (effect.z + effect.hz) * wf)) return false;
+    const haoHung = collideHaoHungFlight(effect, x, y, effect.x, effect.y - (effect.z + effect.hz) * wf);
+    if (haoHung !== null) { if (haoHung) return false; }
+    else {
+      if (!effect.combat.ignoreTerrain && Z0.g && effect.kind && (!R2(effect.x, effect.y + 14) || !mt(x, y + 14, effect.x, effect.y + 14))) return false;
+      spawnDragonFlame(effect, step);
+      if (!(effect.za && effect.z > 20) && collideCombatEffect(effect, x, y, effect.x, effect.y - (effect.z + effect.hz) * wf)) return false;
+    }
     if (reachedLimit) return false;
   }
   return effect.age < effect.lf;
@@ -52,10 +57,12 @@ export function advanceContactEffect(effect: ContactEffect, dt: number): boolean
     const x = effect.x, y = effect.y;
     if (!effect.melee && !effect.staticArea) {
       const angle = effect.ang;
-      const distance = effect.speed * (effect.age - Math.max(0, before));
+      const distance = effect.speed * Math.max(0, Math.min(effect.age, effect.life) - Math.max(0, before));
       effect.x += Math.cos(angle) * distance;
       effect.y += Math.sin(angle) * distance / 2;
     }
+    const haoHung = collideHaoHungFlight(effect, x, y, effect.x, effect.y);
+    if (haoHung !== null) return !haoHung && effect.age < effect.life;
     if (!effect.combat.ignoreTerrain && Z0.g && (!R2(effect.x, effect.y + 14) || !mt(x, y + 14, effect.x, effect.y + 14))) return false;
     return !collideCombatEffect(effect, x, y, effect.x, effect.y) && effect.age < effect.life;
   }
@@ -69,6 +76,8 @@ export function advanceContactEffect(effect: ContactEffect, dt: number): boolean
     const y = effect.y1 + (effect.y2 - effect.y1) * progress;
     const x0 = effect.x1 + (effect.x2 - effect.x1) * oldProgress;
     const y0 = effect.y1 + (effect.y2 - effect.y1) * oldProgress;
+    const haoHung = collideHaoHungFlight(effect, x0, y0, x, y);
+    if (haoHung !== null) return !haoHung && effect.t < effect.life;
     if (!effect.combat.ignoreTerrain && Z0.g && (!R2(x, y + 14) || !mt(x0, y0 + 14, x, y + 14))) return false;
     if (collideCombatEffect(effect, x0, y0, x, y)) return false;
   } else collideCombatEffect(effect, effect.x, effect.y, effect.x, effect.y);
@@ -103,7 +112,8 @@ export function advanceSkillContacts(dt: number): void {
       return true;
     });
     if (l.fxQ && l.fxQ.length) {
-      l.fx.push(...l.fxQ);
+      l.fx.unshift(...l.fxQ.filter(effect => effect.behindProjectiles));
+      l.fx.push(...l.fxQ.filter(effect => !effect.behindProjectiles));
       l.fxQ.length = 0;
     }
   } finally { endContactFrame(); }

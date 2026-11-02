@@ -8,6 +8,7 @@ import type { ResolvedSpeed } from '../speed/types';
 import { playSkillSound } from './audio/runtime';
 import { advancedSkillLayout } from '../render/skills-150';
 import { spawnSnowTrailVisual } from './snow-trail';
+import { configureTianwangImpact, spawnHaoHungGround } from './skill-effects/thien-vuong-impact';
 import { configureIcePeacockImpact } from './skill-effects/bang-tuoc-hoat-ky';
 declare function actorAttackTiming(actor: CombatTarget, skill: CombatSkill): ResolvedSpeed;
 // Secondary fields created synchronously at release inherit the same tick remainder.
@@ -53,6 +54,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
   let impactSoundPlayed = false;
   if (blocked) return cast;
   if (+skill.id! === 1063 && !skill.ev2) configureIcePeacockImpact(cast);
+  if (+skill.id! === 1058 && !skill.ev2) configureTianwangImpact(cast);
   if (+skill.id! === 1075 && !skill.ev2) {
     // Same fixed forward rectangle as Vân Long Kích. Keep the original
     // skill passed to G3 so Giang Hải still plays its own traveling wave.
@@ -107,7 +109,8 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
       if (!cast.emitted) {
         // Missing sprite metadata and hidden FX still need a physical attack.
         l.fx.splice(start);
-        const melee = skill.melee !== false;
+        const haoHung = +skill.id! === 1058 && !skill.ev2;
+        const melee = !haoHung && skill.melee !== false;
         const giangHai = +skill.id! === 1075 && !skill.ev2;
         const area = giangHai || skill.geo && (skill.geo.k === "self" || skill.geo.k === "spot");
         const effect: FallbackContact & ContactEffect = {
@@ -120,6 +123,10 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
           ang: Y3(target.x - actor.x, target.y - actor.y),
           staticArea: !!area,
         };
+        if (haoHung) {
+          effect.speed = 36 * K3;
+          effect.life = (skill.rad || 480) * QA / effect.speed;
+        }
         const swords = !skill.ev2 && [328,1061,1063].includes(Number(skill.id));
         const placements = swords ? advancedSkillLayout(Number(skill.id),actor,target) || [-22,0,22].map(side=>({
           x:actor.x-Math.sin(cast.direction)*side,
@@ -131,6 +138,10 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
           (l.combatProjectiles || (l.combatProjectiles = [])).push(contact);
           if (!l.quiet && !options.hideFallbackVisual) l.fx.push(contact);
         }
+      }
+      if (+skill.id! === 1058 && !skill.ev2) {
+        for (const effect of l.combatProjectiles || []) if (effect.combat === cast)
+          spawnHaoHungGround(effect, effect.x, effect.y, effect.x, effect.y);
       }
       if (+skill.id! === 1065 && !skill.ev2) {
         const fairy = (l.combatProjectiles || []).find(effect => effect.combat === cast);
@@ -163,6 +174,15 @@ export function registerCombatMissile(missile: SpriteMissile): void {
   missile.contactHits = new Set();
   if (missile.kind && !missile.still) missile.age -= activeCombatCast.windup * K3;
   missile.lf = Math.max(missile.lf, 2);
+  if (+activeCombatCast.skill.id! === 1058 && !activeCombatCast.skill.ev2) {
+    const reach = (activeCombatCast.skill.rad || 480) * QA, angle = missile.ang || 0;
+    missile.travelLimit = reach * Math.hypot(Math.cos(angle), Math.sin(angle) / (2 * SKILL_RANGE_Y_RATIO));
+    missile.traveled = 0;
+    missile.loop = true;
+    missile.cv = true;
+    missile.z = missile.hz = 0;
+    missile.lf = Math.ceil(reach / Math.max(1, missile.spd || 36));
+  }
   if (activeCombatCast.interval) missile.lf = Math.max(missile.lf, Math.ceil(activeCombatCast.duration! * K3));
   if (+activeCombatCast.skill.id! === 362 && !activeCombatCast.skill.ev2) {
     const spriteId = A0.f?.[362]?.c || A0.s?.[362];

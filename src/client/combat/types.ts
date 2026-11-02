@@ -43,6 +43,7 @@ export interface CombatSkill {
   /** Uncapped attack/cast speed; cd remains an independent skill constraint. */
   rawRate?: number;
   phys?: boolean;
+  useAR?: boolean;
   id?: number | string;
   L?: number;
   geo?: SkillGeometry;
@@ -111,6 +112,7 @@ interface EffectBase extends WorldPoint {
   impactTargets?: Set<CombatTarget>;
   contactAlive?: boolean;
   cosmetic?: boolean;
+  behindProjectiles?: boolean;
   follow?: unknown;
   add?: unknown;
   staticArea?: boolean;

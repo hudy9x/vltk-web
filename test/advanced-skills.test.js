@@ -391,8 +391,8 @@ test('Đại Lực Kim Cang Chưởng and Tam Giới Quy Thiền damage clustere
   }
 });
 
-test('all three Tianwang 150 skills splash clustered enemies within radius 96 once per cast',()=>{
-  for(const id of [1058,1059,1060])for(const level of [1,25])for(const mode of ['normal','quiet','budget']) {
+test('Tung Hoanh and Ba Vuong keep their radius 96 splash once per cast',()=>{
+  for(const id of [1059,1060])for(const level of [1,25])for(const mode of ['normal','quiet','budget']) {
     const {s,skill}=advancedCombat();
     const target={x:90,y:0,hp:100,r:12},near={x:85,y:26,hp:100,r:12};
     const far={x:90,y:100,hp:100,r:12},hits=[],sk=skill(id,level),originalGeo=sk.geo;
@@ -1387,4 +1387,190 @@ test('stacked targets cannot trigger more than one five-ray package per Ice Peac
   for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
   assert.equal(new Set(shards).size,3);
   assert.equal(shards.length,15*targets.length);
+});
+
+test('Hao Hung sends one directional blade straight along the ground and expires at range 480',()=>{
+  for(let dir=0;dir<8;dir++) {
+    const {s,skill}=advancedCombat(),caster={x:300,y:400,hp:100},angle=dir*Math.PI/4;
+    const target={x:caster.x+Math.cos(angle)*60,y:caster.y+Math.sin(angle)*30,hp:100000,r:12};
+    const cast=s.queueSkillContact(caster,target,skill(1058,25),()=>{},{targets:()=>[],windup:0});finishAttackPose(s,caster);
+    const rays=s.l.combatProjectiles.filter(effect=>effect.combat===cast);assert.equal(rays.length,1);
+    const ray=rays[0];assert.equal(ray.kind,1);assert.equal(ray.z,0);assert.equal(ray.hz,0);
+    assert.equal(ray.m.fly.f,'fx/advanced/m320_directional.webp');assert.equal(ray.m.fly.d,16);assert.equal(ray.m.fly.n,1);
+    assert.ok(Math.abs(Math.atan2(Math.sin(ray.ang-angle),Math.cos(ray.ang-angle)))<1e-8);assert.ok(Math.abs(ray.travelLimit-480*s.QA*Math.hypot(Math.cos(angle),Math.sin(angle)/(2*s.CombatEngine.SKILL_RANGE_Y_RATIO)))<1e-7);
+    const before={x:ray.x,y:ray.y};s.advanceSkillContacts(1/18);
+    assert.ok(Math.abs(ray.x-before.x-Math.cos(angle)*ray.spd)<1e-7);
+    assert.ok(Math.abs(ray.y-before.y-Math.sin(angle)*ray.spd/2)<1e-7);
+    for(let i=0;i<60;i++)s.advanceSkillContacts(1/60);
+    assert.ok(ray.traveled<=ray.travelLimit+1e-7);assert.ok(!s.l.combatProjectiles.includes(ray));
+  }
+});
+
+test('Hao Hung physical reach stays bounded with native, quiet and missing FX at low FPS',()=>{
+  for(const mode of ['native','quiet','missing'])for(const dt of [1/60,.05,.4,2])for(const x of [300,460]) {
+    const {s,skill}=advancedCombat(),target={x,y:0,hp:100000,r:12};
+    s.l.quiet=mode==='quiet';if(mode==='missing')delete s.A0.m[s.A0.f[1058].c];
+    const ability=skill(1058,25),cast=s.queueSkillContact(s.v,target,ability,t=>t.hp-=10,{targets:()=>[target],windup:0});
+    finishAttackPose(s);assert.equal(ability.rad,480);
+    for(let t=0;t<3;t+=dt)s.advanceSkillContacts(dt);
+    assert.equal(target.hp,x===300?99960:100000,`${mode}/${dt}/${x}`);
+    assert.equal(cast.hits.get(target),x===300?1:undefined);
+  }
+});
+
+test('Hao Hung adds exactly three full-strength forward fan rays at first impact in world and SIM',()=>{
+  for(const sim of [false,true])for(const mode of ['native','quiet','missing','budget'])for(const dt of [1/60,.4,2]) {
+    const {s,skill}=advancedCombat(),ability=skill(1058,25),target={x:220,y:0,hp:100000,r:17};
+    const next={x:400,y:0,hp:100000,r:17},side={x:220,y:45,hp:100000,r:17},targets=[target,next,side],hits=[];
+    const actor=sim?{x:0,y:0,hp:100}:s.v;
+    s.l.quiet=mode==='quiet';if(mode==='missing')delete s.A0.m[s.A0.f[1058].c];
+    if(mode==='budget')s.l.fx=Array.from({length:1000},()=>({k:'ring'}));
+    ability.crit=37;assert.equal(ability.useAR,false);assert.equal(ability.skAr,0);
+    const hit=(a,t)=>{hits.push({a,t});const damage=Object.values(a.parts).reduce((x,y)=>x+y,0);t.hp-=damage;return damage;};
+    if(sim){
+      const {compileTypeScriptEntry}=require('../tools/build-app');
+      vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','HaoHungCast').code,s);
+      s._1=()=>targets;s.F5=()=>[];s.nD=()=>[];s.l8=()=>0;
+      s.HaoHungCast.castSimulatorSkill(actor,target,ability,()=>true,()=>targets,hit,fn=>fn());
+    } else s.queueSkillContact(actor,target,ability,(t,a)=>hit(a||ability,t),{targets:()=>targets,windup:0});
+    finishAttackPose(s,actor);assert.equal(hits.length,0,'nothing hits before flight reaches a body');
+    for(let time=0;time<4;time+=dt)s.advanceSkillContacts(dt);
+    const primary=hits.filter(h=>!h.a.ev2),secondary=hits.filter(h=>h.a.ev2);
+    assert.equal(primary.length,1,`${sim}/${mode}/${dt}`);assert.equal(primary[0].t,target);
+    assert.equal(secondary.filter(h=>h.t===target).length,3);
+    assert.equal(secondary.filter(h=>h.t===next).length,1,'only the center ray follows the straight corridor');
+    assert.equal(secondary.filter(h=>h.t===side).length,0,'no old radius-96 splash');
+    assert.equal(new Set(secondary.map(h=>h.a)).size,1,'one package, no recursive splitting');
+    assert.ok(secondary.every(h=>h.a.id===1084&&h.a.crit===37&&h.a.useAR===false&&h.a.parts===ability.parts));
+    assert.ok(Math.abs(target.hp-(100000-ability.tot*4))<1e-6);
+    assert.ok(Math.abs(next.hp-(100000-ability.tot))<1e-6);
+    assert.equal(s.l.combatProjectiles.length,0,'every blade expires');
+  }
+});
+
+test('Hao Hung split blades keep the release direction, with m330 cosmetic earth bursts only',()=>{
+  for(let dir=0;dir<8;dir++) {
+    const {s,skill}=advancedCombat(),actor={x:500,y:500,hp:100},angle=dir*Math.PI/4;
+    const target={x:actor.x+Math.cos(angle)*220,y:actor.y+Math.sin(angle)*110,hp:100000,r:17},hits=[];
+    const cast=s.queueSkillContact(actor,target,skill(1058),(_t,a)=>hits.push(a),{targets:()=>[target],windup:0});
+    finishAttackPose(s,actor);const primary=s.l.combatProjectiles[0];
+    const draws=[];s.Fa=(...args)=>draws.push(args);s.Ds=()=>dir;
+    s.advanceSkillContacts(.1);s.YP(primary);
+    s.advanceSkillContacts(.1);s.YP(primary);
+    assert.equal(draws.length,2,'primary remains visible throughout its flight');
+    actor.x-=100;actor.y-=100;
+    for(let i=0;i<40&&!s.l.combatProjectiles.some(e=>e.combat.skill.id===1084);i++)s.advanceSkillContacts(1/60);
+    const rays=s.l.combatProjectiles.filter(e=>e.combat.skill.id===1084);assert.equal(rays.length,3);
+    for(const [index,ray] of rays.entries()){
+      const rayAngle=Math.atan2((ray.y2-ray.y1)*2,ray.x2-ray.x1),expected=cast.direction+[-Math.PI/8,0,Math.PI/8][index];
+      assert.ok(Math.abs(Math.atan2(Math.sin(rayAngle-expected),Math.cos(rayAngle-expected)))<1e-7);
+      assert.equal(ray.x1,rays[0].x1);assert.equal(ray.y1,rays[0].y1,'all three rays start at the same collision point');
+    }
+    const earth=s.l.fx.concat(s.l.fxQ||[]).filter(e=>e.s?.f==='fx/advanced/m330_fly.webp');
+    assert.ok(earth.length>1);assert.ok(earth.every(e=>e.cosmetic&&!e.combat));
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.filter(a=>a?.ev2).length,3);
+    assert.equal(s.l.fx.filter(e=>e.s?.f==='fx/advanced/m330_fly.webp').length,0);
+  }
+});
+
+test('Hao Hung miss and terrain obstruction cannot produce remote damage or extra split packages',()=>{
+  for(const dt of [1/60,2])for(const mode of ['miss','wallBefore','wallAfter','stacked']){
+    const {s,skill}=advancedCombat(),targets=Array.from({length:mode==='stacked'?3:1},()=>({x:150,y:0,hp:100000,r:17}));
+    const beyond={x:300,y:0,hp:100000,r:17},hits=[];
+    s.Z0.g=mode.startsWith('wall');
+    if(s.Z0.g){const wall=mode==='wallBefore'?100:200;s.mt=(x0,y0,x1)=>x0<wall&&x1<wall;s.R2=x=>x<wall;}
+    s.queueSkillContact(s.v,targets[0],skill(1058),(t,a)=>hits.push({t,a}),{targets:()=>[...targets,beyond],windup:0});finishAttackPose(s);
+    if(mode==='miss'){for(const t of [...targets,beyond])t.y=100;}
+    for(let time=0;time<4;time+=dt)s.advanceSkillContacts(dt);
+    if(mode==='miss'||mode==='wallBefore')assert.equal(hits.length,0);
+    if(mode==='wallAfter'){assert.equal(hits.filter(h=>h.t===targets[0]).length,4);assert.equal(hits.filter(h=>h.t===beyond).length,0);}
+    if(mode==='stacked'){
+      assert.equal(new Set(hits.filter(h=>h.a?.ev2).map(h=>h.a)).size,1);
+      for(const t of targets)assert.equal(hits.filter(h=>h.t===t).length,4);
+    }
+  }
+});
+
+test('Hao Hung draws its golden directional sheet above sparse earth patches in all eight directions',()=>{
+  for(let dir=0;dir<8;dir++){
+    const {s,skill}=advancedCombat(),actor={x:500,y:500,hp:100},angle=dir*Math.PI/4;
+    const target={x:actor.x+Math.cos(angle)*350,y:actor.y+Math.sin(angle)*175,hp:10000,r:17};
+    const cast=s.queueSkillContact(actor,target,skill(1058),()=>{},{targets:()=>[],windup:0});finishAttackPose(s,actor);
+    const ray=s.l.combatProjectiles.find(e=>e.combat===cast);
+    declaration(s,'src/client/render/arena-01.js','Fa');declaration(s,'src/client/render/arena-01.js','CP');
+    declaration(s,'src/client/render/arena-02.js','Ds');
+    const draws=[];s.q3=1;s.bA=f=>({f,complete:true,naturalWidth:200,naturalHeight:2960});
+    s.W={drawImage(...args){draws.push(args);}};
+    const ground=new Set();
+    for(let i=0;i<5;i++){
+      s.advanceSkillContacts(.1);
+      for(const effect of s.l.fx)if(effect.s?.f==='fx/advanced/m330_fly.webp'){
+        ground.add(effect);assert.ok(s.l.fx.indexOf(effect)<s.l.fx.indexOf(ray),'earth is drawn underneath the golden blade');
+      }
+      for(const effect of s.l.fx){if(effect.k==='jm')s.YP(effect);else if(effect.k==='boom')s.CP(effect);}
+    }
+    const blades=draws.filter(draw=>draw[0].f==='fx/advanced/m320_directional.webp');
+    assert.equal(blades.length,5,'the projectile is visible throughout the flight');
+    const expected=s.Ds(Math.cos(angle),Math.sin(angle)/2);
+    assert.ok(blades.every(draw=>draw[1]===0&&draw[2]===expected*185&&draw[3]===200&&draw[4]===185),
+      'each facing uses its own non-empty direction row, never the old blank tile or spinning animation');
+    assert.ok(ground.size<=3,'32px spam is replaced by a 128px earth trail');
+  }
+});
+
+test('Hao Hung restores impact FX and centers three correctly facing rays on the physical collision',()=>{
+  for(const mode of ['native','quiet','fallback'])for(const dt of [1/60,.4,2]){
+    const {s,skill}=advancedCombat(),target={x:220,y:0,hp:10000,r:17},points=[];
+    s.l.quiet=mode==='quiet';if(mode==='fallback')s.A0.m[s.A0.f[1058].c].fly=null;
+    s.queueSkillContact(s.v,target,skill(1058),()=>{},{targets:()=>[target],windup:0,onImpact:(_t,point)=>points.push(point)});
+    finishAttackPose(s);
+    for(let time=0;!points.length&&time<2;time+=dt)s.advanceSkillContacts(dt);
+    assert.equal(points.length,1);const point=points[0];
+    assert.ok(Math.abs(point.x-195)<1e-6,'spawn at the actual entry point, not the monster center at x=220');
+    const rays=s.l.combatProjectiles.filter(e=>e.combat.skill.id===1084);assert.equal(rays.length,3);
+    assert.ok(rays.every(ray=>Math.abs(ray.x1-point.x)<1e-6&&ray.x2>ray.x1));
+    assert.ok(Math.abs(rays.reduce((sum,ray)=>sum+ray.y1,0)/3-(point.y-14))<1e-6);
+    const hits=s.l.fx.filter(e=>e.s?.f==='fx/advanced/m320_hit.webp');
+    assert.equal(hits.length,mode==='quiet'?0:1,'primary hit animation appears exactly once');
+    assert.ok(hits.every(e=>e.x===point.x&&e.y===point.y-14&&e.cosmetic&&!e.combat));
+    if(mode==='native'){
+      declaration(s,'src/client/render/arena-01.js','CP');
+      const draws=[];s.Fa=(sprite,direction,...rest)=>draws.push({sprite,direction,rest});
+      rays.forEach(ray=>s.CP(ray));
+      assert.equal(draws.length,3);assert.ok(draws.every(d=>d.sprite.f==='fx/advanced/m320_directional.webp'));
+      assert.equal(JSON.stringify(draws.map(d=>d.direction)),JSON.stringify([11,12,13]),'each fan ray selects its own facing');
+    }
+  }
+});
+
+test('Hao Hung secondaries keep hit FX and share one earth trail instead of three overlapping trails',()=>{
+  const {s,skill}=advancedCombat(),target={x:220,y:0,hp:10000,r:17},next={x:400,y:0,hp:10000,r:17};
+  const impacts=new Set(),ground=new Set(),hits=[];
+  s.queueSkillContact(s.v,target,skill(1058),(t,a)=>hits.push({t,a}),{targets:()=>[target,next],windup:0});finishAttackPose(s);
+  for(let i=0;i<180;i++){
+    s.advanceSkillContacts(1/60);
+    for(const e of s.l.fx){if(e.s?.f==='fx/advanced/m320_hit.webp')impacts.add(e);if(e.s?.f==='fx/advanced/m330_fly.webp')ground.add(e);}
+  }
+  assert.equal(hits.length,5);assert.equal(impacts.size,5,'one primary plus three shards on the first body, one center ray on the second');
+  assert.ok(ground.size<=11,'separated fan trails share overlapping ground patches');
+  const marks=[...ground];
+  for(let i=0;i<marks.length;i++)for(let j=i+1;j<marks.length;j++)
+    assert.ok(Math.hypot(marks[i].x-marks[j].x,(marks[i].y-marks[j].y)*2)>=64-1e-6,'never stamp three ground effects at one spot');
+  assert.equal(s.l.combatProjectiles.length,0);
+});
+
+test('Hao Hung fan rays independently hit three separated forward paths from one collision origin',()=>{
+  for(const quiet of [false,true]){
+    const {s,skill}=advancedCombat(),first={x:220,y:0,hp:10000,r:17},origin=195,angles=[-Math.PI/8,0,Math.PI/8];
+    const branches=angles.map(angle=>({x:origin+Math.cos(angle)*200,y:Math.sin(angle)*100,hp:10000,r:8}));
+    const hits=[];s.l.quiet=quiet;
+    s.queueSkillContact(s.v,first,skill(1058),(t,a)=>hits.push({t,a}),{targets:()=>[first,...branches],windup:0});finishAttackPose(s);
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.filter(hit=>hit.t===first).length,4,'one primary and all three rays at the collision victim');
+    for(const target of branches){
+      const contacts=hits.filter(hit=>hit.t===target);assert.equal(contacts.length,1);
+      assert.equal(contacts[0].a.id,1084,'each outer path carries damage, not just a cosmetic copy');
+    }
+  }
 });

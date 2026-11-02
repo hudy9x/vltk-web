@@ -1906,3 +1906,100 @@ fn ice_peacock_adds_five_ten_percent_shards_per_blade_without_primary_splash() {
         remove_fixture(g);
     }
 }
+
+#[test]
+fn hao_hung_primary_adds_three_full_damage_fan_rays_once() {
+    for dt in [0.05, 0.4, 2.0] {
+        let mut g = piercing_fixture(&[(250.0,100.0),(250.0,100.0),(400.0,100.0),(250.0,145.0)],648.0);
+        g.rules.tick_seconds = dt;
+        let ids:Vec<_> = g.rooms[&2].mobs.iter().map(|m|m.id).collect();
+        let p = &mut g.pending[0];
+        p.skill.id=1058; p.skill.range=480.0; p.skill.accuracy=None;
+        let projectile=p.skill.projectile.as_mut().unwrap();
+        projectile.range=480.0*0.81; projectile.width=16.0; projectile.pierce=false; projectile.area=0.0;
+        let mut events=vec![];
+        for _ in 0..100 { g.advance_attacks(&mut events); }
+        for id in &ids[..2] {
+            assert_eq!(events.iter().filter(|e|e.1==2&&e.3==*id&&e.4==1058).count(),1);
+            assert_eq!(events.iter().filter(|e|e.1==2&&e.3==*id&&e.4==1084).count(),3);
+        }
+        assert_eq!(events.iter().filter(|e|e.1==2&&e.3==ids[2]&&e.4==1084).count(),1);
+        assert!(!events.iter().any(|e|e.1==2&&e.3==ids[2]&&e.4==1058));
+        assert!(!events.iter().any(|e|e.1==2&&e.3==ids[3]));
+        assert_eq!(g.rooms[&2].mobs[0].hp,60.0);
+        assert_eq!(g.rooms[&2].mobs[1].hp,60.0);
+        assert_eq!(g.rooms[&2].mobs[2].hp,90.0);
+        assert_eq!(g.rooms[&2].mobs[3].hp,100.0);
+        assert!(g.pending.is_empty());remove_fixture(g);
+    }
+}
+
+#[test]
+fn hao_hung_miss_never_splits_and_children_keep_damage_critical_and_no_accuracy() {
+    for missed in [false,true] {
+        let mut g=piercing_fixture(&[(250.0,if missed {200.0}else{100.0})],648.0);
+        let p=&mut g.pending[0];p.skill.id=1058;p.skill.range=480.0;p.skill.crit=37.0;p.skill.accuracy=None;
+        p.skill.parts=[25.0,0.0,13.0,0.0,0.0];
+        p.skill.projectile.as_mut().unwrap().pierce=false;
+        p.flight=Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)));
+        let mut found=false;
+        for _ in 0..100 {
+            g.advance_attacks(&mut vec![]);
+            let rays:Vec<_>=g.pending.iter().filter(|p|p.skill.id==1084).collect();
+            if !rays.is_empty() {
+                assert!(!found,"only one split package");found=true;
+                assert_eq!(rays.len(),3);
+                for (index,ray) in rays.iter().enumerate() {
+                    assert_eq!(ray.skill.parts,[25.0,0.0,13.0,0.0,0.0]);assert_eq!(ray.skill.crit,37.0);
+                    assert!(ray.skill.accuracy.is_none());
+                    assert!((ray.flight.as_ref().unwrap().angle()-[-std::f32::consts::FRAC_PI_8,0.0,std::f32::consts::FRAC_PI_8][index]).abs()<1e-6);
+                }
+                // Inspect once; the children can remain in flight on following ticks.
+                break;
+            }
+        }
+        assert_eq!(found,!missed);remove_fixture(g);
+    }
+}
+
+#[test]
+fn hao_hung_primary_and_each_split_ray_apply_independent_pvp_damage() {
+    let mut g=pvp_fixture();g.rooms.get_mut(&2).unwrap().mobs.clear();
+    {let a=g.actors.get_mut(&2).unwrap();a.x=250.0;a.y=100.0;}
+    let mut skill=g.actors[&1].profile.skills[0].clone();skill.id=1058;skill.range=480.0;skill.accuracy=None;
+    skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.crit=0.0;skill.stun=0.0;skill.cold=0.0;skill.travel=0.4;
+    skill.projectile=Some(LinearProjectile{range:480.0*0.81,width:16.0,speed:648.0,ignore_terrain:false,pierce:false,area:0.0,homing:false});
+    g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),aim:None,
+        flight:Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)))});
+    let mut events=vec![];for _ in 0..80 {g.advance_attacks(&mut events);}
+    assert_eq!(events.iter().filter(|e|e.1==2&&e.3==2&&e.4==1058).count(),1);
+    assert_eq!(events.iter().filter(|e|e.1==2&&e.3==2&&e.4==1084).count(),3);
+    assert_eq!(g.actors[&2].hp,120.0);remove_fixture(g);
+}
+
+#[test]
+fn hao_hung_children_are_centered_on_the_true_collision_point_in_every_direction() {
+    for direction in 0..8 {
+        let angle=direction as f32*std::f32::consts::FRAC_PI_4;
+        let target=(400.0+angle.cos()*150.0,400.0+angle.sin()*75.0);
+        let mut g=piercing_fixture(&[target],648.0);
+        {let actor=g.actors.get_mut(&1).unwrap();actor.x=400.0;actor.y=400.0;}
+        let p=&mut g.pending[0];p.skill.id=1058;p.skill.range=480.0;p.origin=(400.0,400.0);
+        let projectile=p.skill.projectile.as_mut().unwrap();projectile.pierce=false;projectile.width=16.0;
+        p.flight=Some(projectiles::Flight::new((400.0,400.0),target));
+        let mut found=false;
+        for _ in 0..40 {
+            g.advance_attacks(&mut vec![]);
+            let rays:Vec<_>=g.pending.iter().filter(|p|p.skill.id==1084).collect();
+            if rays.is_empty(){continue;}
+            assert_eq!(rays.len(),3);found=true;
+            let center=rays[0].origin;
+            assert!(rays.iter().all(|ray|ray.origin==center),"one shared collision origin for the fan");
+            assert!((center.0-(target.0-angle.cos()*17.0)).abs()<0.01);
+            assert!((center.1-(target.1-angle.sin()*8.5)).abs()<0.01);
+            assert!((center.0-target.0).hypot((center.1-target.1)*2.0)>16.9,"do not teleport the split to the target center");
+            break;
+        }
+        assert!(found);remove_fixture(g);
+    }
+}

@@ -8,7 +8,8 @@ exports.linearProjectile = function (skill, contact = native.contactGeometry(ski
   const piercing = rectangle || geometry?.k === 'line' && !!geometry.pierce;
   if (!piercing && (!contact.moving || ['spot','self'].includes(geometry?.k))) return null;
   return {
-    range: Math.max(1, piercing ? (geometry?.len || skill.rad || 100) * contact.scale : contact.range),
+    range: Math.max(1, +skill.id === 1058 ? (skill.rad || 480) * contact.scale
+      : piercing ? (geometry?.len || skill.rad || 100) * contact.scale : contact.range),
     width: rectangle ? 24 * contact.scale : 16,
     speed: Math.max(1, Math.min(4000, contact.speed)),
     ignoreTerrain: contact.ignoreTerrain,
