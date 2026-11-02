@@ -184,6 +184,8 @@ function simulatorGame(entries, arena=true, nativeMonsters=false, options) {
       main:{id:s.o.main==='basic'?0:s.o.main,n:'Test skill',parts:{phys:100},rad:1000,rate:2,cost:0,crit:0,series:0,series5:0},
       basic:{parts:{phys:100},rad:1000,rate:2,series:0}}),
   });
+  // Missing-image Beggar casts use native frame missiles, like the real game.
+  for(const name of ['K3','mf','T8','wf','KP','gf'])loadDeclaration(s,'src/client/render/projectiles-01.js',name);
   for(const name of ['Pe','ja','hs'])loadDeclaration(s,'src/client/core/state-and-save-01.js',name);
   s.l.enemies ||= [];
   s.l.P=s.j0();for(const enemy of s.l.enemies)Object.assign(enemy,{n:"Quái",res:s.l.P.res,def:0,series:0,act:"at"});s.l.life=1000;s.l.mana=100;s.l.zoneShown=1;s.l.quiet=false;

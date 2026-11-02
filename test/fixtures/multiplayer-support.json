@@ -590,6 +590,21 @@
         },
         {
           "id": 336,
+          "followups": [
+            {
+              "id": 382,
+              "parts": [
+                49.800000000000004,
+                0,
+                780,
+                0,
+                0
+              ],
+              "delay": 0.12,
+              "targets": 3,
+              "stun": 0
+            }
+          ],
           "level": 20,
           "missiles": 5,
           "melee": false,
@@ -1258,6 +1273,21 @@
                 },
                 {
                   "id": 336,
+                  "followups": [
+                    {
+                      "id": 382,
+                      "parts": [
+                        49.800000000000004,
+                        0,
+                        780,
+                        0,
+                        0
+                      ],
+                      "delay": 0.12,
+                      "targets": 3,
+                      "stun": 0
+                    }
+                  ],
                   "level": 20,
                   "missiles": 5,
                   "melee": false,
@@ -1893,6 +1923,21 @@
                 },
                 {
                   "id": 336,
+                  "followups": [
+                    {
+                      "id": 382,
+                      "parts": [
+                        49.800000000000004,
+                        0,
+                        780,
+                        0,
+                        0
+                      ],
+                      "delay": 0.12,
+                      "targets": 3,
+                      "stun": 0
+                    }
+                  ],
                   "level": 20,
                   "missiles": 5,
                   "melee": false,
@@ -2528,6 +2573,21 @@
                 },
                 {
                   "id": 336,
+                  "followups": [
+                    {
+                      "id": 382,
+                      "parts": [
+                        49.800000000000004,
+                        0,
+                        780,
+                        0,
+                        0
+                      ],
+                      "delay": 0.12,
+                      "targets": 3,
+                      "stun": 0
+                    }
+                  ],
                   "level": 20,
                   "missiles": 5,
                   "melee": false,
@@ -3164,6 +3224,21 @@
                 },
                 {
                   "id": 336,
+                  "followups": [
+                    {
+                      "id": 382,
+                      "parts": [
+                        49.800000000000004,
+                        0,
+                        780,
+                        0,
+                        0
+                      ],
+                      "delay": 0.12,
+                      "targets": 3,
+                      "stun": 0
+                    }
+                  ],
                   "level": 20,
                   "missiles": 5,
                   "melee": false,
