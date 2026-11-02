@@ -226,7 +226,8 @@ exports.contactGeometry = function (skill) {
   const parent = ({322:326,323:327,326:326,327:327})[+skill.id];
   const id = parent && scope.A0.m[parent]?.fly ? parent : fx?.c || scope.A0.s?.[skill.id];
   const missile = scope.A0.m[id], motion = scope.R3(id), movement = scope.t7?.[id];
-  const kind = missile?.fly ? motion?.[0] ?? movement?.[0] ?? 1 : 0;
+  // advancedSkillLayout gives all three Bổng Huýnh staffs native homing motion.
+  const kind = +skill.id === 1074 ? 5 : missile?.fly ? motion?.[0] ?? movement?.[0] ?? 1 : 0;
   // Wn stores speed in native frames, then KP advances at K3 frames/second.
   const velocity = speed > 0 ? speed : motion?.[2] ?? Math.round((missile?.spd || 360) / scope.K3);
   const limit = movement?.[0] && ![3,4].includes(movement[0])

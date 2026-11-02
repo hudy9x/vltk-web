@@ -6,10 +6,14 @@ pub(super) struct ContactGate {
     tick: u32,
     confirmed: std::collections::BTreeSet<u32>,
     victim_confirmed: std::collections::BTreeSet<u32>,
-    candidates: std::collections::BTreeSet<u32>,
-    applied: std::collections::BTreeSet<u32>,
+    candidates: std::collections::BTreeMap<u32,u8>,
+    applied: std::collections::BTreeMap<u32,u8>,
 }
 impl ContactGate {
+    // Only server-observed contacts count. Client reports confirm the cast/body,
+    // never supply a hit count; all other skills retain their existing one-hit gate.
+    fn hit_limit(&self)->u8 {match self.skill.id {1073=>2,1074=>3,_=>1}}
+
     pub(super) fn map(&self)->u32 {self.map}
     pub(super) fn new(source: u32, map: u32, skill: Skill, tick: u32) -> Self {
         Self {
@@ -57,17 +61,15 @@ impl Game {
             if self.tick.wrapping_sub(gate.tick) > 100 {
                 continue;
             }
-            let ready: Vec<_> = gate
-                .candidates
-                .intersection(&gate.confirmed)
-                .copied()
-                .filter(|id| {
-                    !gate.applied.contains(id)
-                        && (!self.actors.contains_key(id) || gate.victim_confirmed.contains(id))
-                })
-                .collect();
-            for target in ready {
-                gate.applied.insert(target);
+            let ready: Vec<_> = gate.candidates.iter().filter_map(|(&id,&count)| {
+                let applied=gate.applied.get(&id).copied().unwrap_or(0);
+                let validated=count.min(gate.hit_limit());
+                (validated>applied && gate.confirmed.contains(&id)
+                    && (!self.actors.contains_key(&id) || gate.victim_confirmed.contains(&id)))
+                    .then_some((id,validated-applied,validated))
+            }).collect();
+            for (target,remaining,total) in ready {
+                gate.applied.insert(target,total);
                 let mut p = Pending {
                     cast_id: 0,
                     source: gate.source,
@@ -78,7 +80,7 @@ impl Game {
                     origin: (0.0, 0.0),
                     aim: None, flight: None,
                 };
-                self.contact(&mut p, target, events);
+                for _ in 0..remaining {self.contact(&mut p,target,events);}
                 gate.skill.followups=p.skill.followups;
             }
         }
@@ -143,12 +145,13 @@ impl Game {
                             y: a.y,
                         }),
                 );
-                if geometry.homing {
-                    if let Some(target) = bodies.iter().find(|b| b.id == p.target) {
-                        flight.steer((target.x, target.y), step);
-                    }
+                let aim=bodies.iter().find(|body|body.id==p.target).map(|body|(body.x,body.y));
+                if geometry.homing && ![1073,1074].contains(&p.skill.id) {
+                    if let Some(target)=aim {flight.steer(target,step);}
                 }
-                let (alive, contacts) = if [328,336,1061,1063].contains(&p.skill.id) {
+                let (alive, contacts) = if [1073,1074].contains(&p.skill.id) {
+                    flight.advance_beggar(p.skill.id,geometry,&room.nav,&bodies,step,aim)
+                } else if [328,336,1061,1063].contains(&p.skill.id) {
                     flight.advance_swords(p.skill.id,p.skill.missiles,geometry,&room.nav,&bodies,step)
                 } else {flight.advance_bodies(geometry, &room.nav, &bodies, step)};
                 // The primary blade stops once; stacked bodies still produce one package.
@@ -266,7 +269,9 @@ impl Game {
     fn contact(&mut self, p: &mut Pending, target: u32, events: &mut Vec<EventData>) {
         if p.cast_id != 0 {
             if let Some(gate) = self.contacts.get_mut(&p.cast_id) {
-                gate.candidates.insert(target);
+                let limit=gate.hit_limit();
+                let count=gate.candidates.entry(target).or_insert(0);
+                *count=count.saturating_add(1).min(limit);
             }
             return;
         }

@@ -75,3 +75,14 @@ test('damage representatives come from actual hit recipients even when body repr
  const drawn=frame.selectLabels(labels);
  assert.equal(drawn.length,5);assert.ok(drawn.every(label=>hidden.includes(label.target)));
 });
+
+test('crowded representatives retain separate Beggar projectile rows without revealing extra targets',()=>{
+ for(const count of [2,3]){
+  const actors=pack(30),selected=actors[0],frame=scene().update(actors,.016,view,new Set([selected]));
+  const labels=actors.flatMap(target=>Array.from({length:count},(_,i)=>({target,life:1,amount:4000+i*100,merge:false})));
+  const drawn=frame.selectLabels(labels);
+  assert.equal(drawn.filter(label=>label.target===selected).length,count,'each validated head/staff number remains visible');
+  assert.equal(new Set(drawn.map(label=>label.target)).size,5,'recipient crowd budget is preserved');
+  assert.equal(drawn.length,5*count);assert.ok(drawn.every(label=>labels.includes(label)),'no synthetic combined damage numbers');
+ }
+});

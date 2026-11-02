@@ -4,7 +4,7 @@ export interface CrowdActor {
 }
 export interface CrowdView { x: number; y: number; width: number; height: number }
 export interface CrowdGroup { anchor: CrowdActor; members: CrowdActor[] }
-export interface LabelLike { target?: CrowdActor; life: number }
+export interface LabelLike { target?: CrowdActor; life: number; merge?: boolean }
 export interface CrowdFrame {
   bodies: Set<CrowdActor>;
   damageTargets: Set<CrowdActor>;

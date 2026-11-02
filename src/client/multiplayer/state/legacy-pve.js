@@ -16,6 +16,7 @@ var onlineWorld = (() => {
     if(active()&&!state?.battlefield)send(16,{target,skill:event.skill,x:event.id&65535,y:event.id>>>16});
   });
   const monsters = new Map();
+  const damageRecipients = new Map();
   const mapId = () => (typeof Z0.key === 'number' ? Z0.key : E0.town.id);
   const active = () =>
     !!client?.authoritative &&
@@ -36,6 +37,15 @@ var onlineWorld = (() => {
   function target(id) {
     return id === state?.self ? v : monsters.get(id) || state?.actors.find((a) => a.id === id);
   }
+  // Stable display-only recipients prevent separate online hits from overlapping.
+  function damageRecipient(id, entity) {
+    if (id === state?.self) return v;
+    const actor = state?.actors.find(actor => actor.id === id);
+    if (!actor) return entity;
+    let recipient = damageRecipients.get(id);
+    if (!recipient) damageRecipients.set(id, recipient = {});
+    return Object.assign(recipient, entity, { playerDamage: !state.battlefield || actor.battlefieldKind < 2 });
+  }
   function reset() {
     clearTimeout(moveTimer);
     moveTimer = null;
@@ -47,7 +57,7 @@ var onlineWorld = (() => {
     if(v._onlineCast){v._onlineCast=false;v.castT=0;v.speedCastDuration=undefined;}
     if(typeof OnlineSupport!=='undefined')OnlineSupport.reset();
     if(typeof OnlinePvp!=='undefined')OnlinePvp.reset();
-    monsters.clear();
+    monsters.clear();damageRecipients.clear();
     if(typeof OnlineBattlefield!=='undefined')OnlineBattlefield.reset();
     lastEvent = 0;
     lastCommand = 0;
@@ -67,11 +77,16 @@ var onlineWorld = (() => {
     if (!active()) {trace?.once('drop:'+next.map+':'+mapId(),'world-ignored',{map:next.map,currentMap:mapId(),active:active()});return;}
     if(next.map!==mapId()){
       if(typeof OnlineLifecycle==='undefined')return;
-      motion.clear();visuals.reset();monsters.clear();goal=null;pendingMode=null;lastEvent=0;
+      motion.clear();visuals.reset();monsters.clear();damageRecipients.clear();goal=null;pendingMode=null;lastEvent=0;
     }
     if(typeof OnlineBattlefield!=='undefined')OnlineBattlefield.sync(next,send);
     if(typeof OnlineLifecycle!=='undefined')OnlineLifecycle.sync(next,send);
     state = next;
+    for (const [id, recipient] of damageRecipients) {
+      const actor = next.actors.find(actor => actor.id === id);
+      if (actor) Object.assign(recipient, actor);
+      else damageRecipients.delete(id);
+    }
     if(typeof OnlineSupport!=='undefined')OnlineSupport.sync(next);
     if(typeof OnlinePvp!=='undefined')OnlinePvp.sync(next,send);
     motion.receive(next);
@@ -146,7 +161,9 @@ var onlineWorld = (() => {
       }
       if (event.kind === 2 && to) {
         const hit=event.hit||{element:'phys',critical:false,hurt:false,dot:false};
-        showDamageNumber(next.actors.some(a=>a.id===event.target&&(!next.battlefield||a.battlefieldKind<2))?{...to,playerDamage:true}:to, event.value, hit.element, hit.critical);
+        const separate = !hit.dot && [1073,1074].includes(+event.skill);
+        showDamageNumber(damageRecipient(event.target,to), event.value, hit.element, hit.critical, '',
+          separate ? { merge: false, minRows: +event.skill === 1074 ? 3 : 2 } : undefined);
         if (to.onlineMonster && !hit.dot) {
           to.hitT = 0.15;
           if (hit.hurt && !to.dead) {to.hurtT=.5;ps(to,'hurt');}

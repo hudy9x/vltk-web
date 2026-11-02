@@ -2691,8 +2691,8 @@
   "1073": {
     "name": "Thời Thặng Lục Long",
     "mechanics": [
-      "Tầng 1 (Long Thần Xuất Thế): Tung chưởng giáng thần long lửa cực lớn từ trời giáng xuống đất (form: 6, 10 frames).",
-      "Tầng 2 (Thời Thừa Lục Long · đòn phụ): Sau khi rồng lửa chạm đất, lập tức kích hoạt đòn phụ (ID 1101) chia làm nhiều tia lửa cuộn quét xung quanh."
+      "Tầng 1 (Long Thần Xuất Thế): Hai đầu rồng lửa bay nối tiếp trên cùng đường thẳng, đầu sau trễ 4 nhịp (khoảng 0,22 giây); mỗi đầu xuyên thấu và gây sát thương riêng.",
+      "Tầng 2 (Thời Thừa Lục Long · đòn phụ): Hỏa kình và vệt lửa theo sau bổ sung hình ảnh; không thay thế sát thương của hai đầu rồng."
     ],
     "samples": [
       [
@@ -2858,7 +2858,7 @@
   "1074": {
     "name": "Bổng Huýnh Lược Địa",
     "mechanics": [
-      "Tầng 1 (Tam Trọng Bổng Sóng): Múa bổng quét 3 luồng sóng chấn động liên tiếp (num: 3) dưới mặt đất lướt đi với tốc độ 540 px/s.",
+      "Tầng 1 (Tam Trọng Bổng Sóng): Ba thanh bổng truy đuổi mục tiêu, mỗi thanh gây sát thương riêng khi va chạm; cả ba cùng trúng cộng dồn thành 3 hit.",
       "Tầng 2 (Địa Liệt Bộc Phá): Sóng bổng đánh bật đối thủ lên không trung, gây choáng và sát thương hỏa ngoại công."
     ],
     "samples": [

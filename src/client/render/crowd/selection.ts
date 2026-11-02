@@ -11,11 +11,12 @@ export function chooseRepresentatives(members: readonly CrowdActor[], budget: nu
   return sorted.slice(0, Math.max(budget, protectedCount));
 }
 
-/** One actual number per representative in a crowded group; never adds other mobs' damage. */
+/** Keep actual projectile rows when marked independent; ordinary crowd hits show the newest row. */
 export function selectCrowdLabels<T extends LabelLike>(labels: readonly T[],
   clustered: ReadonlySet<CrowdActor>, representatives: ReadonlySet<CrowdActor>): T[] {
   const newest = new Map<CrowdActor, T>();
   for (const label of labels) if (label.life > 0 && label.target && clustered.has(label.target) && representatives.has(label.target))
     newest.set(label.target, label);
-  return labels.filter(label => !label.target || !clustered.has(label.target) || newest.get(label.target) === label);
+  return labels.filter(label => !label.target || !clustered.has(label.target) || newest.get(label.target) === label ||
+    (label.life > 0 && label.merge === false && representatives.has(label.target)));
 }

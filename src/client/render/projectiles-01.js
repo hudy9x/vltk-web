@@ -458,7 +458,7 @@ var G3 = function (A, n, t) {
     const separateImpact = CombatEngine.configureAdvancedSkillImpact(+t.id, activeCombatCast, h.hit);
     if (layout) {
       for (const placement of layout) {
-        const missile = Wn(f, placement.x, placement.y, placement.angle, n);
+        const missile = Wn(f, placement.x, placement.y, placement.angle, n, placement.delayFrames);
         if (!missile) continue;
         missile.kind = placement.kind;
         if (!placement.kind) {

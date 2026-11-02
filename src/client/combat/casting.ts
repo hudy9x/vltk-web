@@ -9,6 +9,7 @@ import { playSkillSound } from './audio/runtime';
 import { advancedSkillLayout } from '../render/skills-150';
 import { spawnSnowTrailVisual } from './snow-trail';
 import { configureTianwangImpact, spawnHaoHungGround } from './skill-effects/thien-vuong-impact';
+import { configureBeggarImpact, spawnBeggarFallback } from './skill-effects/cai-bang-impact';
 import { configureIcePeacockImpact } from './skill-effects/bang-tuoc-hoat-ky';
 declare function actorAttackTiming(actor: CombatTarget, skill: CombatSkill): ResolvedSpeed;
 // Secondary fields created synchronously at release inherit the same tick remainder.
@@ -55,6 +56,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
   if (blocked) return cast;
   if (+skill.id! === 1063 && !skill.ev2) configureIcePeacockImpact(cast);
   if (+skill.id! === 1058 && !skill.ev2) configureTianwangImpact(cast);
+  if ([1073, 1074].includes(Number(skill.id)) && !skill.ev2) configureBeggarImpact(cast);
   if (+skill.id! === 1075 && !skill.ev2) {
     // Same fixed forward rectangle as Vân Long Kích. Keep the original
     // skill passed to G3 so Giang Hải still plays its own traveling wave.
@@ -109,34 +111,36 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
       if (!cast.emitted) {
         // Missing sprite metadata and hidden FX still need a physical attack.
         l.fx.splice(start);
-        const haoHung = +skill.id! === 1058 && !skill.ev2;
-        const melee = !haoHung && skill.melee !== false;
-        const giangHai = +skill.id! === 1075 && !skill.ev2;
-        const area = giangHai || skill.geo && (skill.geo.k === "self" || skill.geo.k === "spot");
-        const effect: FallbackContact & ContactEffect = {
-          k: "contact", combat: cast, contactHits: new Set(),
-          x: melee || area ? target.x : actor.x,
-          y: (melee || area ? target.y : actor.y) - 14,
-          x2: target.x, y2: target.y - 14,
-          age: area && !giangHai && !(skill.ev2 && +skill.id! === 1061) ? 0 : -cast.windup, life: area ? cast.duration || 0.3 : melee ? 0.1 : 2,
-          melee, speed: 360, color: Hi[Object.keys(skill.parts || {})[0]] || "#ffd24a",
-          ang: Y3(target.x - actor.x, target.y - actor.y),
-          staticArea: !!area,
-        };
-        if (haoHung) {
-          effect.speed = 36 * K3;
-          effect.life = (skill.rad || 480) * QA / effect.speed;
-        }
-        const swords = !skill.ev2 && [328,1061,1063].includes(Number(skill.id));
-        const placements = swords ? advancedSkillLayout(Number(skill.id),actor,target) || [-22,0,22].map(side=>({
-          x:actor.x-Math.sin(cast.direction)*side,
-          y:actor.y-14+Math.cos(cast.direction)*side/2, angle:cast.direction,
-        })) : null;
-        for (const placement of placements || [null]) {
-          const contact = placement ? { ...effect, contactHits:new Set<CombatTarget>(),
-            x:placement.x,y:placement.y,ang:placement.angle,melee:false,life:2 } : effect;
-          (l.combatProjectiles || (l.combatProjectiles = [])).push(contact);
-          if (!l.quiet && !options.hideFallbackVisual) l.fx.push(contact);
+        if (!spawnBeggarFallback(cast, target)) {
+          const haoHung = +skill.id! === 1058 && !skill.ev2;
+          const melee = !haoHung && skill.melee !== false;
+          const giangHai = +skill.id! === 1075 && !skill.ev2;
+          const area = giangHai || skill.geo && (skill.geo.k === "self" || skill.geo.k === "spot");
+          const effect: FallbackContact & ContactEffect = {
+            k: "contact", combat: cast, contactHits: new Set(),
+            x: melee || area ? target.x : actor.x,
+            y: (melee || area ? target.y : actor.y) - 14,
+            x2: target.x, y2: target.y - 14,
+            age: area && !giangHai && !(skill.ev2 && +skill.id! === 1061) ? 0 : -cast.windup, life: area ? cast.duration || 0.3 : melee ? 0.1 : 2,
+            melee, speed: 360, color: Hi[Object.keys(skill.parts || {})[0]] || "#ffd24a",
+            ang: Y3(target.x - actor.x, target.y - actor.y),
+            staticArea: !!area,
+          };
+          if (haoHung) {
+            effect.speed = 36 * K3;
+            effect.life = (skill.rad || 480) * QA / effect.speed;
+          }
+          const swords = !skill.ev2 && [328,1061,1063].includes(Number(skill.id));
+          const placements = swords ? advancedSkillLayout(Number(skill.id),actor,target) || [-22,0,22].map(side=>({
+            x:actor.x-Math.sin(cast.direction)*side,
+            y:actor.y-14+Math.cos(cast.direction)*side/2, angle:cast.direction,
+          })) : null;
+          for (const placement of placements || [null]) {
+            const contact = placement ? { ...effect, contactHits:new Set<CombatTarget>(),
+              x:placement.x,y:placement.y,ang:placement.angle,melee:false,life:2 } : effect;
+            (l.combatProjectiles || (l.combatProjectiles = [])).push(contact);
+            if (!l.quiet && !options.hideFallbackVisual) l.fx.push(contact);
+          }
         }
       }
       if (+skill.id! === 1058 && !skill.ev2) {

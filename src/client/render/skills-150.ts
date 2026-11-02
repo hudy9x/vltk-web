@@ -21,7 +21,7 @@ const FIXED_ANCHORS: Readonly<Record<number, 'caster' | 'target'>> = {
 };
 
 export const SOUL_PALM_SPACING = 96;
-interface SkillSpritePlacement extends WorldPoint { angle: number; kind: 0 | 1 | 5 }
+interface SkillSpritePlacement extends WorldPoint { angle: number; kind: 0 | 1 | 5; delayFrames?: number }
 
 // Kiếm Thùy Tinh Hà: start event 1107 (form 7), tách khỏi vùng đánh ở mục tiêu.
 const CAST_AURAS: Readonly<Record<number, string>> = { 1079: 'advanced-369' };
@@ -51,6 +51,9 @@ export function advancedSkillLayout(id: number, caster: WorldPoint, target: Worl
     return [{ x: center.x, y: center.y - 14, angle: 0, kind: 0 }];
   }
   const angle = Math.atan2((target.y - caster.y) * 2, target.x - caster.x);
+  if (id === 1073) return [0, 4].map(delayFrames => ({
+    x: caster.x, y: caster.y - 14, angle, kind: 1, delayFrames,
+  }));
   if (id === 1074) {
     // Three abreast, aimed parallel at release; kind 5 follows the live target.
     return [-24, 0, 24].map(side => ({

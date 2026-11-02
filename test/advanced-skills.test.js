@@ -576,7 +576,7 @@ test('Tật Hỏa only hits inside radius 150 while preserving three beats and i
   }
 });
 
-test('Thời Thặng Lục Long pierces and damages every enemy along its path once',()=>{
+test('Thời Thặng Lục Long pierces each enemy once per head',()=>{
   for(const level of [1,25])for(const quiet of [false,true]) {
     const {s,skill}=advancedCombat();s.l.quiet=quiet;
     const targets=[100,180,260].map(x=>({x,y:0,hp:100,r:12}));
@@ -586,7 +586,7 @@ test('Thời Thặng Lục Long pierces and damages every enemy along its path o
     });
     assert.equal(cast.skill.geo.pierce,true);assert.equal(cast.skill.geo.area,0);
     for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
-    for(const target of targets)assert.equal(hits.filter(hit=>hit===target).length,1,`level ${level}`);
+    for(const target of targets)assert.equal(hits.filter(hit=>hit===target).length,2,`level ${level}`);
     assert.ok(!hits.includes(offPath),'do not widen the dragon into an unrelated area attack');
   }
 });
@@ -650,7 +650,7 @@ test('Bổng Huýnh Lược Địa emits three abreast and steers toward a movin
   }
 });
 
-test('Bổng Huýnh Lược Địa splashes nearby bodies once with three physical homing rays',()=>{
+test('Bổng Huýnh Lược Địa splashes nearby bodies once per homing staff',()=>{
   for(const level of [1,25])for(const mode of ['normal','quiet','budget']) {
     const {s,skill}=advancedCombat(),target={x:140,y:0,hp:100,r:12};
     const near={x:135,y:26,hp:100,r:12},far={x:140,y:110,hp:100,r:12},hits=[];
@@ -660,8 +660,8 @@ test('Bổng Huýnh Lược Địa splashes nearby bodies once with three physic
     assert.equal(cast.emitted,3);assert.equal(cast.skill.geo.area,96);
     assert.equal(cast.skill.geo.pierce,false);assert.equal(hits.length,0);
     for(let i=0;i<90;i++)s.advanceSkillContacts(1/60);
-    assert.equal(hits.filter(hit=>hit===target).length,1,`${level} ${mode}`);
-    assert.equal(hits.filter(hit=>hit===near).length,1,`${level} ${mode}`);
+    assert.equal(hits.filter(hit=>hit===target).length,3,`${level} ${mode}`);
+    assert.equal(hits.filter(hit=>hit===near).length,3,`${level} ${mode}`);
     assert.equal(hits.filter(hit=>hit===far).length,0,`${level} ${mode}`);
     assert.equal(s.l.combatProjectiles.length,0,'rays expire or stop after contact');
   }
@@ -689,11 +689,11 @@ test('Thời Thặng Lục Long flies first, followed by its delayed fire core a
   assert.equal(draws.length,1);assert.ok(draws[0][3]<dragon.x-90,'fire follows well behind the head');
   assert.equal(draws[0][5],true);
   assert.ok(manifest[1073].assets.includes(flames[0].s.f));
-  assert.equal(cast.emitted,1,'additional layers do not register extra combat missiles');
+  assert.equal(cast.emitted,2,'two damaging heads; core and flames stay cosmetic');
   while(dragon.contactAlive!==false)s.advanceSkillContacts(1/60);
   assert.ok(s.l.fx.includes(core),'delayed fire finishes its path after the dragon expires');
   for(let i=0;i<120;i++)s.advanceSkillContacts(1/60);
-  assert.equal(hits,1);assert.equal(s.l.fx.filter(fx=>fx.s?.f==='fx/advanced/m344_fly.webp').length,0);
+  assert.equal(hits,2);assert.equal(s.l.fx.filter(fx=>fx.s?.f==='fx/advanced/m344_fly.webp').length,0);
 });
 
 test('dragon fire respects quiet, FX budget, windup and cast cancellation',()=>{
@@ -706,7 +706,7 @@ test('dragon fire respects quiet, FX budget, windup and cast cancellation',()=>{
     if(mode==='zone')s.l.zoneShown=99;
     for(let i=0;i<12;i++)s.advanceSkillContacts(1/60);
     assert.equal(s.l.fx.filter(fx=>fx.s?.f==='fx/advanced/m344_fly.webp').length,0,mode);
-    assert.equal(cast.emitted,mode==='windup'?0:1);
+    assert.equal(cast.emitted,mode==='windup'?0:2);
   }
 });
 
@@ -751,8 +751,8 @@ test('all 24 level-150 primary skills register physical contacts within their ca
     if(entry.id===1078)assert.equal(cast.pulse,6,'seven Thái Thanh pulses');
     else if(entry.id===1081)assert.equal(cast.pulse,4,'five Thiên Lôi pulses');
     else if(entry.id===1076)assert.equal(cast.pulse,2,'three Tật Hỏa pulses');
-    else assert.equal(cast.hits.get(target),entry.id===1063?3:1,`${entry.id} ${def.n} primary quota`);
-    assert.equal(hits,entry.id===1078?7:entry.id===1081?5:entry.id===1076||entry.id===1063?3:1,`${entry.id} ${def.n}`);
+    else assert.equal(cast.hits.get(target),[1063,1074].includes(entry.id)?3:entry.id===1073?2:1,`${entry.id} ${def.n} primary quota`);
+    assert.equal(hits,entry.id===1078?7:entry.id===1081?5:[1076,1063,1074].includes(entry.id)?3:entry.id===1073?2:1,`${entry.id} ${def.n}`);
   }
 });
 
@@ -1574,5 +1574,102 @@ test('Hao Hung fan rays independently hit three separated forward paths from one
       const contacts=hits.filter(hit=>hit.t===target);assert.equal(contacts.length,1);
       assert.equal(contacts[0].a.id,1084,'each outer path carries damage, not just a cosmetic copy');
     }
+  }
+});
+
+test('Luc Long emits two staggered damaging heads and each owns its own target contact',()=>{
+  for(const mode of ['native','quiet','missing']){
+    const {s,skill}=advancedCombat(),target={x:220,y:0,hp:100000,r:17},hits=[];
+    s.l.quiet=mode==='quiet';if(mode==='missing')delete s.A0.m[s.A0.f[1073].c];
+    const cast=s.queueSkillContact(s.v,target,skill(1073),t=>hits.push(t),{targets:()=>[target],maxHits:()=>1,windup:0});finishAttackPose(s);
+    assert.equal(cast.emitted,2,mode);
+    const heads=s.l.combatProjectiles.filter(e=>e.combat===cast);assert.equal(heads.length,2);
+    assert.equal(heads[0].x,heads[1].x);assert.equal(heads[0].y,heads[1].y);
+    assert.ok(Math.abs(heads[1].age-heads[0].age+4)<1e-8);
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.length,2);assert.equal(cast.hits.get(target),2);
+  }
+});
+
+test('three Bong Huynh staffs independently damage one overlapping victim in native, quiet and missing FX modes',()=>{
+  for(const mode of ['native','quiet','missing']){
+    const {s,skill}=advancedCombat(),target={x:220,y:0,hp:100000,r:17},hits=[];
+    s.l.quiet=mode==='quiet';if(mode==='missing')delete s.A0.m[s.A0.f[1074].c];
+    const cast=s.queueSkillContact(s.v,target,skill(1074),t=>hits.push(t),{targets:()=>[target],maxHits:()=>1,windup:0});finishAttackPose(s);
+    assert.equal(cast.emitted,3,mode);
+    for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    assert.equal(hits.length,3,mode);assert.equal(cast.hits.get(target),3);
+  }
+});
+
+test('Beggar hits use real F2 components and hs resistance/critical damage in world and SIM',()=>{
+  for(const id of [1073,1074])for(const sim of [false,true])for(const critical of [false,true]){
+    const {s,skill}=advancedCombat(),ability=skill(id,25),count=id===1073?2:3;
+    Object.assign(s,{Math:Object.assign(Object.create(Math),{random:()=>.5}),cw:75,Rn:()=>null,E8(){},y1:()=>false,ea:()=>1,W3(){}});
+    Object.assign(s.l,{P:{heavy:0,res:{}},txt:[]});
+    declaration(s,'src/client/core/state-and-save-01.js','ja');declaration(s,'src/client/core/state-and-save-01.js','hs');
+    ability.crit=critical?100:0;
+    const target={x:220,y:0,hp:100000,max:100000,r:17,animKey:'target',act:'st',res:{phys:20,fire:30},series:3},events=[];
+    const actor=sim?{x:0,y:0,hp:100}:s.v;
+    const hit=(a,t)=>{const before=t.hp,damage=s.hs(a,t);events.push({a,damage,lost:before-t.hp});return damage;};
+    if(sim){
+      const {compileTypeScriptEntry}=require('../tools/build-app');
+      vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','BeggarCast').code,s);
+      s._1=()=>[target];s.F5=()=>[];s.nD=()=>[];s.l8=()=>0;
+      s.BeggarCast.castSimulatorSkill(actor,target,ability,()=>true,()=>[target],hit,fn=>fn());
+    }else s.queueSkillContact(actor,target,ability,(t,a)=>hit(a||ability,t),{targets:()=>[target],windup:0});
+    finishAttackPose(s,actor);for(let i=0;i<180;i++)s.advanceSkillContacts(1/60);
+    const perHit=(ability.parts.phys||0)*.8*(critical?2:1)+(ability.parts.fire||0)*.7;
+    assert.equal(events.length,count,`${id}/${sim}/${critical}`);
+    assert.ok(events.every(event=>Math.abs(event.damage-perHit)<1e-6&&Math.abs(event.lost-perHit)<1e-6));
+    assert.ok(Math.abs(target.hp-(100000-count*perHit))<1e-6);
+    assert.equal(JSON.stringify(ability.parts),JSON.stringify(events[0].a.parts),'no per-hit coefficient increase');
+  }
+});
+
+test('Beggar release, per-ray hit ledgers and expiry survive low FPS, missing images and FX budget limits',()=>{
+  for(const id of [1073,1074])for(const mode of ['native','quiet','missing','budget'])for(const dt of [1/60,.4,2]){
+    const {s,skill}=advancedCombat(),target={x:200,y:0,hp:100000,r:17},hits=[];
+    s.l.quiet=mode==='quiet';if(mode==='missing')delete s.A0.m[s.A0.f[id].c];
+    if(mode==='budget')s.l.fx=Array.from({length:1000},()=>({k:'ring'}));
+    const cast=s.queueSkillContact(s.v,target,skill(id),()=>hits.push(cast.elapsed),{targets:()=>[target],windup:0});finishAttackPose(s);
+    assert.equal(hits.length,0,'release never deals immediate damage');
+    for(let time=0;time<4;time+=dt)s.advanceSkillContacts(dt);
+    assert.equal(hits.length,id===1073?2:3,`${id}/${mode}/${dt}`);
+    assert.equal(s.l.combatProjectiles.length,0);
+    if(id===1073&&dt<.1)assert.ok(hits[1]-hits[0]>=3/18,'rear head hits later, not as a hidden multiplier on the first head');
+  }
+});
+
+test('Luc Long displays two native dragon sprites in eight directions with a four-frame gap',()=>{
+  for(let direction=0;direction<8;direction++){
+    const {s,skill}=advancedCombat(),actor={x:500,y:500,hp:100},angle=direction*Math.PI/4;
+    const target={x:actor.x+Math.cos(angle)*350,y:actor.y+Math.sin(angle)*175,hp:10000,r:17};
+    const cast=s.queueSkillContact(actor,target,skill(1073),()=>{},{targets:()=>[],windup:0});finishAttackPose(s,actor);
+    const heads=s.l.combatProjectiles.filter(e=>e.combat===cast),draws=[];
+    declaration(s,'src/client/render/arena-02.js','Ds');s.Fa=(...args)=>draws.push(args);s.W={globalAlpha:1};
+    heads.forEach(head=>s.YP(head));assert.equal(draws.length,1,'only the first head is initially visible');
+    actor.x+=100;target.x+=200;
+    s.advanceSkillContacts(4/18);draws.length=0;heads.forEach(head=>s.YP(head));
+    assert.equal(draws.length,2);assert.ok(draws.every(draw=>draw[0].f==='fx/advanced/m335_fly.webp'));
+    assert.ok(Math.abs(Math.hypot(heads[0].x-heads[1].x,(heads[0].y-heads[1].y)*2)-160)<1e-6);
+    assert.ok(Math.abs(heads[1].x-500)<1e-6&&Math.abs(heads[1].y-486)<1e-6,'rear head retains the original release position');
+    assert.ok(heads.every(head=>Math.abs(Math.atan2(Math.sin(head.ang-angle),Math.cos(head.ang-angle)))<1e-6));
+    for(let i=0;i<17;i++)s.advanceSkillContacts(1/18);
+    assert.ok(!s.l.combatProjectiles.includes(heads[0]));
+    for(let i=0;i<10;i++)s.advanceSkillContacts(1/18);
+    assert.ok(!s.l.combatProjectiles.includes(heads[1]));
+  }
+});
+
+test('one, two or three staff contacts cause exactly one, two or three hits without per-tick duplicates',()=>{
+  for(const count of [1,2,3]){
+    const {s,skill}=advancedCombat(),ability=skill(1074),target={x:300,y:0,hp:100000,r:17};
+    const cast=s.queueSkillContact(s.v,target,ability,t=>t.hp-=ability.tot,{targets:()=>[target],windup:0,maxHits:()=>1});finishAttackPose(s);
+    const staffs=s.l.combatProjectiles.filter(e=>e.combat===cast);
+    for(const staff of staffs.slice(0,count))for(let tick=0;tick<4;tick++)
+      s.collideCombatEffect(staff,target.x,target.y-14,target.x,target.y-14);
+    assert.equal(cast.hits.get(target),count);
+    assert.ok(Math.abs(target.hp-(100000-count*ability.tot))<1e-6);
   }
 });

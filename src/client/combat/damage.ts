@@ -15,8 +15,8 @@ export function applyContactHit(effect: ContactEffect, target: CombatTarget): bo
   }
   effect.contactHits.add(target);
   const count = cast.hits.get(target) || 0;
-  // Each Nga Mi sword / Ice Peacock blade owns its full contact damage.
-  const independentSword = !cast.skill.ev2 && [328, 336, 1061, 1063].includes(Number(cast.skill.id));
+  // Each counted sword, blade, dragon head and staff owns its full contact damage.
+  const independentSword = !cast.skill.ev2 && [328, 336, 1061, 1063, 1073, 1074].includes(Number(cast.skill.id));
   if (!independentSword && ((!count && cast.hits.size >= cast.maxTargets) || count >= cast.maxHits(target))) return false;
   cast.hits.set(target, count + 1);
   cast.onHit(target);

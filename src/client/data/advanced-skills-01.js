@@ -6646,7 +6646,7 @@
     "aura": 0,
     "radius": 400,
     "child": 335,
-    "childN": 1,
+    "childN": 2,
     "form": 1,
     "hurt": 30,
     "enemy": 1,
@@ -7109,7 +7109,7 @@
   "1074": {
     "id": 1074,
     "n": "Bổng Huýnh Lược Địa",
-    "d": "Nhất Bán Nhi Triền, Ngũ Phách Lục Lược, Cái Bang Đại Thừa Côn Pháp, Công kích mục tiêu liên tục truy kích 5 lần.",
+    "d": "Nhất Bán Nhi Triền, Ngũ Phách Lục Lược, Cái Bang Đại Thừa Côn Pháp, Ba thanh bổng truy kích mục tiêu, mỗi thanh gây sát thương riêng khi va chạm.",
     "prop": "Công kích ngoại công",
     "f": "gaibang",
     "series": 3,
@@ -7121,7 +7121,7 @@
     "aura": 0,
     "radius": 400,
     "child": 336,
-    "childN": 5,
+    "childN": 3,
     "form": 1,
     "hurt": 0,
     "enemy": 1,
@@ -11997,13 +11997,13 @@
     "1073": {
       "c": "advanced-335",
       "form": 1,
-      "num": 1,
+      "num": 2,
       "pre": "advanced-18"
     },
     "1074": {
       "c": "advanced-336",
       "form": 1,
-      "num": 5,
+      "num": 3,
       "pre": "advanced-8"
     },
     "1075": {

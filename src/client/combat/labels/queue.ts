@@ -58,14 +58,15 @@ export function enqueueDamageLabel(labels: FloatingCombatLabel[], target: LabelT
   stack = index.stacks.get(target) || [];
   const window = kind === 'poison' ? Math.max(DAMAGE_LABEL_LAYOUT.poisonMergeWindow, crowded ? BUDGET.denseMergeWindow : 0) :
     crowded ? BUDGET.denseMergeWindow : DAMAGE_LABEL_LAYOUT.mergeWindow;
-  let label = stack.slice().reverse().find(candidate => candidate.kind === kind && candidate.critical === critical &&
+  let label = options.merge === false ? undefined : stack.slice().reverse().find(candidate => candidate.merge !== false && candidate.kind === kind && candidate.critical === critical &&
     candidate.suffix === suffix && candidate.status === status && (candidate.age || 0) <= window);
   if (label) {
     label.amount = (label.amount || 0) + (typeof amount === 'number' ? amount : 0);
     label.hits = (label.hits || 1) + 1;
     remove(labels, index, label);
   } else {
-    const rows = crowded ? BUDGET.denseRows : options.lowFx ? DAMAGE_LABEL_LAYOUT.lowFxRows : DAMAGE_LABEL_LAYOUT.rows;
+    const rows = Math.max(crowded ? BUDGET.denseRows : options.lowFx ? DAMAGE_LABEL_LAYOUT.lowFxRows : DAMAGE_LABEL_LAYOUT.rows,
+      Math.min(DAMAGE_LABEL_LAYOUT.rows, options.minRows || 0));
     while (stack.length >= rows) remove(labels, index, stack[0]);
     const limit = options.lowFx ? BUDGET.lowFx : BUDGET.normal;
     while (labels.length >= limit) {
@@ -80,6 +81,7 @@ export function enqueueDamageLabel(labels: FloatingCombatLabel[], target: LabelT
       size: critical ? 16 : 14, life: 0, target, amount: typeof amount === 'number' ? amount : 0,
       status, kind, critical, suffix, hits: 1, age: 0, priority: options.priority || 0 };
   }
+  if (options.merge === false) label.merge = false;
   label.index = ++nextIndex; label.rise = 0;
   label.life = options.lowFx ? DAMAGE_LABEL_LAYOUT.lowFxLifetime : crowded ? BUDGET.denseLifetime : DAMAGE_LABEL_LAYOUT.lifetime;
   label.t = (label.status ?? String(Math.round(label.amount || 0))) + suffix + (critical ? '!' : '');

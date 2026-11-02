@@ -2003,3 +2003,133 @@ fn hao_hung_children_are_centered_on_the_true_collision_point_in_every_direction
         assert!(found);remove_fixture(g);
     }
 }
+
+#[test]
+fn beggar_each_dragon_head_and_staff_applies_full_independent_pve_damage() {
+    for id in [1073,1074] {for dt in [0.05,0.4,2.0] {for sim in [false,true] {
+        let points=if id==1073 {vec![(220.0,100.0),(300.0,100.0),(220.0,170.0)]}
+            else {vec![(250.0,100.0),(245.0,126.0),(250.0,210.0)]};
+        let mut g=piercing_fixture(&points,if id==1073 {720.0}else{432.0});
+        g.rules.tick_seconds=dt;
+        let source=if sim {g.training_command(training_request(&g,"sim")).unwrap()} else {1};
+        let ids:Vec<_>=g.rooms[&2].mobs.iter().map(|m|m.id).collect();
+        for m in &mut g.rooms.get_mut(&2).unwrap().mobs {m.hp=10000.0;m.def.hp=10000.0;}
+        let p=&mut g.pending[0];p.source=source;p.skill.id=id;p.skill.parts=[60.0,0.0,0.0,40.0,0.0];
+        p.skill.crit=0.0;p.skill.missiles=if id==1073 {2}else{3};
+        let projectile=p.skill.projectile.as_mut().unwrap();
+        projectile.width=16.0;projectile.pierce=id==1073;projectile.homing=id==1074;
+        projectile.area=if id==1074 {96.0*0.81}else{0.0};
+        let count=if id==1073 {2}else{3};let mut events=vec![];
+        for _ in 0..100 {g.advance_attacks(&mut events);}
+        for victim in &ids[..2] {
+            let hits:Vec<_>=events.iter().filter(|e|e.1==2&&e.3==*victim&&e.4==id).collect();
+            assert_eq!(hits.len(),count,"skill={id}, dt={dt}, sim={sim}");
+            assert!(hits.iter().all(|hit|hit.5==100.0),"each contact preserves both damage components");
+        }
+        assert!(!events.iter().any(|e|e.1==2&&e.3==ids[2]));
+        assert_eq!(g.rooms[&2].mobs[0].hp,10000.0-count as f32*100.0);
+        assert!(g.pending.is_empty());remove_fixture(g);
+    }}}
+}
+
+#[test]
+fn beggar_rear_dragon_waits_four_frames_and_does_not_inherit_the_leading_heads_hit_set() {
+    let mut g=piercing_fixture(&[(250.0,100.0)],720.0);
+    g.rooms.get_mut(&2).unwrap().mobs[0].hp=10000.0;
+    let p=&mut g.pending[0];p.skill.id=1073;p.skill.missiles=2;
+    let mut events=vec![];let mut ticks=vec![];
+    for tick in 0..100 {
+        let before=events.len();g.advance_attacks(&mut events);
+        if events.len()>before {ticks.push(tick);}
+    }
+    assert_eq!(ticks.len(),2);assert!((ticks[1]-ticks[0]) as f32*g.rules.tick_seconds>=3.0/18.0);
+    assert_eq!(g.rooms[&2].mobs[0].hp,9980.0);remove_fixture(g);
+}
+
+#[test]
+fn beggar_three_staffs_each_steer_toward_the_live_target() {
+    let mut g=piercing_fixture(&[(300.0,100.0)],432.0);
+    let target=g.rooms[&2].mobs[0].id;g.rooms.get_mut(&2).unwrap().mobs[0].hp=10000.0;
+    let p=&mut g.pending[0];p.skill.id=1074;p.skill.missiles=3;
+    let projectile=p.skill.projectile.as_mut().unwrap();projectile.homing=true;projectile.pierce=false;projectile.area=0.0;
+    let mut events=vec![];for _ in 0..4 {g.advance_attacks(&mut events);}
+    g.rooms.get_mut(&2).unwrap().mobs[0].y=145.0;
+    for _ in 0..100 {g.advance_attacks(&mut events);}
+    assert_eq!(events.iter().filter(|e|e.1==2&&e.3==target&&e.4==1074).count(),3);
+    assert_eq!(g.rooms[&2].mobs[0].hp,9970.0);remove_fixture(g);
+}
+
+#[test]
+fn beggar_each_projectile_also_has_its_own_pvp_hit() {
+    for id in [1073,1074] {
+        let mut g=pvp_fixture();g.rooms.get_mut(&2).unwrap().mobs.clear();
+        {let a=g.actors.get_mut(&2).unwrap();a.x=250.0;a.y=100.0;}
+        let mut skill=g.actors[&1].profile.skills[0].clone();skill.id=id;skill.missiles=if id==1073 {2}else{3};
+        skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.crit=0.0;skill.stun=0.0;skill.cold=0.0;skill.travel=0.4;
+        skill.projectile=Some(LinearProjectile{range:400.0,width:16.0,speed:if id==1073 {720.0}else{432.0},
+            ignore_terrain:false,pierce:id==1073,area:0.0,homing:id==1074});
+        g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),aim:None,
+            flight:Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)))});
+        let mut events=vec![];for _ in 0..100 {g.advance_attacks(&mut events);}
+        let count=if id==1073 {2}else{3};
+        assert_eq!(events.iter().filter(|e|e.1==2&&e.3==2&&e.4==id).count(),count);
+        assert_eq!(g.actors[&2].hp,200.0-count as f32*20.0);remove_fixture(g);
+    }
+}
+
+#[test]
+fn beggar_online_confirmation_preserves_each_authoritative_hit_and_rejects_report_replays() {
+    for id in [1073,1074] {for early in [false,true] {
+        let mut g=piercing_fixture(&[(250.0,100.0)],if id==1073 {720.0}else{432.0});
+        let target=g.rooms[&2].mobs[0].id;g.rooms.get_mut(&2).unwrap().mobs[0].hp=10000.0;
+        let skill={
+            let p=&mut g.pending[0];p.skill.id=id;p.skill.missiles=if id==1073 {2}else{3};
+            let projectile=p.skill.projectile.as_mut().unwrap();projectile.width=16.0;projectile.pierce=id==1073;projectile.homing=id==1074;
+            p.skill.clone()
+        };
+        g.actors.get_mut(&1).unwrap().profile.skills=vec![skill];
+        g.event(2,1,1,target,id,0.0,0);
+        let cast=g.events.iter().find(|event|event.kind==1&&event.source==1).unwrap().id;
+        let report=cmd(0,16,2,target,id,(cast&65535) as f32,(cast>>16) as f32);
+        let mut events=vec![];
+        g.confirm_contact(2,&report);g.resolve_contacts(&mut events);
+        if early {g.confirm_contact(1,&report);}
+        assert_eq!(g.rooms[&2].mobs[0].hp,10000.0,"a report cannot create an authoritative collision");
+        for _ in 0..100 {g.advance_attacks(&mut events);g.resolve_contacts(&mut events);}
+        if !early {
+            assert_eq!(g.rooms[&2].mobs[0].hp,10000.0,"server collisions wait for client display confirmation");
+            g.confirm_contact(1,&report);g.resolve_contacts(&mut events);
+        }
+        let count=if id==1073 {2}else{3};
+        assert_eq!(g.rooms[&2].mobs[0].hp,10000.0-count as f32*10.0,"online skill {id}");
+        assert_eq!(events.iter().filter(|e|e.1==2&&e.3==target&&e.4==id).count(),count);
+        for _ in 0..10 {g.confirm_contact(1,&report);g.resolve_contacts(&mut events);}
+        assert_eq!(g.rooms[&2].mobs[0].hp,10000.0-count as f32*10.0,"replaying confirmations cannot multiply the validated hits");
+        remove_fixture(g);
+    }}
+}
+
+#[test]
+fn beggar_online_pvp_needs_both_confirmations_but_keeps_all_projectile_hits() {
+    for id in [1073,1074] {
+        let mut g=pvp_fixture();g.rooms.get_mut(&2).unwrap().mobs.clear();
+        {let a=g.actors.get_mut(&2).unwrap();a.x=250.0;a.y=100.0;}
+        let mut skill=g.actors[&1].profile.skills[0].clone();skill.id=id;skill.missiles=if id==1073 {2}else{3};
+        skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.crit=0.0;skill.stun=0.0;skill.cold=0.0;skill.travel=0.4;
+        skill.projectile=Some(LinearProjectile{range:400.0,width:16.0,speed:if id==1073 {720.0}else{432.0},
+            ignore_terrain:false,pierce:id==1073,area:0.0,homing:id==1074});
+        g.actors.get_mut(&1).unwrap().profile.skills=vec![skill.clone()];
+        g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),aim:None,
+            flight:Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)))});
+        g.event(2,1,1,2,id,0.0,0);
+        let cast=g.events.iter().find(|e|e.kind==1&&e.source==1).unwrap().id;
+        let report=cmd(0,16,2,2,id,(cast&65535) as f32,(cast>>16) as f32);
+        g.confirm_contact(1,&report);let mut events=vec![];
+        for _ in 0..100 {g.advance_attacks(&mut events);g.resolve_contacts(&mut events);}
+        assert_eq!(g.actors[&2].hp,200.0,"the victim must also display the impact");
+        g.confirm_contact(2,&report);g.resolve_contacts(&mut events);
+        let count=if id==1073 {2}else{3};assert_eq!(g.actors[&2].hp,200.0-count as f32*20.0);
+        for _ in 0..10 {g.confirm_contact(1,&report);g.confirm_contact(2,&report);g.resolve_contacts(&mut events);}
+        assert_eq!(g.actors[&2].hp,200.0-count as f32*20.0);remove_fixture(g);
+    }
+}

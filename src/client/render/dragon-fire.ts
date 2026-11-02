@@ -5,7 +5,7 @@ const FIRE_DELAY = 4 / 18;
 /** Original fly event 1103 (missile 344): leave one flame at each movement
  * frame, visible four frames after the head passes. The small core (1101)
  * follows the same path independently so it can finish after the head expires.
- * Both layers are visual only; the piercing dragon owns all damage. */
+ * Both layers are visual only; the two piercing heads own their independent hits. */
 export function spawnDragonFlame(effect: SpriteMissile & ContactEffect, step: number): void {
   if (Number(effect.combat.skill.id) !== 1073 || l.quiet) return;
   const queue = l.fxQ || (l.fxQ = []);

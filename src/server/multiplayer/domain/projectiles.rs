@@ -14,6 +14,7 @@ pub(super) struct Flight {
     origin: (f32, f32),
     direction: (f32, f32),
     traveled: f32,
+    release_delay: f32,
     hits: BTreeSet<(u32, u32)>,
 }
 impl Flight {
@@ -44,8 +45,36 @@ impl Flight {
                 (1.0, 0.0)
             },
             traveled: 0.0,
+            release_delay: 0.0,
             hits: BTreeSet::new(),
         }
+    }
+    /// Two delayed dragon heads or three independent homing staffs per cast.
+    pub(super) fn advance_beggar(&mut self, id:u16, geometry:&LinearProjectile,
+        nav:&Navigation, bodies:&[Body], dt:f32, aim:Option<(f32,f32)>)->(bool,Vec<u32>) {
+        let rays=self.swords.get_or_insert_with(|| {
+            let (c,s)=self.direction;
+            if id==1073 {
+                return [0.0,4.0/18.0].into_iter().map(|delay| {
+                    let mut ray=Self::new(self.origin,(self.origin.0+c*100.0,self.origin.1+s*50.0));
+                    ray.release_delay=delay;ray
+                }).collect();
+            }
+            [-24.0,0.0,24.0].into_iter().map(|side| {
+                let origin=(self.origin.0-s*side,self.origin.1+c*side/2.0);
+                Self::new(origin,(origin.0+c*100.0,origin.1+s*50.0))
+            }).collect()
+        });
+        let mut contacts=Vec::new();
+        rays.retain_mut(|ray| {
+            let step=(dt-ray.release_delay).max(0.0);
+            ray.release_delay=(ray.release_delay-dt).max(0.0);
+            if step<=0.0 {return true;}
+            if let Some(target)=aim.filter(|_|geometry.homing) {ray.steer(target,step);}
+            let (alive,hits)=ray.advance_bodies(geometry,nav,bodies,step);
+            contacts.extend(hits);alive
+        });
+        (!rays.is_empty(),contacts)
     }
     /// Each sword has its own sweep and contact set, including shared victims.
     pub(super) fn advance_swords(&mut self, id:u16, count:u8, geometry:&LinearProjectile,

@@ -53,3 +53,54 @@ test('catalog uses native cold/poison defaults and includes equipment stun modif
   }
  }
 });
+
+test('online Luc Long keeps two damage numbers when both server hits arrive in one WORLD packet',()=>{
+ const f=view();require('./helpers/combat-engine').loadCombatEngine(f.s);
+ const hits=[4000,4100].map((value,i)=>({id:i+1,source:1,target:2,skill:1073,kind:2,value,
+  hit:{element:'fire',critical:false,hurt:false,dot:false}}));
+ f.packet({...f.monster,hp:91900,maxHp:100000},hits);
+ const labels=f.s.l.txt.filter(label=>label.target===f.s.l.enemies[0]);
+ assert.equal(f.s.l.enemies[0].hp,91900,'HP comes from the authoritative two-hit result');
+ assert.equal(labels.length,2,'do not sum both dragon heads into one floating number');
+ assert.deepEqual(labels.map(label=>label.amount),[4000,4100]);
+ assert.ok(labels.every(label=>label.hits===1));assert.notEqual(labels[0].y,labels[1].y);
+ f.packet({...f.monster,hp:91900,maxHp:100000},hits);
+ assert.equal(f.s.l.txt.filter(label=>label.target===f.s.l.enemies[0]).length,2,'repeated WORLD packets must not replay hits');
+});
+
+test('crowded and low-FX online Beggar hits retain one visible number per validated projectile',()=>{
+ for(const id of [1073,1074])for(const lowFx of [false,true]){
+  const f=view();require('./helpers/combat-engine').loadCombatEngine(f.s);f.s.o.lowFx=lowFx;
+  for(let i=0;i<24;i++)f.s.showDamageNumber({x:i,y:i},1,'fire');
+  const count=id===1073?2:3,hits=Array.from({length:count},(_,i)=>({id:i+1,source:1,target:2,skill:id,kind:2,value:4000+i*100,
+   hit:{element:'fire',critical:false,hurt:false,dot:false}}));
+  f.packet({...f.monster,hp:100000,maxHp:100000},[hits[0]]);
+  f.s.CombatEngine.updateDamageLabels(f.s.l.txt,.22);
+  f.packet({...f.monster,hp:100000,maxHp:100000},hits.slice(1));
+  const labels=f.s.l.txt.filter(label=>label.target===f.s.l.enemies[0]);
+  assert.equal(labels.length,count,`${id}/${lowFx}`);
+  assert.ok(labels.every(label=>label.hits===1));assert.equal(new Set(labels.map(label=>label.y)).size,count);
+ }
+});
+
+test('online player targets stack both dragon hits separately rather than painting them at identical coordinates',()=>{
+ const f=view();require('./helpers/combat-engine').loadCombatEngine(f.s);f.s.pvpDamageDisplay.set(true);
+ const frame=(x,events)=>f.s.onlineWorld.snapshot({self:1,map:140,ack:1,actors:[{id:1,hp:100,mp:20,maxHp:100,maxMp:20,farming:false},
+  {id:2,x,y:100,hp:9000,maxHp:10000,battlefieldKind:0}],monsters:[],loot:[],events});
+ const hit=id=>({id,source:1,target:2,skill:1073,kind:2,value:4000,hit:{element:'fire',critical:false,hurt:false,dot:false}});
+ frame(100,[hit(1),hit(2)]);
+ assert.equal(f.s.l.txt.length,2);assert.notEqual(f.s.l.txt[0].y,f.s.l.txt[1].y,'rows must share the same recipient identity');
+ assert.equal(f.s.l.txt[0].target,f.s.l.txt[1].target);
+ frame(120,[]);f.s.CombatEngine.updateDamageLabels(f.s.l.txt,.016);
+ assert.ok(f.s.l.txt.every(label=>label.x===120),'both rows follow the live online target');
+});
+
+test('ordinary online damage and poison retain their existing merge policy',()=>{
+ for(const [skill,dot,element] of [[321,false,'phys'],[1073,true,'poison']]){
+  const f=view();require('./helpers/combat-engine').loadCombatEngine(f.s);
+  const hits=[100,200].map((value,i)=>({id:i+1,source:1,target:2,skill,kind:2,value,
+   hit:{element,critical:false,hurt:false,dot}}));
+  f.packet(f.monster,hits);
+  assert.equal(f.s.l.txt.length,1);assert.equal(f.s.l.txt[0].amount,300);assert.equal(f.s.l.txt[0].hits,2);
+ }
+});

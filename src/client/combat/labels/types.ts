@@ -15,6 +15,8 @@ export interface FloatingCombatLabel {
   critical?: boolean;
   suffix?: string;
   hits?: number;
+  /** Independent projectile hits stay separate through queueing and crowd culling. */
+  merge?: boolean;
   age?: number;
   index?: number;
   rise?: number;
@@ -24,6 +26,8 @@ export interface FloatingCombatLabel {
 }
 
 export interface LabelOptions {
+  merge?: boolean;
+  minRows?: number;
   quiet?: boolean;
   lowFx?: boolean;
   critical?: boolean;

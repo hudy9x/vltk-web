@@ -52,11 +52,11 @@ var pvpDamageDisplay=(()=>{
   return {get enabled(){return enabled;},set(value){enabled=!!value;try{window.localStorage?.setItem('__volam_pvp_damage',enabled?'1':'0');}catch{}if(typeof l!=='undefined')l.txt=[];}};
 })();
 // Feed raw damage and the recipient into the display queue, after HP is resolved.
-var showDamageNumber = function (target, amount, kind = "phys", critical = false, suffix = "") {
+var showDamageNumber = function (target, amount, kind = "phys", critical = false, suffix = "", presentation = {}) {
   const person=target?.playerDamage||target?.arenaSim||target?.onlinePlayer||target?.battlefieldPlayer||(target?.battlefieldKind!==undefined&&target.battlefieldKind<2)||(typeof v!=='undefined'&&target===v);
   if(person&&!pvpDamageDisplay.enabled)return;
   return CombatEngine.enqueueDamageLabel(l.txt || (l.txt = []), target, amount, kind,
-    { critical, suffix, quiet: l.quiet, lowFx: o.lowFx, context: typeof W !== "undefined" ? W : undefined,
+    { ...presentation, critical, suffix, quiet: l.quiet, lowFx: o.lowFx, context: typeof W !== "undefined" ? W : undefined,
       priority: typeof v !== "undefined" && target === v ? 3 : target === l.tgt || target === l.manTgt ? 2 : target.cls === "boss" ? 1 : 0,
       viewport: typeof B0 !== "undefined" && typeof M0 !== "undefined"
         ? { x: B0.x, y: B0.y, width: M0.w, height: M0.h } : undefined });
