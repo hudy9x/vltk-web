@@ -1,4 +1,5 @@
-import { getMap, isMapAvailable } from '../catalog';
+import { resolveMonsterBalance } from '../monster-balance';
+import { getMap, getEncounter, encounters, isMapAvailable } from '../catalog';
 import type { NavigationRuntime } from '../runtime';
 import { FIELD_POLICY as policy, generateFieldPoints, randomBetween } from './generate';
 import type { FieldEnemy, FieldHost, FieldPoint } from './types';
@@ -7,8 +8,19 @@ import type { FieldEnemy, FieldHost, FieldPoint } from './types';
 export function createFieldRuntime(navigation: NavigationRuntime, host: FieldHost, random: () => number = Math.random) {
   function spawn(point: FieldPoint): void {
     if (!isMapAvailable(host.zone().id)) return;
-    const enemy = host.createEnemy(point);
+    const map=getMap(host.zone().id);
+    const authoredSpawn=map?.spawns.find(s=>point.spawnId?s.id===point.spawnId:s.position.x===point.x&&s.position.y===point.y&&s.rank===point.cls);
+    const profile=authoredSpawn?getEncounter(authoredSpawn.encounterId):map?.encounterId?getEncounter(map.encounterId):encounters.find(p=>p.mapId===map?.id);
+    const balance=profile?.monsterProfiles?.[point.tid];
+    const level=authoredSpawn?.level ?? (balance||authoredSpawn?Math.max(1,profile?.levelRange[0]||1):undefined);
+    const enemy = host.createEnemy(level===undefined?point:{...point,level});
     if (point.cls === 'normal') { enemy.dens = true; enemy.dmg *= policy.normalDamageScale; }
+    if(balance&&profile){
+      const settings=resolveMonsterBalance(balance,profile.levelRange[0],level!);
+      enemy.L=level;enemy.hp=enemy.max=settings.hp;enemy.dmg=settings.damage;enemy.def=settings.defense;enemy.spd=settings.speed;
+      enemy.res=Object.fromEntries(['phys','poison','cold','fire','light'].map((key,i)=>[key,settings.res[i]]));
+      enemy.configuredXp=settings.xp;enemy.configuredAttack=settings.attack;enemy.reach=settings.attack.range;enemy.cd=settings.attack.cooldown;enemy.ranged=settings.attack.range>90;
+    }
     enemy.home = point; enemy.aggro = false; enemy.wT = randomBetween(random, 0, 3);
     point.e = enemy; point.t = 0; host.enemies().push(enemy);
     if (point.cls === 'boss') host.announceBoss(enemy, point);

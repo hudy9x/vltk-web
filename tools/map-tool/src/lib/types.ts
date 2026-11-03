@@ -40,6 +40,7 @@ export interface Monster {
 export interface Workspace {
   root: string;
   maps: MapDefinition[];
+  mapsWithArtwork?: number[];
   projects: Record<string, EditorProject>;
   encounters: EncounterDefinition[];
   progression: ProgressionEntry[];

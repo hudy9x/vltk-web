@@ -1015,3 +1015,45 @@
 .sound-disable-toggle[aria-pressed="true"] { color: var(--primary); background: #ddbd7e0d; }
 .skill-sound-table tr.sound-disabled td, .skill-sound-table tr.sound-disabled .sound-row-skill, .skill-sound-table tr.sound-disabled .sound-row-review { opacity: .38; }
 .sound-disabled .sound-row-review button:disabled { cursor: default; }
+
+.monster-tool-shell { height: 100%; display: flex; flex-direction: column; }
+.monster-tool-content { overflow: auto; padding: 24px; width: 100%; max-width: 980px; margin: 0 auto; }
+.monster-tool-content .two-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.monster-tool-content .monster-pool { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Monsters: browse maps on the left, edit the selected monster on the right. */
+.monster-tool-content { flex: 1; min-height: 0; max-width: none; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.monster-catalog-tabs { flex: 1; min-height: 0; gap: 0; }
+.monster-catalog-layout { display: grid; grid-template-columns: 290px minmax(0,1fr); flex: 1; min-height: 0; overflow: hidden; }
+.monster-map-sidebar { min-height: 0; display: flex; flex-direction: column; border-right: 1px solid var(--border); background: #121315; }
+.monster-map-heading { display: flex; justify-content: space-between; align-items: center; padding: 20px 16px 12px; font-size: 12px; }
+.monster-map-heading > span { color: var(--muted-foreground); font-size: 11px; }
+.monster-map-search { display: flex; align-items: center; gap: 8px; margin: 0 12px 12px; color: var(--muted-foreground); }
+.monster-map-search input { min-width: 0; }
+.monster-map-list { min-height: 0; overflow-y: auto; padding: 0 10px 12px; }
+.monster-map-card { width: 100%; display: flex; gap: 12px; align-items: center; text-align: left; padding: 10px; margin-bottom: 5px; border: 1px solid transparent; border-radius: 8px; transition: background .12s,border-color .12s; cursor: pointer; }
+.monster-map-card:hover, .monster-choice-card:hover { background: #ffffff08; border-color: #ffffff24; }
+.monster-map-card[aria-pressed="true"], .monster-choice-card[aria-pressed="true"] { border-color: #bfa266; background: #bfa26612; }
+.monster-map-preview { display: flex; align-items: center; justify-content: center; flex: 0 0 76px; height: 56px; overflow: hidden; border-radius: 5px; background: #24262a; color: #80765e; }
+.monster-map-preview img { width: 100%; height: 100%; object-fit: cover; }
+.monster-map-caption { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.monster-map-caption strong { font-size: 12px; line-height: 1.35; }
+.monster-map-caption > span { font-size: 11px; color: #c0a66e; }
+.monster-map-caption small { color: var(--muted-foreground); font-size: 10px; overflow-wrap: anywhere; }
+.monster-settings-panel { min-width: 0; overflow-y: auto; padding: 28px 32px 40px; }
+.monster-settings-panel > section, .monster-settings-heading { max-width: 980px; margin-inline: auto; }
+.monster-settings-heading { margin-bottom: 24px; }
+.monster-settings-heading h2 { font-size: 20px; font-weight: 600; line-height: 1.4; }
+.monster-settings-heading p { color: var(--muted-foreground); font-size: 12px; margin-top: 5px; }
+.monster-choice-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(126px,1fr)); gap: 10px; }
+.monster-choice-card { min-width: 0; position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 10px 14px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: background .12s,border-color .12s; }
+.monster-choice-card .monster-thumbnail { width: 56px; height: 56px; background: #ffffff05; }
+.monster-choice-card .monster-thumbnail img { width: 100%; height: 100%; object-fit: contain; }
+.monster-choice-name { font-size: 12px; font-weight: 500; line-height: 1.4; text-align: center; }
+.monster-choice-badge { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: #d9ac67; }
+.monster-map-card:focus-visible, .monster-choice-card:focus-visible { outline: 2px solid #d9bd7e; outline-offset: 2px; }
+.monster-tool-status { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 11px; }
+@media (max-width: 900px) { .monster-catalog-layout { grid-template-columns: 235px minmax(0,1fr); } .monster-settings-panel { padding: 20px; } .monster-map-preview { flex-basis: 56px; height: 48px; } }
+.monster-range-list { display: flex; flex-wrap: wrap; gap: 8px; max-width: 980px; margin: 0 auto 20px; }
+.monster-bulk-editor { max-width: 980px; margin: 0 auto 24px; }
+.monster-bulk-editor .monster-range-list { margin-bottom: 0; }

@@ -80,10 +80,10 @@ impl Game {
                         .map_or(0, |(id, _)| *id);
                 }
                 let destination = if let Some(a) = self.actors.get_mut(&m.target) {
-                    if distance(m.x, m.y, a.x, a.y) < 45.0 && room.nav.clear(m.x, m.y, a.x, a.y) {
+                    if distance(m.x, m.y, a.x, a.y) < m.def.attack.range && room.nav.clear(m.x, m.y, a.x, a.y) {
                         if m.cd <= 0.0 {
                             let amount = combat::damage(
-                                &[m.def.damage, 0.0, 0.0, 0.0, 0.0],
+                                &m.def.attack.parts(m.def.damage),
                                 a.profile.defense,
                                 &a.profile.res,
                             );
@@ -94,8 +94,8 @@ impl Game {
                                 events.push((map,2,m.target,m.id,0,lost,0));
                                 if m.hp<=0.0{deaths.push((map,m.id,m.target));}
                             }
-                            m.cd = 1.5;
-                            events.push((map, 2, m.id, m.target, 0, amount, 0));
+                            m.cd = m.def.attack.cooldown;
+                            events.push((map, 2, m.id, m.target, 0, amount, m.def.attack.hit_kind()));
                             if a.hp <= 0.0 {
                                 a.move_goal = None;
                                 a.dead = self.rules.player_respawn_seconds;

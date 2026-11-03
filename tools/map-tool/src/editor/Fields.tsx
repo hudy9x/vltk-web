@@ -13,6 +13,7 @@ export function NumberField({
   value,
   onChange,
   step = 1,
+  integer = false,
   min,
   max,
 }: {
@@ -20,6 +21,7 @@ export function NumberField({
   value: number;
   onChange(value: number): void;
   step?: number;
+  integer?: boolean;
   min?: number;
   max?: number;
 }) {
@@ -36,14 +38,17 @@ export function NumberField({
         max={max}
         onChange={(event) => setText(event.target.value)}
         onBlur={() => {
-          const next = Number(text);
+          const parsed = Number(text);
+          const next = integer ? Math.round(parsed) : parsed;
           if (
             text.trim() &&
             Number.isFinite(next) &&
             (min === undefined || next >= min) &&
             (max === undefined || next <= max)
-          )
+          ) {
+            if (integer) setText(String(next));
             onChange(next);
+          }
           else setText(String(value));
         }}
         onKeyDown={(event) => {

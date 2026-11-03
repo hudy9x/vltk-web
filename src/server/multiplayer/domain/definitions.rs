@@ -147,12 +147,34 @@ pub struct MonsterDefinition {
     pub res: [f32; 5],
     #[serde(default = "no_series")]
     pub series: i8,
+    #[serde(default)]
+    pub attack: MonsterAttack,
     pub xp: u32,
     pub gold: u32,
     #[serde(default, rename = "goldMin")]
     pub gold_min: Option<u32>,
     #[serde(default, rename = "respawnSeconds")]
     pub respawn_seconds: Option<f32>,
+}
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MonsterAttack {
+    pub element: String,
+    pub range: f32,
+    pub cooldown: f32,
+}
+impl Default for MonsterAttack {
+    fn default() -> Self { Self { element: "phys".into(), range: 45.0, cooldown: 1.5 } }
+}
+impl MonsterAttack {
+    pub fn parts(&self, damage: f32) -> [f32;5] {
+        let mut parts=[0.0;5];
+        let index=match self.element.as_str(){"poison"=>1,"cold"=>2,"fire"=>3,"light"=>4,_=>0};
+        parts[index]=damage;parts
+    }
+    pub fn hit_kind(&self) -> u8 {
+        match self.element.as_str(){"poison"=>1,"cold"=>2,"fire"=>3,"light"=>4,_=>0}
+    }
 }
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

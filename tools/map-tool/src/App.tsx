@@ -1,3 +1,5 @@
+import { GameplayPanel } from '@/editor/GameplayPanel';
+import { Tabs } from '@/components/ui/tabs';
 import { stageLayerImage } from "@/lib/image-editing";
 import { SoundTool } from "@/editor/SoundTool";
 import { removeNpc } from '../../../src/client/npcs';
@@ -147,7 +149,12 @@ export default function App() {
   const dirty = !!document && documentKey(document) !== baseline;
   const state = useRef({ document, dirty, busy });
   state.current = { document, dirty, busy };
-  const [activeTool, setActiveTool] = useState<'map' | 'sound'>('map');
+  const [activeTool, setActiveTool] = useState<'map' | 'sound' | 'monsters'>(() => location.hash === '#/monsters' ? 'monsters' : location.hash === '#/sound' ? 'sound' : 'map');
+  useEffect(() => { history.replaceState(null, '', `#/${activeTool === 'map' ? 'maps' : activeTool}`); }, [activeTool]);
+  useEffect(() => {
+    const route = () => setActiveTool(location.hash === '#/monsters' ? 'monsters' : location.hash === '#/sound' ? 'sound' : 'map');
+    window.addEventListener('hashchange', route); return () => window.removeEventListener('hashchange', route);
+  }, []);
   const [soundEpoch, setSoundEpoch] = useState(0);
   const soundState = useRef({ dirty: false, busy: false });
   const activeToolRef = useRef(activeTool); activeToolRef.current = activeTool;
@@ -315,6 +322,10 @@ export default function App() {
   handlers.current = { save, undo, redo, removeSelection, requestTransition };
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
+      if (activeToolRef.current === 'monsters') {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') { event.preventDefault(); void handlers.current.save(); }
+        return;
+      }
       if (activeToolRef.current !== 'map' || soundState.current.busy) return;
       if (state.current.busy) return;
       const key = event.key.toLowerCase();
@@ -564,6 +575,7 @@ export default function App() {
         <nav className="tool-rail" aria-label="Công cụ workspace">
           <div className="tool-rail-brand">VL</div>
           <button aria-label="Map Tool" aria-pressed={activeTool === 'map'} onClick={() => setActiveTool('map')}><MapIcon size={22} /><span>Map</span></button>
+          <button aria-label="Monsters Tool" aria-pressed={activeTool === 'monsters'} onClick={() => setActiveTool('monsters')}><CircleDot size={22}/><span>Monsters</span></button>
           <button aria-label="Sound Tool" aria-pressed={activeTool === 'sound'} onClick={() => setActiveTool('sound')}><Volume2 size={22} /><span>Sound</span></button>
         </nav>
         <div className="tool-pages">
@@ -967,6 +979,12 @@ export default function App() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+        </div>
+        <div className="tool-page" hidden={activeTool !== 'monsters'}>
+          <div className="editor-shell dark monster-tool-shell">
+            <header className="app-header"><div className="brand"><strong>Monsters</strong><span>Cấu hình quái và EXP theo dải cấp</span></div><Button disabled={!dirty || !!busy} onClick={()=>void save()}><Save/> Lưu cấu hình{dirty?' *':''}</Button></header>
+            <main className="monster-tool-content">{document&&workspace?<Tabs defaultValue="gameplay" className="monster-catalog-tabs"><GameplayPanel document={document} workspace={workspace} assets={assets} onEdit={edit} mode="monsters"/></Tabs>:<p>Mở workspace trong mục Map để cấu hình quái.</p>}{error&&<p role="alert" className="monster-tool-status">{error}</p>}<footer className="monster-tool-status"><span>{busy || message}</span><span>Khởi động lại server online và tải lại game sau khi lưu.</span></footer></main>
+          </div>
         </div>
         <div className="tool-page" hidden={activeTool !== 'sound'}>
           <SoundTool key={`${workspace?.root || ''}:${soundEpoch}`} root={workspace?.root || null} active={activeTool === 'sound'} onState={onSoundState} onWorkspace={() => requestTransition(() => { setActiveTool('map'); setWorkspaceDialog(true); }, true)} />

@@ -33,7 +33,18 @@ export function validate(document: EditorInput, availableAssets: string[]): void
   for (const profile of document.encounters) {
     if (profiles.has(profile.id)) throw new Error(`Encounter trùng ID: ${profile.id}`);
     profiles.add(profile.id);
-    for (const id of [...profile.monsterIds, profile.bossId]) if (!monsters.has(id)) throw new Error(`Không tìm thấy quái #${id}.`);
+    for (const id of [...profile.monsterIds, profile.bossId, ...Object.keys(profile.monsterProfiles || {}).map(Number)]) if (!monsters.has(id)) throw new Error(`Không tìm thấy quái #${id}.`);
+  }
+  // Changing a shared range must remain valid for every map that references it.
+  const catalog = new Map(document.encounters.map(profile=>[profile.id,profile]));
+  for (const id of fs.readdirSync(path.join(root,'src/client/maps/content')).filter(id=>/^\d+$/.test(id))) {
+    const candidate = Number(id) === document.map.id ? document.map : JSON.parse(fs.readFileSync(path.join(root,'src/client/maps/content',id,'map.json'),'utf8')) as MapDefinition;
+    if(candidate.encounterId&&!catalog.has(candidate.encounterId))throw new Error(`Map ${id}: cấu hình quái không tồn tại.`);
+    for(const spawn of candidate.spawns){
+      const profile=catalog.get(spawn.encounterId);
+      if(!profile)throw new Error(`Map ${id}: spawn ${spawn.id} thiếu cấu hình quái.`);
+      if(spawn.level!==undefined&&(!Number.isInteger(spawn.level)||spawn.level<Math.max(1,profile.levelRange[0])||spawn.level>profile.levelRange[1]))throw new Error(`Map ${id}: cấp của spawn ${spawn.id} nằm ngoài dải quái.`);
+    }
   }
   const oldProgression = JSON.parse(fs.readFileSync(path.join(root, 'src/client/maps/progression.json'), 'utf8')) as { mapId: number; alternateMapIds: number[] }[];
   for (let i = 0; i < oldProgression.length; i++) if (document.progression[i]?.mapId !== oldProgression[i].mapId) throw new Error('Không được đảo hoặc xóa thứ tự progression đang có.');

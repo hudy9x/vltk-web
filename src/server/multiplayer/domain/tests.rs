@@ -2133,3 +2133,36 @@ fn beggar_online_pvp_needs_both_confirmations_but_keeps_all_projectile_hits() {
         assert_eq!(g.actors[&2].hp,200.0-count as f32*20.0);remove_fixture(g);
     }
 }
+
+#[test]
+fn configured_monster_attack_uses_its_element_range_and_cooldown() {
+    let mut g=game();field(&mut g);
+    g.actors.get_mut(&2).unwrap().map=1;
+    let a=g.actors.get_mut(&1).unwrap();a.profile.res=[0.0,0.0,50.0,0.0,0.0];a.hp=200.0;
+    let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];
+    m.x=220.0;m.y=100.0;m.home=(220.0,100.0);m.target=1;m.cd=0.0;
+    m.def.damage=100.0;
+    m.def.attack=serde_json::from_value(serde_json::json!({"element":"cold","range":200,"cooldown":3})).unwrap();
+    let mut events=vec![];g.advance_monsters(&mut events);
+    assert_eq!(g.actors[&1].hp,150.0);
+    assert_eq!(g.rooms[&2].mobs[0].cd,3.0);
+    assert!(events.iter().any(|e|e.1==2&&e.3==1&&e.5==50.0&&e.6==2));
+    g.advance_monsters(&mut events);assert_eq!(g.actors[&1].hp,150.0);
+    let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];m.cd=0.0;m.def.attack=Default::default();
+    g.advance_monsters(&mut events);assert_eq!(g.actors[&1].hp,150.0,"default melee cannot hit at 120px");
+    remove_fixture(g);
+}
+
+#[test]
+fn authored_monster_experience_is_journaled_once_after_real_combat() {
+    let mut g=game();field(&mut g);
+    g.actors.get_mut(&2).unwrap().map=1;
+    let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];
+    m.def.xp=225000;m.def.res=[0.0,0.0,50.0,0.0,0.0];m.def.hp=20.0;m.hp=20.0;
+    let mob=m.id;
+    g.command(1,cmd(2,3,2,mob,1,0.0,0.0)).unwrap();
+    for _ in 0..35 {client_step(&mut g);}
+    let grants:Vec<_>=g.outbox.pending.values().filter(|r|r.xp>0).collect();
+    assert_eq!(grants.len(),1);assert_eq!(grants[0].xp,225000);assert_eq!(grants[0].account,"account-a");
+    remove_fixture(g);
+}

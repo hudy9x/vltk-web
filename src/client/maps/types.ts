@@ -1,3 +1,13 @@
+export interface MonsterBalance {
+  hp: number;
+  damage: number;
+  defense: number;
+  speed: number;
+  res: [number, number, number, number, number];
+  xp: number;
+  attack: { element: 'phys' | 'poison' | 'cold' | 'fire' | 'light'; range: number; cooldown: number };
+  growth: { hp: number; damage: number; defense: number; xp: number };
+}
 /** Pixel coordinates in the existing world projection; Y increases downwards. */
 export interface Point { x: number; y: number }
 export interface Size { width: number; height: number }
@@ -28,6 +38,8 @@ export interface MapSpawn {
   encounterId: string;
   rank: MonsterRank;
   initialDelaySeconds: number;
+  /** Defaults to the first level of the selected encounter. */
+  level?: number;
 }
 export interface MapNpc {
   id: string;
@@ -48,6 +60,7 @@ export interface MapDefinition {
   layers: MapLayer[];
   navigation: NavigationDefinition;
   /** Omitted: legacy auto mode (fixed when spawns is nonempty). */
+  encounterId?: string;
   spawnMode?: 'procedural' | 'fixed';
   spawns: MapSpawn[];
   /** Reusable NPC instances. Omitted uses the shared legacy layout; [] is intentionally empty. */
@@ -62,6 +75,7 @@ export interface EncounterDefinition {
   monsterIds: number[];
   bossId: number;
   equipmentElementWeights: [number, number, number, number, number];
+  monsterProfiles?: Record<string, MonsterBalance>;
   alternate?: boolean;
 }
 export interface ProgressionEntry { mapId: number; alternateMapIds: number[] }

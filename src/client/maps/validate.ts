@@ -1,3 +1,4 @@
+import { resolveMonsterBalance, validateMonsterBalance } from './monster-balance';
 import type { EncounterDefinition, MapDefinition } from './types';
 import { getNpc } from '../npcs';
 
@@ -26,6 +27,7 @@ export function parseMapDefinition(value: unknown): MapDefinition {
   positive(map.id, `${path}.id`);
   if (!Number.isInteger(map.id)) throw new Error(`${path}.id: expected integer`);
   text(map.name, `${path}.name`);
+  if (map.encounterId !== undefined) text(map.encounterId, `${path}.encounterId`);
   const size = record(map.size, `${path}.size`);
   positive(size.width, `${path}.size.width`); positive(size.height, `${path}.size.height`);
   point(map.entry, `${path}.entry`);
@@ -84,6 +86,7 @@ export function parseMapDefinition(value: unknown): MapDefinition {
     const position = record(spawn.position, `${path}.spawn.position`);
     if (Number(position.x) < 0 || Number(position.y) < 0 || Number(position.x) >= size.width || Number(position.y) >= size.height) throw new Error(`${path}: spawn outside map`);
     if (!['normal', 'elite', 'boss'].includes(String(spawn.rank))) throw new Error(`${path}: invalid spawn rank`);
+    if (spawn.level !== undefined && (!Number.isInteger(spawn.level) || Number(spawn.level) < 1 || Number(spawn.level) > 200)) throw new Error(`${path}: invalid spawn level`);
     if (typeof spawn.initialDelaySeconds !== 'number' || !Number.isFinite(spawn.initialDelaySeconds) || spawn.initialDelaySeconds < 0) throw new Error(`${path}: invalid spawn delay`);
   }
   if (map.npcs !== undefined) {
@@ -120,5 +123,14 @@ export function parseEncounterDefinition(value: unknown): EncounterDefinition {
   if (!Array.isArray(profile.equipmentElementWeights) || profile.equipmentElementWeights.length !== 5 ||
       profile.equipmentElementWeights.some(weight => typeof weight !== 'number' || !Number.isFinite(weight) || weight < 0) ||
       !profile.equipmentElementWeights.some(weight => weight > 0)) throw new Error(`${profile.id}: invalid equipment element weights`);
+  if (profile.monsterProfiles !== undefined) {
+    if (profile.levelRange.some(level=>!Number.isInteger(level)||level<1||level>200)) throw new Error(`${profile.id}: configured range must use integer levels 1..200`);
+    const settings = record(profile.monsterProfiles, `${profile.id}.monsterProfiles`);
+    for (const [id, balance] of Object.entries(settings)) {
+      if (!/^[1-9]\d*$/.test(id)) throw new Error(`${profile.id}: invalid monster ID ${id}`);
+      validateMonsterBalance(balance, `${profile.id}.monster.${id}`);
+      resolveMonsterBalance(balance, Number(profile.levelRange[0]), Number(profile.levelRange[1]));
+    }
+  }
   return value as EncounterDefinition;
 }

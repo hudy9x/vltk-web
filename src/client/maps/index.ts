@@ -13,3 +13,5 @@ export { createGroundProbe, findVisibleGround } from './ground';
 export { createMapScene } from './rendering';
 export { createLegacyMapAdapter } from './legacy-adapter';
 export type { MapDefinition, MapObject, MapLayer, EncounterDefinition, Point, NavigationGrid } from './types';
+
+export { resolveMonsterBalance, configuredMonsterHit } from './monster-balance';

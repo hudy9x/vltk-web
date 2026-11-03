@@ -216,7 +216,10 @@ export function validateDocument(document: EditorDocument): MapDefinition {
       return [profile.id, profile];
     }),
   );
+  if (map.encounterId && !profiles.has(map.encounterId)) throw new Error('Cấu hình quái của map không tồn tại.');
   for (const spawn of map.spawns) {
+    const profile = profiles.get(spawn.encounterId);
+    if (profile && spawn.level !== undefined && (spawn.level < Math.max(1, profile.levelRange[0]) || spawn.level > profile.levelRange[1])) throw new Error(`Spawn ${spawn.id}: cấp nằm ngoài dải cấu hình quái.`);
     if (!profiles.has(spawn.encounterId))
       throw new Error(`Spawn ${spawn.id}: encounter không tồn tại.`);
     if (!canStandAt(grid, spawn.position.x, spawn.position.y))

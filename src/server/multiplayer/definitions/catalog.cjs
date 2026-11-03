@@ -3,7 +3,6 @@ const native = require('./runtime.cjs'),
   path = require('node:path');
 const root = path.resolve(__dirname, '../../../..');
 const elements = ['phys', 'poison', 'cold', 'fire', 'light'];
-const rules = require('../../../shared/multiplayer/rules.json');
 const { goldDropRange } = require('../../../client/gameplay/gold-loot.ts');
 const { linearProjectile } = require('./projectiles.cjs');
 const characterCache=new Map();
@@ -82,23 +81,28 @@ exports.character = function (profile, activeBuffs = [], includeSupport = true, 
   if(includeSupport){if(characterCache.size>=32)characterCache.delete(characterCache.keys().next().value);characterCache.set(cacheKey,structuredClone(result));}
   return result;
 };
-let cachedWorld;
+let cachedWorld, cachedWorldSignature;
 exports.world = function () {
-  if (cachedWorld) return cachedWorld;
+  const files = ['src/client/gameplay/encounters/catalog.json','src/client/maps/progression.json','src/client/maps/availability.json',
+    ...fs.readdirSync(path.join(root,'src/client/maps/content')).filter(id=>/^\d+$/.test(id)).map(id=>`src/client/maps/content/${id}/map.json`)];
+  const signature=files.filter(file=>fs.existsSync(path.join(root,file))).map(file=>{const stat=fs.statSync(path.join(root,file));return `${file}:${stat.mtimeMs}:${stat.size}`;}).join('|');
+  if (cachedWorld && cachedWorldSignature===signature) return cachedWorld;
   const source = native.catalog(),
     progression = JSON.parse(fs.readFileSync(path.join(root, 'src/client/maps/progression.json')));
   const states = JSON.parse(
     fs.readFileSync(path.join(root, 'src/client/maps/availability.json')),
   ).maps;
   const encounters = JSON.parse(fs.readFileSync(path.join(root, "src/client/gameplay/encounters/catalog.json")));
+  const {monsterDefinition}=require('./monster-balance.cjs');
   const maps = [];
   const add = (id, zone) => {
     if (states[id] !== 'available') return;
     const file = path.join(root, `src/client/maps/content/${id}/map.json`);
     if (!fs.existsSync(file)) return;
     const map = JSON.parse(fs.readFileSync(file));
-    const level = Math.max(1, zone?.lo || 1),
-      stats = native.monsterStats(level);
+    const encounter = map.encounterId ? encounters.find(e=>e.id===map.encounterId) : encounters.find(e=>e.mapId===id);
+    if(map.encounterId&&!encounter)throw new Error(`Map ${id}: unknown encounter ${map.encounterId}`);
+    const level = Math.max(1, encounter?.levelRange[0] || zone?.lo || 1);
     maps.push({
       id,
       level,
@@ -111,38 +115,20 @@ exports.world = function () {
       spawns: map.spawnMode === 'fixed' || map.spawns?.length ? map.spawns.map(spawn => {
         const encounter = encounters.find(e => e.id === spawn.encounterId);
         if (!encounter) throw new Error(`Map ${id}: unknown encounter ${spawn.encounterId}`);
-        const rank = spawn.rank, spawnLevel = Math.max(1, encounter.levelRange[0]);
-        const spawnStats = native.monsterStats(spawnLevel, rank);
+        const rank = spawn.rank, spawnLevel = spawn.level ?? Math.max(1, encounter.levelRange[0]);
+        if(!Number.isInteger(spawnLevel)||spawnLevel<Math.max(1,encounter.levelRange[0])||spawnLevel>encounter.levelRange[1])throw new Error(`Map ${id}: spawn level outside encounter range`);
         const ids = rank === 'boss' ? [encounter.bossId] : encounter.monsterIds;
         if (!ids.length) throw new Error(`Map ${id}: empty spawn pool ${spawn.id}`);
         return {id:spawn.id, position:spawn.position, initialDelaySeconds:spawn.initialDelaySeconds,
           monsters:ids.map(monsterId => {
-            const monster=source.monsters[monsterId];
-            if (!monster) throw new Error(`Map ${id}: unknown monster ${monsterId}`);
-            return {id:monsterId,name:monster.n,level:spawnLevel,series:native.monsterSeries(monsterId),
-              hp:spawnStats.hp,damage:spawnStats.dmg*(rank==='normal'?.75:1),defense:spawnStats.def,
-              speed:30+(monster.run||6)*4,res:elements.map(()=>Math.min(75,spawnLevel*.35)),
-              xp:Math.max(1,spawnLevel*rules.rewards.xpPerMonsterLevel),
-              gold:goldDropRange(spawnLevel).max,goldMin:goldDropRange(spawnLevel).min,
-              respawnSeconds:rank==='boss'?180:undefined};
+            return {...monsterDefinition(native,source,encounter,monsterId,rank,spawnLevel),
+              gold:goldDropRange(spawnLevel).max,goldMin:goldDropRange(spawnLevel).min};
           })};
       }) : null,
-      monsters: (zone?.m || [])
-        .filter((id) => source.monsters[id])
-        .map((id) => ({
-          id,
-          name: source.monsters[id].n,
-          series: native.monsterSeries(id),
-          level,
-          hp: stats.hp,
-          damage: stats.dmg * 0.75,
-          defense: stats.def,
-          speed: 30 + (source.monsters[id].run || 6) * 4,
-          res: elements.map(() => Math.min(75, level * 0.35)),
-          xp: Math.max(1, level * rules.rewards.xpPerMonsterLevel),
-          gold: goldDropRange(level).max,
-          goldMin: goldDropRange(level).min,
-        })),
+      monsters: (encounter?.monsterIds || zone?.m || [])
+        .filter(id=>source.monsters[id])
+        .map(id=>({...monsterDefinition(native,source,encounter,id,'normal',level),
+          gold:goldDropRange(level).max,goldMin:goldDropRange(level).min})),
     });
   };
   for (const entry of progression) {
@@ -153,5 +139,6 @@ exports.world = function () {
   if (!maps.some((m) => m.id === source.town)) add(source.town, null);
   add(9003,null);
   add(9004,null);
+  cachedWorldSignature=signature;
   return (cachedWorld = { version: 1, town: source.town, maps, battlefield: require("./battlefield.cjs").definition() });
 };

@@ -325,6 +325,7 @@ export function Inspector({
                         next.map.spawns.find(
                           (point) => point.id === spawn.id,
                         )!.encounterId = value;
+                        delete next.map.spawns.find((point) => point.id === spawn.id)!.level;
                       })
                     }
                   />
@@ -344,6 +345,7 @@ export function Inspector({
                       })
                     }
                   />
+                  {spawnProfile && <NumberField label="Cấp quái tại điểm spawn" min={Math.max(1,spawnProfile.levelRange[0])} max={spawnProfile.levelRange[1]} value={spawn.level ?? Math.max(1,spawnProfile.levelRange[0])} onChange={value=>onEdit(next=>{next.map.spawns.find(p=>p.id===spawn.id)!.level=value;})}/>}
                   {spawnProfile && (
                     <MonsterPicker
                       label={spawn.rank === "boss" ? "Boss tại điểm này" : "Quái tại điểm này"}

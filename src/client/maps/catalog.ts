@@ -29,8 +29,9 @@ export function getMapBackground(id: number): string {
 }
 
 export function createLegacyZone(mapId: number): LegacyZone {
-  const map = maps.get(mapId) || unavailableMaps.find(map => map.id === mapId);
-  const profile = encounters.find(value => value.mapId === mapId);
+  const definition = maps.get(mapId);
+  const map = definition || unavailableMaps.find(map => map.id === mapId);
+  const profile = definition?.encounterId ? encounterIndex.get(definition.encounterId) : encounters.find(value => value.mapId === mapId);
   if (!map || !profile) throw new Error(`Map ${mapId}: missing encounter or map`);
   return { id: mapId, n: map.name, lo: profile.levelRange[0], hi: profile.levelRange[1],
     bg: getMapBackground(mapId), sw: [...profile.equipmentElementWeights],

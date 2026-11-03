@@ -31,6 +31,7 @@ struct ImageRevision {
 pub struct Snapshot {
     root: String,
     maps: Vec<Value>,
+    maps_with_artwork: Vec<u64>,
     projects: BTreeMap<String, Value>,
     encounters: Value,
     progression: Value,
@@ -140,6 +141,7 @@ fn snapshot(workspace: &Workspace) -> Result<Snapshot> {
             .unwrap_or(0)
     });
     let mut maps = Vec::new();
+    let mut maps_with_artwork = Vec::new();
     let mut projects = BTreeMap::new();
     let mut bytes = Vec::new();
     for entry in folders {
@@ -155,6 +157,9 @@ fn snapshot(workspace: &Workspace) -> Result<Snapshot> {
                     serde_json::from_slice(&data).map_err(|e| format!("{relative}: {e}"))?;
                 track_image_revisions(workspace, &id, &value, &mut bytes)?;
                 if name == "map.json" {
+                    if has_ground_artwork(&workspace.root, &id, &value) {
+                        if let Some(id) = value["id"].as_u64() { maps_with_artwork.push(id); }
+                    }
                     maps.push(value)
                 } else {
                     projects.insert(id.clone(), value);
@@ -173,6 +178,7 @@ fn snapshot(workspace: &Workspace) -> Result<Snapshot> {
     Ok(Snapshot {
         root: workspace.root.to_string_lossy().into_owned(),
         maps,
+        maps_with_artwork,
         projects,
         encounters,
         progression,
@@ -182,6 +188,16 @@ fn snapshot(workspace: &Workspace) -> Result<Snapshot> {
 }
 
 // Content hashes also stay stable when a failed Save restores the same image bytes.
+// File metadata is enough: the frontend need not decode every map image to filter the list.
+fn has_ground_artwork(root: &Path, id: &str, map: &Value) -> bool {
+    map["layers"].as_array()
+        .and_then(|layers| layers.iter().find(|layer| layer["type"] == "ground"))
+        .and_then(|layer| layer["image"].as_str())
+        .and_then(|image| image.strip_prefix("./"))
+        .and_then(|local| transactions::safe_target(root, &format!("public/app/maps/content/{id}/{local}")).ok())
+        .is_some_and(|target| target.is_file())
+}
+
 // Missing Test-map images participate, so importing/deleting them changes revision.
 fn track_image_revisions(workspace: &Workspace, id: &str, value: &Value, bytes: &mut Vec<u8>) -> Result<()> {
     let mut images = Vec::new();
@@ -550,5 +566,24 @@ mod save_integration_tests {
         let error = save(request(&doc, &current, false), workspace).err().unwrap();
         assert!(error.contains("thay đổi bên ngoài"), "{error}");
         assert_eq!(fs::read(public.join("ground.webp")).unwrap(), b"RIFF1234WEBPnew");
+    }
+}
+
+#[cfg(test)]
+mod monster_artwork_tests {
+    use super::*;
+    #[test]
+    fn only_maps_with_an_existing_ground_file_are_listed_as_having_artwork() {
+        let root=std::env::temp_dir().join(format!("vltk-monster-artwork-{}",std::process::id()));
+        let assets=root.join("public/app/maps/content/123/assets");
+        fs::create_dir_all(&assets).unwrap();
+        let root=root.canonicalize().unwrap();
+        let map=json!({"layers":[{"type":"ground","image":"./assets/ground.png"}]});
+        assert!(!has_ground_artwork(&root,"123",&map));
+        fs::write(assets.join("ground.png"),b"fixture").unwrap();
+        assert!(has_ground_artwork(&root,"123",&map));
+        assert!(!has_ground_artwork(&root,"123",&json!({"layers":[]})));
+        assert!(!has_ground_artwork(&root,"123",&json!({"layers":[{"type":"ground","image":"./../../outside.png"}]})));
+        fs::remove_dir_all(root).unwrap();
     }
 }

@@ -303,6 +303,14 @@ var hs = function (A, n) {
 var Tt = function () {};
 
 var U9 = function (A) {
+  if(A.configuredAttack){
+    const hit=MapsEngine.configuredMonsterHit(A.dmg,A.configuredAttack.element,l.P,Math.max(0,l.life),l.mana);
+    l.life=Math.max(0,l.life-hit.amount);l.mana=hit.mana;
+    if(hit.reflected>0)A.hp=Math.max(0,A.hp-hit.reflected);
+    showDamageNumber(v,hit.amount,A.configuredAttack.element);
+    if(typeof combatLog!=="undefined"&&combatLog)combatLog.record("in",A.n||"Quái",hit.amount,"Đòn đánh cấu hình");
+    return;
+  }
   const attackerHP = A.hp;
   const trace = typeof arenaSimulator !== "undefined" && arenaSimulator ? arenaSimulator.step : null;
   const n = typeof Rn == "function" ? Rn(A) : null;
@@ -959,7 +967,7 @@ var $d = function (A, n) {
     ? combatSandbox.nearestTarget(A) : (typeof om == "function" && om(A)) || v;
   if (!e) { A.moving = false; return; }
   const a = q0(A, e),
-    i = A.ranged ? A.reach || 200 : Math.max((A.r + 24) / QA, Math.min(A.reach || 0, 90));
+    i = A.configuredAttack ? A.configuredAttack.range : A.ranged ? A.reach || 200 : Math.max((A.r + 24) / QA, Math.min(A.reach || 0, 90));
   ((A.face = e.x >= A.x ? 1 : -1),
     (A.dir = kn(e.x - A.x, e.y - A.y)),
     (A.seeT = (A.seeT || 0) - n) <= 0 &&

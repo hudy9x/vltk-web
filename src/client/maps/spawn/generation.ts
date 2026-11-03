@@ -39,8 +39,9 @@ export function generateFieldPoints(navigation: NavigationRuntime, zone: LegacyZ
     if (!profile) throw new Error(`Unknown encounter ${spawn.encounterId}`);
     const { x, y } = spawn.position;
     if (x < 0 || y < 0 || x >= map.size.width || y >= map.size.height || !navigation.canStand(x, y)) throw new Error(`Map ${map.id}: blocked spawn ${spawn.id}`);
-    return { x, y, cls: spawn.rank, tid: spawn.rank === 'boss' ? profile.bossId :
-      profile.monsterIds[randomInteger(random, 0, profile.monsterIds.length - 1)], t: spawn.initialDelaySeconds };
+    const tid=spawn.rank==='boss'?profile.bossId:profile.monsterIds[randomInteger(random,0,profile.monsterIds.length-1)];
+    return { x, y, cls: spawn.rank, tid, t: spawn.initialDelaySeconds,
+      ...(spawn.level!==undefined||profile.monsterProfiles?.[tid]?{spawnId:spawn.id,level:spawn.level??Math.max(1,profile.levelRange[0])}:{}) };
   });
   const centers = generateCampCenters(navigation, FIELD_POLICY.camps, FIELD_POLICY.campSpacing, player, isVoid, random);
   const points: FieldPoint[] = [], elites = new Set<number>();

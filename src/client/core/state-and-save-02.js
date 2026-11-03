@@ -151,7 +151,7 @@ var cD = function (A) {
   (l.kills++, (o.totalKills = (o.totalKills || 0) + 1), (l.stall = 0), YD());
   const n = A.L - o.lvl,
     t = n < -10 ? 0.2 : n < -5 ? 0.6 : 1,
-    e = d8(
+    e = A.configuredXp !== undefined ? d8(A.configuredXp, true) : d8(
       _d(A.L) *
         Nd(o.lvl, A.L) *
         (typeof Yl == "function" ? Yl() : 1) *
@@ -185,10 +185,10 @@ var cD = function (A) {
     p7(A));
 };
 
-var d8 = function (A) {
+var d8 = function (A, configured = false) {
   const n = G2();
   if (o.lvl >= n) return 0;
-  const t =
+  const t = configured ? A :
     A *
     ye *
     (1 + (o.tanthuXp && !(v0() > 0) ? +o.tanthuXp : 0)) *
@@ -635,7 +635,7 @@ var mapField = MapsEngine.createFieldRuntime(mapNavigation, {
   setField: (field) => { l.field = field; },
   enemies: () => l.enemies,
   setEnemies: (enemies) => { l.enemies = enemies; },
-  createEnemy: (point) => n1(point.tid, De(o.stage) + (point.cls === "boss" ? 1 : 0), point.cls, point.x, point.y),
+  createEnemy: (point) => n1(point.tid, point.level ?? (De(o.stage) + (point.cls === "boss" ? 1 : 0)), point.cls, point.x, point.y),
   announceBoss: (enemy, point) => {
     enemy.n = ga(point.tid, AA(Math.min(o.stage, d0)).n);
     C(`<b class="boss">${D(enemy.n)}</b> xuất hiện!`);

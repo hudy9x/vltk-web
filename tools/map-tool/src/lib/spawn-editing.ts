@@ -8,7 +8,7 @@ export function retainSpawnPoints(document: EditorDocument, points: SpawnPreview
     map.spawnMode = "fixed";
     return;
   }
-  const base = document.encounters.find((profile) => profile.mapId === map.id);
+  const base = document.encounters.find((profile) => map.encounterId ? profile.id === map.encounterId : profile.mapId === map.id);
   if (!base) throw new Error("Tạo encounter trong tab Gameplay trước.");
   const profiles = new Map<string, string>();
   map.spawns = points.map((point) => {

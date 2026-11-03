@@ -243,6 +243,8 @@ export function MapCanvas(props: Props) {
     }
     function draw(time: number) {
       frame = 0;
+      // Hidden tool routes have a zero-size canvas; ResizeObserver resumes drawing on return.
+      if (width <= 0 || height <= 0) return;
       const p = latest.current,
         document = drag?.document || p.document;
       try {

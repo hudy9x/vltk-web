@@ -42,7 +42,7 @@ export function spawnPreview(
       ];
     });
   const profile = document.encounters.find(
-    (profile) => profile.mapId === map.id,
+    (profile) => map.encounterId ? profile.id === map.encounterId : profile.mapId === map.id,
   );
   if (!profile) return [];
   const navigation = createNavigationRuntime(),

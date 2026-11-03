@@ -2,6 +2,8 @@ import type { LegacyZone, MonsterRank, MovingActor, Point } from '../types';
 
 export interface FieldEnemy extends MovingActor {
   dead?: boolean; goldBoss?: boolean; sat?: boolean; satG?: boolean;
+  L?: number; def?: number; res?: Record<string,number>; reach?: number; cd?: number; ranged?: boolean;
+  configuredXp?: number; configuredAttack?: import('../monster-balance').MonsterBalance['attack'];
   cls: MonsterRank; hp: number; max: number; dmg: number; spd: number;
   home?: FieldPoint; dens?: boolean; aggro?: boolean; wT?: number;
   agT?: number; vis?: number; backT?: number; moving?: boolean;
@@ -10,6 +12,8 @@ export interface FieldEnemy extends MovingActor {
 }
 /** Runtime compatibility record; never serialized into map.json. */
 export interface FieldPoint extends Point {
+  level?: number;
+  spawnId?: string;
   cls: MonsterRank; tid: number; t: number; e?: FieldEnemy | null;
 }
 export interface FieldState { key: string; pts: FieldPoint[]; kills: number }
