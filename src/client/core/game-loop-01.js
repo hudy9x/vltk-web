@@ -282,7 +282,13 @@ var Ym = function () {
     const e = (A - yi) / 1e3;
     e > 0 && (n || e >= 2.5) && (L2 = Math.min(M_, L2 + e));
   }
-  if (((yi = n ? A : 0), !(L2 > 0))) return;
+  yi = n ? A : 0;
+  // The worker wakes this loop even when requestAnimationFrame is paused.
+  // Online input/control sync must not depend on drawing a visible frame.
+  if (!(L2 > 0)) {
+    if (n && typeof gameMultiplayer !== "undefined") gameMultiplayer.tick();
+    return;
+  }
   const t = Math.min(L2, 60);
   ((L2 -= t),
     ra("mo phong an", () => {
@@ -293,6 +299,7 @@ var Ym = function () {
       } finally {
         l.quiet = e;
       }
+      if (typeof gameMultiplayer !== "undefined") gameMultiplayer.tick();
     }),
     (qr += t),
     qr >= 10 && ((qr = 0), ra("luu", Rm)));

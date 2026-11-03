@@ -69,7 +69,6 @@ async fn play(
 ) -> Result<()> {
     let mut revision = None;
     let mut debug_last_event=0u32;
-    let mut last = Instant::now();
     let mut budget_start = Instant::now();
     let mut budget = 0;
     let control = read_uni(connection);
@@ -81,11 +80,11 @@ async fn play(
                 if budget_start.elapsed() >= Duration::from_secs(1) { budget = 0; budget_start = Instant::now(); }
                 budget += 1; ensure!(budget <= 60, "input rate exceeded");
                 world.lock().unwrap().update(id, protocol::position(&bytes)?)?;
-                last = Instant::now();
             }
             changed = ticks.changed() => {
                 changed?;
-                ensure!(last.elapsed() < Duration::from_secs(12), "input timeout");
+                // Hidden tabs can stop sending application input while QUIC is alive.
+                // Transport close/idle detection owns session liveness; combat keeps ticking.
                 let tick = *ticks.borrow_and_update();
                 let packet = { let state = world.lock().unwrap(); (state.revision, state.packets(id,tick,revision != Some(state.revision))) };
                 if let Some((snapshot, roster)) = packet.1 {

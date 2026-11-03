@@ -50,6 +50,7 @@ export function createClient(hooks: Hooks) {
     waitingAt = 0,
     rosterRevision: number | undefined;
   let latestPosition: Position | undefined, latestLook: Appearance | undefined;
+  let updatedAt = 0, resumedAt = 0;
   let initialWorld=true,returningTown=false,publicMatch=false;
   let roster = new Map<number, Appearance>();
   const history = new Map<number, RemoteTimeline>();
@@ -216,6 +217,10 @@ export function createClient(hooks: Hooks) {
         retryAt = 0;
       }
       const now = performance.now();
+      // A scheduling pause is not evidence that the server stopped sending.
+      // Let queued reads run and allow fresh snapshots after the tab wakes up.
+      if (now - updatedAt > 1500) resumedAt = now;
+      updatedAt = now;
       latestLook = appearance;
       if (position.map !== map && !initialWorld && !returningTown) {
         map = position.map;
@@ -271,8 +276,9 @@ export function createClient(hooks: Hooks) {
             profileBusy = false;
           });
       }
-      if (online && now - receivedAt > 3000) disconnected(new Error('Mất snapshot từ máy chủ.'));
-      else if (connection && !online && now - waitingAt > 5000)
+      const watchdogActive = !document.hidden && now - resumedAt > 3000;
+      if (watchdogActive && online && now - receivedAt > 3000) disconnected(new Error('Mất snapshot từ máy chủ.'));
+      else if (watchdogActive && connection && !online && now - waitingAt > 5000)
         disconnected(new Error('Máy chủ chưa chấp nhận bản đồ này. Hãy chọn lại bản đồ hoặc bấm thử lại.'));
     },
     players(): RenderPlayer[] {

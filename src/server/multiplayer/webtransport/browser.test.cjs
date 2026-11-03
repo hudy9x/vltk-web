@@ -277,6 +277,41 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   await a.page.waitForTimeout(1700);
   for(const {page} of [a,b]) await page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   assert.ok((await a.page.evaluate(()=>window.__onlineTest.state())).draws>0);
+  if(process.env.BACKGROUND_TEST==='1'){
+    const original=await a.page.evaluate(()=>window.__onlineTest.state().pve.self);
+    // Deterministic hidden-tab path: foreground simulation is disabled, but the
+    // existing worker must keep calling the online bridge and syncing profiles.
+    let profileReads=0;
+    a.page.on('request',request=>{if(request.url().includes('/api/multiplayer/character?'))profileReads++;});
+    await a.page.evaluate(()=>{
+      Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await b.page.waitForTimeout(16000);
+    assert.ok(profileReads>=3,'hidden worker continues online updates without foreground simulation');
+    assert.equal(await a.page.evaluate(()=>window.__onlineClient.online),true);
+    assert.ok((await b.page.evaluate(()=>window.__onlineTest.state().remote)).some(p=>p.id===original));
+    // A real browser lifecycle suspension stops JS, including the worker. QUIC
+    // remains responsible for liveness, and the server must keep the actor.
+    const cdp=await a.context.newCDPSession(a.page);
+    await cdp.send('Page.setWebLifecycleState',{state:'frozen'});
+    await b.page.waitForTimeout(16000);
+    assert.ok((await b.page.evaluate(()=>window.__onlineTest.state().remote)).some(p=>p.id===original),'silent live peer remains visible beyond old 3s/12s deadlines');
+    await cdp.send('Page.setWebLifecycleState',{state:'active'});
+    await a.page.evaluate(()=>{
+      delete document.hidden;
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await a.page.waitForTimeout(4000);
+    assert.equal(await a.page.evaluate(()=>window.__onlineClient.online),true);
+    assert.equal(await a.page.evaluate(()=>window.__onlineTest.state().pve.self),original,'resuming does not reconnect or replace actor');
+    assert.equal(await a.page.locator('#serverDisconnect').isVisible(),false);
+    await a.page.close();
+    await b.page.waitForFunction(()=>window.__onlineTest.state().remote.length===0,null,{timeout:10000});
+    assert.deepEqual(errors,[]);
+    console.log('Background browser: hidden worker, 16s freeze, same-session resume and real tab close passed.');
+    return;
+  }
   if(process.env.PUBLIC_WAR_TEST==='1'){
     await b.page.evaluate(()=>window.__onlineTest.gm('knb'));
     const gmBalance=await b.page.evaluate(()=>window.__onlineTest.purse());

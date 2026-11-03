@@ -2,7 +2,7 @@ use crate::protocol::{self, Appearance, MAX_PLAYERS, Position};
 use anyhow::{Result, ensure};
 use std::{
     collections::BTreeMap,
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 pub struct Player {
@@ -113,8 +113,8 @@ impl World {
             .players
             .iter()
             .filter(|(_, p)| {
+                // Membership follows the live transport, not foreground input frequency.
                 p.position.is_some_and(|v| v.map == map)
-                    && p.seen.elapsed() < Duration::from_secs(3)
             })
             .collect();
         Some((
@@ -167,6 +167,22 @@ mod tests {
             moving: 1,
         }
     }
+    #[test]
+    fn silent_connected_player_stays_in_snapshot_and_roster_until_leave() {
+        let mut world = World::default();
+        let a = world.join([7; 16], look()).unwrap();
+        let b = world.join([8; 16], look()).unwrap();
+        world.update(a, pos(1, 1)).unwrap();
+        world.update(b, pos(1, 1)).unwrap();
+        let before = world.packets(a, 1, true).unwrap();
+        world.players.get_mut(&b).unwrap().seen =
+            Instant::now() - std::time::Duration::from_secs(600);
+        let silent = world.packets(a, 1, true).unwrap();
+        assert_eq!(silent, before);
+        world.leave(b);
+        assert_eq!(world.packets(a, 2, false).unwrap().0.len(), 42);
+    }
+
     #[test]
     fn rooms_reordering_and_disconnect() {
         let mut world = World::default();

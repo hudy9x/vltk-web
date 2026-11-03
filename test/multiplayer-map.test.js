@@ -6,7 +6,8 @@ const bundle=esbuild.build({entryPoints:['src/client/multiplayer/webtransport/in
  plugins:[{name:'test-transport',setup(build){build.onLoad({filter:/multiplayer\/webtransport\/transport\.ts$/},()=>({contents:'export const connect=(...args)=>globalThis.testConnect(...args);',loader:'ts'}));}}]});
 async function fixture(restoredMap=140){
  let time=0,receive,closeCount=0;const statuses=[],sent=[],worlds=[];
- const scope={module:{exports:{}},exports:{},URLSearchParams,location:{search:''},TextEncoder,TextDecoder,AbortSignal,atob,
+ const document={hidden:false};
+ const scope={module:{exports:{}},exports:{},document,URLSearchParams,location:{search:''},TextEncoder,TextDecoder,AbortSignal,atob,
   performance:{now:()=>time},fetch:async()=>({ok:true,json:async()=>({enabled:true,ticket:Buffer.alloc(69).toString('base64')})}),
   testConnect:async(_config,_hello,callback)=>{receive=callback;return{send(){},reliable:async b=>{sent.push(b);},close(){closeCount++;}}}};
  vm.runInNewContext((await bundle).outputFiles[0].text,scope);
@@ -14,7 +15,7 @@ async function fixture(restoredMap=140){
  const update=map=>client.update({map,x:100,y:100,timestamp:time,effectTime:0,dir:0,moving:false},{name:'Fixture',faction:0,sex:0,bodySex:0,ride:0,helm:-1,armor:-1,weapon:0,horse:-1});
  const snapshot=(map,tick)=>receive({type:'snapshot',map,tick,self:1,players:[]});
  update(140);await new Promise(setImmediate);receive({type:'world',map:restoredMap,tick:1,self:1,actors:[]});snapshot(restoredMap,1);
- return{client,update,snapshot,statuses,sent,worlds,receive:packet=>receive(packet),time:t=>{time=t;},closed:()=>closeCount};
+ return{client,update,snapshot,statuses,sent,worlds,document,receive:packet=>receive(packet),time:t=>{time=t;},closed:()=>closeCount};
 }
 test('travel resets old room state, accepts the destination and resumes commands',async()=>{
  const f=await fixture();assert.equal(f.client.online,true);f.time(100);f.update(340);
@@ -38,11 +39,36 @@ test('town recovery accepts the server map and ignores snapshots from the previo
 });
 test('missing destination snapshots have a bounded wait even after online was cleared',async()=>{
  const f=await fixture();f.time(100);f.update(340);f.snapshot(140,2);
+ for(let time=1000;time<=5000;time+=1000){f.time(time);f.update(340);}
  f.time(5101);f.update(340);
  assert.equal(f.closed(),1);assert.match(f.statuses.at(-1).text,/chưa chấp nhận bản đồ/);assert.equal(f.client.online,false);
  f.client.close();
 });
 test('the first room also times out if QUIC connects but the server never sends its snapshots',async()=>{
  const f=await fixture();f.client.retry();f.time(100);f.update(340);await new Promise(setImmediate);
+ for(let time=1000;time<=5000;time+=1000){f.time(time);f.update(340);}
  f.time(5200);f.update(340);assert.match(f.statuses.at(-1).text,/chưa chấp nhận bản đồ/);f.client.close();
+});
+
+test('hidden tab does not declare snapshot loss when background callbacks are delayed',async()=>{
+ const f=await fixture();f.document.hidden=true;
+ for(let time=1000;time<=16000;time+=1000){f.time(time);f.update(140);}
+ assert.equal(f.closed(),0);assert.equal(f.client.online,true);f.client.close();
+});
+
+test('resuming after a frozen event loop allows fresh snapshots before the watchdog runs',async()=>{
+ const f=await fixture();f.time(60000);f.update(140);
+ assert.equal(f.closed(),0);assert.equal(f.client.online,true);
+ f.time(60100);f.snapshot(140,2);
+ for(let time=61000;time<=64000;time+=1000){f.time(time);f.snapshot(140,time);f.update(140);}
+ assert.equal(f.closed(),0);assert.equal(f.client.online,true);f.client.close();
+});
+
+test('visible running tab still detects real snapshot loss, including after a resume grace period',async()=>{
+ for(const resume of [0,60000]){
+  const f=await fixture();f.time(resume);f.update(140);
+  for(let time=resume+1000;time<=resume+4000;time+=1000){f.time(time);f.update(140);}
+  assert.equal(f.closed(),1);assert.equal(f.client.online,false);
+  assert.match(f.statuses.at(-1).text,/Mất snapshot/);f.client.close();
+ }
 });
