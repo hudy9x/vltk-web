@@ -96,3 +96,14 @@ test('war inventory stacks at 50, remains visible outside the match and uses one
   clickListener({ target: { closest: () => ({ dataset: { warItem: 'resistance' } }) }, stopPropagation() {} } as unknown as Event);
   assert.equal(refreshed, 1); assert.match(error, /trong trận/);
 });
+
+ test('entry issues forty combined potions per slot and consumes the slots independently', () => {
+  const {createWarSupplies}=loadModule<typeof import('../src/client/simulator/supplies.ts')>('simulator/supplies.ts','Supplies');
+  const supplies=createWarSupplies({running:()=>true,alive:()=>true,team:()=> 'song',position:()=>({x:0,y:0}),recover:()=>true,changed(){},catalog:()=>[{key:'both:5',kind:'both',tier:5,n:'Ngũ Hoa Ngọc Lộ Hoàn',total:5000,mtotal:5000,price:3000}]});
+  supplies.reset(true);
+  assert.equal(supplies.state.total,80);assert.equal(supplies.slot('life').n,40);assert.equal(supplies.slot('mana').n,40);
+  for(let i=0;i<40;i++)assert.equal(supplies.use('life'),true);
+  assert.equal(supplies.use('life'),false);assert.equal(supplies.slot('mana').n,40);
+  assert.equal(supplies.use('mana'),true);assert.equal(supplies.state.total,39);
+  supplies.reset();assert.equal(supplies.state.total,0);
+});

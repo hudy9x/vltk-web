@@ -31,6 +31,8 @@ interface SupplyHost {
  */
 export function createWarSupplies(host: SupplyHost) {
   const stock = new Map<string, number>();
+  const issued: Record<PotionResource, number> = {life:0,mana:0};
+  let issuedKey = "";
   const selected: Record<PotionResource, string> = {
     life: "auto",
     mana: "auto",
@@ -46,7 +48,7 @@ export function createWarSupplies(host: SupplyHost) {
       price: 0,
     }));
   const total = () =>
-    [...stock.values()].reduce((sum, quantity) => sum + quantity, 0);
+    [...stock.values()].reduce((sum, quantity) => sum + quantity, issued.life + issued.mana);
   const eligible = (resource: PotionResource) =>
     catalog().filter(
       (potion) => potion.kind === resource || potion.kind === "both",
@@ -54,7 +56,7 @@ export function createWarSupplies(host: SupplyHost) {
   function selectedPotion(resource: PotionResource, requireStock = true) {
     const candidates = eligible(resource).filter(
       (potion) =>
-        (!requireStock || (stock.get(potion.key) || 0) > 0) &&
+        (!requireStock || (stock.get(potion.key) || 0) + (potion.key === issuedKey ? issued[resource] : 0) > 0) &&
         (selected[resource] === "auto" || potion.key === selected[resource]),
     );
     return candidates.sort(
@@ -73,13 +75,21 @@ export function createWarSupplies(host: SupplyHost) {
   function reset(initialStock = false) {
     stock.clear();
     selected.life = selected.mana = "auto";
-    if (initialStock)
-      for (const resource of ["life", "mana"] as const) {
-        const potion = eligible(resource)
-          .filter((potion) => potion.kind === resource)
-          .sort((first, second) => second.tier - first.tier)[0];
-        if (potion) stock.set(potion.key, WAR_POTION_CAPACITY[resource]);
+    issued.life = issued.mana = 0;
+    issuedKey = "";
+    if (initialStock) {
+      const potion = catalog().find(p => p.kind === "both" && p.tier === 5);
+      if (potion) {
+        issuedKey = potion.key;
+        issued.life = issued.mana = 40;
+        selected.life = selected.mana = potion.key;
+      } else if (!host.catalog) {
+        for(const resource of ["life","mana"] as const){
+          const fallback=eligible(resource).filter(p=>p.kind===resource).sort((a,b)=>b.tier-a.tier)[0];
+          if(fallback)stock.set(fallback.key,40);
+        }
       }
+    }
     host.changed();
   }
   function buy(key: string, quantity: number) {
@@ -132,7 +142,7 @@ export function createWarSupplies(host: SupplyHost) {
   }
   function count(resource: PotionResource) {
     return eligible(resource).reduce(
-      (sum, potion) => sum + (stock.get(potion.key) || 0),
+      (sum, potion) => sum + (stock.get(potion.key) || 0) + (potion.key === issuedKey ? issued[resource] : 0),
       0,
     );
   }
@@ -154,7 +164,8 @@ export function createWarSupplies(host: SupplyHost) {
       !host.recover(resource, potion)
     )
       return false;
-    stock.set(potion.key, (stock.get(potion.key) || 0) - 1);
+    if(potion.key === issuedKey && issued[resource] > 0) issued[resource]--;
+    else stock.set(potion.key, (stock.get(potion.key) || 0) - 1);
     host.changed();
     return true;
   }
@@ -165,7 +176,7 @@ export function createWarSupplies(host: SupplyHost) {
       n:
         selected[resource] === "auto"
           ? count(resource)
-          : stock.get(selected[resource]) || 0,
+          : (stock.get(selected[resource]) || 0) + (selected[resource] === issuedKey ? issued[resource] : 0),
       name:
         (selected[resource] === "auto" ? "Tự động: " : "") +
         (potion?.n || "Hết thuốc"),
@@ -187,7 +198,7 @@ export function createWarSupplies(host: SupplyHost) {
         capacity: WAR_POTION_LIMIT,
         nearCamp: nearCamp(),
         selected: { ...selected },
-        inventory: Object.fromEntries(stock),
+        inventory: { ...Object.fromEntries(stock), ...(issuedKey ? {[issuedKey]:(stock.get(issuedKey)||0)+issued.life+issued.mana} : {}) },
       };
     },
   };

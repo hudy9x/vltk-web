@@ -53,7 +53,7 @@ var gameMultiplayer = (() => {
       if(entity.remotePlayer?.battlefieldUnit){OnlineBattlefield.draw(ctx,entity.remotePlayer,onlineWorld.state);return;}
       const p = entity.remotePlayer, look = p.appearance;
       const authoritative=onlineWorld.state?.actors.find(a=>a.id===p.id);
-      if(authoritative?.hp<=0&&!onlineWorld.state?.battlefield)return;
+      if(authoritative?.hp<=0&&!(onlineWorld.state?.battlefield?.units.find(u=>u.id===p.id)?.corpseRemaining>0))return;
       const actor = { n: look.name, f: factions[look.faction] || factions[0], s: look.sex, x: p.x, y: p.y,
         dir: p.dir, mv: p.moving, t: p.animationTime, hurtT:authoritative?.hurt||0,poison:authoritative?.poison||0,slowT:authoritative?.cold||0,slowPower:authoritative?.coldPower||0,stun:authoritative?.stun||0,dead:authoritative?.hp===0,act:authoritative?.hp===0?'die':undefined, hp: onlineWorld.state?.actors.find(a=>a.id===p.id)?.hp??1, hpMax: onlineWorld.state?.actors.find(a=>a.id===p.id)?.maxHp??1,
         J: look.armor >= 0 ? lB({ sx: look.bodySex ? "f" : "m", ride: look.ride,

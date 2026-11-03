@@ -234,7 +234,7 @@ export function createBattlefield(host: BattlefieldHost) {
     score[otherTeam(actor.battlefieldTeam)] += actor.battlefieldBoss ? 1000 : 1;
     if (!actor.battlefieldBoss) {
       actor.moving = false; actor.target = null;
-      place(actor); // Return home immediately; stay untargetable until the timer expires.
+      actor.battlefieldCorpseT = 0; actor.act = 'die'; actor.actT = 0;
       respawns.set(actor, elapsed + deployment.respawnSeconds);
     }
   }

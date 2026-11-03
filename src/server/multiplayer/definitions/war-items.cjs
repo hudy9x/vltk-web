@@ -24,7 +24,7 @@ exports.apply=function(p,action,capacity=60){
     const key=`tk_${kind}`;
     if(!Number.isSafeInteger(store[key])||store[key]<1)throw new Error('Chưa có loại vật phẩm này.');
     if(!p.warSupplies||p.warSupplies.matchId!==room.matchId||p.warSupplies.starts!==room.starts)
-      p.warSupplies={matchId:room.matchId,starts:room.starts,bought:[{},{}],selected:[0,0]};
+      p.warSupplies={matchId:room.matchId,starts:room.starts,bought:[{205:40},{205:40}],selected:[205,205]};
     const bag=p.warSupplies;
     bag.itemUses=(bag.itemUses||[]).filter(use=>use.at+180>room.now);
     if(bag.itemUses.length>=128)throw new Error('Quá nhiều vật phẩm đang có hiệu lực.');

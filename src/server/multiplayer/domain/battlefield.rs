@@ -93,8 +93,10 @@ impl Game {
             Unit {appearance:None,key,id,name:a.name.clone(),faction:String::new(),sex:0,skin:0,team,kind:0,tier:0,points:0,kills:0,player_kills:0,deaths:0,
                 home,x:home.0,y:home.1,hp:a.profile.hp,mp:a.profile.mp,ready_at:clock+5.0,respawn_at:0.0,respawn_seconds:5.0,counted:false,
                 return_to:Some(ReturnState{map:a.map,x:a.x,y:a.y,hp:a.hp,mp:a.mp,potions:a.profile.potions.clone()}),skills:vec![],patrol:0.0,leash:f32::INFINITY,patrol_at:0.0,patrolling:false,
-                bought:Default::default(),spent:Default::default(),selected:[0,0],potions:[0,0],potion_at:[0.0;2],last_hit:0.0,last_source:0}
+                bought:Default::default(),spent:Default::default(),selected:[205,205],potions:[40,40],potion_at:[0.0;2],last_hit:0.0,last_source:0}
         };
+        let mut unit=unit;
+        if unit.bought.iter().all(|bag|bag.is_empty()){unit.bought=[BTreeMap::from([(205,40)]),BTreeMap::from([(205,40)])];}
         let room=&self.rooms[&WAIT_MAP];
         let waiting=room.nav.nearest(room.definition.entry.x,room.definition.entry.y);
         let a=self.actors.get_mut(&id).unwrap();
@@ -308,7 +310,7 @@ impl Game {
             let rally=if victim.kind<2{let camp=self.battlefield_camp(victim.team);self.rooms[&MAP].nav.nearest(camp.0,camp.1)}else{victim.home};
             let u=self.battlefield.units.get_mut(&id).unwrap();u.counted=true;u.deaths+=1;
             u.respawn_at=if u.kind==3{0.0}else{clock+if u.kind<2{respawn_delay(u.deaths)}else{u.respawn_seconds}};
-            let a=self.actors.get_mut(&id).unwrap();(a.x,a.y)=rally;a.target=0;a.secondary=None;a.path.clear();a.move_goal=None;a.farming=false;
+            let a=self.actors.get_mut(&id).unwrap();if u.kind>=2{(a.x,a.y)=rally;}a.target=0;a.secondary=None;a.path.clear();a.move_goal=None;a.farming=false;
             self.pending.retain(|p|p.source!=id);
         }
         for (&id,u) in &mut self.battlefield.units {if let Some(a)=self.actors.get(&id).filter(|a|a.war.is_some()) {if a.map==MAP{u.hp=a.hp;u.mp=a.mp;u.x=a.x;u.y=a.y;}}}
@@ -330,7 +332,7 @@ impl Game {
         let Some(u)=self.battlefield.units.get(&id)else{return false;};
         let selected=u.selected[kind];let available=u.bought[kind].get(&selected).copied().unwrap_or(0).saturating_sub(*u.spent[kind].get(&selected).unwrap_or(&0));
         if available==0{return false;}
-        let Some(potion)=self.actors.get(&id).and_then(|a|a.profile.potions.iter().find(|p|p.id==selected&&p.level<=a.profile.level)).cloned()else{return false;};
+        let Some(potion)=self.actors.get(&id).and_then(|a|a.profile.potions.iter().find(|p|p.id==selected&&(selected==205||p.level<=a.profile.level))).cloned()else{return false;};
         let Some(a)=self.actors.get_mut(&id).filter(|a|a.hp>0.0&&a.war.is_some_and(|w|w.ready)&&!self.battlefield.finished) else{return false;};
         let Some(u)=self.battlefield.units.get_mut(&id) else{return false;};
         if kind>1||u.potions[kind]==0||clock<u.potion_at[kind]{return false;}
@@ -342,7 +344,7 @@ impl Game {
     pub fn battlefield_snapshot(&self,id:u32)->Option<serde_json::Value> {
         let a=self.actors.get(&id)?;let w=a.war?;let own=self.battlefield.units.get(&id)?;let clock=self.battlefield.clock;
         Some(serde_json::json!({"id":w.match_id,"marshalsSpawned":self.battlefield.marshals,"killNotices":self.battlefield.kill_notices.iter().filter(|n|n.owner==own.key&&clock-n.at<=10.0).collect::<Vec<_>>(),"starts":self.battlefield.starts,"ends":self.battlefield.ends,"now":clock,"itemDrops":self.battlefield.item_drops.iter().filter(|d|d.team==w.team&&d.expires>clock).collect::<Vec<_>>(),"itemBuffs":a.support.war_items.iter().map(|(k,t)|(k,(t-clock).max(0.0))).collect::<BTreeMap<_,_>>(),"itemTraps":self.battlefield.items.traps.iter().filter(|t|t.team==w.team).collect::<Vec<_>>(),"phase":if self.battlefield.finished{"finished"}else if clock<self.battlefield.starts{"waiting"}else{"running"},"score":self.battlefield.score,"team":w.team,"entryRemaining":(own.ready_at-clock).max(0.0),"respawnRemaining":(own.respawn_at-clock).max(0.0),"deaths":own.deaths,"potions":own.potions,"selected":own.selected,"inventory":(0..2).flat_map(|slot|own.bought[slot].iter().map(move |(&id,&bought)|serde_json::json!({"slot":slot,"id":id,"count":bought.saturating_sub(*own.spent[slot].get(&id).unwrap_or(&0))}))).collect::<Vec<_>>(),
-            "units":self.battlefield.units.values().filter(|u|u.kind<2||self.actors.contains_key(&u.id)).map(|u|serde_json::json!({"id":u.id,"name":u.name,"faction":u.faction,"sex":u.sex,"skin":u.skin,"appearance":u.appearance,"team":u.team,"kind":u.kind,"tier":u.tier,"points":u.points,"kills":u.kills,"playerKills":u.player_kills,"online":self.actors.get(&u.id).is_some_and(|a|a.war.is_some()),"ready":self.actors.get(&u.id).is_some_and(|a|a.war.is_some_and(|w|w.ready)),"moving":self.actors.get(&u.id).is_some_and(|a|!a.path.is_empty()),"level":if u.kind==2{120}else{200}})).collect::<Vec<_>>() }))
+            "units":self.battlefield.units.values().filter(|u|u.kind<2||self.actors.contains_key(&u.id)).map(|u|serde_json::json!({"id":u.id,"name":u.name,"faction":u.faction,"sex":u.sex,"skin":u.skin,"appearance":u.appearance,"team":u.team,"kind":u.kind,"tier":u.tier,"points":u.points,"kills":u.kills,"playerKills":u.player_kills,"corpseRemaining":if u.kind<2&&u.counted{(5.0-(clock-(u.respawn_at-respawn_delay(u.deaths)))).clamp(0.0,5.0)}else{0.0},"online":self.actors.get(&u.id).is_some_and(|a|a.war.is_some()),"ready":self.actors.get(&u.id).is_some_and(|a|a.war.is_some_and(|w|w.ready)),"moving":self.actors.get(&u.id).is_some_and(|a|!a.path.is_empty()),"level":if u.kind==2{120}else{200}})).collect::<Vec<_>>() }))
     }
 }
 
@@ -484,14 +486,57 @@ mod tests {
         g.advance_players(&mut vec![]);assert_eq!(g.actors[&1].target,soldier);
     }
     #[test]
-    fn public_supplies_start_empty_purchase_refresh_does_not_refill_consumed_bottles() {
-        let mut g=fixture();start(&mut g);assert_eq!(g.battlefield.units[&1].potions,[0,0]);assert!(!g.battlefield_potion(1,0));
+    fn public_supplies_start_full_purchase_refresh_does_not_refill_consumed_bottles() {
+        let mut g=fixture();start(&mut g);assert_eq!(g.battlefield.units[&1].potions,[40,40]);assert_eq!(g.battlefield.units[&1].selected,[205,205]);assert!(!g.battlefield_potion(1,0));
         let clock=g.battlefield.clock;
         let bag=Supplies{match_id:g.battlefield.id,starts:g.battlefield.starts,bought:[BTreeMap::from([(1,20)]),BTreeMap::new()],selected:[1,0],item_uses:vec![]};
         let a=g.actors.get_mut(&1).unwrap();a.base_profile.war_supplies=Some(bag);a.profile.potions.push(Potion{id:1,kind:"life".into(),tier:1,level:1,hp:250.0,mp:0.0,count:0,spent:0});a.base_profile.potions=a.profile.potions.clone();a.hp=100.0;
         g.advance_battlefield(clock);assert_eq!(g.battlefield.units[&1].potions,[20,0]);assert!(g.battlefield_potion(1,0));assert_eq!(g.actors[&1].hp,350.0);
         assert_eq!(g.battlefield.units[&1].potions,[19,0]);g.advance_battlefield(clock+0.1);assert_eq!(g.battlefield.units[&1].potions,[19,0]);assert!(!g.battlefield_potion(1,0));
         g.actors.get_mut(&1).unwrap().base_profile.war_supplies.as_mut().unwrap().bought[0].insert(1,40);g.advance_battlefield(clock+0.4);assert_eq!(g.battlefield.units[&1].potions,[39,0]);
+    }
+    #[test]
+    fn entry_fills_both_slots_and_each_slot_spends_its_own_combined_potions() {
+        let mut g=fixture();g.battlefield_join(1,0).unwrap();
+        assert_eq!(g.actors[&1].map,WAIT_MAP);
+        let snapshot=g.battlefield_snapshot(1).unwrap();
+        assert_eq!(snapshot["potions"],serde_json::json!([40,40]));
+        assert_eq!(snapshot["selected"],serde_json::json!([205,205]));
+        let due=g.battlefield.units[&1].ready_at;g.advance_battlefield(due);
+        let a=g.actors.get_mut(&1).unwrap();
+        a.profile.potions.push(Potion{id:205,kind:"both".into(),tier:5,level:90,hp:5000.0,mp:5000.0,count:0,spent:0});
+        a.hp=1.0;a.mp=0.0;
+        assert!(g.battlefield_potion(1,0));
+        assert_eq!(g.actors[&1].hp,g.actors[&1].profile.hp);
+        assert_eq!(g.actors[&1].mp,g.actors[&1].profile.mp);
+        assert_eq!(g.battlefield.units[&1].potions,[39,40]);
+        let a=g.actors.get_mut(&1).unwrap();a.hp=1.0;a.mp=0.0;
+        assert!(g.battlefield_potion(1,1));
+        assert_eq!(g.battlefield.units[&1].potions,[39,39]);
+    }
+    #[test]
+    fn people_and_sim_corpses_expire_at_five_seconds_before_later_respawn() {
+        let mut g=fixture();start(&mut g);let clock=g.battlefield.clock;
+        let sim=g.battlefield.units.values().find(|u|u.kind==1).unwrap().id;
+        for id in [1,sim] {
+            g.battlefield.units.get_mut(&id).unwrap().deaths=1;
+            let a=g.actors.get_mut(&id).unwrap();a.x=500.0;a.y=500.0;a.hp=0.0;
+        }
+        g.battlefield_deaths();g.advance_battlefield(clock+4.99);
+        let state=g.battlefield_snapshot(1).unwrap();
+        for id in [1,sim] {
+            let unit=state["units"].as_array().unwrap().iter().find(|u|u["id"]==id).unwrap();
+            assert!(unit["corpseRemaining"].as_f64().unwrap()>0.0);
+        }
+        g.advance_battlefield(clock+5.0);
+        let state=g.battlefield_snapshot(1).unwrap();
+        for id in [1,sim] {
+            let unit=state["units"].as_array().unwrap().iter().find(|u|u["id"]==id).unwrap();
+            assert_eq!(unit["corpseRemaining"],0.0);assert_eq!(g.actors[&id].hp,0.0);
+            assert_eq!((g.actors[&id].x,g.actors[&id].y),(500.0,500.0));
+        }
+        g.advance_battlefield(clock+7.0);
+        for id in [1,sim]{assert!(g.actors[&id].hp>0.0);}
     }
     #[test]
     fn explicit_walk_preserves_auto_and_it_resumes_only_after_the_walk() {
@@ -518,13 +563,13 @@ mod tests {
         for id in [1,2,sim]{let a=g.actors.get_mut(&id).unwrap();a.x=500.0;a.y=500.0;a.hp=0.0;a.path=vec![(600.0,600.0)];a.farming=true;}
         g.battlefield_deaths();
         for id in [1,2,sim]{
-            let a=&g.actors[&id];let camp=g.battlefield_camp(g.battlefield.units[&id].team);
-            assert_eq!((a.x,a.y),g.rooms[&MAP].nav.nearest(camp.0,camp.1));
+            let a=&g.actors[&id];
+            assert_eq!((a.x,a.y),(500.0,500.0));
             assert_eq!(a.hp,0.0);assert!(a.path.is_empty());assert!(!a.farming);
             assert_eq!((g.battlefield.units[&id].x,g.battlefield.units[&id].y),(a.x,a.y));
         }
         g.advance_battlefield(clock+4.99);
-        for id in [1,2,sim]{let a=&g.actors[&id];assert_eq!(a.hp,0.0);let camp=g.battlefield_camp(g.battlefield.units[&id].team);assert_eq!((a.x,a.y),g.rooms[&MAP].nav.nearest(camp.0,camp.1));}
+        for id in [1,2,sim]{let a=&g.actors[&id];assert_eq!(a.hp,0.0);assert_eq!((a.x,a.y),(500.0,500.0));}
         assert!(g.battlefield_snapshot(1).unwrap()["respawnRemaining"].as_f64().unwrap()>0.0);
         g.advance_battlefield(clock+5.01);
         for id in [1,2,sim]{let a=&g.actors[&id];let center=g.battlefield_camp(g.battlefield.units[&id].team);assert!(a.hp>0.0);assert!(distance(center.0,center.1,a.x,a.y)<=1000.01);assert!(g.rooms[&MAP].nav.stand(a.x,a.y));assert_ne!((a.x,a.y),(500.0,500.0));}

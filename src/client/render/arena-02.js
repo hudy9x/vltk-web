@@ -1,4 +1,5 @@
 // render/arena — shared IIFE scope; order is defined in modules.json.
+var battlefieldHeroCorpseT = 0;
 var crowdRenderer = CrowdVisibility.createCrowdVisibility();
 
 // Shared yuanbao artwork; the explicit currency label distinguishes ngân lượng and KNB.
@@ -116,6 +117,7 @@ var NP = function (A) {
   if (typeof arenaSimulator !== "undefined" && arenaSimulator && typeof arenaSimulator.drawBattlefieldLoot === "function") arenaSimulator.drawBattlefieldLoot(n);
   typeof qm == "function" && qm(n, A);
   for (const a of l.corpses) {
+    if(a.arenaSim && a.battlefieldTeam && !a.battlefieldBoss) continue;
     a.actT += A;
     const i = E(1.6 - a.actT, 0, 1),
       r = 1;
@@ -151,7 +153,10 @@ var NP = function (A) {
           n.stroke()));
   }
   ((n.globalAlpha = 1), (l.fx = l.fx.filter((a) => a.life > 0)), (n.textAlign = "center"));
-  const living = l.enemies.filter((a) => !a.dead);
+  const warActive = l.battlefield || (typeof OnlineBattlefield !== 'undefined' && OnlineBattlefield.state);
+  battlefieldHeroCorpseT = warActive && l.deadT > 0 ? battlefieldHeroCorpseT + A : 0;
+  for(const actor of l.enemies) if(actor.arenaSim && actor.battlefieldTeam && !actor.battlefieldBoss && actor.dead) actor.battlefieldCorpseT = (actor.battlefieldCorpseT || 0) + A;
+  const living = l.enemies.filter((a) => !a.dead || (a.arenaSim && a.battlefieldTeam && !a.battlefieldBoss && a.battlefieldCorpseT < 5));
   const simVisible = (a) => a.x >= B0.x - 160 && a.x <= B0.x + M0.w + 160 &&
     a.y >= B0.y - 160 && a.y <= B0.y + M0.h + 160;
   // Hidden SIMs keep their animation clocks without preparing sprites/nameplates.
@@ -207,6 +212,7 @@ var NP = function (A) {
       continue;
     }
     if (a.hero) {
+      if(warActive && l.deadT > 0 && (typeof OnlineBattlefield !== 'undefined' && OnlineBattlefield.state ? !(OnlineBattlefield.state.units.find(unit=>unit.id===onlineWorld.state?.self)?.corpseRemaining>0) : battlefieldHeroCorpseT >= 5)) continue;
       ((n.fillStyle = "#0007"), n.beginPath(), n.ellipse(v.x, v.y, 16, 6, 0, 0, 7), n.fill());
       const f = Jt();
       v.animKey = f && f.anim;

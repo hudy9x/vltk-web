@@ -49,7 +49,7 @@ exports.apply=function(input,action,development=false,gameMasterMode){
         const potion=s.S.potions.find(row=>row.kind===action.potion&&row.tier===action.tier);
         if(!potion||!s.ro(potion)||(potion.kind!=='both'&&potion.kind!==(action.slot===0?'life':'mana')))fail('Thuốc không phù hợp với ô chiến trường.');
         const id=({life:0,mana:100,both:200})[potion.kind]+potion.tier;
-        if(!p.warSupplies||p.warSupplies.matchId!==action.matchId||p.warSupplies.starts!==action.starts)p.warSupplies={matchId:action.matchId,starts:action.starts,bought:[{},{}],selected:[0,0]};
+        if(!p.warSupplies||p.warSupplies.matchId!==action.matchId||p.warSupplies.starts!==action.starts)p.warSupplies={matchId:action.matchId,starts:action.starts,bought:[{205:40},{205:40}],selected:[205,205]};
         const bag=p.warSupplies,slot=action.slot;
         if(kind==='warPotionBuy'){
           let quantity=action.quantity;if(!integer(quantity,1,20)||!Array.isArray(action.spent)||!integer(action.spent[slot],0,1000000))fail('Số lượng không hợp lệ.');

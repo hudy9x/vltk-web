@@ -703,7 +703,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     }
   }
   function draw(context: CanvasRenderingContext2D, actor: SimulatorActor, dt: number) {
-    advanceAnimation(actor, dt);
+    if(actor.dead){actor.act='die';actor.actT=(actor.actT||0)+dt;}else advanceAnimation(actor, dt);
     const look = actor.battlefieldBoss ? r0[actor.tid] : actor.look;
     const height = look && look.anim ? asSim(actor, () => {
       // Composite sprites read the current profile/world. Give each SIM its own equipment.
@@ -1158,7 +1158,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     alive: () => battlefieldWorld.life > 0 && !(battlefieldWorld.deadT > 0),
     team: () => battlefield!.state.team, position: () => battlefieldHero,
     changed: () => { if(typeof R !== 'undefined')R=true; },
-    catalog: () => (S.potions || []).filter((potion:LegacyRecord) => typeof be==='undefined'||o.lvl >= (be[potion.tier] || 999)).map((potion:LegacyRecord) => ({...potion,key:`${potion.kind}:${potion.tier}`,price:typeof Ot==='function'?Ot(potion):potion.price||0})),
+    catalog: () => (S.potions || []).filter((potion:LegacyRecord) => (potion.kind==='both'&&potion.tier===5)||typeof be==='undefined'||o.lvl >= (be[potion.tier] || 999)).map((potion:LegacyRecord) => ({...potion,key:`${potion.kind}:${potion.tier}`,price:typeof Ot==='function'?Ot(potion):potion.price||0})),
     pay(amount){if(!Number.isFinite(amount)||amount<0||o.gold<amount)return false;o.gold-=amount;battlefieldWorld.dirty=true;return true;},
     recover(resource,selectedPotion) {
       if ((battlefieldWorld.potCd?.[resource] || 0) > 0) return false;
@@ -1275,7 +1275,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       document.getElementById('bBack')?.classList.add('hidden');
       const arenaPanel = document.getElementById('combat-sandbox'); if (arenaPanel) arenaPanel.inert = true;
       Object.assign(v, CAMPS[team]); l.life = l.P.life; l.mana = l.P.mana;
-      simNames.reset(); warEvents.length=0; warRewards.reset(); supplies.reset(); roadMonsters.start(); updateWarNpcs();
+      simNames.reset(); warEvents.length=0; warRewards.reset(); supplies.reset(true); roadMonsters.start(); updateWarNpcs();
       soldierCountdown.render(true, battlefield!.state.deployment.soldierAppearanceSeconds, roadMonsters.totalCount);
     },
     leave() {
@@ -1305,7 +1305,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     setPlayerDead(team, waitSeconds) {
       respawnCountdown.render(true, waitSeconds);
       warRewards.killed(battlefieldHero);
-      Object.assign(battlefieldHero, CAMPS[team]);
+      battlefieldHero.act = 'die'; battlefieldHero.actT = 0;
       battlefieldWorld.life = 0; battlefieldWorld.deadT = waitSeconds; battlefieldWorld.manTgt = battlefieldWorld.tgt = battlefieldWorld.moveTo = null;
       battlefieldWorld.slowT = battlefieldWorld.stunT = battlefieldWorld.hpDotT = battlefieldWorld.hpDot = 0;
       battlefieldHero.actionRevision = (battlefieldHero.actionRevision || 0) + 1;

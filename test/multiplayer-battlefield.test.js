@@ -82,7 +82,7 @@ test('public combatants interpolate snapshots and advance native run, attack and
   now=550;const pair=s.OnlineBattlefield.entities(next);assert.equal(pair[1].remotePlayer.act,'run');assert.notEqual(pair[0].remotePlayer.actT,pair[1].remotePlayer.actT,'each soldier has its own footstep phase');
   next.battlefield.units.pop();next.actors.pop();
   next.actors[0].hp=0;now=400;assert.equal(s.OnlineBattlefield.entities(next).length,0,'dead soldiers have no render entity, shadow or nameplate');
-  next.battlefield.units[0].kind=1;assert.equal(s.OnlineBattlefield.entities(next).length,0,'dead SIM have no sprite, name or shadow');
+  next.battlefield.units[0].kind=1;next.battlefield.units[0].corpseRemaining=5;assert.equal(s.OnlineBattlefield.entities(next)[0].remotePlayer.act,'die');next.battlefield.units[0].corpseRemaining=0;assert.equal(s.OnlineBattlefield.entities(next).length,0,'SIM corpse disappears after five seconds');
   next.battlefield.units[0].kind=2;
   next.actors[0].hp=100;next.actors[0].life=2;next.actors[0].x=900;next.tick=8;pose=null;now=500;body=s.OnlineBattlefield.entities(next)[0].remotePlayer;assert.equal(body.x,900);assert.equal(body.hpMax,100);
   next.battlefield.units[0].kind=1;next.battlefield.units[0].faction='emei';body=s.OnlineBattlefield.entities(next)[0].remotePlayer;s.OnlineBattlefield.draw(ctx,body,next);assert.equal(draws.at(-1)[0],'hero');

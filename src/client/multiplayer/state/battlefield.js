@@ -243,7 +243,7 @@ body.tongkim-controls #public-war-prefer{display:flex}
       const ids=new Set(),result=[],now=performance.now();
       for(const unit of [...(next.training?.units||[]),...(next.map===9003?next.battlefield?.units||[]:[])]){
         if(!unit.kind||!unit.online)continue;
-        const actor=next.actors.find(a=>a.id===unit.id);if(!actor||actor.hp<=0)continue;ids.add(unit.id);
+        const actor=next.actors.find(a=>a.id===unit.id);if(!actor||(actor.hp<=0&&!(unit.kind===1&&unit.corpseRemaining>0)))continue;ids.add(unit.id);
         let body=bodies.get(unit.id);
         if(!body||body.life!==actor.life||body.dead!==(actor.hp<=0)){
           body={x:actor.x,y:actor.y,dir:0,t:0,actT:0,runT:((Math.imul(unit.id,2654435761)>>>0)%1000)/1000,at:now,history:new GameWebTransport.RemoteTimeline(),life:actor.life,dead:actor.hp<=0};bodies.set(unit.id,body);

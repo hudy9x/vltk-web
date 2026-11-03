@@ -32,7 +32,7 @@ test('SIM death is counted once and respawns after 30 seconds; boss death never 
   const { match, actors } = fixture(); match.start('song');
   const [sim] = match.add({ team: 'jin', faction: 'gaibang', level: 150, strength: 'normal', count: 1 });
   const home = { x: sim.x, y: sim.y }; sim.x = 1800; sim.y = 1792;
-  sim.hp = 0; match.tick(.01); assert.equal(sim.x, home.x); assert.equal(sim.y, home.y); match.tick(29.99); assert.equal(sim.hp, 0); assert.equal(match.state.score.song, 1);
+  sim.hp = 0; match.tick(.01); assert.equal(sim.x, 1800); assert.equal(sim.y, 1792); assert.equal(sim.act, 'die'); match.tick(29.99); assert.equal(sim.hp, 0); assert.equal(match.state.score.song, 1);
   match.tick(.01); assert.equal(sim.hp, sim.max); assert.equal(sim.dead, false);
   match.tick(600 - match.state.elapsed);
   const boss = actors.find(a => a.battlefieldTeam === 'jin' && a.battlefieldBoss); boss.hp = 0;
