@@ -104,3 +104,15 @@ test('ordinary online damage and poison retain their existing merge policy',()=>
   assert.equal(f.s.l.txt.length,1);assert.equal(f.s.l.txt[0].amount,300);assert.equal(f.s.l.txt[0].hits,2);
  }
 });
+
+test('online monster hits animate each attack once without turning poison ticks into attacks',()=>{
+ const f=view();f.s.v.x=200;f.s.v.y=100;
+ f.s.kn=(dx,dy)=>{assert.equal(dx,100);assert.equal(dy,0);return 6;};
+ const hit=(id,dot=false)=>({id,source:2,target:1,skill:0,kind:2,value:6,hit:{element:'phys',critical:false,hurt:false,dot}});
+ f.packet(f.monster,[hit(1)]);
+ const actor=f.s.l.enemies[0];assert.equal(actor.act,'at');assert.equal(actor.dir,6);assert.equal(f.labels[0][1],6);
+ actor.actT=.2;f.packet(f.monster,[hit(1)]);assert.equal(actor.actT,.2,'replayed event must not restart attack');assert.equal(actor.dir,6);
+ f.packet(f.monster,[hit(2)]);assert.equal(actor.actT,0,'each new attack restarts animation');
+ actor.act='st';actor.actT=.3;f.packet(f.monster,[hit(3,true)]);assert.equal(actor.act,'st');assert.equal(actor.actT,.3);
+ f.packet({...f.monster,hp:0},[hit(4)]);assert.notEqual(actor.act,'at','dead monsters must not start attacks');
+});

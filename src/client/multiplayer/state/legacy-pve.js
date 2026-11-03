@@ -139,7 +139,7 @@ var onlineWorld = (() => {
         slowT: m.cold,
         stun: m.stun,
         poison: m.poison,
-        dir: m.dir,
+        dir: actor.act === 'at' ? actor.dir : m.dir,
         moving: m.moving,
         _netX: m.x,
         _netY: m.y,
@@ -161,6 +161,13 @@ var onlineWorld = (() => {
       }
       if (event.kind === 2 && to) {
         const hit=event.hit||{element:'phys',critical:false,hurt:false,dot:false};
+        // Monster attacks arrive as hit events, without a skill-cast visual.
+        // Replay their pose only; HP and attack cadence remain server-owned.
+        if (from?.onlineMonster && !from.dead && !hit.dot) {
+          from.dir = kn(to.x - from.x, to.y - from.y);
+          ps(from, 'at');
+          from.actT = 0;
+        }
         const separate = !hit.dot && [1073,1074].includes(+event.skill);
         showDamageNumber(damageRecipient(event.target,to), event.value, hit.element, hit.critical, '',
           separate ? { merge: false, minRows: +event.skill === 1074 ? 3 : 2 } : undefined);
