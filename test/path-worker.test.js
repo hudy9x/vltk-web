@@ -5,7 +5,7 @@ const { Worker } = require('node:worker_threads');
 const { once } = require('node:events');
 const { compileTypeScriptEntry } = require('../tools/build-app');
 function moduleAt(file, name) {
-  const scope = { setTimeout, clearTimeout, atob, btoa };
+  const scope = { setTimeout, clearTimeout, atob, btoa, structuredClone };
   vm.runInNewContext(compileTypeScriptEntry(file, name).code, scope);
   return scope[name];
 }

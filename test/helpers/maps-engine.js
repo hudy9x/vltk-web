@@ -3,6 +3,7 @@ const { compileTypeScriptEntry } = require('../../tools/build-app');
 
 function loadMapsEngine(sandbox) {
   sandbox.atob = atob;
+  sandbox.structuredClone ??= structuredClone;
   vm.runInContext(compileTypeScriptEntry('maps/index.ts', 'MapsEngine').code, sandbox);
   return sandbox.MapsEngine;
 }

@@ -166,6 +166,7 @@ function simulatorGame(entries, arena=true, nativeMonsters=false, options) {
   s.Math=Object.create(Math);s.Math.random=()=>.5;
   const element=()=>({value:'',checked:false,hidden:false,style:{},attributes:{},listeners:{},
     setAttribute(key,value){this.attributes[key]=value;},addEventListener(key,fn){this.listeners[key]=fn;},
+    click(){if(!this.disabled)this.onclick?.({target:this,currentTarget:this});},
     focus(){this.focused=true;},querySelectorAll:()=>[],querySelector:id=>field(id)});
   function field(id){if(!fields.has(id))fields.set(id,element());return fields.get(id);}
   s.simNodes=[];s.simListeners={};

@@ -207,7 +207,8 @@ test('fixed map spawns consume encounter references and reject positions inside 
 
 test('field respawn preserves home, delays near the player, and retains the boss quest shortcut', () => {
   const fixture = fieldFixture();
-  const point = { x: 1600, y: 1600, cls: 'normal', tid: 12, t: 0 };
+  // An unconfigured ID exercises the legacy 0.75 damage scale, independently of authored monster balances.
+  const point = { x: 1600, y: 1600, cls: 'normal', tid: 999001, t: 0 };
   fixture.host.setField({ key: fixture.host.key(), pts: [point], kills: 0 });
   fixture.runtime.spawn(point);
   assert.equal(point.e.dmg, 75); assert.equal(point.e.home, point);
@@ -291,7 +292,7 @@ test('saving JSON or adding a map folder is detected by the real build without e
   assert.equal(fs.existsSync(directory), false);
   const map = plain(engine.getMap(2)); map.id = id; map.name = 'Editor reload probe'; map.navigation = { kind: 'open' };
   const read = () => {
-    const sandbox = vm.createContext({ atob });
+    const sandbox = vm.createContext({ atob, structuredClone });
     vm.runInContext(compileTypeScriptEntry('maps/index.ts', 'MapsEngine').code, sandbox);
     return sandbox.MapsEngine.getMap(id);
   };

@@ -268,6 +268,7 @@
       assert.equal(game.v.x, camp.x);
       assert.equal(game.v.y, camp.y);
       assert.equal(panel.hidden, true, "joining closes the recruitment panel");
+      simulator.battlefield.reset();
     }
   });
 

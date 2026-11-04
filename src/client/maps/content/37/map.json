@@ -58,32 +58,32 @@
       "id": "npc-7f307bd6",
       "npcId": "tongkim",
       "position": {
-        "x": 1316,
-        "y": 2282
+        "x": 1537,
+        "y": 1917
       }
     },
     {
       "id": "town-song-recruiter",
       "npcId": "song-recruiter",
       "position": {
-        "x": 1156,
-        "y": 2250
+        "x": 1276,
+        "y": 1943
       }
     },
     {
       "id": "town-jin-recruiter",
       "npcId": "jin-recruiter",
       "position": {
-        "x": 1436,
-        "y": 2260
+        "x": 1148,
+        "y": 2029
       }
     },
     {
       "id": "town-special-items",
       "npcId": "special-items",
       "position": {
-        "x": 1624,
-        "y": 2392
+        "x": 1230,
+        "y": 2214
       },
       "direction": 0
     }

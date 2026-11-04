@@ -21,7 +21,7 @@ test('road monsters spread symmetrically across Hoang Nguyên on walkable ground
   assert.equal(spawns.filter(point=>point.x>1792).length,35);
   assert.ok(Math.max(...spawns.map(point=>point.y))-Math.min(...spawns.map(point=>point.y))>1500);
   assert.ok(new Set(spawns.map(point=>point.x)).size>6);
-  const maps={atob,btoa};vm.runInNewContext(compileTypeScriptEntry('maps/index.ts','Maps').code,maps);
+  const maps={atob,btoa,structuredClone};vm.runInNewContext(compileTypeScriptEntry('maps/index.ts','Maps').code,maps);
   const nav=maps.Maps.createNavigationRuntime();nav.load(9003,maps.Maps.createLegacyCatalog().navigation[9003]);
   for(const point of spawns)assert.equal(nav.canStand(point.x,point.y),true);
 });

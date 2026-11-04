@@ -7,7 +7,7 @@ const { createHeadlessGame } = require('../tools/sim-balance/legacy-runtime.ts')
 
 const directory = 'src/client/maps/content/9003';
 const layout = JSON.parse(fs.readFileSync(`${directory}/layout.json`, 'utf8'));
-const scope = { atob, btoa };
+const scope = { atob, btoa, structuredClone };
 vm.runInNewContext(compileTypeScriptEntry('maps/index.ts', 'Maps').code, scope);
 const maps = scope.Maps;
 function navigation() {

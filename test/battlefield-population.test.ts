@@ -5,7 +5,7 @@
   const { compileTypeScriptEntry } = require('../tools/build-app');
   const { createHeadlessGame } = require('../tools/sim-balance/legacy-runtime.ts');
   function loadPopulationModule(entry: string): any {
-    const scope: any = { atob, btoa };
+    const scope: any = { atob, btoa, structuredClone };
     vm.runInNewContext(compileTypeScriptEntry(entry, 'Population').code, scope);
     return scope.Population;
   }
