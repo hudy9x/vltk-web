@@ -1,3 +1,5 @@
+import { normalizeMarshalSettings } from './marshal-settings';
+import type { MarshalSettings } from './marshal-settings';
 import { DEFAULT_WAR_DROP_RATES, validateWarDropRates } from './war-drop-settings';
 import type { WarDropRates } from './war-drop-settings';
 import { DEFAULT_DEPLOYMENT, PLAYER_DEATH_PENALTY_THRESHOLD, validateDeploymentSettings } from './deployment-settings';
@@ -37,7 +39,7 @@ export interface BattlefieldHost {
   teamPoints?(): Record<Team,number>;
   finished?(result: string, points: Record<Team,number>): void;
   marshalHP?(): number;
-  marshalSettings?(): Partial<Record<Team,{hp:number;res:number[]}>> | undefined;
+  marshalSettings?(): Partial<Record<Team,MarshalSettings>> | undefined;
   marshalAppeared?(side: Team): void;
   inAttackRange?(actor: SimulatorActor, target: LegacyEntity): boolean;
   prepare?(build: ArmyBuild, bossElement?: number): unknown | Promise<unknown>;
@@ -60,7 +62,7 @@ export function createBattlefield(host: BattlefieldHost) {
   let generation = 0, adding = false;
   let nextDeployment = validateDeploymentSettings(DEFAULT_DEPLOYMENT), deployment = { ...nextDeployment }, playerDeaths = 0;
   let marshalHP = DEFAULT_SOLDIERS.marshal.hp;
-  let marshalSettings:Partial<Record<Team,{hp:number;res:number[]}>>={};
+  let marshalSettings:Partial<Record<Team,MarshalSettings>>={};
   let result = '', elements = { song: 3, jin: 2 };
   const score = { song: 0, jin: 0 };
   let finalScore: Record<Team,number> | null = null;
@@ -103,7 +105,10 @@ export function createBattlefield(host: BattlefieldHost) {
     const candidates: LegacyEntity[] = [...host.actors(), ...(host.monsters?.() || [])].filter(target => canHit(actor, target));
     if (playerDue === null && host.playerAlive() && canHit(actor, host.player())) candidates.push(host.player());
     const distance = (target:LegacyEntity) => Math.hypot(target.x-actor.x,(target.y-actor.y)*2);
-    if (actor.battlefieldBoss) return candidates.filter(target => distance(target) < 650);
+    if (actor.battlefieldBoss) {
+      const home=actor.battlefieldSpawn || CAMPS[actor.battlefieldTeam as Team];
+      return candidates.filter(target => Math.hypot(target.x-home.x,target.y-home.y) <= (actor.battlefieldMovementRadius ?? 500));
+    }
     const priority = (target: LegacyEntity) => target === host.player() ? 0 : !target.battlefieldMonster && !target.battlefieldBoss ? 1 : 2;
     const inRange = (target: LegacyEntity) => host.inAttackRange?.(actor, target) ?? distance(target) < 500;
     const ranged = new Set(candidates.filter(inRange));
@@ -155,24 +160,35 @@ export function createBattlefield(host: BattlefieldHost) {
     const composition = build.composition ? distributeArmy(build.count, build.composition) : { [build.faction]: build.count };
     return Object.entries(composition).flatMap(([faction, count]) => Array.from({ length: count }, () => ({ ...build, faction, count: 1, composition: undefined })));
   }
-  async function createPlan(plan: ArmyBuild[], progress: (added: number, total: number) => void, yieldFrame: () => Promise<void>) {
+  async function createPlan(plan: ArmyBuild[], progress: (added: number, total: number) => void, yieldFrame: (delay?: number) => Promise<void>) {
     if (adding) throw new Error('Đang tạo quân, vui lòng chờ.');
     if (phase !== 'running') throw new Error('Hãy bắt đầu trận trước khi bổ sung quân.');
     if (host.actors().filter(actor => owns(actor) && !actor.battlefieldBoss).length + plan.length > 500) throw new Error('Tối đa 500 SIM và hai boss trên chiến trường.');
     const token = generation, created: SimulatorActor[] = []; adding = true;
     try {
+      const started = Date.now();
+      let batchRemaining = 2 + Math.floor(Math.random() * 3);
+      if (plan.length - batchRemaining === 1) batchRemaining += batchRemaining < 4 ? 1 : -1;
       for (const build of plan) {
+        if (batchRemaining === 0) {
+          const remaining = plan.length - created.length;
+          const wait = Math.min(2000 + Math.random() * 3000, Math.max(0, 120000 - (Date.now() - started)) / Math.ceil(remaining / 2));
+          progress(created.length, plan.length); await yieldFrame(wait);
+          batchRemaining = 2 + Math.floor(Math.random() * 3);
+          if (remaining - batchRemaining === 1) batchRemaining += batchRemaining < 4 ? 1 : -1;
+        }
         progress(created.length, plan.length); await yieldFrame();
         if (token !== generation || phase !== 'running') throw new Error('Đã hủy bổ sung quân.');
         const prepared = await host.prepare?.(build);
         if (token !== generation || phase !== 'running') throw new Error('Đã hủy bổ sung quân.');
         created.push(...add(build,prepared));
+        batchRemaining--;
       }
       progress(created.length, plan.length); return created;
     } catch (error) { for (const actor of created) if (host.actors().includes(actor)) host.remove(actor); throw error; }
     finally { adding = false; }
   }
-  const yieldFrame = () => new Promise<void>(resolve => setTimeout(resolve, 0));
+  const yieldFrame = (delay = 0) => new Promise<void>(resolve => setTimeout(resolve, delay));
   function addAsync(build: ArmyBuild, progress: (added: number, total: number) => void = () => {}, schedule = yieldFrame) {
     return createPlan(buildPlan(build), progress, schedule);
   }
@@ -199,8 +215,7 @@ export function createBattlefield(host: BattlefieldHost) {
     const validatedDrops=validateWarDropRates(configuredDropRates);
     const settings=host.marshalSettings?.(),snapshot:typeof marshalSettings={};
     for(const side of ['song','jin'] as const){const row=settings?.[side];if(row){
-      if(!Number.isSafeInteger(row.hp)||row.hp<1||row.hp>1e12||!Array.isArray(row.res)||row.res.length!==5||row.res.some(n=>!Number.isFinite(n)||n< -100||n>100))throw new Error('Máu hoặc kháng Nguyên soái không hợp lệ.');
-      snapshot[side]={hp:row.hp,res:[...row.res]};
+      snapshot[side]=normalizeMarshalSettings(row);
     }}
     const configuredMarshalHP = host.marshalHP?.() ?? DEFAULT_SOLDIERS.marshal.hp;
     if (!Number.isSafeInteger(configuredMarshalHP) || configuredMarshalHP < 1 || configuredMarshalHP > 1_000_000_000_000) throw new Error("HP Nguyên soái không hợp lệ.");
@@ -214,10 +229,18 @@ export function createBattlefield(host: BattlefieldHost) {
     for (const side of ['song', 'jin'] as const) {
       const actor = host.create(marshalBuild(side), elements[side], marshalRecipes.get(side));
       actor.battlefieldTeam = side; actor.battlefieldBoss = true;
+      actor.stun=actor.poison=actor.poisonDmg=actor.slowT=actor.slowPower=0;
       actor.n = `Hoàng Kim · ${actor.n}`;
       actor.max = actor.hp = actor.stats.life = marshalSettings[side]?.hp??marshalHP;
-      const configured=marshalSettings[side];
-      if(configured){
+      const configured=normalizeMarshalSettings(marshalSettings[side] || {hp:actor.max,res:['phys','poison','cold','fire','light'].map(key=>actor.res?.[key]??25)});
+      actor.mounted=false;actor.battlefieldMovementRadius=configured.movementRadius;actor.hurtReduction=configured.hurtReduction;
+      const applySettings=(stats:SimulatorActor['stats'])=>{
+        stats.stunRed=configured.stunReduction;stats.poisonRed=configured.poisonReduction;stats.freezeRed=configured.coldReduction;
+        stats.speed=stats.speedFoot=1;
+        if(stats.main)stats.main={...stats.main,rawRate:configured.attackSpeedPercent/100};
+      };
+      applySettings(actor.stats);for(const entry of actor.battlefieldDeck||[])applySettings(entry.stats);
+      if(marshalSettings[side]){
         actor.battlefieldConfiguredRes=true;
         const res=Object.fromEntries(['phys','poison','cold','fire','light'].map((key,i)=>[key,configured.res[i]]));
         actor.res=actor.stats.res={...res};

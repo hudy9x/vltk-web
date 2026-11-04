@@ -64,7 +64,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
   const until = Object.fromEntries(itemKinds.map(kind => [kind,0])) as Record<WarItem,number>;
   let shared = new Map<LegacyEntity,Partial<Record<WarItem,number>>>();
   const traps: {kind:WarItem;x:number;y:number;age:number;expires:number}[] = [];
-  const drops: { id:number; kind:WarItem; x:number; y:number; expires:number }[] = [];
+  const drops: { id:number; kind:WarItem; x:number; y:number; expires:number; publicAt:number; owner:LegacyEntity }[] = [];
   function reset() {
     elapsed=0; nextId=0; credits=new WeakMap(); defeated=new WeakSet(); merits=new WeakMap(); soldierKills=new WeakMap(); playerKills=new WeakMap(); totals.song=totals.jin=0; drops.length=0; traps.length=0; shared=new Map();
     for(const kind of Object.keys(WAR_ITEMS) as WarItem[]) { until[kind]=0; if(!host.storage)inventory[kind]=0; }
@@ -102,10 +102,10 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
       host.event?.(`${name(credit.source)} đạt danh hiệu mới: <${title}> (${before+points} quân trạng · +${Math.round(warRank(before+points).bonus*100)}% sát thương vật lý ngoại/nội công, tốc độ đánh và kháng)`);
     }
     if(credit.player) { host.earned?.(points);host.changed(); }
-    if((target.battlefieldMonster||target.battlefieldBoss) && random()<(host.dropChance?.(target)??warDropProbability(target)) && credit.team===host.team()) {
+    if((target.battlefieldMonster||target.battlefieldBoss) && random()<(host.dropChance?.(target)??warDropProbability(target))) {
       const kinds=Object.keys(WAR_ITEMS) as WarItem[], kind=kinds[Math.floor(random()*kinds.length)];
       if(drops.length>=40)drops.shift();
-      drops.push({id:++nextId,kind,x:target.x,y:target.y,expires:elapsed+90});
+      drops.push({id:++nextId,kind,x:target.x,y:target.y,expires:elapsed+120,publicAt:elapsed+20,owner:credit.source});
     }
   }
   function tick(dt:number) {
@@ -129,7 +129,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     for(let i=drops.length-1;i>=0;i--) {
       const drop=drops[i];
       if(drop.expires<=elapsed) { drops.splice(i,1);continue; }
-      if(host.alive()&&Math.hypot(player.x-drop.x,(player.y-drop.y)*2)<=80) { if(host.canCollect?.(drop.kind)===false)continue; stock(drop.kind,stock(drop.kind)+1); drops.splice(i,1); host.event?.(`Nhặt ${WAR_ITEMS[drop.kind].name} (${stock(drop.kind)})`); host.changed(); }
+      if(host.alive()&&(drop.owner===player||elapsed>=drop.publicAt)&&Math.hypot(player.x-drop.x,(player.y-drop.y)*2)<=80) { if(host.canCollect?.(drop.kind)===false)continue; stock(drop.kind,stock(drop.kind)+1); drops.splice(i,1); host.event?.(`Nhặt ${WAR_ITEMS[drop.kind].name} (${stock(drop.kind)})`); host.changed(); }
 
     }
   }

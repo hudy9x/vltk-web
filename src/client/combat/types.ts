@@ -17,6 +17,7 @@ export interface CombatTarget extends WorldPoint {
   hurtT?: number;
   actionRevision?: number;
   hurtProxy?: boolean;
+  hurtReduction?: number;
   /** Player dùng l.life; quái dùng hp. Player không bắt buộc có hp. */
   hp?: number;
   r?: number;

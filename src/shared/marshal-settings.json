@@ -1,0 +1,8 @@
+{
+  "stunReduction": 40,
+  "poisonReduction": 40,
+  "coldReduction": 40,
+  "hurtReduction": 40,
+  "attackSpeedPercent": 200,
+  "movementRadius": 500
+}

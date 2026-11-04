@@ -6,6 +6,8 @@ impl Game {
         for (&map, room) in &mut self.rooms {
             room.loot.retain_mut(|l| {
                 l.ttl -= dt;
+                // Monster loot is reserved for its killer for the first twenty seconds.
+                if l.ttl <= self.rules.loot_seconds - 20.0 { l.public = true; }
                 l.ttl > 0.0
             });
             for m in &mut room.mobs {

@@ -142,7 +142,13 @@ impl Game {
                 }
             }
             let speed = speed::movement(a) * dt;
+            let previous=(a.x,a.y);
             room.nav.step(&mut a.x, &mut a.y, &mut a.path, speed);
+            if let Some(unit)=self.battlefield.units.get(&id).filter(|u|u.kind==3) {
+                if distance(unit.home.0,unit.home.1,a.x,a.y)>unit.leash+0.001 {
+                    (a.x,a.y)=previous;a.path.clear();
+                }
+            }
         }
     }
 }

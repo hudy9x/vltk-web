@@ -2437,3 +2437,23 @@ fn companions_paused_on_disconnect_are_safe_and_return_for_the_same_character_on
  assert!(!g.actors.contains_key(&sim));g.join(10,"account-a".into(),1,profile.clone()).unwrap();assert!(g.companion_list("account-a",1).is_empty());
  g.join(11,"account-a".into(),0,profile).unwrap();let list=g.companion_list("account-a",0);assert_eq!(list.len(),1);assert_eq!(list[0]["hp"],123.0);remove_fixture(g);
 }
+
+#[test]
+fn monster_loot_reserves_twenty_seconds_then_allows_public_manual_pickup_and_expires_at_120() {
+    let mut g=game();field(&mut g);
+    for room in g.rooms.values_mut(){room.mobs.clear();}
+    let drop=Loot{public:false,knb:0,grant_id:None,id:9999,owner:"account-a".into(),owner_slot:0,x:100.0,y:100.0,gold:2,ttl:120.0};
+    g.rooms.get_mut(&2).unwrap().loot.push(drop.clone());
+    g.rules.tick_seconds=19.999;g.advance_monsters(&mut vec![]);
+    g.command(2,cmd(10,6,2,drop.id,0,0.0,0.0)).unwrap();assert_eq!(g.actors[&2].pickup,0);
+    g.command(1,cmd(10,6,2,drop.id,0,0.0,0.0)).unwrap();assert_eq!(g.actors[&1].pickup,drop.id);
+    g.actors.get_mut(&1).unwrap().pickup=0;
+    g.rules.tick_seconds=0.00101;g.advance_monsters(&mut vec![]);assert!(g.rooms[&2].loot[0].public);
+    g.command(2,cmd(11,6,2,drop.id,0,0.0,0.0)).unwrap();assert_eq!(g.actors[&2].pickup,drop.id);
+    {let a=g.actors.get_mut(&2).unwrap();a.x=100.0;a.y=100.0;}
+    g.commit_rewards(&mut vec![],vec![]);assert!(g.rooms[&2].loot.is_empty());
+    let count=g.outbox.pending.len();g.commit_rewards(&mut vec![],vec![]);assert_eq!(g.outbox.pending.len(),count);
+    g.rooms.get_mut(&2).unwrap().loot.push(drop);
+    g.rules.tick_seconds=119.999;g.advance_monsters(&mut vec![]);assert_eq!(g.rooms[&2].loot.len(),1);
+    g.rules.tick_seconds=0.00101;g.advance_monsters(&mut vec![]);assert!(g.rooms[&2].loot.is_empty());
+}

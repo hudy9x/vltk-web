@@ -99,7 +99,7 @@ declare function Fa(sprite:LegacyRecord,direction:number,age:number,x:number,y:n
 declare function d_(trap:{c:number;x:number;y:number}):void;
 declare function $(): void;
 declare const INV_MAX: number;
-declare const OnlineBattlefield:{marshalSettings?:Partial<Record<'song'|'jin',{hp:number;res:number[]}>>;leave():boolean;state?:{itemBuffs?:Partial<Record<keyof typeof WAR_ITEMS,number>>}};
+declare const OnlineBattlefield:{marshalSettings?:Partial<Record<'song'|'jin',import('./marshal-settings').MarshalSettings>>;leave():boolean;state?:{itemBuffs?:Partial<Record<keyof typeof WAR_ITEMS,number>>}};
 declare function k(message: string): void;
 declare function ma(id: number | string): unknown;
 declare function j2(id: number): number;
@@ -260,9 +260,9 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
         result = originalHit(boss ? { ...ability, series5: 0 } : ability, target);
       }
       finally { target.hurtProxy = proxy; l.P.series5 = flat; if (boss) { target.res = resistance; l.P.anti = anti; l.P.antiMax = antiMax; target.resBrkT = breakTime; } }
-      if (defendedSim) {
+      if (defendedSim || boss) {
         const defender = target as SimulatorActor, defense = defender.stats;
-        const resolved = skillDefense(Math.max(0, before - defender.hp), defense, defender.mana, v.series, Jr);
+        const resolved = defendedSim ? skillDefense(Math.max(0, before - defender.hp), defense, defender.mana, v.series, Jr) : {damage:Math.max(0,before-defender.hp),mana:defender.mana};
         defender.mana = resolved.mana; defender.hp = Math.max(0, before - resolved.damage);
         // Reduce only the newly applied poison, preserving an existing poison pool.
         const addedPoison = Math.max(0, (defender.poison || 0) * (defender.poisonDmg || 0) - poisonBefore);
@@ -273,7 +273,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
         defender.slowT = Math.max(statusBefore.slow, statusDuration(defender.slowT || 0, defense.freezeRed));
         defender.stun = Math.max(statusBefore.stun, statusDuration(defender.stun || 0, defense.stunRed));
         if (!(skill.parts.cold > 0)) applyActorHurt(defender, resolved.damage, defender.max);
-        reflectHit(defender, v, skill, resolved.damage);
+        if(defendedSim)reflectHit(defender, v, skill, resolved.damage);
         step("Phòng thủ SIM sau kháng: khiên → hấp thụ → hồi MP → nội lực hộ thân", resolved);
       }
       if (before > target.hp || (target.poison || 0) * (target.poisonDmg || 0) > poisonBefore) recordBattlefieldHit(v,target);
@@ -659,7 +659,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     if (actor.seeT <= 0) { actor.seeT = .25; actor.see = skillIgnoresTerrain(skill) || mt(actor.x, actor.y, target.x, target.y); }
     // Same approach/line-of-sight/cooldown cadence as the monster $d loop.
     actor.moving = distance() > reach || !actor.see;
-    if (actor.battlefieldBoss && actor.moving) { actor.moving = false; return; }
+    if (actor.battlefieldBoss && actor.moving && actor.battlefieldMovementRadius === 0) { actor.moving = false; return; }
     if (actor.moving) {
       const before = { x: actor.x, y: actor.y }, step = 100 * actorMovementSpeed(actor) * dt;
       const goal = { x: target.x, y: target.y };
@@ -671,6 +671,10 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
         Object.assign(actor, before);
         const next = crowd.steer(actor, proposed, step, (x, y, tx, ty) => typeof mapNavigation !== 'undefined' ? mapNavigation.clear(x, y, tx, ty) : mt(x, y, tx, ty));
         Object.assign(actor, next);
+        const home=actor.battlefieldSpawn;
+        if(actor.battlefieldBoss && home && Math.hypot(actor.x-home.x,actor.y-home.y)>(actor.battlefieldMovementRadius??500)) {
+          Object.assign(actor,before);actor.moving=false;
+        }
       }
     }
     if (distance() > reach + 4 || !actor.see || actor.cooldown > 0) return;
@@ -723,6 +727,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     }
     if (actor.curse && typeof WP === "function") WP(context, actor, Jn);
     if (actor.stFx && typeof ZP === "function") ZP(context, actor, height ? Math.min(height, 110) : 50, Jn, dt);
+    if (actor.battlefieldTeam && (actor.dead || actor.act === "die")) return;
     const earned = battlefield?.active ? warRewards.rank(actor) : null;
     const actorName = actor.battlefieldBoss ? `${actor.battlefieldTeam === 'song' ? 'Tống' : 'Kim'} Nguyên soái` : actor.n;
     const title=actor.battlefieldBoss?'<Nguyên soái>':earned?`<${actor.battlefieldTeam === 'song' ? 'Tống' : 'Kim'} ${earned.name}>`:'';

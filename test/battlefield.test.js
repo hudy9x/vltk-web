@@ -102,7 +102,8 @@ test('team soldiers reject friendly fire and fight only opposing soldiers, SIMs 
   for(const actor of [song,player]) {assert.equal(match.canHit(actor,monsters[0]),true);assert.equal(match.canHit(monsters[0],actor),true);}
   assert.equal(match.canHit(jin,monsters[0]),false);assert.equal(match.canHit(monsters[0],jin),false);
   assert.equal(match.canHit(player,monsters[1]),false);assert.equal(match.canHit(monsters[0],monsters[1]),true);
-  song.x=1100;song.y=1792;assert.ok(match.targets(song).includes(monsters[0]));
+  Object.assign(monsters[0],song.battlefieldSpawn);assert.ok(match.targets(song).includes(monsters[0]));
+  monsters[0].x=song.battlefieldSpawn.x+501;assert.ok(!match.targets(song).includes(monsters[0]));
   monsters[0].hp=0;assert.equal(match.canHit(player,monsters[0]),false);assert.equal(match.state.monsters.alive,1);
   match.tick(1200);assert.equal(match.canHit(player,monsters[1]),false);
 });
@@ -153,4 +154,23 @@ test('paired async reinforcements reject an overflowing batch before creating ei
     assert.equal(actors.filter(actor => actor.battlefieldBoss).length, 2);
     assert.equal(actors.length, 502);
   }
+});
+
+test('private SIM creation alternates sides in batches of two to four within two minutes',async()=>{
+ let time=0;sandbox.Date={now:()=>time};
+ try{
+  for(const total of [2,4,6,20,200]){
+   time=0;const {match,actors}=fixture();match.start('song');
+   let before=0;const batches=[],waits=[];
+   await match.addBothAsync({faction:'shaolin',level:150,strength:'normal',count:total},()=>{},async(delay=0)=>{
+    if(delay>0){batches.push(actors.length-before);before=actors.length;waits.push(delay);time+=delay;}
+   });
+   batches.push(actors.length-before);
+   assert.ok(batches.every(n=>n>=2&&n<=4),String(batches));
+   assert.ok(waits.every(n=>n>0&&n<=5000));assert.ok(time<=120000);
+   assert.equal(actors.filter(a=>a.battlefieldTeam==='song').length,total/2);
+   assert.equal(actors.filter(a=>a.battlefieldTeam==='jin').length,total/2);
+   actors.forEach((a,i)=>assert.equal(a.battlefieldTeam,i%2?'jin':'song'));
+  }
+ }finally{delete sandbox.Date;}
 });

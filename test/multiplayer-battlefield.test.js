@@ -44,7 +44,9 @@ test('public snapshots carry more than 32 combatants and reject malformed room s
   assert.throws(()=>protocol.decodeWorld(worldPacket(1,{score:[-1,0]})),/battlefield state/);
   const drop={id:'1700000000000-1-100-5',kind:'drum',team:0,x:100,y:100,expires:500};
   assert.equal(protocol.decodeWorld(worldPacket(1,{itemDrops:[drop]})).battlefield.itemDrops.length,1);
-  assert.throws(()=>protocol.decodeWorld(worldPacket(1,{itemDrops:[{...drop,team:1}]})),/item drops/);
+  assert.equal(protocol.decodeWorld(worldPacket(1,{itemDrops:[{...drop,team:1,publicAt:20}]})).battlefield.itemDrops.length,1);
+  assert.throws(()=>protocol.decodeWorld(worldPacket(1,{itemDrops:[{...drop,team:2}]})),/item drops/);
+  assert.throws(()=>protocol.decodeWorld(worldPacket(1,{itemDrops:[{...drop,publicAt:'20'}]})),/item drops/);
   assert.throws(()=>protocol.decodeWorld(worldPacket(1,{potions:[41,30]})),/battlefield state/);
   assert.throws(()=>protocol.decodeWorld(worldPacket(1,{units:[{id:500,team:3}]})),/battlefield state/);
 });

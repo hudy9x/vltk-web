@@ -1,7 +1,7 @@
 // Public-room presentation. Commands express intent; only server snapshots change the match.
 var OnlineBattlefield=(()=>{
   let state=null,world=null,sender=()=>0,panel=null,hud=null,table=null,summary={},lastAt=0,requestAt=0,leaving=false,preferPlayers=true,preferenceSent=null,controlsActive=false,recruitment=null,shop=null,shopSlot=0,shopStamp='',shopBusy=false,shopMessage='',respawnNotice=null;
-  let shownResult=null,configuredDrops,configuredMarshals;
+  let shownResult=null,configuredDrops,configuredMarshals,configuredSimPerTeam;
   let lastKillNotice=0,marshalAnnounced=false,announcementAt=0;
   const bodies=new Map();
   const rank=p=>['Binh sĩ','Hiệu úy','Thống lĩnh','Phó tướng','Đại tướng'][[3000,9000,18000,30000].filter(n=>p>=n).length];
@@ -18,6 +18,21 @@ var OnlineBattlefield=(()=>{
 #public-war-hud{position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:1200;margin:0;color:#ffe1a0;font:700 20px/1.5 WarCalligraphy,cursive;text-align:center;text-shadow:0 2px 3px #000,0 0 12px #000,0 0 24px #9b3a12;pointer-events:none}
 #public-war-hud[hidden],#public-war-respawn[hidden]{display:none}
 #public-war-respawn{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);z-index:95020;max-width:90vw;box-sizing:border-box;padding:10px 20px;border:1px solid #b29455;border-radius:6px;background:#181c16ed;color:#ffe1a0;font:700 20px/1.5 WarCalligraphy,cursive;text-align:center;text-shadow:0 2px 3px #000,0 0 12px #000;pointer-events:none}
+#public-war-settings{width:min(960px,94vw);height:min(760px,88dvh);overflow:hidden;display:flex;flex-direction:column}
+#public-war-settings>header{position:static;flex-shrink:0}
+#public-war-settings>.war-content{padding:0;min-height:0;flex:1;display:flex;flex-direction:column;overflow:hidden}
+#public-war-settings .war-settings-note{margin:0;padding:12px 18px 4px;font-size:12px}
+#public-war-settings .war-tabs{position:static;flex-shrink:0;overflow-x:auto;padding:10px 18px;gap:6px}
+#public-war-settings .war-tabs button{white-space:nowrap;min-height:40px}
+#public-war-settings .war-tabs button[aria-selected=true]{color:#ffe3a0;border-bottom:3px solid #cbbb72}
+#public-war-settings button:focus-visible{outline:2px solid #ffe3a0;outline-offset:2px}
+#public-war-settings .war-settings-body{overflow:auto;min-height:0;flex:1;padding:18px;overscroll-behavior:contain}
+#public-war-settings [role=tabpanel]>h3{margin:0 0 8px;color:#ead48e;font-weight:500}
+#public-war-settings [role=tabpanel]>p{margin:0 0 16px}
+#public-war-settings .war-settings-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;padding:12px 18px;border-top:1px solid #57523b;background:#23251d}
+#public-war-settings .war-settings-footer p{margin:0;font-size:12px}
+#public-war-settings .war-settings-footer button{min-height:40px;border-color:#b6a363;color:#ffe3a0;white-space:nowrap}
+@media(max-width:600px){#public-war-settings{height:90dvh;max-height:90dvh}#public-war-settings .war-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:8px 12px}#public-war-settings .war-tabs button{min-width:0;white-space:normal;padding:7px 4px}#public-war-settings .war-settings-body{padding:12px}#public-war-settings .war-settings-footer{align-items:stretch;flex-direction:column-reverse;padding:10px 12px}}
 #public-war-ranking{z-index:100020}
 body.tongkim-controls #modeSw,body.tongkim-controls #rotBtn,body.tongkim-controls #rideBtn{display:none!important}
 #public-war-prefer{display:none;align-items:center;gap:6px;cursor:pointer}
@@ -116,8 +131,8 @@ body.tongkim-controls #public-war-prefer{display:flex}
     mount();
     let dialog=document.getElementById('public-war-settings');
     if(dialog){dialog.hidden=false;return;}
-    dialog=document.createElement('section');dialog.id='public-war-settings';dialog.className='war-dialog';dialog.style.zIndex='100022';dialog.setAttribute('role','dialog');
-    dialog.innerHTML='<header><h2>Cài đặt Tống Kim · lưu server</h2><button class="war-close" aria-label="Đóng cài đặt">×</button></header><div class="war-content"><p>Đang tải cấu hình từ server…</p></div>';
+    dialog=document.createElement('section');dialog.id='public-war-settings';dialog.className='war-dialog';dialog.style.zIndex='100022';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','public-war-settings-title');
+    dialog.innerHTML='<header><h2 id="public-war-settings-title">Cài đặt Tống Kim · lưu server</h2><button class="war-close" aria-label="Đóng cài đặt">×</button></header><div class="war-content"><p>Đang tải cấu hình từ server…</p></div>';
     dialog.querySelector('.war-close').onclick=()=>dialog.remove();document.body.appendChild(dialog);
     const content=dialog.querySelector('.war-content');
     try{
@@ -125,40 +140,65 @@ body.tongkim-controls #public-war-prefer{display:flex}
       const value=data.settings,escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       const input=(label,path,v,min,max)=>`<label>${label}<input data-setting="${path}" type="number" step="any" min="${min}" max="${max}" value="${v}"></label>`;
       const skills=(path,ids,available)=>[0,1].map(slot=>`<label>Chiêu ${slot+1}<select data-setting="${path}.skills.${slot}"><option value="0">${path.startsWith('marshals')?'Mặc định theo hệ':'Đánh thường'}</option>${available.map(skill=>`<option value="${skill.id}" ${ids[slot]===skill.id?'selected':''}>${escape(skill.name)} · cấp ${skill.level}</option>`).join('')}</select></label>`).join('');
-      content.innerHTML=`<p>Cấu hình chung lưu tại server, dùng cho các trận mới. Trận đang chạy giữ cấu hình lúc bắt đầu. Nguyên soái xuất hiện ở nửa thời lượng trận.</p><div class="war-grid">${input('Thời lượng PvP (phút)','durationSeconds',(value.durationSeconds??1200)/60,1/6,120)}${input('Thời lượng trận riêng (phút)','privateDurationSeconds',(value.privateDurationSeconds??1200)/60,1/6,120)}</div>`;
+      content.innerHTML='';
+      const notice=document.createElement('p');notice.className='war-settings-note';notice.textContent='Lưu tại server · Áp dụng từ trận mới. Trận đang chạy giữ cấu hình ban đầu.';
+      const tabs=document.createElement('div');tabs.className='war-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Nhóm cài đặt Tống Kim');
+      const body=document.createElement('div');body.className='war-settings-body';
+      const groups=[['match','Trận đấu'],['sims','Quân SIM'],['soldiers','Binh sĩ'],['marshals','Nguyên soái'],['drops','Vật phẩm rơi']];
+      const panels=new Map(),buttons=[];
+      function selectTab(index,focus=false){
+        groups.forEach(([key],i)=>{buttons[i].setAttribute('aria-selected',String(i===index));buttons[i].tabIndex=i===index?0:-1;panels.get(key).hidden=i!==index;});
+        body.scrollTop=0;
+        if(focus)buttons[index].focus();
+      }
+      groups.forEach(([key,label],index)=>{
+        const tab=document.createElement('button');tab.type='button';tab.id=`public-war-tab-${key}`;tab.textContent=label;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',`public-war-page-${key}`);
+        const page=document.createElement('section');page.id=`public-war-page-${key}`;page.setAttribute('role','tabpanel');page.setAttribute('aria-labelledby',tab.id);page.tabIndex=0;
+        panels.set(key,page);buttons.push(tab);tabs.appendChild(tab);body.appendChild(page);
+        tab.onclick=()=>selectTab(index);
+        tab.onkeydown=event=>{
+          const next=event.key==='ArrowRight'?(index+1)%groups.length:event.key==='ArrowLeft'?(index+groups.length-1)%groups.length:event.key==='Home'?0:event.key==='End'?groups.length-1:null;
+          if(next===null)return;event.preventDefault();selectTab(next,true);
+        };
+      });
+      panels.get('match').innerHTML=`<h3>Thời lượng trận đấu</h3><p>Thiết lập riêng cho chiến trường PvP và trận riêng.</p><div class="war-grid">${input('Thời lượng PvP (phút)','durationSeconds',(value.durationSeconds??1200)/60,1/6,120)}${input('Thời lượng trận riêng (phút)','privateDurationSeconds',(value.privateDurationSeconds??1200)/60,1/6,120)}</div>`;
+      panels.get('sims').innerHTML=`<h3>Quân SIM mỗi phe</h3><p>Số lượng chia đều cho Tống và Kim. Nhập 10 sẽ có 10 Tống + 10 Kim = 20 SIM.</p><div class="war-grid">${input('SIM mỗi bên','simPerTeam',value.simPerTeam??10,0,100)}</div><p>Mỗi đợt 2–4 SIM, cách nhau ngẫu nhiên vài giây; hoàn tất trong tối đa 2 phút. Đặt 0 để không tạo SIM.</p>`;
+      panels.get('soldiers').innerHTML='<h3>Binh sĩ chiến trường</h3><p>Số lượng là tổng hai phe. Tối đa 200 binh sĩ; đặt 0 để tắt một cấp quân. Chiêu dùng cấp 50–70.</p>';
+      panels.get('marshals').innerHTML='<h3>Nguyên soái · cài đặt chung hai phe</h3><p>Các chỉ số bên dưới áp dụng giống nhau cho cả Tống và Kim. Mỗi phe một Nguyên soái, xuất hiện ở nửa thời lượng trận. Ngũ hành ngẫu nhiên; bộ chiêu gồm 1 chiêu cấp 80, 1 chiêu cấp 150 và 1 phụ trợ cùng hệ.</p>';
+      panels.get('drops').innerHTML='<h3>Vật phẩm Quân Nhu</h3>';
+      content.append(notice,tabs,body);selectTab(0);
       const rates=document.createElement('div');rates.className='war-card';
-      rates.innerHTML=`<h3>Tỉ lệ rơi vật phẩm Quân Nhu (%)</h3><p>Áp dụng cho PvP và trận riêng từ trận mới. Tự nhặt khi đến gần; túi đầy thì vật phẩm ở lại trên đất tối đa 90 giây.</p><div class="war-grid">${[...data.ranks,'marshal'].map((rank,index)=>input(index<data.titles.length?data.titles[index]:'Nguyên soái','dropRates.'+rank,value.dropRates[rank],0,100)).join('')}</div>`;content.appendChild(rates);
+      rates.innerHTML=`<h3>Tỉ lệ rơi vật phẩm Quân Nhu (%)</h3><p>Áp dụng cho PvP và trận riêng từ trận mới. 20 giây đầu dành cho người hạ quái; sau đó ai cũng có thể nhặt, kể cả phe đối phương. Tự nhặt khi đến gần; biến mất sau 2 phút kể từ lúc rơi.</p><div class="war-grid">${[...data.ranks,'marshal'].map((rank,index)=>input(index<data.titles.length?data.titles[index]:'Nguyên soái','dropRates.'+rank,value.dropRates[rank],0,100)).join('')}</div>`;panels.get('drops').appendChild(rates);
       for(const [index,rank]of data.ranks.entries()){
         const row=value.soldiers[rank],path='soldiers.'+rank,card=document.createElement('div');card.className='war-card';
-        card.innerHTML=`<h3>${escape(data.titles[index])}</h3><div class="war-grid">${input('Tổng hai phe',path+'.count',row.count,0,100)}${input('Máu',path+'.hp',row.hp,1,1e12)}<label>Hồi sinh<select data-setting="${path}.respawnSeconds">${[10,20,30].map(n=>`<option ${n===row.respawnSeconds?'selected':''}>${n}</option>`).join('')}</select></label>${input('Tuần tra',path+'.patrolRadius',row.patrolRadius,40,1200)}${input('Truy đuổi',path+'.leashRadius',row.leashRadius,40,1600)}${skills(path,row.skills,data.skills.filter(s=>s.level>=50&&s.level<=70))}</div>`;content.appendChild(card);
+        card.innerHTML=`<h3>${escape(data.titles[index])}</h3><div class="war-grid">${input('Tổng hai phe',path+'.count',row.count,0,100)}${input('Máu',path+'.hp',row.hp,1,1e12)}<label>Hồi sinh<select data-setting="${path}.respawnSeconds">${[10,20,30].map(n=>`<option ${n===row.respawnSeconds?'selected':''}>${n}</option>`).join('')}</select></label>${input('Tuần tra',path+'.patrolRadius',row.patrolRadius,40,1200)}${input('Truy đuổi',path+'.leashRadius',row.leashRadius,40,1600)}${skills(path,row.skills,data.skills.filter(s=>s.level>=50&&s.level<=70))}</div>`;panels.get('soldiers').appendChild(card);
       }
-      for(const team of ['song','jin']){
-        const row=value.marshals[team],path='marshals.'+team,card=document.createElement('div');card.className='war-card';
-        card.innerHTML=`<h3>Nguyên soái ${team==='song'?'Tống':'Kim'}</h3><p>Ngũ hành ngẫu nhiên mỗi trận · 1 chiêu cấp 80, 1 chiêu cấp 150 và 1 phụ trợ cùng hệ.</p><div class="war-grid">${input('Máu',path+'.hp',row.hp,1,1e12)}${['Vật lí','Độc','Băng','Hỏa','Lôi'].map((name,i)=>input('Kháng '+name+' (%)',path+'.res.'+i,row.res[i],-100,100)).join('')}</div>`;
-        content.appendChild(card);
-      }
-      const save=document.createElement('button');save.textContent='Lưu cấu hình lên server';save.disabled=!data.editable;const message=document.createElement('p');message.setAttribute('role','status');
+      const marshal=value.marshals.song;
+      panels.get('marshals').innerHTML+=`<div class="war-grid">${input('Máu mỗi Nguyên soái','marshals.song.hp',marshal.hp,1,1e12)}${['Vật lí','Độc','Băng','Hỏa','Lôi'].map((name,i)=>input('Kháng '+name+' (%)','marshals.song.res.'+i,marshal.res[i],-100,100)).join('')}${[['stunReduction','Giảm thời gian choáng (%)',40,0,100],['poisonReduction','Giảm thời gian trúng độc (%)',40,0,100],['coldReduction','Giảm thời gian làm chậm (%)',40,0,100],['hurtReduction','Giảm thời gian khựng đòn (%)',40,0,100],['attackSpeedPercent','Tốc độ đánh (%)',200,25,300],['movementRadius','Phạm vi di chuyển',500,0,1600]].map(([key,label,fallback,min,max])=>input(label,'marshals.song.'+key,marshal[key]??fallback,min,max)).join('')}</div><p>Tốc độ đánh 200% dùng hệ tốc độ đánh/thi triển của game. Phạm vi di chuyển tính từ vị trí xuất hiện; đặt 0 để đứng yên.</p>`;
+      const save=document.createElement('button');save.textContent='Lưu cấu hình lên server';save.disabled=!data.editable;const message=document.createElement('p');message.setAttribute('role','status');message.textContent=data.editable?'Lưu tất cả nhóm cài đặt trong một lần.':'Chỉ GM được lưu cấu hình.';
       save.onclick=async()=>{
         save.disabled=true;message.textContent='Đang lưu…';
         try{
           for(const field of content.querySelectorAll('[data-setting]')){
             const parts=field.dataset.setting.split('.');let target=value;for(const part of parts.slice(0,-1))target=target[part];target[parts.at(-1)]=['durationSeconds','privateDurationSeconds'].includes(field.dataset.setting)?Math.round(Number(field.value)*60):Number(field.value);
           }
+          value.marshals.jin={...value.marshals.song,res:[...value.marshals.song.res]};
           for(const row of Object.values(value.soldiers))row.skills=row.skills.filter(Boolean);
           const response=await fetch('/api/multiplayer/battlefield-settings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(value)}),saved=await response.json();if(!response.ok)throw new Error(saved.error);
           message.textContent='Đã lưu trên server. Áp dụng từ trận mới.';
-        }catch(error){message.textContent=error.message;}finally{save.disabled=false;}
-      };content.append(save,message);
+        }catch(error){message.textContent=error.message;}finally{save.disabled=!data.editable;}
+      };const footer=document.createElement('footer');footer.className='war-settings-footer';footer.append(message,save);content.appendChild(footer);
     }catch(error){content.textContent=error.message;}
   }
   const api={
     settings:openSettings,
     get marshalSettings(){return configuredMarshals;},
     get dropRates(){return configuredDrops;},
+    get simPerTeam(){return configuredSimPerTeam;},
     async matchDuration(mode='public'){
       const response=await fetch('/api/multiplayer/battlefield-settings'),data=await response.json();
       if(!response.ok)throw new Error(data.error||'Không tải được thời lượng trận từ server.');
-      configuredDrops=data.settings.dropRates;configuredMarshals=data.settings.marshals;
+      configuredDrops=data.settings.dropRates;configuredMarshals=data.settings.marshals;configuredSimPerTeam=data.settings.simPerTeam??10;
       return data.settings[mode==='private'?'privateDurationSeconds':'durationSeconds']??1200;
     },
     get active(){return !!state||!!read();},
@@ -286,6 +326,7 @@ body.tongkim-controls #public-war-prefer{display:flex}
         if(!asset||!M8(asset,definition.sz,actor.x,actor.y,1,false,actor.dead ? .35 : 1)){ctx.fillStyle=color;ctx.beginPath();ctx.arc(actor.x,actor.y-18,12,0,7);ctx.fill();}
       }
       effects('over');
+      if(actor.dead || actor.act==='die')return;
       L3(actor.x,actor.y-(typeof nameplateOffset==='function'?nameplateOffset(anim,scale,.9,6,58):65),(actor.kind>=2?`${actor.team===0?'Tống':'Kim'} ${actor.name}`:actor.name),color,12,actor.hp/actor.maxHp,OnlinePvp.healthColor(next,actor),!actor.training&&actor.kind<2?`<${actor.team===0?'Tống':'Kim'} ${rank(actor.points)}>`:undefined,'#8de1cf');
     },
   };

@@ -1,6 +1,7 @@
 // Global public-room configuration. Only validated native skill IDs cross the API.
 const native=require('./runtime.cjs');
 const defaultDrops=require('../../../shared/war-drop-rates.json');
+const marshalDefaults=require('../../../shared/marshal-settings.json');
 const catalog=require('./catalog.cjs');
 const ranks=['soldier','captain','commander','general','grandGeneral'];
 const titles=['Binh Sĩ','Hiệu úy','Thống lĩnh','Phó tướng','Đại tướng'];
@@ -9,10 +10,13 @@ let options;
 function skillOptions(){
   return options ||= native.withProgression({fac:'shaolin',lvl:200},s=>Object.values(s.I).flatMap(f=>f.skills.map(id=>s.T[id]).filter(row=>row&&s.UA(row)&&((row.req>=50&&row.req<=70)||[90,150].includes(row.tier))).map(row=>({id:row.id,name:f.n+' · '+row.n,element:f.series,level:row.req,tier:row.tier,faction:f.key,icon:row.ic||''}))));
 }
-function defaults(){return {durationSeconds:1200,privateDurationSeconds:1200,dropRates:{...defaultDrops},soldiers:Object.fromEntries(ranks.map((rank,i)=>[rank,{count:[50,10,6,4,0][i],hp:[50000,60000,80000,100000,120000][i],skills:[],respawnSeconds:20,patrolRadius:180,leashRadius:800}])),marshals:{song:{hp:200000,res:[35,35,35,35,35]},jin:{hp:200000,res:[35,35,35,35,35]}}};}
+function defaults(){return {simPerTeam:10,durationSeconds:1200,privateDurationSeconds:1200,dropRates:{...defaultDrops},soldiers:Object.fromEntries(ranks.map((rank,i)=>[rank,{count:[50,10,6,4,0][i],hp:[50000,60000,80000,100000,120000][i],skills:[],respawnSeconds:20,patrolRadius:180,leashRadius:800}])),marshals:{song:{...marshalDefaults,hp:200000,res:[35,35,35,35,35]},jin:{...marshalDefaults,hp:200000,res:[35,35,35,35,35]}}};}
 function validate(value){
   const result=defaults(),valid=(x,min,max)=>Number.isFinite(x)&&x>=min&&x<=max;
   if(!value||!value.soldiers||!value.marshals)throw new Error('Thiếu cấu hình chiến trường.');
+  const simPerTeam=value.simPerTeam??10;
+  if(!Number.isSafeInteger(simPerTeam)||simPerTeam<0||simPerTeam>100)throw new Error('SIM mỗi bên: số nguyên từ 0 đến 100.');
+  result.simPerTeam=simPerTeam;
   for(const key of ['durationSeconds','privateDurationSeconds']){
     const seconds=value[key]??1200;
     if(!Number.isSafeInteger(seconds)||seconds<10||seconds>7200)throw new Error('Thời lượng trận: từ 10 đến 7.200 giây.');
@@ -34,7 +38,9 @@ function validate(value){
   for(const team of ['song','jin']){
     const row=value.marshals[team];
     if(!row||!Number.isSafeInteger(row.hp)||!valid(row.hp,1,1e12)||!Array.isArray(row.res)||row.res.length!==5||row.res.some(x=>!valid(x,-100,100)))throw new Error('Nguyên soái: HP hoặc kháng không hợp lệ.');
-    result.marshals[team]={hp:row.hp,res:[...row.res]};
+    const extra={...marshalDefaults,...Object.fromEntries(Object.keys(marshalDefaults).map(key=>[key,row[key]??marshalDefaults[key]]))};
+    if(['stunReduction','poisonReduction','coldReduction','hurtReduction'].some(key=>!valid(extra[key],0,100))||!valid(extra.attackSpeedPercent,25,300)||!valid(extra.movementRadius,0,1600))throw new Error('Nguyên soái: giảm thời gian 0–100%, tốc độ đánh 25–300%, phạm vi 0–1.600.');
+    result.marshals[team]={hp:row.hp,res:[...row.res],...extra};
   }
   return result;
 }
@@ -63,6 +69,7 @@ function attackProfile(ids){
 function configure(base,value){
   const settings=validate(value),definition=structuredClone(base);
   definition.durationSeconds=settings.durationSeconds;
+  definition.simPerTeam=settings.simPerTeam;
   definition.dropRates=settings.dropRates;
   const itemScope={};require('node:vm').runInNewContext(require('../../../../tools/build-app.js').compileTypeScriptEntry('simulator/war-rewards.ts','Items').code,itemScope);
   definition.itemKinds=Object.keys(itemScope.Items.WAR_ITEMS);
@@ -76,6 +83,7 @@ function configure(base,value){
     return {...original,...s,name:titles[ranks.indexOf(s.rank)],skin:skins[s.rank][0],attackSkills:attackProfile(settings.soldiers[s.rank].skills)};
   });
   definition.marshalProfiles={};definition.marshalVariants={};
+  definition.marshalMovementRadius=Object.fromEntries(['song','jin'].map(team=>[team,settings.marshals[team].movementRadius]));
   const loadoutScope={};vm.runInNewContext(compileTypeScriptEntry('simulator/marshal-loadout.ts','Marshal').code,loadoutScope);
   const variants=[];
   for(let element=0;element<5;element++){
@@ -96,7 +104,12 @@ function configure(base,value){
     const row=settings.marshals[team];
     definition.marshalVariants[team]=variants.map(source=>{
       const profile=structuredClone(source);
-      const normalize=p=>{Object.assign(p,{hp:row.hp,res:[...row.res],allyScaling:null,regen:0,manaRegen:0,speed:0,timing:null});p.skills=p.skills.filter(skill=>profile.skills.some(s=>s.id===skill.id)).map(s=>({...s,cost:0}));};
+      const normalize=p=>{
+        Object.assign(p,{hp:row.hp,res:[...row.res],allyScaling:null,regen:0,manaRegen:0,speed:150});
+        p.protection={...p.protection,stunReduction:row.stunReduction,poisonReduction:row.poisonReduction,coldReduction:row.coldReduction,hurtReduction:row.hurtReduction};
+        if(p.timing)p.timing.runPercent=100;
+        p.skills=p.skills.filter(skill=>profile.skills.some(s=>s.id===skill.id)).map(s=>({...s,cost:0,attackPercent:row.attackSpeedPercent}));
+      };
       normalize(profile);
       for(const skill of profile.support.skills){skill.cost=0;skill.lifeCost=false;}
       for(const variant of profile.support.variants)normalize(variant.profile);

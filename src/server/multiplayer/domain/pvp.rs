@@ -208,7 +208,7 @@ pub(super) fn hit(
     }
     let hurt = parts[2] <= 0.0 && amount >= defender.profile.hp * 0.15;
     if hurt {
-        defender.pvp.hurt = 0.5;
+        defender.pvp.hurt = 0.5 * reduction(protection.hurt_reduction);
         defender.support.lock = 0.0;
     }
     let map = defender.map;
@@ -239,7 +239,7 @@ pub(super) fn hit(
         attacker.hp = (attacker.hp - reflection).max(0.0);
         if lost>0.0 {attacker.last_attacker=target;attacker.last_attacker_name=target_name;attacker.last_attacker_player=true;}
         if lost >= attacker.profile.hp * 0.15 {
-            attacker.pvp.hurt = 0.5;
+            attacker.pvp.hurt = 0.5 * reduction(attacker.profile.protection.hurt_reduction);
             attacker.support.lock = 0.0;
         }
         if lost > 0.0 {

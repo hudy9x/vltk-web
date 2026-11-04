@@ -37,7 +37,7 @@ export function applyActorHurt(actor: CombatTarget, damage: number, maximumHP: n
   // shields. Only the final HP damage may put the real player into hurt.
   if (actor.hurtProxy || !Number.isFinite(damage) || !Number.isFinite(maximumHP) ||
     maximumHP <= 0 || damage < maximumHP * 0.15) return false;
-  actor.hurtT = 0.5;
+  actor.hurtT = 0.5 * (1 - Math.max(0, Math.min(100, actor.hurtReduction || 0)) / 100);
   actor.castT = 0; actor.atT = 0;
   actor.actionRevision = (actor.actionRevision || 0) + 1;
   actor.moving = false; actor.mv = false; actor.act = 'hurt'; actor.actT = 0;

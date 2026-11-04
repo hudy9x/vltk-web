@@ -255,6 +255,7 @@ pub struct Protection {
     pub from: [f32; 5],
     pub cold_reduction: f32,
     pub stun_reduction: f32,
+    pub hurt_reduction: f32,
     pub poison_reduction: f32,
     pub mana_shield: f32,
     pub reflect: f32,

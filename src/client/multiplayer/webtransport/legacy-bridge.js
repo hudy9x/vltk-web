@@ -62,7 +62,6 @@ var gameMultiplayer = (() => {
         const anim=Jt(actor.f,actor.s)?.anim;
         ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(actor.x,actor.y,16,6,0,0,7);ctx.fill();
         (actor.J&&It('die',actor.dir,2,actor.x,actor.y,Jn,1,anim,actor.J))||(anim&&Va(anim,'die',actor.dir,2,actor.x,actor.y,Jn));
-        L3(actor.x,actor.y-nameplateOffset(anim,Jn,.9,6,58),actor.n,OnlinePvp.nameColor(onlineWorld.state,authoritative),11,0,OnlinePvp.healthColor(onlineWorld.state,authoritative),OnlineBattlefield.rankTitle(p.id),'#8de1cf');
         return;
       }
       const castPose=onlineWorld.pose?.(p.id);

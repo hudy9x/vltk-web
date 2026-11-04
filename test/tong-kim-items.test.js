@@ -26,7 +26,7 @@ test('all 26 items can drop and collect; stacks split at 50, stock survives matc
 test('full bag leaves drops on ground, then collects when space is freed; expired drops cannot be picked',()=>{
   const f=fixture();f.full();f.drop();f.reward.tick(1);assert.equal(f.reward.drops.length,1);assert.equal(f.reward.state.inventory.resistance,0);
   f.free();f.reward.tick(.1);assert.equal(f.reward.drops.length,0);assert.equal(f.reward.state.inventory.resistance,1);
-  f.full();f.drop();f.reward.tick(91);assert.equal(f.reward.drops.length,0);
+  f.full();f.drop();f.reward.tick(120);assert.equal(f.reward.drops.length,0);
   f.free();f.reward.tick(.1);assert.equal(f.reward.state.inventory.resistance,1);
 });
 test('personal pills affect their documented stat and expire; speed bonuses do not multiply each other',()=>{
@@ -107,4 +107,16 @@ test('rank drop probabilities are rare for regular soldiers and configurable per
    const reward=createWarRewards(host,()=>.01);reward.record(player,victim);reward.killed(victim);reward.killed(victim);return reward.drops.length;
  }
  assert.equal(drops('Binh sĩ'),0);assert.equal(drops('Hiệu úy'),1);assert.equal(drops('Đại tướng',0),0);assert.equal(drops('Binh sĩ',1),1);
+});
+
+test('private battlefield drops reserve the killer for 20 seconds then open across teams until 120 seconds',()=>{
+ for(const team of ['song','jin']){
+  const f=fixture(),source=team==='song'?f.ally:f.enemy;
+  const victim={x:0,y:0,hp:0,battlefieldMonster:true,battlefieldTeam:team==='song'?'jin':'song'};
+  f.reward.record(source,victim);f.reward.killed(victim);assert.equal(f.reward.drops.length,1);
+  f.reward.tick(19.999);assert.equal(f.reward.drops.length,1);assert.equal(f.reward.state.inventory.resistance,0);
+  f.reward.tick(.001001);assert.equal(f.reward.drops.length,0);assert.equal(f.reward.state.inventory.resistance,1);
+ }
+ const f=fixture();f.full();f.drop();f.reward.tick(119.999);assert.equal(f.reward.drops.length,1);
+ f.free();f.reward.tick(.001001);assert.equal(f.reward.drops.length,0);assert.equal(f.reward.state.inventory.resistance,0);
 });

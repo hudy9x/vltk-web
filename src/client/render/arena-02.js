@@ -243,7 +243,7 @@ var NP = function (A) {
       (Pf(n, "over", w ? Math.min(w, 90) : 60), sv(n, A));
       const x = v.y - (typeof heroNameplateOffset === "function" ? heroNameplateOffset(Jn) : nameplateOffset(v.animKey, Jn, 0.9, 6, 58)),
         p = typeof bo == "function" && bo();
-      (L3(
+      (!(warActive && (l.deadT > 0 || v.act === "die")) && L3(
         v.x,
         x,
         `${o.name || (I[o.fac] && I[o.fac].n) || ""}${o.name && typeof Rh == "function" ? Rh(o.name) : ""}${hf({ slowT: l.slowT, poison: l.hpDotT, stun: l.stunT })}`,

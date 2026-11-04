@@ -93,3 +93,32 @@ test('private marshals roll elements per match and use the server HP/resistance 
    assert.equal(boss.battlefieldDeck.length,2);
  }
 });
+
+test('both private marshals keep status, attack and movement settings in every skill deck',()=>{
+ const game=createHeadlessGame(process.cwd()),sim=game.arenaSimulator;
+ const row={...require('../src/shared/marshal-settings.json'),hp:1000000,res:[0,0,0,0,0]};
+ game.OnlineBattlefield={marshalSettings:{song:structuredClone(row),jin:structuredClone(row)}};
+ sim.battlefield.start('song');game.OnlineBattlefield.marshalSettings.song.stunReduction=0;sim.battlefield.tick(600);
+ const bosses=sim.actors.filter(a=>a.battlefieldBoss);assert.equal(bosses.length,2);
+ for(const boss of bosses){
+  assert.equal(boss.battlefieldMovementRadius,500);assert.equal(boss.hurtReduction,40);assert.equal(boss.mounted,false);
+  for(const stats of [boss.stats,...boss.battlefieldDeck.map(e=>e.stats)]){
+   assert.equal(stats.stunRed,40);assert.equal(stats.poisonRed,40);assert.equal(stats.freezeRed,40);assert.equal(stats.main.rawRate,2);
+   assert.equal(game.actorAttackTiming(boss,stats.main).percent,200);
+  }
+  assert.equal(game.applyActorHurt(boss,boss.max*.2,boss.max),true);assert.ok(Math.abs(boss.hurtT-.3)<1e-9);
+ }
+});
+
+test('real hits shorten poison, cold and stun on each private marshal by forty percent',()=>{
+ for(const team of ['song','jin']){
+  const game=createHeadlessGame(process.cwd()),sim=game.arenaSimulator;
+  game.Math.random=()=>.5;sim.battlefield.start(team);sim.battlefield.tick(600);
+  const boss=sim.actors.find(a=>a.battlefieldBoss&&a.battlefieldTeam!==team);
+  const before=boss.hp;
+  game.hs({parts:{poison:100,cold:100},poisonT:10,coldT:10,stun:100,crit:0,series:boss.series,series5:0},boss);
+  assert.ok(boss.hp<before);assert.ok(Math.abs(boss.poison-6)<1e-9,String(boss.poison));
+  assert.ok(Math.abs(boss.slowT-6)<1e-9,String(boss.slowT));
+  assert.ok(Math.abs(boss.stun-.8*(1+(game.l.P.stunLong||0)/100)*.6)<1e-9,String(boss.stun));
+ }
+});
