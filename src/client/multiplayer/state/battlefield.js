@@ -273,11 +273,12 @@ body.tongkim-controls #public-war-prefer{display:flex}
     sync(next,send){
       sender=send;world=next;
       if(!next.battlefield){if(shop)shop.hidden=true;
-        if(state){resetAnnouncements();closeResult();state=null;bodies.clear();if(hud)hud.hidden=true;if(respawnNotice)respawnNotice.hidden=true;if(panel)panel.hidden=true;}
+        if(state){R=true;l.dirty=true;l.stKey=null;resetAnnouncements();closeResult();state=null;bodies.clear();if(hud)hud.hidden=true;if(respawnNotice)respawnNotice.hidden=true;if(panel)panel.hidden=true;}
         const intent=read();if(intent&&!leaving){if(intent.until<Date.now()){remember(null);render();return;}if(!requestAt||performance.now()-requestAt>10000){requestAt=performance.now();send(19,{target:intent.team});}}
         render();return;
       }
-      const previous=state;state=next.battlefield;if(!previous){preferPlayers=true;preferenceSent=null;}if(!previous||String(previous.potions)!==String(state.potions)){R=true;l.dirty=true;}lastAt=performance.now();mount();
+      const previous=state;state=next.battlefield;if(!previous){preferPlayers=true;preferenceSent=null;}const buffKey=s=>Object.keys(s?.itemBuffs||{}).filter(key=>s.itemBuffs[key]>0).sort().join(',');
+      if(!previous||previous.phase!==state.phase||buffKey(previous)!==buffKey(state)||String(previous.potions)!==String(state.potions)){R=true;l.dirty=true;l.stKey=null;}lastAt=performance.now();mount();
       remember({team:state.team,until:Date.now()+Math.max(0,state.ends-state.now)*1000});
       announce(previous);showResult();render();api.renderShop();
     },

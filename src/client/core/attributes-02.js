@@ -29,12 +29,17 @@ var F2 = function (A, n, t) {
   if (r.phys) r.phys *= Math.min(1.2, Math.max(1, A.warPhysicalMultiplier || 1));
   if (a) {
     if (r.phys) r.phys *= A.warExternalMultiplier || 1;
-    if (A.warExternalCold) r.cold = (r.cold || 0) + A.warExternalCold;
-  } else if (A.warInternalAdd) {
+    if (!A.warOffenseAfterSkill && A.warExternalCold) r.cold = (r.cold || 0) + A.warExternalCold;
+  } else if (!A.warOffenseAfterSkill && A.warInternalAdd) {
     for (const key in A.warInternalAdd) r[key] = (r[key] || 0) + A.warInternalAdd[key];
   }
   let c = 0;
   for (const T0 in r) ((r[T0] *= i), (c += r[T0]));
+  // PvP snapshots describe server additions after the native skill calculation.
+  if (A.warOffenseAfterSkill) {
+    const additions = a ? { cold: A.warExternalCold || 0 } : A.warInternalAdd || {};
+    for (const key in additions) if (additions[key]) { r[key] = (r[key] || 0) + additions[key]; c += additions[key]; }
+  }
   const d = (b0(n, "skill_attackradius", t) || [n.radius || 60])[0] || 60,
     f = d * (1 + (A.vision || 0) / 100),
     h = h4[n.id],
@@ -93,7 +98,7 @@ var F2 = function (A, n, t) {
       ignore: B,
       stun: O,
       fatal: y,
-      ar: _ ? Math.max(10, (A.arBase || 0) * (1 + ((A.arPct || 0) + _) / 100)) : 0,
+      ar: _ ? Math.max(10, (A.arBase || 0) * (1 + ((A.arPct || 0) + _) / 100)) + (A.warAccuracyAdd || 0) : 0,
       skAr: _,
       series: n.series >= 0 ? n.series : A.series,
       rate: X,
@@ -133,9 +138,10 @@ var Ow = function (A) {
   for (const a in A.add) A.add[a] && (t[a] = A.add[a]);
   t.phys *= Math.min(1.2, Math.max(1, A.warPhysicalMultiplier || 1));
   t.phys *= A.warExternalMultiplier || 1;
-  if (A.warExternalCold) t.cold = (t.cold || 0) + A.warExternalCold;
+  if (!A.warOffenseAfterSkill && A.warExternalCold) t.cold = (t.cold || 0) + A.warExternalCold;
   let e = 0;
   for (const a in t) ((t[a] *= A.dmgMul || 1), (e += t[a]));
+  if (A.warOffenseAfterSkill && A.warExternalCold) { t.cold = (t.cold || 0) + A.warExternalCold; e += A.warExternalCold; }
   return {
     id: 0,
     n: "Đánh thường",

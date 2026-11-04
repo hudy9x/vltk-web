@@ -1,3 +1,4 @@
+import { applyWarOffense } from './war-offense';
 import { warDropProbability } from './war-drop-settings';
 import type { LegacyEntity, LegacyRecord } from './types';
 import type { Team } from './battlefield';
@@ -33,7 +34,7 @@ export const WAR_ITEMS = {
   poisonRes: { name:'Độc Phòng Hoàn', description:'+50 điểm kháng độc', color:'#9ee978', icon:pill },
   coldRes: { name:'Băng Phòng Hoàn', description:'+50 điểm kháng băng', color:'#83dcff', icon:pill },
   lightRes: { name:'Lôi Phòng Hoàn', description:'+50 điểm kháng lôi', color:'#d7b3ff', icon:pill },
-  physicalRes: { name:'Phổ Phòng Hoàn', description:'+50 điểm phòng thủ vật lý', color:'#e3d1a0', icon:pill },
+  physicalRes: { name:'Phổ Phòng Hoàn', description:'+50 điểm kháng vật lý', color:'#e3d1a0', icon:pill },
   fireRes: { name:'Hỏa Phòng Hoàn', description:'+50 điểm kháng hỏa', color:'#ff9875', icon:pill },
   freezeTrap: { name:'Bẫy băng', description:'Đặt bẫy tại chỗ, đối thủ đến gần bị đóng băng 3 giây; bẫy tồn tại 30 giây', color:'#83dcff', icon:command },
   stunTrap: { name:'Bẫy choáng', description:'Đặt bẫy tại chỗ, đối thủ đến gần bị choáng 3 giây; bẫy tồn tại 30 giây', color:'#ffd06e', icon:command },
@@ -173,9 +174,7 @@ export function createWarRewards(host: { player(): LegacyEntity; team(): Team; r
     if(active('life'))stats.life+=500;
     if(active('evasion'))stats.def=(stats.def||0)+500;
     if(active('accuracy')) { stats.ar=(stats.ar||0)+500;stats.arBase=(stats.arBase||0)+500; }
-    if(active('external'))stats.warExternalMultiplier=1.5;
-    stats.warExternalCold=active('externalCold')?100:0;
-    stats.warInternalAdd={phys:active('internal')?100:0,poison:active('internalPoison')?50:0,cold:active('internalCold')?100:0,fire:active('internalFire')?100:0,light:active('internalLight')?100:0};
+    applyWarOffense(stats,active);
     if(actor!==host.player()&&active('horn')) { stats.retMelee=(stats.retMelee||0)*.8;stats.retMeleeP=(stats.retMeleeP||0)*.8;stats.retRangeP=(stats.retRangeP||0)*.8; }
 
   }

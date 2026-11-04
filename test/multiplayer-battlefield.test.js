@@ -180,3 +180,20 @@ test('reload shows reconnect status before snapshots then server entry countdown
  s.OnlineBattlefield.reset();storage.set(key,JSON.stringify({team:1,until:wall+1000}));s.OnlineBattlefield.entities(null);assert.equal(notice.hidden,false);
  wall+=1001;s.OnlineBattlefield.sync(empty,send);assert.equal(notice.hidden,true);assert.equal(storage.has(key),false);
 });
+
+test('online item activation and expiry invalidate hand stats, duration-only snapshots do not',()=>{
+ const nodes=new Map();
+ const element=()=>({children:[],style:{},hidden:false,classList:{remove(){},toggle(){}},setAttribute(){},append(...items){this.children.push(...items);for(const child of items)if(child?.id)nodes.set(child.id,child);},appendChild(child){this.append(child);},remove(){nodes.delete(this.id);}});
+ const s={performance:{now:()=>100},document:{createElement:element,head:element(),body:element(),getElementById:id=>nodes.get(id)},window:{},sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},m0:0,l:{},R:false};
+ vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/battlefield.js','utf8'),s);
+ const state={id:1,now:100,ends:1200,phase:'running',team:0,score:[0,0],potions:[0,0],units:[],entryRemaining:0,respawnRemaining:0,deaths:0};
+ const next={map:9003,self:1,actors:[{id:1,hp:100}],battlefield:state};
+ s.OnlineBattlefield.sync(next,()=>1);
+ for(const kind of ['external','externalCold','internal','internalPoison','internalCold','internalFire','internalLight']){
+  s.l.dirty=false;s.R=false;s.l.stKey='cached';s.OnlineBattlefield.sync({...next,battlefield:{...state,itemBuffs:{[kind]:180}}},()=>1);
+  assert.equal(s.l.dirty,true);assert.equal(s.R,true);assert.equal(s.l.stKey,null);
+  s.l.dirty=false;s.R=false;s.OnlineBattlefield.sync({...next,battlefield:{...state,itemBuffs:{[kind]:179}}},()=>1);assert.equal(s.l.dirty,false);assert.equal(s.R,false);
+  s.OnlineBattlefield.sync({...next,battlefield:{...state,itemBuffs:{[kind]:0}}},()=>1);assert.equal(s.l.dirty,true);
+ }
+ s.l.dirty=false;s.OnlineBattlefield.sync({...next,battlefield:undefined},()=>1);assert.equal(s.l.dirty,true);
+});

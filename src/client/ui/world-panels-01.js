@@ -82,6 +82,8 @@ var HB = function () {
       ["Chính xác", F(Math.round(A.ar))],
       ["Chí mạng", Math.round(A.main.crit) + "%"],
       ["Tốc độ đánh", (A.main.rawRate ?? A.main.rate ?? A.aspd).toFixed(2)],
+      ["Phản đòn cận chiến", `${F(Math.round(A.retMelee || 0))} + ${Math.round(A.retMeleeP || 0)}%`],
+      ["Phản đòn tầm xa", `${Math.round(A.retRangeP || 0)}%`],
     ],
     h = { phys: "#d8d2c0", poison: "#7fd46a", cold: "#6fc4ff", fire: "#ff7a4a", light: "#ffd84a" },
     g = Q0.map(

@@ -1,3 +1,4 @@
+import { applyOnlineWarStats } from './online-war-stats';
 import { marshalLoadout } from './marshal-loadout';
 import { warDropProbability } from './war-drop-settings';
 import { createPotentialClient } from './potential-worker-client';
@@ -99,7 +100,7 @@ declare function Fa(sprite:LegacyRecord,direction:number,age:number,x:number,y:n
 declare function d_(trap:{c:number;x:number;y:number}):void;
 declare function $(): void;
 declare const INV_MAX: number;
-declare const OnlineBattlefield:{marshalSettings?:Partial<Record<'song'|'jin',import('./marshal-settings').MarshalSettings>>;leave():boolean;state?:{itemBuffs?:Partial<Record<keyof typeof WAR_ITEMS,number>>}};
+declare const OnlineBattlefield:{marshalSettings?:Partial<Record<'song'|'jin',import('./marshal-settings').MarshalSettings>>;leave():boolean;state?:{phase?:string;itemBuffs?:Partial<Record<keyof typeof WAR_ITEMS,number>>}};
 declare function k(message: string): void;
 declare function ma(id: number | string): unknown;
 declare function j2(id: number): number;
@@ -1204,6 +1205,10 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
   function recordBattlefieldHit(source: LegacyEntity,target: LegacyEntity) { warRewards.record(source,target); }
   function applyBattlefieldBonuses(stats: LegacyRecord) {
     if(l.battlefield)warRewards.apply(stats,l.sim?v:battlefieldHero);
+    else if(!l.sim && typeof OnlineBattlefield!=='undefined' && OnlineBattlefield.state?.phase==='running') {
+      const buffs=OnlineBattlefield.state.itemBuffs;
+      applyOnlineWarStats(stats,buffs);
+    }
   }
   function drawBattlefieldLoot(context: CanvasRenderingContext2D) {
     if (!battlefield?.active) return;
