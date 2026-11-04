@@ -1,6 +1,6 @@
 // Public-room presentation. Commands express intent; only server snapshots change the match.
 var OnlineBattlefield=(()=>{
-  let state=null,world=null,sender=()=>0,panel=null,hud=null,table=null,summary={},lastAt=0,requestAt=0,leaving=false,preferPlayers=true,preferenceSent=null,controlsActive=false,recruitment=null,shop=null,shopSlot=0,shopStamp='',shopBusy=false,shopMessage='',respawnNotice=null;
+  let state=null,world=null,sender=()=>0,panel=null,hud=null,table=null,summary={},lastAt=0,requestAt=0,leaving=false,preferPlayers=true,preferenceSent=null,controlsActive=false,recruitment=null,shop=null,shopSlot=0,shopStamp='',shopBusy=false,shopMessage='',respawnNotice=null,rejoinNotice=null;
   let shownResult=null,configuredDrops,configuredMarshals,configuredSimPerTeam;
   let lastKillNotice=0,marshalAnnounced=false,announcementAt=0;
   const bodies=new Map();
@@ -16,7 +16,8 @@ var OnlineBattlefield=(()=>{
     const style=document.createElement('style');style.textContent=`
 @font-face{font-family:WarCalligraphy;src:url('/fonts/charm-bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:swap}
 #public-war-hud{position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:1200;margin:0;color:#ffe1a0;font:700 20px/1.5 WarCalligraphy,cursive;text-align:center;text-shadow:0 2px 3px #000,0 0 12px #000,0 0 24px #9b3a12;pointer-events:none}
-#public-war-hud[hidden],#public-war-respawn[hidden]{display:none}
+#public-war-hud[hidden],#public-war-respawn[hidden],#public-war-rejoin[hidden]{display:none}
+#public-war-rejoin{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:95020;width:max-content;max-width:90vw;box-sizing:border-box;padding:18px 26px;border:1px solid #b29455;border-radius:8px;background:#181c16ed;color:#ffe1a0;font:500 20px/1.6 'IBM Plex Mono',monospace;text-align:center;box-shadow:0 8px 32px #0008;pointer-events:none}
 #public-war-respawn{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);z-index:95020;max-width:90vw;box-sizing:border-box;padding:10px 20px;border:1px solid #b29455;border-radius:6px;background:#181c16ed;color:#ffe1a0;font:700 20px/1.5 WarCalligraphy,cursive;text-align:center;text-shadow:0 2px 3px #000,0 0 12px #000;pointer-events:none}
 #public-war-settings{width:min(960px,94vw);height:min(760px,88dvh);overflow:hidden;display:flex;flex-direction:column}
 #public-war-settings>header{position:static;flex-shrink:0}
@@ -44,6 +45,7 @@ body.tongkim-controls #public-war-prefer{display:flex}
 `;document.head.appendChild(style);
     hud=document.createElement('div');hud.id='public-war-hud';hud.hidden=true;hud.setAttribute('role','timer');hud.setAttribute('aria-label','Thời gian chiến trường còn lại');document.body.appendChild(hud);
     respawnNotice=document.createElement('div');respawnNotice.id='public-war-respawn';respawnNotice.hidden=true;respawnNotice.setAttribute('role','status');respawnNotice.setAttribute('aria-live','polite');document.body.appendChild(respawnNotice);
+    rejoinNotice=document.createElement('div');rejoinNotice.id='public-war-rejoin';rejoinNotice.hidden=true;rejoinNotice.setAttribute('role','status');rejoinNotice.setAttribute('aria-live','polite');document.body.appendChild(rejoinNotice);
     void document.fonts?.load('700 20px WarCalligraphy');
     panel=document.createElement('section');panel.id='public-war-ranking';panel.className='war-dialog';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-labelledby','public-war-title');
     const header=document.createElement('header'),title=document.createElement('h2');title.id='public-war-title';title.textContent='Bảng xếp hạng · Tống Kim';
@@ -59,8 +61,16 @@ body.tongkim-controls #public-war-prefer{display:flex}
   }
 
   function render(){
-    if(!hud)return;hud.hidden=!state;if(!state)return;
-    const elapsed=Math.max(0,clock()-state.now),entry=Math.max(0,state.entryRemaining-elapsed),respawn=Math.max(0,state.respawnRemaining-elapsed);
+    const intent=!state&&!leaving?read():null,pending=!!intent&&intent.until>Date.now();
+    if(!hud){if(!pending)return;mount();}
+    hud.hidden=!state;
+    const elapsed=state?Math.max(0,clock()-state.now):0,entry=state?Math.max(0,state.entryRemaining-elapsed):0,respawn=state?Math.max(0,state.respawnRemaining-elapsed):0;
+    rejoinNotice.hidden=leaving||!(pending||(state&&state.phase!=='finished'&&entry>0));
+    if(!rejoinNotice.hidden){
+      const text=entry>0?`Vào Tống Kim sau ${Math.ceil(entry)} giây`:world?'Đang xin vào lại Tống Kim…':'Đang kết nối lại Tống Kim…';
+      if(rejoinNotice.textContent!==text)rejoinNotice.textContent=text;
+    }
+    if(!state)return;
     const phase=state.phase==='finished'?(state.score[0]===state.score[1]?'Hòa':`${state.score[0]>state.score[1]?'Tống':'Kim'} thắng`):entry>0?`Nhập trận sau ${Math.ceil(entry)} giây`:respawn>0?`Tái xuất sau ${Math.ceil(respawn)} giây`:'Đang giao chiến';
     hud.textContent=entry>0?`Phòng chờ · Vào trận sau ${Math.ceil(entry)} giây`:time(state.ends-clock());
     hud.style.fontSize=entry>0?'40px':'20px';
@@ -259,13 +269,13 @@ body.tongkim-controls #public-war-prefer{display:flex}
       event.preventDefault();event.stopImmediatePropagation();
       if(!event.repeat){if(toggle&&panel.hidden)openRanking();else panel.hidden=true;}return true;
     },
-    reset(){resetAnnouncements();closeResult();leaving=false;state=null;world=null;requestAt=0;preferenceSent=null;controlsActive=false;document.body.classList.remove('tongkim-controls');recruitment?.remove();if(shop)shop.hidden=true;bodies.clear();if(hud)hud.hidden=true;if(respawnNotice)respawnNotice.hidden=true;if(panel)panel.hidden=true;},
+    reset(){resetAnnouncements();closeResult();leaving=false;state=null;world=null;requestAt=0;preferenceSent=null;controlsActive=false;document.body.classList.remove('tongkim-controls');recruitment?.remove();if(shop)shop.hidden=true;bodies.clear();if(hud)hud.hidden=true;if(respawnNotice)respawnNotice.hidden=true;if(rejoinNotice)rejoinNotice.hidden=true;if(panel)panel.hidden=true;},
     sync(next,send){
       sender=send;world=next;
       if(!next.battlefield){if(shop)shop.hidden=true;
         if(state){resetAnnouncements();closeResult();state=null;bodies.clear();if(hud)hud.hidden=true;if(respawnNotice)respawnNotice.hidden=true;if(panel)panel.hidden=true;}
-        const intent=read();if(intent&&!leaving){if(intent.until<Date.now()){remember(null);return;}if(!requestAt||performance.now()-requestAt>10000){requestAt=performance.now();send(19,{target:intent.team});}}
-        return;
+        const intent=read();if(intent&&!leaving){if(intent.until<Date.now()){remember(null);render();return;}if(!requestAt||performance.now()-requestAt>10000){requestAt=performance.now();send(19,{target:intent.team});}}
+        render();return;
       }
       const previous=state;state=next.battlefield;if(!previous){preferPlayers=true;preferenceSent=null;}if(!previous||String(previous.potions)!==String(state.potions)){R=true;l.dirty=true;}lastAt=performance.now();mount();
       remember({team:state.team,until:Date.now()+Math.max(0,state.ends-state.now)*1000});

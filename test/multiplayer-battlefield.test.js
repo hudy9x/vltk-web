@@ -159,3 +159,24 @@ test('public waiting countdown uses the server deadline, kill notices deduplicat
  now+=6000;s.OnlineBattlefield.entities(next);assert.ok(ticks.at(-1)[0]>=6);
  s.OnlineBattlefield.sync({map:1,self:1,actors:[]},()=>1);assert.ok(resets>=2);assert.equal(nodes.get('public-war-hud').hidden,true);
 });
+
+test('reload shows reconnect status before snapshots then server entry countdown and clears on entry or expiry',()=>{
+ const nodes=new Map(),storage=new Map(),sent=[];let now=100,wall=100000;
+ const element=()=>({children:[],style:{},hidden:false,classList:{remove(){},toggle(){}},setAttribute(){},append(...items){this.children.push(...items);for(const child of items)if(child?.id)nodes.set(child.id,child);},appendChild(child){this.append(child);},remove(){nodes.delete(this.id);}});
+ const key='__tongkim_public:rejoin-user:0';storage.set(key,JSON.stringify({team:1,until:wall+60000}));
+ const s={Date:{now:()=>wall},performance:{now:()=>now},document:{createElement:element,head:element(),body:element(),getElementById:id=>nodes.get(id)},window:{localGameAuth:{user:{id:'rejoin-user'}}},sessionStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},m0:0,l:{},R:false};
+ vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/battlefield.js','utf8'),s);
+ s.OnlineBattlefield.entities(null);const notice=nodes.get('public-war-rejoin');
+ assert.equal(notice.hidden,false);assert.equal(notice.textContent,'Đang kết nối lại Tống Kim…');
+ const send=(...args)=>{sent.push(args);return 1;},empty={map:1,self:1,actors:[{id:1,hp:100}]};
+ s.OnlineBattlefield.sync(empty,send);assert.equal(sent[0][0],19);assert.equal(sent[0][1].target,1);assert.equal(notice.textContent,'Đang xin vào lại Tống Kim…');
+ const next={map:9004,self:1,actors:[{id:1,hp:100}],battlefield:{id:1,now:100,ends:1200,phase:'running',team:1,score:[0,0],potions:[0,0],units:[],entryRemaining:5,respawnRemaining:0,deaths:0}};
+ s.OnlineBattlefield.sync(next,send);assert.equal(notice.textContent,'Vào Tống Kim sau 5 giây');
+ now=2600;s.OnlineBattlefield.entities(next);assert.equal(notice.textContent,'Vào Tống Kim sau 3 giây');
+ now=5100;s.OnlineBattlefield.entities(next);assert.equal(notice.hidden,true);
+ s.OnlineBattlefield.sync({...next,battlefield:{...next.battlefield,now:105,entryRemaining:0}},send);assert.equal(notice.hidden,true);
+ s.OnlineBattlefield.sync(empty,send);assert.equal(notice.hidden,false);
+ s.OnlineBattlefield.leave(send);s.OnlineBattlefield.entities(empty);assert.equal(notice.hidden,true);assert.equal(storage.has(key),false);
+ s.OnlineBattlefield.reset();storage.set(key,JSON.stringify({team:1,until:wall+1000}));s.OnlineBattlefield.entities(null);assert.equal(notice.hidden,false);
+ wall+=1001;s.OnlineBattlefield.sync(empty,send);assert.equal(notice.hidden,true);assert.equal(storage.has(key),false);
+});
