@@ -88,14 +88,35 @@ trình duyệt. Benchmark cũng kiểm tra địa hình và khoảng cách trán
 `test/nameplates.test.js` kiểm tra culling; `test/combat-sandbox.test.js` kiểm tra
 log và vòng đời trận.
 
-## Công cụ test online thay thế Arena
+## SIM đồng hành và công cụ test online
 
-Chế độ `dev:arena` và panel Test room cũ đã bỏ. Hai lệnh bài SIM/Test dùng
-`dev/online-training-01.js`, API `/api/multiplayer/training` và Rust
-`domain/training.rs`. Tạo SIM bằng cùng builder native/trang bị Tống Kim, sau đó
-đưa actor vào runtime Rust thông thường. Không dùng buff giả định hoặc damage
-client cho các thực thể test online. Renderer của quân Tống Kim được dùng lại
-để nội suy snapshot SIM.
+Chế độ `dev:arena` và panel Test room cũ đã bỏ. Lệnh bài SIM mở giao diện
+`dev/online-training-01.js`, dùng API `/api/multiplayer/companions`. SIM đồng hành
+không bật chế độ test, không khóa map và không thay đổi cách chủ hồi sinh.
+Mỗi nhân vật có tối đa 3 SIM, tên `SIM#1`–`SIM#3`; tạo mới không thay SIM đang có.
+Chọn avatar môn phái để chỉnh riêng từng SIM hoặc bấm **Xóa SIM này**.
+Sau khi xóa/chết, số thứ tự trống được dùng lại cho SIM tạo tiếp theo.
+
+SIM dùng builder native/trang bị Tống Kim và thực thi combat Rust thông thường,
+không dùng damage client hoặc buff giả. Hai checkbox mặc định tắt:
+- **Theo sau chủ, kể cả khi đổi bản đồ**: xa hơn 180 px thì quay về, dừng trong
+  72 px; đổi map thường thì sang cùng chủ tại vị trí đi được gần chủ. Không theo
+  vào Tống Kim. Tắt checkbox thì SIM ở lại map cũ và tiếp tục chế độ chiến đấu.
+- **Tự nhận lời mời tổ đội từ chủ**: chỉ nhận lời mời hợp lệ từ chủ. Vào đội chiếm
+  một chỗ trong giới hạn 8 thành viên nhưng không chiếm phần EXP.
+
+SIM hết HP từ bất kỳ nguồn sát thương hợp lệ nào đều bị xóa, không tự hồi sinh.
+Chủ chết không xóa SIM. Khi chủ ngắt kết nối, SIM rời runtime chiến đấu để tạm dừng
+an toàn; khi cùng nhân vật kết nối lại sẽ phục hồi. Checkpoint `.state.json` lưu
+SIM theo tài khoản/ô nhân vật, gồm cấu hình native, HP/MP, map/vị trí và tùy chọn;
+tạo/xóa/đổi tùy chọn được ghi ngay và trạng thái chiến đấu cập nhật định kỳ.
+Tổ đội vẫn chỉ tồn tại trong phiên, không tự khôi phục sau reconnect/restart.
+
+Lệnh bài Test tiếp tục dùng API `/api/multiplayer/training`, chỉ trong development.
+Tạo quái/bao cát hoặc đổi phái test mới khóa map và hồi sinh chủ tại chỗ; **Kết thúc
+test / mở khóa map** chỉ kết thúc trạng thái đó, không xóa SIM đồng hành.
+Wire trailer và renderer SIM cũ được dùng lại; chỉ metadata SIM cùng map được đưa
+vào world snapshot, còn danh sách quản lý trả đủ SIM của chủ kể cả khác map.
 
 Các test private Tống Kim còn dùng fixture `test/helpers/legacy-combat-sandbox.js`;
 fixture này không được bundle hoặc chạy trong game.

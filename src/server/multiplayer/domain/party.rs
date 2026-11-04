@@ -3,6 +3,7 @@ use super::*;
 pub const MAX_MEMBERS: usize = 8;
 pub const INVITE_SECONDS: f32 = 60.0;
 pub const INVITE_RANGE: f32 = 1600.0;
+pub const EXPERIENCE_RANGE: f32 = 1600.0;
 pub struct Invitation {
     pub id: u32,
     pub from: u32,
@@ -25,12 +26,26 @@ impl Game {
         self.tick.wrapping_sub(invite.created) as f32 * self.rules.tick_seconds < INVITE_SECONDS
     }
     pub(super) fn party_colors(&mut self) {
-        for actor in self.actors.values_mut() { actor.party_alignment = None; }
+        for actor in self.actors.values_mut() { actor.party_alignment = None; actor.party_leader = 0; }
         for (&leader, members) in &self.parties.groups {
             let Some(color) = self.actors.get(&leader).map(|a| a.profile.alignment) else { continue; };
             for id in members {
-                if let Some(actor) = self.actors.get_mut(id) { actor.party_alignment = Some(color); }
+                if let Some(actor) = self.actors.get_mut(id) { actor.party_alignment = Some(color); actor.party_leader = leader; }
             }
+        }
+    }
+    /// Only the SIM owner can trigger automatic consent; ordinary accept validation still runs.
+    pub(super) fn accept_training_invitations(&mut self) {
+        let invites: Vec<_> = self.parties.invitations.iter().filter_map(|(&to, invite)| {
+            let unit = self.training.units.get(&to)?;
+            let actor = self.actors.get(&to)?;
+            let owner = self.actors.get(&unit.owner)?;
+            (unit.auto_accept_party && invite.from == unit.owner && actor.map == owner.map
+                && distance(actor.x, actor.y, owner.x, owner.y) <= INVITE_RANGE)
+                .then_some((to, invite.id, actor.map))
+        }).collect();
+        for (id, invitation, map) in invites {
+            self.apply_party_command(id, &Command {seq:0,kind:13,map,target:invitation,skill:0,x:0.0,y:0.0});
         }
     }
     pub fn party_leave(&mut self, id: u32) {

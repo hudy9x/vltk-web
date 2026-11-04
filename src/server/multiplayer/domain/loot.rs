@@ -1,25 +1,35 @@
 use super::*;
 impl Game {
+    fn experience_recipients(&self, killer:u32, map:u32, position:(f32,f32), xp:u32) -> Vec<(String,u8,u32)> {
+        let Some(source)=self.actors.get(&killer).filter(|a|a.map==map) else{return vec![];};
+        let leader=self.parties.leader(killer);
+        // Preserve solo rewards; party range/life eligibility applies only to shared XP.
+        if leader==0 {
+            return if source.test_owner.is_none() && xp>0 {vec![(source.account.clone(),source.slot,xp)]} else {vec![]};
+        }
+        // SIMs contribute only through their actual party, never implicitly through ownership.
+        let members=self.parties.groups[&leader].as_slice();
+        let eligible:Vec<_>=members.iter().filter_map(|id|self.actors.get(id))
+            .filter(|a|a.test_owner.is_none() && a.hp>0.0 && a.map==map
+                && distance(a.x,a.y,position.0,position.1)<=party::EXPERIENCE_RANGE).collect();
+        let count=eligible.len() as u32;
+        if count==0 || xp==0{return vec![];}
+        // Preserve total XP exactly; ordered party membership breaks remainder ties.
+        eligible.into_iter().enumerate().filter_map(|(i,a)|{
+            let share=xp/count+u32::from((i as u32)<xp%count);
+            (share>0).then(||(a.account.clone(),a.slot,share))
+        }).collect()
+    }
     pub(super) fn commit_rewards(&mut self, events: &mut Vec<EventData>, deaths: Vec<Death>) {
         for (map, id, owner) in deaths {
+            let m = self.rooms[&map].mobs.iter().find(|m|m.id==id).unwrap();
+            let recipients = self.experience_recipients(owner,map,(m.x,m.y),m.def.xp);
             let room = self.rooms.get_mut(&map).unwrap();
             let m = room.mobs.iter_mut().find(|m| m.id == id).unwrap();
             if self.training.mobs.contains_key(&id){m.respawn=2.0;events.push((map,3,owner,id,0,0.0,0));continue;}
+            // Finalize only after every recipient's share is in the same durable record.
+            if self.outbox.grant_experience(format!("{}-{}",m.id,m.life),recipients).is_err(){continue;}
             if let Some(a) = self.actors.get(&owner).filter(|a| a.map == map && a.test_owner.is_none()) {
-                // Do not finalize a death until its reward has reached the durable journal.
-                if self
-                    .outbox
-                    .grant(
-                        format!("{}-{}-0", m.id, m.life),
-                        a.account.clone(),
-                        a.slot,
-                        m.def.xp,
-                        0,
-                    )
-                    .is_err()
-                {
-                    continue;
-                }
                 if room.loot.len() < self.rules.max_loot_per_map {
                     self.next = self.next.wrapping_add(1);
                     room.loot.push(Loot {

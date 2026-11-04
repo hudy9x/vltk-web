@@ -53,6 +53,10 @@ impl Outbox {
             let value: serde_json::Value = serde_json::from_str(line)?;
             if let Some(id) = value.get("ack").and_then(|v| v.as_str()) {
                 pending.remove(id);
+            } else if let Some(batch) = value.get("grants") {
+                for g in serde_json::from_value::<Vec<Grant>>(batch.clone())? {
+                    pending.insert(g.id.clone(), g);
+                }
             } else {
                 let g: Grant = serde_json::from_value(value)?;
                 pending.insert(g.id.clone(), g);
@@ -110,6 +114,18 @@ impl Outbox {
         // A retry uses the same ID even if sync_data failed after writing a complete line.
         self.append(format!("{}\n", serde_json::to_string(&g)?).as_bytes())?;
         self.pending.insert(g.id.clone(), g);
+        Ok(())
+    }
+    /// One complete journal line commits the whole XP split, including crash recovery.
+    pub fn grant_experience(&mut self, key:String, recipients:Vec<(String,u8,u32)>) -> Result<()> {
+        let grants:Vec<_>=recipients.into_iter().enumerate().map(|(i,(account,slot,xp))|Grant {
+            id:format!("{}-{key}-0-{i}",self.epoch),account,slot,xp,gold:0,
+            merit:0,death:None,knb:0,potion:None,
+        }).collect();
+        if grants.is_empty() || grants.iter().all(|g|self.pending.contains_key(&g.id)) {return Ok(());}
+        ensure!(self.pending.len()+grants.len()<=4096,"reward delivery backlog full");
+        self.append(format!("{}\n",serde_json::to_string(&serde_json::json!({"grants":grants}))?).as_bytes())?;
+        for g in grants {self.pending.insert(g.id.clone(),g);}
         Ok(())
     }
     pub fn credit_merit(&mut self,key:String,account:String,slot:u8,merit:u32)->Result<()> {
@@ -190,4 +206,30 @@ mod tests {
         assert!(Outbox::open(p.clone()).unwrap().pending.is_empty());
         std::fs::remove_file(p).unwrap();
     }
+    #[test]
+    fn experience_batch_is_atomic_on_recovery_idempotent_and_acknowledgeable() {
+        let p=std::env::temp_dir().join(format!("vltk-xp-batch-{}.jsonl",std::process::id()));
+        let _=std::fs::remove_file(&p);
+        let mut outbox=Outbox::open(p.clone()).unwrap();
+        let recipients=vec![("a".into(),0,3),("b".into(),1,2)];
+        outbox.grant_experience("123-456".into(),recipients.clone()).unwrap();
+        outbox.grant_experience("123-456".into(),recipients).unwrap();
+        assert_eq!(outbox.pending.len(),2);
+        for id in outbox.pending.keys() {
+            assert_eq!(id.split('-').count(),5);
+            assert!(id.split('-').all(|part|part.parse::<u128>().is_ok()),"SQLite grants require numeric ID components");
+        }
+        drop(outbox);
+        let bytes=std::fs::read(&p).unwrap();assert_eq!(bytes.iter().filter(|&&b|b==b'\n').count(),1);
+        let mut recovered=Outbox::open(p.clone()).unwrap();assert_eq!(recovered.pending.values().map(|g|g.xp).sum::<u32>(),5);
+        let keys:Vec<_>=recovered.pending.keys().cloned().collect();recovered.ack(&keys).unwrap();drop(recovered);
+        assert!(Outbox::open(p.clone()).unwrap().pending.is_empty());
+        // Crash anywhere inside the batch line must recover no partial recipient list.
+        for cut in [bytes.len()/2,bytes.len()-1] {
+            std::fs::write(&p,&bytes[..cut]).unwrap();
+            let recovered=Outbox::open(p.clone()).unwrap();assert!(recovered.pending.is_empty());
+        }
+        std::fs::remove_file(p).unwrap();
+    }
+
 }

@@ -22,6 +22,7 @@ pub(super) struct Peer {
     pub y: f32,
     pub hp: f32,
     pub alignment: u8,
+    pub party_leader: u32,
     pub enabled: bool,
     pub war:Option<battlefield::Membership>,
 }
@@ -31,6 +32,7 @@ pub(super) fn peers(game: &Game) -> Vec<Peer> {
         .map(|(&id, a)| Peer {
             id,
             test_owner:a.test_owner,
+            party_leader:a.party_leader,
             map: a.map,
             x: a.x,
             y: a.y,
@@ -42,7 +44,7 @@ pub(super) fn peers(game: &Game) -> Vec<Peer> {
         .collect()
 }
 pub(super) fn hostile(id: u32, a: &Actor, b: &Peer, town: bool) -> bool {
-    if a.test_owner.is_some()||b.test_owner.is_some(){return !town&&a.war.is_none()&&b.war.is_none()&&a.map==b.map&&a.hp>0.0&&b.hp>0.0&&a.pvp.enabled&&!(a.test_owner.is_some()&&b.test_owner.is_some());}
+    if a.test_owner.is_some()||b.test_owner.is_some(){return !(a.party_leader!=0&&a.party_leader==b.party_leader)&&!town&&a.war.is_none()&&b.war.is_none()&&a.map==b.map&&a.hp>0.0&&b.hp>0.0&&a.pvp.enabled&&!(a.test_owner.is_some()&&b.test_owner.is_some());}
     if a.war.is_some()||b.war.is_some(){
         return a.war.zip(b.war).is_some_and(|(x,y)|x.ready&&y.ready&&x.match_id==y.match_id&&x.team!=y.team)&&id!=b.id&&a.hp>0.0&&b.hp>0.0&&a.map==b.map;
     }
@@ -65,6 +67,7 @@ pub(super) fn can_hit(game: &Game, source: u32, target: u32) -> bool {
         &Peer {
             id: target,
             test_owner:b.test_owner,
+            party_leader:b.party_leader,
             map: b.map,
             x: b.x,
             y: b.y,

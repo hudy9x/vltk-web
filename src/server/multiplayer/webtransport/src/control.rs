@@ -34,6 +34,18 @@ fn authorize(h: &HeaderMap, s: &Control) -> Result<(), StatusCode> {
 }
 pub fn routes(world: Arc<Mutex<World>>, secret: String) -> Router {
     Router::new()
+        .route("/companions",post(|State(s):State<Control>,h:HeaderMap,Json(r):Json<crate::domain::training::Request>|async move{
+            authorize(&h,&s)?;
+            let mut world=s.world.lock().unwrap();
+            let account=r.account.clone();let slot=r.slot;
+            let id=if r.action=="listSims" {None} else {
+                match world.game.training_command(r) {
+                    Ok(id)=>Some(id),
+                    Err(error)=>return Ok::<_,StatusCode>((StatusCode::BAD_REQUEST,Json(serde_json::json!({"error":error.to_string()})))),
+                }
+            };
+            Ok((StatusCode::OK,Json(serde_json::json!({"id":id,"units":world.game.companion_list(&account,slot)}))))
+        }))
         .route("/training",post(|State(s):State<Control>,h:HeaderMap,Json(r):Json<crate::domain::training::Request>|async move{
             authorize(&h,&s)?;let id=s.world.lock().unwrap().game.training_command(r).map_err(|_|StatusCode::BAD_REQUEST)?;
             Ok::<_,StatusCode>(Json(serde_json::json!({"id":id})))

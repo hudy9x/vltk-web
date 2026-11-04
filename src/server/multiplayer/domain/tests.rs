@@ -1654,7 +1654,7 @@ fn iron_lotus_impact_is_narrower_and_raised_without_changing_cast_distance(){
 }
 
 fn training_request(g:&Game,action:&str)->training::Request {
- serde_json::from_value(serde_json::json!({"account":"account-a","slot":0,"action":action,"profile":g.actors[&1].profile,"skill":1,"faction":"wudang","name":"SIM","monster":{"id":if action=="dummy"{999001}else{602},"name":"Target","level":150,"hp":1000,"damage":10,"defense":0,"speed":if action=="dummy"{0}else{54},"res":[0,0,0,0,0],"xp":0,"gold":0}})).unwrap()
+ serde_json::from_value(serde_json::json!({"account":"account-a","slot":0,"action":action,"simId":if action=="simMode"{g.training.units.iter().find(|(_,u)|u.owner==1).map(|(&id,_)|id)}else{None},"profile":g.actors[&1].profile,"skill":1,"faction":"wudang","name":"SIM","monster":{"id":if action=="dummy"{999001}else{602},"name":"Target","level":150,"hp":1000,"damage":10,"defense":0,"speed":if action=="dummy"{0}else{54},"res":[0,0,0,0,0],"xp":0,"gold":0}})).unwrap()
 }
 #[test]
 fn training_sims_use_online_pvp_damage_movement_and_owner_controls(){
@@ -1690,9 +1690,9 @@ fn training_pins_map_and_revives_in_place_without_death_drops(){
 fn training_entities_survive_disconnect_and_rebind_same_account_slot(){
  let mut g=game();field(&mut g);let sim=g.training_command(training_request(&g,"sim")).unwrap();let dummy=g.training_command(training_request(&g,"dummy")).unwrap();
  let profile=g.actors[&1].base_profile.clone();g.checkpoint().unwrap();
- g.actors.remove(&1);g.step();assert!(g.actors.contains_key(&sim));assert!(g.actors[&sim].path.is_empty());assert!(!g.actors[&sim].farming);
+ g.actors.remove(&1);g.step();assert!(!g.actors.contains_key(&sim));assert!(!g.training.units.contains_key(&sim));
  assert!(g.rooms[&2].mobs.iter().any(|m|m.id==dummy));
- g.join(3,"account-a".into(),0,profile).unwrap();assert_eq!(g.training.units[&sim].owner,3);assert_eq!(g.actors[&sim].test_owner,Some(3));assert_eq!(g.training.mobs[&dummy].0,3);assert!(g.training.pinned.contains_key(&3));assert_eq!(g.actors[&3].map,2);
+ g.join(3,"account-a".into(),0,profile).unwrap();let restored=g.companion_list("account-a",0)[0]["id"].as_u64().unwrap() as u32;assert_eq!(g.training.units[&restored].owner,3);assert_eq!(g.actors[&restored].test_owner,Some(3));assert_eq!(g.training.mobs[&dummy].0,3);assert!(g.training.pinned.contains_key(&3));assert_eq!(g.actors[&3].map,2);
  g.training_command(serde_json::from_value(serde_json::json!({"account":"account-a","slot":0,"action":"clearSims"})).unwrap()).unwrap();assert!(!g.actors.contains_key(&sim));
 }
 
@@ -1726,7 +1726,7 @@ fn training_sim_modes_defaults_live_switch_idle_and_single_replacement(){
   else if !monsters{let a=&g.actors[&id];assert_eq!(a.target,0);assert!(!a.farming);assert!(a.path.is_empty());}
  }
  let position=(g.actors[&id].x,g.actors[&id].y);for _ in 0..20{g.step();}assert_eq!((g.actors[&id].x,g.actors[&id].y),position);
- let next=g.training_command(training_request(&g,"sim")).unwrap();assert_ne!(id,next);assert!(!g.actors.contains_key(&id));assert_eq!(g.training.units.len(),1);
+ let next=g.training_command(training_request(&g,"sim")).unwrap();assert_ne!(id,next);assert!(g.actors.contains_key(&id));assert_eq!(g.training.units.len(),2);
 }
 
 #[test]
@@ -2165,4 +2165,275 @@ fn authored_monster_experience_is_journaled_once_after_real_combat() {
     let grants:Vec<_>=g.outbox.pending.values().filter(|r|r.xp>0).collect();
     assert_eq!(grants.len(),1);assert_eq!(grants[0].xp,225000);assert_eq!(grants[0].account,"account-a");
     remove_fixture(g);
+}
+
+#[test]
+fn training_party_auto_consent_is_owner_only_and_cleanup_removes_membership() {
+    let mut g=game();field(&mut g);
+    let mut request=training_request(&g,"sim");request.auto_accept_party=true;request.attack_players=true;
+    let sim=g.training_command(request).unwrap();
+    // An unrelated player may invite, but never trigger the SIM's automatic consent.
+    g.command(2,cmd(2,12,2,sim,0,0.0,0.0)).unwrap();g.advance_training();
+    assert_eq!(g.parties.leader(sim),0);assert!(g.parties.invitations.contains_key(&sim));
+    g.party_leave(2);
+    g.command(1,cmd(2,12,2,sim,0,0.0,0.0)).unwrap();g.advance_training();
+    assert_eq!(g.parties.groups[&1],vec![1,sim]);assert!(!g.parties.invitations.contains_key(&sim));
+    g.actors.get_mut(&1).unwrap().pvp.enabled=true;
+    assert!(!pvp::can_hit(&g,sim,1));assert!(!pvp::can_hit(&g,1,sim));
+    assert!(pvp::can_hit(&g,sim,2),"unrelated players remain valid test targets");
+    g.command(1,cmd(3,12,2,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
+    g.command(2,cmd(3,13,2,invite,0,0.0,0.0)).unwrap();
+    assert!(!pvp::can_hit(&g,sim,2));
+    let before=g.actors[&2].hp;let skill=g.actors[&sim].profile.skills[0].clone();
+    pvp::hit(&mut g,sim,2,&skill,&mut vec![]);assert_eq!(g.actors[&2].hp,before);
+    let mut remove=training_request(&g,"removeSim");remove.sim_id=Some(sim);g.training_command(remove).unwrap();
+    let replacement=g.training_command(training_request(&g,"sim")).unwrap();
+    assert_eq!(g.parties.groups[&1],vec![1,2]);assert!(!g.actors.contains_key(&sim));
+    assert_eq!(g.parties.leader(replacement),0);
+    g.command(1,cmd(4,12,2,replacement,0,0.0,0.0)).unwrap();g.advance_training();
+    assert_eq!(g.parties.leader(replacement),0,"auto-accept defaults to off");
+    let mut mode=training_request(&g,"simMode");mode.auto_accept_party=true;
+    g.training_command(mode).unwrap();g.advance_training();assert_eq!(g.parties.leader(replacement),1);
+    g.training_command(training_request(&g,"clearSims")).unwrap();
+    assert_eq!(g.parties.groups[&1],vec![1,2]);
+    assert!(crate::pve_protocol::snapshot(&g,1).is_some(),"removed SIMs cannot leave dangling party actors");
+    remove_fixture(g);
+}
+
+#[test]
+fn training_party_auto_consent_rechecks_expiration_map_distance_and_capacity() {
+    for invalid in ["expired","map","range","full"] {
+        let mut g=game();field(&mut g);
+        let mut request=training_request(&g,"sim");request.auto_accept_party=true;
+        let sim=g.training_command(request).unwrap();
+        g.command(1,cmd(2,12,2,sim,0,0.0,0.0)).unwrap();
+        match invalid {
+            "expired"=>g.tick+=(party::INVITE_SECONDS/g.rules.tick_seconds).ceil() as u32+1,
+            "map"=>g.actors.get_mut(&1).unwrap().map=1,
+            "range"=>g.actors.get_mut(&1).unwrap().x=3000.0,
+            "full"=>{
+                let profile=g.actors[&1].profile.clone();
+                for id in 100..106 {g.join(id,format!("full-{id}"),0,profile.clone()).unwrap();}
+                g.parties.groups.insert(1,vec![1,2,100,101,102,103,104,105]);g.party_colors();
+            },
+            _=>unreachable!(),
+        }
+        g.advance_training();assert_eq!(g.parties.leader(sim),0,"{invalid}");
+        remove_fixture(g);
+    }
+}
+
+#[test]
+fn training_follow_moves_toward_owner_pauses_combat_and_can_be_disabled_live() {
+    let mut g=game();field(&mut g);g.rooms.get_mut(&2).unwrap().mobs.clear();
+    let mut request=training_request(&g,"sim");request.follow_owner=true;request.attack_monsters=false;
+    let sim=g.training_command(request).unwrap();
+    g.actors.get_mut(&1).unwrap().x=800.0;
+    let before=distance(g.actors[&sim].x,g.actors[&sim].y,800.0,100.0);
+    for _ in 0..100 {g.step();}
+    let a=&g.actors[&sim];assert!(distance(a.x,a.y,800.0,100.0)<=72.0);assert!(distance(a.x,a.y,800.0,100.0)<before);
+    assert_eq!(a.target,0);assert!(!a.farming);
+    let pos=(a.x,a.y);for _ in 0..10{g.step();}assert_eq!((g.actors[&sim].x,g.actors[&sim].y),pos);
+    let mut mode=training_request(&g,"simMode");mode.attack_monsters=false;
+    g.training_command(mode).unwrap();g.actors.get_mut(&1).unwrap().x=100.0;
+    for _ in 0..20{g.step();}assert_eq!((g.actors[&sim].x,g.actors[&sim].y),pos);
+    mode=training_request(&g,"simMode");mode.follow_owner=true;mode.attack_players=true;
+    g.training_command(mode).unwrap();g.step();assert_eq!(g.actors[&sim].target,0);assert!(!g.actors[&sim].path.is_empty());
+    assert!(g.pending.iter().all(|p|p.source!=sim));
+    let snap=g.training_snapshot(1).unwrap();assert_eq!(snap["units"][0]["followOwner"],true);
+    g.actors.get_mut(&1).unwrap().map=1;g.step();let a=&g.actors[&sim];assert_eq!(a.map,1);assert!(!a.farming);assert_eq!(a.target,0);
+    remove_fixture(g);
+}
+
+#[test]
+fn party_experience_splits_real_combat_once_and_preserves_total_and_gold_ownership() {
+    let mut g=game();field(&mut g);
+    g.command(1,cmd(2,12,2,2,0,0.0,0.0)).unwrap();let invite=g.parties.invitations[&2].id;
+    g.command(2,cmd(2,13,2,invite,0,0.0,0.0)).unwrap();
+    let mob=g.rooms[&2].mobs[0].id;
+    g.command(1,cmd(3,3,2,mob,1,0.0,0.0)).unwrap();
+    for _ in 0..35{client_step(&mut g);}
+    let grants:Vec<_>=g.outbox.pending.values().filter(|r|r.xp>0).collect();
+    assert_eq!(grants.len(),2);assert_eq!(grants.iter().map(|g|g.xp).sum::<u32>(),5);
+    assert_eq!(grants.iter().find(|g|g.account=="account-a").unwrap().xp,3);
+    assert_eq!(grants.iter().find(|g|g.account=="account-b").unwrap().xp,2);
+    assert_eq!(g.rooms[&2].loot.len(),1);assert_eq!(g.rooms[&2].loot[0].owner,"account-a");
+    let file=g.outbox.path_for_test();let reopened=Outbox::open(file).unwrap();
+    assert_eq!(reopened.pending.values().filter(|g|g.xp>0).count(),2);
+    remove_fixture(g);
+}
+
+#[test]
+fn party_experience_excludes_dead_remote_far_disconnected_and_non_members() {
+    for excluded in ["dead","map","far","offline","not-member"] {
+        let mut g=game();field(&mut g);
+        if excluded!="not-member" {g.parties.groups.insert(1,vec![1,2]);g.party_colors();}
+        match excluded {
+            "dead"=>{let a=g.actors.get_mut(&2).unwrap();a.hp=0.0;a.dead=100.0;},
+            "map"=>g.actors.get_mut(&2).unwrap().map=1,
+            "far"=>g.actors.get_mut(&2).unwrap().x=3000.0,
+            "offline"=>{g.party_leave(2);g.actors.remove(&2);},
+            _=>{},
+        }
+        let mob=g.rooms[&2].mobs[0].id;g.command(1,cmd(2,3,2,mob,1,0.0,0.0)).unwrap();
+        for _ in 0..35{client_step(&mut g);}
+        let grants:Vec<_>=g.outbox.pending.values().filter(|r|r.xp>0).collect();
+        assert_eq!(grants.len(),1,"{excluded}");assert_eq!(grants[0].account,"account-a");assert_eq!(grants[0].xp,5);
+        remove_fixture(g);
+    }
+}
+
+#[test]
+fn training_sim_kills_share_experience_only_with_actual_party_players() {
+    for grouped in [false,true] {
+        let mut g=game();field(&mut g);
+        let sim=g.training_command(training_request(&g,"sim")).unwrap();
+        if grouped {g.parties.groups.insert(1,vec![1,2,sim]);g.party_colors();}
+        for _ in 0..35{client_step(&mut g);}
+        assert!(g.events.iter().any(|e|e.kind==3&&e.source==sim),"SIM must really kill the monster");
+        let grants:Vec<_>=g.outbox.pending.values().filter(|r|r.xp>0).collect();
+        assert_eq!(grants.len(),if grouped{2}else{0});
+        assert!(grants.iter().all(|r|!r.account.starts_with("test-sim:")));
+        if grouped {assert_eq!(grants.iter().map(|r|r.xp).sum::<u32>(),5);}
+        assert!(g.rooms[&2].loot.is_empty(),"SIM kill does not change gold ownership policy");
+        remove_fixture(g);
+    }
+}
+
+#[test]
+fn party_experience_never_rewards_training_targets() {
+    let mut g=game();field(&mut g);g.rooms.get_mut(&2).unwrap().mobs.clear();
+    g.parties.groups.insert(1,vec![1,2]);g.party_colors();
+    let dummy=g.training_command(training_request(&g,"dummy")).unwrap();
+    let m=g.rooms.get_mut(&2).unwrap().mobs.iter_mut().find(|m|m.id==dummy).unwrap();m.hp=1.0;m.def.xp=1000;
+    g.command(1,cmd(2,3,2,dummy,1,0.0,0.0)).unwrap();for _ in 0..10{client_step(&mut g);}
+    assert!(g.outbox.pending.values().all(|r|r.xp==0));
+    remove_fixture(g);
+}
+
+#[test]
+fn party_experience_of_one_is_not_rounded_up_per_member() {
+    let mut g=game();field(&mut g);g.parties.groups.insert(1,vec![1,2]);g.party_colors();
+    g.rooms.get_mut(&2).unwrap().mobs[0].def.xp=1;
+    let mob=g.rooms[&2].mobs[0].id;g.command(1,cmd(2,3,2,mob,1,0.0,0.0)).unwrap();
+    for _ in 0..35{client_step(&mut g);}
+    let grants:Vec<_>=g.outbox.pending.values().filter(|r|r.xp>0).collect();
+    assert_eq!(grants.len(),1);assert_eq!(grants[0].xp,1);remove_fixture(g);
+}
+
+#[test]
+fn training_follow_uses_walkable_paths_around_walls_and_respects_stun() {
+    use base64::Engine;
+    let mut g=game();field(&mut g);g.rooms.get_mut(&2).unwrap().mobs.clear();
+    let mut blocked=vec![0u8;2500usize.div_ceil(8)];
+    for row in 0..35 {let i=row*50+25;blocked[i/8]|=1<<(i%8);}
+    let map:MapDefinition=serde_json::from_value(serde_json::json!({"id":2,"level":1,"town":false,"width":1000,"height":1000,"entry":{"x":100,"y":100},"grid":{"kind":"grid","columns":50,"rows":50,"cellSize":{"width":20,"height":20},"blockedBase64":base64::engine::general_purpose::STANDARD.encode(blocked)},"monsters":[]})).unwrap();
+    g.rooms.get_mut(&2).unwrap().nav=Navigation::new(&map).unwrap();
+    let mut request=training_request(&g,"sim");request.follow_owner=true;request.attack_monsters=false;
+    let sim=g.training_command(request).unwrap();g.actors.get_mut(&1).unwrap().x=800.0;
+    g.actors.get_mut(&sim).unwrap().stun=1.0;let pos=(g.actors[&sim].x,g.actors[&sim].y);
+    for _ in 0..5{g.step();}assert_eq!((g.actors[&sim].x,g.actors[&sim].y),pos);
+    let mut detoured=false;
+    for _ in 0..500 {
+        g.step();let a=&g.actors[&sim];assert!(g.rooms[&2].nav.stand(a.x,a.y));
+        detoured|=a.y>=700.0;
+    }
+    assert!(detoured);let a=&g.actors[&sim];assert!(distance(a.x,a.y,800.0,100.0)<=72.0);remove_fixture(g);
+}
+
+#[test]
+fn solo_experience_keeps_existing_rewards_when_killer_dies_or_moves_far() {
+    let mut g=game();field(&mut g);
+    let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];m.hp=0.0;m.killer=1;
+    let a=g.actors.get_mut(&1).unwrap();a.x=3000.0;a.hp=0.0;
+    let deaths=g.advance_monsters(&mut vec![]);g.commit_rewards(&mut vec![],deaths);
+    let grants:Vec<_>=g.outbox.pending.values().filter(|g|g.xp>0).collect();
+    assert_eq!(grants.len(),1);assert_eq!(grants[0].xp,5);remove_fixture(g);
+}
+
+#[test]
+fn party_sim_protection_does_not_override_opposing_battlefield_teams() {
+    let mut g=game();field(&mut g);g.parties.groups.insert(1,vec![1,2]);g.party_colors();
+    for (id,team) in [(1,0),(2,1)] {g.actors.get_mut(&id).unwrap().war=Some(battlefield::Membership {prefer_players:true,team,match_id:42,ready:true,kind:1,points:0});}
+    assert!(pvp::can_hit(&g,1,2));assert!(pvp::can_hit(&g,2,1));remove_fixture(g);
+}
+
+#[test]
+fn companions_limit_three_names_and_individual_owner_scoped_controls() {
+ let mut g=game();field(&mut g);let mut ids=vec![];
+ for number in 1..=3 {
+  let id=g.training_command(training_request(&g,"sim")).unwrap();ids.push(id);
+  assert_eq!(g.actors[&id].name,format!("SIM#{number}"));assert_eq!(g.training.units[&id].number,number);
+ }
+ assert!(!g.training.pinned.contains_key(&1));
+ assert!(g.training_command(training_request(&g,"sim")).unwrap_err().to_string().contains("tối đa 3"));
+ assert!(ids.iter().all(|id|g.actors.contains_key(id)));
+ let mut mode=training_request(&g,"simMode");mode.sim_id=Some(ids[1]);mode.follow_owner=true;mode.auto_accept_party=true;
+ g.training_command(mode).unwrap();assert!(g.training.units[&ids[1]].follow_owner);assert!(!g.training.units[&ids[0]].follow_owner);
+ let mut remove=training_request(&g,"removeSim");remove.sim_id=Some(ids[1]);remove.account="account-b".into();
+ assert!(g.training_command(remove).is_err());assert!(g.actors.contains_key(&ids[1]));
+ let mut remove=training_request(&g,"removeSim");remove.sim_id=Some(ids[1]);g.training_command(remove).unwrap();
+ assert!(!g.actors.contains_key(&ids[1]));assert!(g.actors.contains_key(&ids[0]));assert!(g.actors.contains_key(&ids[2]));
+ let new=g.training_command(training_request(&g,"sim")).unwrap();assert_eq!(g.actors[&new].name,"SIM#2");
+ assert_eq!(g.companion_list("account-a",0).len(),3);assert!(g.companion_list("account-b",0).is_empty());remove_fixture(g);
+}
+
+#[test]
+fn companions_restore_after_restart_with_health_options_and_deleted_sim_absent() {
+ let mut g=game();field(&mut g);let profile=g.actors[&1].base_profile.clone();
+ let definitions=Definitions{version:1,town:1,battlefield:None,maps:g.rooms.values().map(|r|r.definition.clone()).collect()};
+ for number in 1..=3 {
+  let mut request=training_request(&g,"sim");request.follow_owner=number==2;request.auto_accept_party=number==3;
+  let id=g.training_command(request).unwrap();let a=g.actors.get_mut(&id).unwrap();a.hp=100.0+number as f32;a.mp=number as f32;a.x=200.0+number as f32;
+ }
+ g.checkpoint().unwrap();let file=g.outbox.path_for_test();drop(g);
+ let mut g=Game::new(file.clone()).unwrap();g.install(definitions.clone()).unwrap();
+ g.join(10,"account-a".into(),0,profile.clone()).unwrap();
+ let list=g.companion_list("account-a",0);assert_eq!(list.len(),3);
+ for unit in &list {let n=unit["number"].as_u64().unwrap();assert_eq!(unit["name"],format!("SIM#{n}"));assert_eq!(unit["hp"].as_f64().unwrap(),100.0+n as f64);assert_eq!(unit["mp"].as_f64().unwrap(),n as f64);assert_eq!(unit["followOwner"],n==2);assert_eq!(unit["autoAcceptParty"],n==3);}
+ let delete=list[1]["id"].as_u64().unwrap() as u32;
+ let request:training::Request=serde_json::from_value(serde_json::json!({"account":"account-a","slot":0,"action":"removeSim","simId":delete})).unwrap();
+ g.training_command(request).unwrap();drop(g);
+ let mut g=Game::new(file).unwrap();g.install(definitions).unwrap();g.join(20,"account-a".into(),0,profile).unwrap();
+ let list=g.companion_list("account-a",0);assert_eq!(list.len(),2);assert!(list.iter().all(|u|u["number"]!=2));remove_fixture(g);
+}
+
+#[test]
+fn companion_monster_death_is_permanent_without_owner_death_grants_or_revive() {
+ let mut g=game();field(&mut g);let mut request=training_request(&g,"sim");request.attack_monsters=false;
+ let sim=g.training_command(request).unwrap();let (x,y)=(g.actors[&sim].x,g.actors[&sim].y);
+ g.actors.get_mut(&1).unwrap().x=800.0;
+ let m=&mut g.rooms.get_mut(&2).unwrap().mobs[0];m.x=x+1.0;m.y=y;m.home=(x,y);m.target=sim;m.cd=0.0;m.def.damage=1000.0;
+ g.step();assert!(g.events.iter().any(|e|e.kind==2&&e.target==sim&&e.value>0.0));
+ assert!(!g.actors.contains_key(&sim));assert!(g.companion_list("account-a",0).is_empty());
+ assert!(g.outbox.pending.values().all(|r|!r.account.starts_with("sim:")));
+ for _ in 0..100{g.step();}assert!(!g.actors.contains_key(&sim));
+ let profile=g.actors[&1].base_profile.clone();let definitions=Definitions{version:1,town:1,battlefield:None,maps:g.rooms.values().map(|r|r.definition.clone()).collect()};
+ let file=g.outbox.path_for_test();drop(g);let mut g=Game::new(file).unwrap();g.install(definitions).unwrap();g.join(10,"account-a".into(),0,profile).unwrap();
+ assert!(g.companion_list("account-a",0).is_empty());remove_fixture(g);
+}
+
+#[test]
+fn companion_follow_crosses_normal_maps_without_test_pin_or_affecting_non_followers() {
+ let mut g=game();field(&mut g);
+ let mut destination=g.rooms[&2].definition.clone();destination.id=3;
+ let mut maps:Vec<_>=g.rooms.values().map(|r|r.definition.clone()).collect();maps.push(destination);
+ g.rooms.clear();g.install(Definitions{version:1,town:1,battlefield:None,maps}).unwrap();for room in g.rooms.values_mut(){room.mobs.clear();}
+ let mut request=training_request(&g,"sim");request.follow_owner=true;let follows=g.training_command(request).unwrap();
+ let stays=g.training_command(training_request(&g,"sim")).unwrap();
+ g.command(1,cmd(2,1,3,0,0,0.0,0.0)).unwrap();g.step();
+ assert_eq!(g.actors[&1].map,3);assert_eq!(g.actors[&follows].map,3);assert_eq!(g.actors[&stays].map,2);
+ assert!(!g.training.pinned.contains_key(&1));
+ g.command(1,cmd(3,1,1,0,0,0.0,0.0)).unwrap();g.step();assert_eq!(g.actors[&follows].map,1);assert!(!g.actors[&follows].farming);
+ // A normal owner death is not converted into test recovery or a companion deletion.
+ g.actors.get_mut(&1).unwrap().hp=0.0;g.step();assert_eq!(g.actors[&1].hp,0.0);assert!(g.actors.contains_key(&follows));assert!(g.actors.contains_key(&stays));remove_fixture(g);
+}
+
+#[test]
+fn companions_paused_on_disconnect_are_safe_and_return_for_the_same_character_only() {
+ let mut g=game();field(&mut g);let sim=g.training_command(training_request(&g,"sim")).unwrap();g.actors.get_mut(&sim).unwrap().hp=123.0;
+ let profile=g.actors[&1].base_profile.clone();g.checkpoint().unwrap();g.suspend_companions(1);g.party_leave(1);g.actors.remove(&1);
+ for _ in 0..100 {g.step();}
+ assert!(!g.actors.contains_key(&sim));g.join(10,"account-a".into(),1,profile.clone()).unwrap();assert!(g.companion_list("account-a",1).is_empty());
+ g.join(11,"account-a".into(),0,profile).unwrap();let list=g.companion_list("account-a",0);assert_eq!(list.len(),1);assert_eq!(list[0]["hp"],123.0);remove_fixture(g);
 }

@@ -270,7 +270,7 @@ body.tongkim-controls #public-war-prefer{display:flex}
         if(!(sprite&&Fa(sprite,0,Math.max(0,30-(actor.expires-clock())),actor.x,actor.y,true))){ctx.strokeStyle='#83dcff';ctx.beginPath();ctx.ellipse(actor.x,actor.y,24,12,0,0,7);ctx.stroke();}
         return;
       }
-      const color=actor.kind>=2?'#ffffff':actor.team===0?'#ffb347':'#c77bff',pose=onlineWorld.pose(actor.id);
+      const color=(actor.training&&OnlinePvp.nameColor(next,actor))||(actor.kind>=2?'#ffffff':actor.team===0?'#ffb347':'#c77bff'),pose=onlineWorld.pose(actor.id);
       const definition=actor.kind===1?Jt(actor.f,actor.s):r0[actor.skin],anim=definition?.anim;
       let elapsed=actor.actT;
       if(actor.act==='at'&&pose?.atD>0){elapsed=(1-pose.atT/pose.atD)*(ws(anim,'at')||.4);if(Number.isFinite(pose.dir))actor.dir=pose.dir;}

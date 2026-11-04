@@ -54,6 +54,7 @@ pub struct Actor {
     pub profile_revision: u64,
     pub name: String,
     pub party_alignment: Option<u8>,
+    pub party_leader: u32,
     pub account: String,
     pub slot: u8,
     pub profile: Profile,
@@ -92,6 +93,7 @@ impl Actor {
                 profile_revision: 0,
                 name: String::new(),
                 party_alignment: None,
+                party_leader: 0,
                 account,
                 slot,
                 map: map,
@@ -352,7 +354,7 @@ impl Game {
     pub fn join(&mut self, id: u32, account: String, slot: u8, mut profile: Profile) -> Result<()> {
         recovery::reconcile(&mut profile,&self.outbox,&account,slot);
         ensure!(
-            self.actors.values().filter(|a|a.war.is_none_or(|w|w.kind==0)).count() < self.rules.max_players
+            self.actors.values().filter(|a|a.test_owner.is_none()&&a.war.is_none_or(|w|w.kind==0)).count() < self.rules.max_players
                 && (1..=200).contains(&profile.level)
                 && profile.hp.is_finite()
                 && profile.hp > 0.0
@@ -368,7 +370,7 @@ impl Game {
         ensure!(
             self.actors
                 .values()
-                .filter(|a| a.map == room.definition.id && a.war.is_none_or(|w|w.kind==0))
+                .filter(|a| a.test_owner.is_none() && a.map == room.definition.id && a.war.is_none_or(|w|w.kind==0))
                 .count()
                 < 32,
             "town full"
@@ -475,7 +477,7 @@ impl Game {
             if self
                 .actors
                 .iter()
-                .filter(|(other_id, p)| **other_id != id && p.map == c.map)
+                .filter(|(other_id, p)| **other_id != id && p.test_owner.is_none() && p.map == c.map)
                 .count()
                 >= 32
             {
@@ -625,6 +627,7 @@ impl Game {
         self.training_respawn();
         self.finalize_deaths();
         self.commit_rewards(&mut events, deaths);
+        self.remove_dead_companions();
         for (map, kind, source, target, skill, value, hit) in events {
             self.event(map, kind, source, target, skill, value, hit);
         }

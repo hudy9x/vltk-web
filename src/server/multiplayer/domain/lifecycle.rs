@@ -21,6 +21,8 @@ struct SavedActor {
 }
 #[derive(Default, Serialize, Deserialize)]
 struct SavedWorld {
+    #[serde(default)]
+    companions: BTreeMap<String, Vec<training::SavedCompanion>>,
     actors: BTreeMap<String, SavedActor>,
     drops: BTreeMap<u32, Vec<Loot>>,
     completed: BTreeSet<String>,
@@ -38,6 +40,9 @@ impl Checkpoints {
             SavedWorld::default()
         };
         Ok(Self { path, data })
+    }
+    pub(super) fn companions(&self,account:&str,slot:u8)->Vec<training::SavedCompanion> {
+        self.data.companions.get(&format!("{account}:{slot}")).cloned().unwrap_or_default()
     }
     pub(super) fn next(&self) -> u32 {
         self.data.next.max(1000)
@@ -82,6 +87,18 @@ impl Game {
         }
     }
     pub fn checkpoint(&mut self) -> Result<()> {
+        // Online owners write even an empty list, so explicit deletions cannot resurrect.
+        // Offline owners retain their saved list until they reconnect.
+        let mut companions:BTreeMap<String,Vec<training::SavedCompanion>>=self.actors.values()
+            .filter(|a|a.test_owner.is_none()).map(|a|(format!("{}:{}",a.account,a.slot),vec![])).collect();
+        for (&id,unit) in &self.training.units {
+            let Some(a)=self.actors.get(&id).filter(|a|a.hp>0.0) else{continue;};
+            let mut profile=a.base_profile.clone();profile.potions=a.profile.potions.clone();
+            companions.entry(format!("{}:{}",unit.account,unit.slot)).or_default().push(training::SavedCompanion {
+                unit:unit.clone(),profile,map:a.map,x:a.x,y:a.y,hp:a.hp,mp:a.mp,life:a.life,
+            });
+        }
+        self.checkpoints.data.companions.extend(companions);
         for a in self.actors.values().filter(|a|a.war.is_none()&&a.test_owner.is_none()) {
             self.checkpoints.data.actors.insert(
                 format!("{}:{}", a.account, a.slot),
@@ -175,7 +192,7 @@ impl Game {
             .actors
             .iter()
             .filter(|(_, a)| {
-                a.war.is_none() && a.hp <= 0.0 && a.death_notice.as_ref().is_none_or(|d| d.request.is_none())
+                a.test_owner.is_none() && a.war.is_none() && a.hp <= 0.0 && a.death_notice.as_ref().is_none_or(|d| d.request.is_none())
             })
             .map(|(&id, _)| id)
             .collect();
@@ -333,7 +350,7 @@ impl Game {
         if self
             .actors
             .iter()
-            .filter(|(other, a)| **other != id && a.map == town_id)
+            .filter(|(other, a)| **other != id && a.test_owner.is_none() && a.map == town_id)
             .count()
             >= 32
         {

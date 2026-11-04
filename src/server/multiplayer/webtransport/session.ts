@@ -48,8 +48,10 @@ export function registerMultiplayerWebTransport(
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       signal: AbortSignal.any([stopped.signal, AbortSignal.timeout(5000)]),
     });
-    if (!response.ok)
-      throw Object.assign(new Error('Máy chủ thế giới chưa sẵn sàng.'), { status: 503 });
+    if (!response.ok) {
+      const problem=await response.json().catch(()=>null) as {error?:string}|null;
+      throw Object.assign(new Error(problem?.error||'Máy chủ thế giới chưa sẵn sàng.'), {status:response.status>=500?503:response.status});
+    }
     return response.json();
   }
   async function refreshProfiles(selected?:{account:string;slot:number}){
@@ -95,6 +97,31 @@ export function registerMultiplayerWebTransport(
     stopped.abort();
     await polling;
   });
+  app.get('/api/multiplayer/companions',async(request,reply)=>{
+    const user=requireUser(request),slot=Number((request.query as {slot?:string}).slot);
+    if(!Number.isInteger(slot)||slot<0||slot>2)return sendJson(reply,400,{error:'Ô nhân vật không hợp lệ.'});
+    if(!characters||!process.env.MULTIPLAYER_WT_CONTROL_URL)return sendJson(reply,503,{error:'Máy chủ online chưa sẵn sàng.'});
+    const saved=characters.read(String(user.id),slot);
+    if(!saved.profile.inv?.some((i:any)=>i.ktc?.k==='sim_token'&&i.ktc.c===1))return sendJson(reply,403,{error:'Cần lệnh bài SIM trong hành trang.'});
+    const result=await controlCall('/companions',{account:String(user.id),slot,action:'listSims'}) as {units:unknown[]};
+    return sendJson(reply,200,{factions:training.options(),units:result.units});
+  });
+  app.post('/api/multiplayer/companions',async(request,reply)=>{
+    const user=requireUser(request),body=parseJsonBody(request.body) as Record<string,any>;
+    if(!body||!Number.isInteger(body.slot)||body.slot<0||body.slot>2||!['sim','simMode','removeSim'].includes(body.action))return sendJson(reply,400,{error:'Thao tác SIM không hợp lệ.'});
+    if(!characters||!process.env.MULTIPLAYER_WT_CONTROL_URL)return sendJson(reply,503,{error:'Máy chủ online chưa sẵn sàng.'});
+    const saved=characters.read(String(user.id),body.slot);
+    if(!saved.profile.inv?.some((i:any)=>i.ktc?.k==='sim_token'&&i.ktc.c===1))return sendJson(reply,403,{error:'Cần lệnh bài SIM trong hành trang.'});
+    if(body.action!=='sim'&&(!Number.isSafeInteger(body.simId)||body.simId<=0||body.simId>0xffffffff))return sendJson(reply,400,{error:'Hãy chọn SIM cần điều chỉnh.'});
+    const command:Record<string,unknown>={account:String(user.id),slot:body.slot,action:body.action};
+    if(body.action!=='sim')command.simId=body.simId;
+    if(body.action==='sim'||body.action==='simMode'){
+      if(['attackPlayers','attackMonsters','followOwner','autoAcceptParty'].some(key=>body[key]!==undefined&&typeof body[key]!=='boolean'))return sendJson(reply,400,{error:'Chế độ SIM không hợp lệ.'});
+      Object.assign(command,{attackPlayers:body.attackPlayers??false,attackMonsters:body.attackMonsters??true,followOwner:body.followOwner??false,autoAcceptParty:body.autoAcceptParty??false});
+    }
+    if(body.action==='sim')Object.assign(command,training.sim(body.faction,body.skill,body.hp,body.equipped));
+    return sendJson(reply,200,await controlCall('/companions',command));
+  });
   app.get('/api/multiplayer/training', (request,reply)=>{
     requireUser(request);if(!development)return sendJson(reply,403,{error:'Lệnh bài SIM/Test chỉ dùng trong development.'});
     return sendJson(reply,200,{factions:training.options()});
@@ -108,9 +135,10 @@ export function registerMultiplayerWebTransport(
     const saved=characters.read(String(user.id),body.slot),token=['sim','simMode','clearSims'].includes(body.action)?'sim_token':'test_token';
     if(!saved.profile.inv?.some((i:any)=>i.ktc?.k===token&&i.ktc.c===1))return sendJson(reply,403,{error:'Cần lệnh bài trong hành trang.'});
     const command:Record<string,unknown>={account:String(user.id),slot:body.slot,action:body.action};
+    if(body.simId!==undefined){if(!Number.isSafeInteger(body.simId)||body.simId<=0||body.simId>0xffffffff)return sendJson(reply,400,{error:'SIM không hợp lệ.'});command.simId=body.simId;}
     if(body.action==='sim'||body.action==='simMode'){
-      if((body.attackPlayers!==undefined&&typeof body.attackPlayers!=='boolean')||(body.attackMonsters!==undefined&&typeof body.attackMonsters!=='boolean'))return sendJson(reply,400,{error:'Chế độ SIM không hợp lệ.'});
-      Object.assign(command,{attackPlayers:body.attackPlayers??false,attackMonsters:body.attackMonsters??true});
+      if(['attackPlayers','attackMonsters','followOwner','autoAcceptParty'].some(key=>body[key]!==undefined&&typeof body[key]!=='boolean'))return sendJson(reply,400,{error:'Chế độ SIM không hợp lệ.'});
+      Object.assign(command,{attackPlayers:body.attackPlayers??false,attackMonsters:body.attackMonsters??true,followOwner:body.followOwner??false,autoAcceptParty:body.autoAcceptParty??false});
     }
     if(body.action==='sim')Object.assign(command,training.sim(body.faction,body.skill,body.hp,body.equipped));
     if(body.action==='monster'||body.action==='dummy')command.monster=training.monster(body.hp,body.action==='dummy');

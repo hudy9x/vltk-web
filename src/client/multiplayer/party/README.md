@@ -11,6 +11,26 @@ nhóm còn một người tự giải tán. Đổi bản đồ vẫn giữ độ
 và trong tầm nhìn của client. Server kiểm tra cùng map và khoảng cách tối đa 1.600 pixel.
 Tổ đội hiện tồn tại trong phiên server; reconnect được xem là rời đội.
 
+## Chia kinh nghiệm và SIM
+
+Quái thường cấp một tổng EXP duy nhất, chia đều cho người chơi thật trong tổ đội của
+actor hạ quái: còn sống, cùng bản đồ và cách vị trí quái chết tối đa 1.600 pixel.
+Không nhân thưởng theo số thành viên. Phần dư nguyên chia lần lượt theo thứ tự vào đội;
+người không đủ điều kiện và SIM không chiếm phần. Ví dụ 5 EXP, 2 người thật + 1 SIM:
+người đầu nhận 3, người sau nhận 2. Không chia ngân lượng hoặc thay quyền sở hữu vật rơi.
+
+SIM có thể được mời từ danh sách trong tầm nhìn dù không nằm trong roster ngoại hình
+người chơi. Checkbox **Tự nhận lời mời tổ đội từ chủ** chỉ cho phép tự nhận lời mời của
+nhân vật tạo SIM; server vẫn kiểm tra hạn mời, khoảng cách, cùng map, quyền đội trưởng
+và giới hạn 8 thành viên. Xóa hoặc SIM chết sẽ dọn tư cách đội và lời mời của con đó. Tạo mới không xóa SIM cũ (tối đa 3 SIM/nhân vật).
+SIM không đánh đồng đội kể cả khi bật **Đánh người**. Hai checkbox mới mặc định tắt.
+
+Khi SIM trong đội hạ quái thường, EXP được chia cho người chơi thật đủ điều kiện của
+đội đó; sở hữu SIM không tự động tạo quyền nhận EXP nếu chưa vào cùng đội. Quái và
+bao cát tạo bằng lệnh bài Test vẫn không cấp thưởng. Rust ghi toàn bộ phần chia của
+một lần hạ quái trong một dòng journal, phục hồi cả nhóm hoặc bỏ dòng chưa hoàn tất;
+API giao thưởng tiếp tục dùng từng grant và chống nhận lặp theo grant ID như trước.
+
 ## Binary v8
 
 Command vẫn 25 byte: `12=invite(target actor ID)`, `13=accept(target invitation ID)`,

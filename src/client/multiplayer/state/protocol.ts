@@ -68,7 +68,7 @@ export interface PartyState {leader:number;reply:{seq:number;code:number};member
 export interface BattlefieldUnit {appearance?:{sx:'m'|'f';rows:{helm:number;armor:number;weapon:number;horse:number};ride:number;mg:boolean};id:number;name:string;faction:string;sex:number;skin:number;team:number;kind:number;tier:number;points:number;kills:number;playerKills?:number;online:boolean;moving:boolean;ready:boolean;level:number}
 export interface BattlefieldState {marshalsSpawned?:boolean;killNotices?:{id:number;title:string;name:string;at:number}[];itemDrops?:{id:string;kind:string;x:number;y:number;team:number;expires:number}[];itemBuffs?:Record<string,number>;itemTraps?:{kind:string;x:number;y:number;team:number;expires:number}[];id:number;starts:number;ends:number;now:number;phase:'waiting'|'running'|'finished';score:number[];team:number;entryRemaining:number;respawnRemaining:number;deaths:number;potions:number[];selected?:number[];inventory?:{id:number;slot:number;count:number}[];units:BattlefieldUnit[]}
 export interface WorldState {
-  training?:{pinned:boolean;units:(BattlefieldUnit&{owner:number;training:true;attackPlayers?:boolean;attackMonsters?:boolean})[]};
+  training?:{pinned:boolean;units:(BattlefieldUnit&{owner:number;training:true;attackPlayers?:boolean;attackMonsters?:boolean;followOwner?:boolean;autoAcceptParty?:boolean})[]};
   battlefield?:BattlefieldState;
   death?:{killer:number;name:string;player:boolean};
   party?:PartyState;
@@ -270,7 +270,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     if(size>100000||at+size>bytes.length)throw new Error('Invalid training size');
     training=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes.subarray(at,at+size)));at+=size;
     if(!training||typeof training.pinned!=='boolean'||!Array.isArray(training.units)||training.units.length>320||
-      new Set(training.units.map(u=>u.id)).size!==training.units.length||training.units.some(u=>!Number.isSafeInteger(u.id)||!Number.isSafeInteger(u.owner)||!actors.some(a=>a.id===u.id)||typeof u.name!=='string'||u.name.length>96||typeof u.faction!=='string'||u.kind!==1||u.training!==true))throw new Error('Invalid training state');
+      new Set(training.units.map(u=>u.id)).size!==training.units.length||training.units.some(u=>!Number.isSafeInteger(u.id)||!Number.isSafeInteger(u.owner)||!actors.some(a=>a.id===u.id)||typeof u.name!=='string'||u.name.length>96||typeof u.faction!=='string'||['attackPlayers','attackMonsters','followOwner','autoAcceptParty'].some(key=>{const value=(u as unknown as Record<string,unknown>)[key];return value!==undefined&&typeof value!=='boolean';})||u.kind!==1||u.training!==true))throw new Error('Invalid training state');
     for(const u of training.units){const a=actors.find(a=>a.id===u.id);if(a)Object.assign(a,{trainingOwner:u.owner});}
   }
   if(at!==bytes.length)throw new Error('Invalid world size');

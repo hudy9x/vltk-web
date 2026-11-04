@@ -29,7 +29,7 @@ exports.sim=function(faction,skill,hp,equipped){
   // Rebuild every support variant so activating a buff cannot discard the HP override.
   const profile=catalog.character(raw);profile.hp=hp;for(const v of profile.support?.variants||[])v.profile.hp=hp;
   const look=native.withProgression(raw,s=>{const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');const l={};l.window=l;vm.runInNewContext(fs.readFileSync(path.resolve(__dirname,'../../../../public/jxlook.js'),'utf8'),l);s.P0=l.JXLOOK;s.l.mounted=false;s.l.P=s.j0();const a=s.N8();return {sx:a.sx,rows:a.rows,ride:0,mg:s.l.P.main.phys===false};});
-  return {profile,appearance:look,faction,sex:raw.sex,name:'SIM · '+exports.options().find(f=>f.key===faction).name,skill};
+  return {profile,appearance:look,faction,sex:raw.sex,name:'SIM',skill};
 };
 exports.monster=function(hp,dummy=false){
   if(!Number.isSafeInteger(hp)||hp<1||hp>1000000000)fail('HP không hợp lệ.');
