@@ -25,14 +25,24 @@ const shop=createQuartermaster({storage,available,freeSlots(){
 function open() {
   let message='',busy=false;
   function render() {
+    const listScroll=document.querySelector<HTMLElement>('.quartermaster-shop .shoplist')?.scrollTop ?? 0;
+    const modalScroll=document.querySelector<HTMLElement>('#modal .mbox')?.scrollTop ?? 0;
+    const bodyScroll=document.querySelector<HTMLElement>('#mBody')?.scrollTop ?? 0;
     J(`<section class="quartermaster-shop"><h3>Quan Quân Nhu</h3><p><b>Quân trạng tích lũy: ${shop.balance.toLocaleString('vi-VN')}</b></p><p class="desc">Chỉ thanh toán bằng quân trạng tích lũy của nhân vật. Mua hàng không giảm quân trạng xét danh hiệu trong trận.</p><p role="status">${D(message)}</p><div class="shoplist">${(Object.keys(WAR_ITEMS) as WarItem[]).map(kind=>{
       const item=WAR_ITEMS[kind];
+      const detail=D(`${item.description} · ${kind.endsWith('Trap')?'Bẫy tồn tại 30 giây':'Hiệu lực 180 giây'}`);
       const controls=[1,10].map(quantity=>{
         let error='';try{shop.quote(kind,quantity);}catch(reason){error=reason instanceof Error?reason.message:String(reason);}
         return `<button class="btn" data-quartermaster-buy="${kind}" data-quantity="${quantity}" ${error||busy?'disabled':''} title="${D(error||`Mua ${quantity} ${item.name}`)}">${quantity===1?'Mua':'×10'}</button>`;
       }).join('');
-      return `<div class="shoprow quartermaster-product"><img src="${item.icon}" width="24" height="24" alt="${item.name}"><span><b>${item.name}</b><small>${item.description} · ${kind.endsWith('Trap')?'Bẫy tồn tại 30 giây':'Hiệu lực 180 giây'}<br>${WAR_PRICES[kind].toLocaleString('vi-VN')} điểm/món · Đang có ${storage()[`tk_${kind}`]||0}</small></span><div class="quartermaster-actions">${controls}</div></div>`;
+      return `<div class="shoprow quartermaster-product"><img src="${item.icon}" width="24" height="24" alt="${item.name}" title="${detail}"><span><b title="${detail}">${item.name}</b><small>${WAR_PRICES[kind].toLocaleString('vi-VN')} điểm/món</small></span><div class="quartermaster-actions">${controls}</div></div>`;
     }).join('')}</div></section>`,()=>{
+      const list=document.querySelector<HTMLElement>('.quartermaster-shop .shoplist');
+      const body=document.querySelector<HTMLElement>('#mBody');
+      const modal=document.querySelector<HTMLElement>('#modal .mbox');
+      if(modal)modal.scrollTop=modalScroll;
+      if(list)list.scrollTop=listScroll;
+      if(body)body.scrollTop=bodyScroll;
       document.querySelectorAll<HTMLButtonElement>('[data-quartermaster-buy]').forEach(button=>button.onclick=async()=>{
         const kind=button.dataset.quartermasterBuy as WarItem,quantity=Number(button.dataset.quantity);
         if(busy)return;

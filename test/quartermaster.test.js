@@ -38,17 +38,22 @@ test('currency and bought stacks persist to SQLite per character after closing a
  const state=snapshot(db),a=JSON.parse(state.entries.jxidle),b=JSON.parse(state.entries.jxidle_2);assert.equal(a.mats.misc.tk_merit,5000);assert.equal(a.mats.misc.tk_drum,10);assert.equal(b.mats.misc.tk_merit,150);assert.equal(b.mats.misc.tk_drum,undefined);
  }finally{db.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
-test('shop dialog shows only current character balance, buys, saves and rejects stale-distance purchases',()=>{
+test('shop dialog preserves scroll through local and online purchases, saves and rejects stale-distance purchases',async()=>{
+ const surfaces=Object.fromEntries(['.quartermaster-shop .shoplist','#mBody','#modal .mbox'].map(key=>[key,{scrollTop:0}]));
  const buttons=Object.keys(WAR_ITEMS).map(kind=>({dataset:{quartermasterBuy:kind,quantity:'1'}})),select={value:'1'};
- const s={o:{fac:'wudang',name:'First',inv:[],mats:{misc:{tk_merit:10000}}},l:{life:100,town:false},v:{x:100,y:100},Z0:{key:9003},INV_MAX:60,R:false,saved:0,html:'',D:x=>x,V(){},$(){s.saved++;},m:()=>select,J(html,ready){s.html=html;ready();},document:{querySelectorAll:()=>buttons},MapsEngine:{getMap:()=>({id:9003}),mapNpcs:()=>[{npcId:'quartermaster',position:{x:100,y:100},team:'song'}]},arenaSimulator:{battlefield:{active:true,state:{team:'song',mapId:9003}}}};
+ const s={o:{fac:'wudang',name:'First',inv:[],mats:{misc:{tk_merit:10000}}},l:{life:100,town:false},v:{x:100,y:100},Z0:{key:9003},INV_MAX:60,R:false,saved:0,html:'',D:x=>x,V(){},$(){s.saved++;},m:()=>select,J(html,ready){s.html=html;for(const node of Object.values(surfaces))node.scrollTop=0;ready();},document:{querySelector:key=>surfaces[key]||null,querySelectorAll:()=>buttons},MapsEngine:{getMap:()=>({id:9003}),mapNpcs:()=>[{npcId:'quartermaster',position:{x:100,y:100},team:'song'}]},arenaSimulator:{battlefield:{active:true,state:{team:'song',mapId:9003}}}};
  const shop=load('gameplay/quartermaster/index.ts','Quartermaster',s);shop.open();assert.match(s.html,/Quân trạng tích lũy: 10.000/);assert.equal((s.html.match(/data-quartermaster-buy=/g)||[]).length,52);
  assert.doesNotMatch(s.html,/<select|quartermaster-quantity|<button class="shoprow/);
  assert.match(s.html,/data-quantity="10"/);
- buttons.find(b=>b.dataset.quartermasterBuy==='drum').onclick();assert.equal(s.o.mats.misc.tk_merit,9500);assert.equal(s.o.mats.misc.tk_drum,1);assert.equal(s.saved,1);
+ for(const node of Object.values(surfaces))node.scrollTop=240;
+ buttons.find(b=>b.dataset.quartermasterBuy==='drum').onclick();for(const node of Object.values(surfaces))assert.equal(node.scrollTop,240);assert.equal(s.o.mats.misc.tk_merit,9500);assert.equal(s.o.mats.misc.tk_drum,1);assert.equal(s.saved,1);
  const bulk=buttons.find(b=>b.dataset.quartermasterBuy==='life');bulk.dataset.quantity='10';bulk.onclick();
  assert.equal(s.o.mats.misc.tk_life,10);assert.equal(s.o.mats.misc.tk_merit,8000);
  s.v.x=1000;buttons[0].onclick();assert.match(s.html,/đến gần/);assert.equal(s.o.mats.misc.tk_merit,8000);
  s.o={fac:'shaolin',inv:[],mats:{misc:{tk_merit:200}}};shop.open();assert.match(s.html,/Quân trạng tích lũy: 200/);assert.doesNotMatch(s.html,/9.500/);
+ s.OnlineProgression={enabled:()=>true,async run(){for(const node of Object.values(surfaces))assert.equal(node.scrollTop,360);}};
+ for(const node of Object.values(surfaces))node.scrollTop=360;await buttons[0].onclick();
+ for(const node of Object.values(surfaces))assert.equal(node.scrollTop,360);
 });
 test('map-tool shares the catalog and draws the new transparent sprite even with an old invalid direction',()=>{
  const {buildSync}=require('esbuild');const s={module:{exports:{}},structuredClone};vm.runInNewContext(buildSync({entryPoints:['src/client/npcs/index.ts'],bundle:true,platform:'node',format:'cjs',write:false}).outputFiles[0].text,s);
@@ -72,12 +77,12 @@ test('server serves the catalog-registered NPC asset without adding a separate s
 });
 
 test('authored battlefield has a reachable quartermaster for each team and both sell using accumulated merit',()=>{
- const scope={atob,btoa};const maps=load('maps/index.ts','Maps',scope),nav=maps.createNavigationRuntime();nav.load(9003,maps.createLegacyCatalog().navigation[9003]);
+ const scope={atob,btoa,structuredClone};const maps=load('maps/index.ts','Maps',scope),nav=maps.createNavigationRuntime();nav.load(9003,maps.createLegacyCatalog().navigation[9003]);
  const map=maps.getMap(9003),placements=maps.mapNpcs(map).filter(npc=>npc.npcId==='quartermaster');assert.equal(placements.length,2);
  for(const team of ['song','jin']){
   const npc=placements.find(npc=>npc.team===team);assert.ok(npc);assert.ok(nav.canStand(npc.position.x,npc.position.y));
   const buttons=Object.keys(WAR_ITEMS).map(kind=>({dataset:{quartermasterBuy:kind,quantity:'1'}}));
-  const s={o:{fac:'wudang',inv:[],mats:{misc:{tk_merit:1000}}},l:{life:100},v:{...npc.position},Z0:{key:9003},R:false,INV_MAX:60,D:x=>x,V(){},$(){},m:()=>({value:'1'}),J(html,ready){ready();},document:{querySelectorAll:()=>buttons},MapsEngine:maps,arenaSimulator:{battlefield:{active:true,state:{mapId:9003,team}}}};
+  const s={o:{fac:'wudang',inv:[],mats:{misc:{tk_merit:1000}}},l:{life:100},v:{...npc.position},Z0:{key:9003},R:false,INV_MAX:60,D:x=>x,V(){},$(){},m:()=>({value:'1'}),J(html,ready){ready();},document:{querySelector:()=>null,querySelectorAll:()=>buttons},MapsEngine:maps,arenaSimulator:{battlefield:{active:true,state:{mapId:9003,team}}}};
   load('gameplay/quartermaster/index.ts','Quartermaster',s).open();buttons.find(b=>b.dataset.quartermasterBuy==='drum').onclick();assert.equal(s.o.mats.misc.tk_merit,500);assert.equal(s.o.mats.misc.tk_drum,1);
   const enemy=placements.find(n=>n.team!==team);s.v={...enemy.position};buttons.find(b=>b.dataset.quartermasterBuy==='drum').onclick();assert.equal(s.o.mats.misc.tk_merit,500,'opposing quartermaster cannot be used');
  }

@@ -389,7 +389,13 @@ body:has(#dev-tools) #combat-sandbox>button{margin:0 12px 12px}
 #skBuffs .war-effect img{width:24px;height:24px;border-color:#9b823e}
 #skBuffs .war-effect b{color:#ffe49a;font-size:10px;line-height:12px}
 
-.quartermaster-product{grid-template-columns:36px minmax(0,1fr)}
+.quartermaster-shop .shoplist{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:stretch;scrollbar-gutter:stable}
+.quartermaster-shop [role=status]{min-height:1.6em}
+.quartermaster-product{grid-template-columns:36px minmax(0,1fr);grid-template-rows:auto 1fr auto;align-content:start;align-items:start;padding:10px;min-width:0}
+.quartermaster-product>span{grid-column:1/-1;overflow-wrap:anywhere}
+.quartermaster-product>img{grid-column:1/-1}
+.quartermaster-product small{margin-top:6px;line-height:1.5}
+.quartermaster-product .quartermaster-actions{align-self:end}
 .quartermaster-actions{grid-column:1/-1;display:flex;gap:6px}
 .quartermaster-actions .btn:first-child{flex:1}
 .quartermaster-actions .btn:last-child{flex:0 0 56px}
