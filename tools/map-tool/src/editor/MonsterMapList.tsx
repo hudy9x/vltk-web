@@ -1,4 +1,5 @@
 import type { MonsterMapGroup } from '@/lib/monster-catalog';
+import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Map as MapIcon, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -25,15 +26,16 @@ function MapPreview({ map, assets }: {map?: MapDefinition; assets: AssetStore}) 
   </span>;
 }
 
-export function MonsterMapList({ groups, selected, assets, onSelect }: {
+export function MonsterMapList({ groups, selected, assets, onSelect, bulkAction }: {
   groups: MonsterMapGroup[]; selected?: number; assets: AssetStore;
+  bulkAction?: ReactNode;
   onSelect(id:number):void;
 }) {
   const [search,setSearch]=useState('');
   const rows=groups.filter(group=>`${group.map.name} ${group.map.id} ${group.ranges.map(range=>range.join(' ')).join(' ')}`.toLocaleLowerCase('vi').includes(search.toLocaleLowerCase('vi')));
   return <aside className="monster-map-sidebar" aria-label="Map và dải level">
     <div className="monster-map-heading"><strong>Map · Dải level</strong><span>{groups.length}</span></div>
-    <div className="monster-map-search"><Search size={15}/><Input aria-label="Tìm map hoặc dải level" placeholder="Tìm map, level…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="monster-map-toolbar"><div className="monster-map-search"><Search size={15} aria-hidden="true"/><Input aria-label="Tìm map hoặc dải level" placeholder="Tìm map, level…" value={search} onChange={e=>setSearch(e.target.value)}/></div>{bulkAction}</div>
     <div className="monster-map-list">
       {rows.map(group=>{
         const map=group.map,levels=group.ranges.map(range=>range.join('–')).join(' · ');

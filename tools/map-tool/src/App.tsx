@@ -324,6 +324,15 @@ export default function App() {
     const keydown = (event: KeyboardEvent) => {
       if (activeToolRef.current === 'monsters') {
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') { event.preventDefault(); void handlers.current.save(); }
+        if (state.current.busy || (event.target as HTMLElement).closest('input,textarea,[contenteditable="true"],[role="combobox"]')) return;
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
+          event.preventDefault();
+          if (event.shiftKey) handlers.current.redo();
+          else handlers.current.undo();
+        } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'y') {
+          event.preventDefault();
+          handlers.current.redo();
+        }
         return;
       }
       if (activeToolRef.current !== 'map' || soundState.current.busy) return;
@@ -982,7 +991,7 @@ export default function App() {
         </div>
         <div className="tool-page" hidden={activeTool !== 'monsters'}>
           <div className="editor-shell dark monster-tool-shell">
-            <header className="app-header"><div className="brand"><strong>Monsters</strong><span>Cấu hình quái và EXP theo dải cấp</span></div><Button disabled={!dirty || !!busy} onClick={()=>void save()}><Save/> Lưu cấu hình{dirty?' *':''}</Button></header>
+            <header className="app-header"><div className="brand"><strong>Monsters</strong><span>Cấu hình quái và EXP theo dải cấp</span></div><div className="header-actions"><IconButton label="Hoàn tác · ⌘Z" disabled={!past.length || !!busy} onClick={undo}><Undo2/></IconButton><IconButton label="Làm lại · ⇧⌘Z" disabled={!future.length || !!busy} onClick={redo}><Redo2/></IconButton><Button disabled={!dirty || !!busy} onClick={()=>void save()}><Save/> Lưu cấu hình{dirty?' *':''}</Button></div></header>
             <main className="monster-tool-content">{document&&workspace?<Tabs defaultValue="gameplay" className="monster-catalog-tabs"><GameplayPanel document={document} workspace={workspace} assets={assets} onEdit={edit} mode="monsters"/></Tabs>:<p>Mở workspace trong mục Map để cấu hình quái.</p>}{error&&<p role="alert" className="monster-tool-status">{error}</p>}<footer className="monster-tool-status"><span>{busy || message}</span><span>Khởi động lại server online và tải lại game sau khi lưu.</span></footer></main>
           </div>
         </div>

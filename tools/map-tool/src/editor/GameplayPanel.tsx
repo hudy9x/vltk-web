@@ -71,11 +71,10 @@ export function GameplayPanel({ document, workspace, assets, onEdit, mode = "map
   const selectedMap=group?.map;
   return (
     <TabsContent value="gameplay" className="monster-catalog-layout">
-      <MonsterMapList groups={visibleGroups} selected={selectedMap?.id} assets={assets} onSelect={id=>{setSelectedMapId(id);setProfileId('');setMonsterId(undefined);}}/>
+      <MonsterMapList groups={visibleGroups} selected={selectedMap?.id} assets={assets} bulkAction={<MonsterBulkEditor document={document} groups={visibleGroups} onEdit={onEdit}/>} onSelect={id=>{setSelectedMapId(id);setProfileId('');setMonsterId(undefined);}}/>
       <div className="monster-settings-panel">
       <header className="monster-settings-heading"><h2>{selectedMap?.name||profile?.name||'Cấu hình quái'}</h2>{profile&&<p>Level {profile.levelRange.join('–')}</p>}</header>
       {group&&group.ranges.length>1&&<div className="monster-range-list" role="group" aria-label="Dải level của map">{group.ranges.map(range=><Button key={range.join(':')} variant={profile?.levelRange.join(':')===range.join(':')?'secondary':'outline'} aria-pressed={profile?.levelRange.join(':')===range.join(':')} onClick={()=>{setProfileId(group.profiles.find(p=>p.levelRange.join(':')===range.join(':'))!.id);setMonsterId(undefined);}}>Level {range.join('–')}</Button>)}</div>}
-      {profile&&group&&<MonsterBulkEditor key={`${group.map.id}:${profile.levelRange.join(':')}`} document={document} groups={visibleGroups} mapId={group.map.id} range={profile.levelRange} onEdit={onEdit}/>}
       {profile ? (
         <MonsterBalanceEditor key={profile.id} profile={profile} monsters={workspace.monsters} assets={assets} onEdit={onEdit} choices={choices} selectedMonsterId={monsterId} onChoose={(profileId,id)=>{setProfileId(profileId);setMonsterId(id);}}>
           <p className="help-text">
