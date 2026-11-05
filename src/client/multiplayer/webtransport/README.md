@@ -570,3 +570,17 @@ hành trang hoặc kho chung đã có trên server. Đồ chưa nhặt hết h�
 đồ trong túi/kho không có thời hạn này. Metadata nguồn loot cho combat local/phó
 bản được nhận qua `lootDrop` **chỉ trong development**; production chỉ nhận nguồn
 quái của Rust. Không nhận item roll hoặc inventory thay thế từ client.
+
+### Tự bán đồ thừa
+
+Khi bật tùy chọn, `lootPickup` dùng lại quy tắc gốc `Cf`/`Of` trên server để bán
+đồ thừa trong túi và món vừa nhặt. Vòng quét online kiểm tra lại sau mỗi 30 giây;
+bật checkbox cũng áp dụng ngay cho túi hiện tại. Tắt tùy chọn không bán đồ.
+Cả việc xóa món và cộng giá `x0` đều nằm trong cùng transaction, được chống lặp
+bằng command ID; client không gửi giá bán. `lastAutoSale` lưu món/giá và phát log
+“Tự bán … (+… lượng)” khi client nhận kết quả.
+
+Giữ nguyên bảo vệ đồ khóa, đồ bộ, đồ Tím, Thần Mã, vật phẩm nhiệm vụ và các ngoại
+lệ gốc. Giữ đủ 6 trang sức thường dự phòng trong túi: phân biệt món đã nằm trong
+túi với món đang nhặt để không quét xuống còn 5 món. Giá trị `autoJunk` được chụp
+cùng ý định nhặt/quét; yêu cầu nhặt cũ chưa có cờ này mặc định không tự bán.

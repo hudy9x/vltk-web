@@ -147,6 +147,10 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
         },
         itemsWorldSetup:async()=>{o.autoMap=false;await OnlineProgression.run({kind:'gm',action:'level150'});if(o.eq.weapon)await OnlineProgression.run({kind:'unequip',slot:'weapon'});if(!o.sk[10])await OnlineProgression.run({kind:'skill',skill:10});await OnlineProgression.run({kind:'mainSkill',skill:10});},
         wallet:()=>({gold:o.gold,knb:o.knb,goldText:Tr(o.gold),knbText:F(o.knb||0)}),
+        autosellState:()=>({enabled:o.autoJunk!==false,gold:o.gold,inv:structuredClone(o.inv),sale:structuredClone(o.lastAutoSale),logs:l.logs.slice()}),
+        autosellFlush:()=>OnlineProgression.flush(),
+        autosellSweep:async()=>{OnlineLoot.advance(31);await OnlineProgression.flush();},
+        autosellFilter:()=>{WA().pickAll=false;},
         itemsAuto:enabled=>{o.autoJunk=false;o.autoEquip=false;WA().auto=enabled;WA().pickAll=true;$();},
         itemsState:()=>({inv:structuredClone(o.inv),eq:structuredClone(o.eq),drops:structuredClone(l.ground),stash:structuredClone(rn().st.items),scene:OnlineLoot.scene()}),
         itemsDungeon:async()=>{
@@ -300,6 +304,48 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   await a.page.waitForTimeout(1700);
   for(const {page} of [a,b]) await page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   assert.ok((await a.page.evaluate(()=>window.__onlineTest.state())).draws>0);
+  if(process.env.AUTOSELL_TEST==='1'){
+    const page=a.page;
+    await page.evaluate(()=>window.__onlineTest.itemsWorldSetup());
+    await page.evaluate(()=>{window.__onlineTest.autosellFilter();window.__onlineTest.assistant();});
+    await page.locator('#tJunk').uncheck();await page.evaluate(()=>window.__onlineTest.autosellFlush());
+    const {DatabaseSync}=require('node:sqlite'),db=new DatabaseSync(path.join(directory,'game.sqlite'));
+    const canonical=require('../persistence/characters.ts').createCharacters(db).read(a.account,0).profile;
+    const data=require('../definitions/runtime.cjs').withProgression({...canonical,autoJunk:false,lootF:{pickAll:false},gold:100,lvl:150,attr:{str:1000,dex:1000,vit:1000,eng:1000}},s=>{
+      function gear(d,level){const row=s.equipmentTrader.blueCatalog(0,level).find(it=>it.d===d),it=s.equipmentTrader.preview({kind:'blue',sex:0,level,item:row.key,series:0,lines:[s.equipmentTrader.affixes(row,0,0)[0].a]})[0];it.uid=s.o.uid++;delete it.lock;return it;}
+      const worn=gear(5,10),pendant=gear(9,10),weak=gear(5,1),locked=gear(5,1);locked.lock=true;
+      s.o.eq.boot=worn;s.o.eq[s.JA(pendant)]=pendant;
+      const jewels=Array.from({length:7},()=>gear(9,1)),drops=Array.from({length:3},(_,i)=>({id:'autosell-fixture:'+i,it:gear(5,1),source:'legacy',scene:'map:town',x:100,y:100,expires:Date.now()+120000}));
+      s.o.inv=[weak,locked,...jewels];s.o.itemDrops=drops;
+      return {profile:s.o,weak,locked,jewels,drops,initialSale:s.x0(weak)+s.x0(jewels[0]),prices:drops.map(d=>s.x0(d.it))};
+    });
+    db.prepare('UPDATE multiplayer_characters SET profile=?,revision=revision+1 WHERE account=? AND slot=0').run(JSON.stringify(data.profile),a.account);db.close();
+    await page.waitForFunction(uid=>window.__onlineTest.autosellState().inv.some(it=>it.uid===uid),data.weak.uid);
+    await page.evaluate(()=>window.__onlineTest.autosellSweep());assert.equal((await page.evaluate(()=>window.__onlineTest.autosellState())).gold,100);
+    await page.locator('#tJunk').check();await page.evaluate(()=>window.__onlineTest.autosellFlush());
+    let state=await page.evaluate(()=>window.__onlineTest.autosellState());
+    assert.equal(state.gold,100+data.initialSale);assert.ok(!state.inv.some(it=>it.uid===data.weak.uid));assert.ok(state.inv.some(it=>it.uid===data.locked.uid));
+    assert.equal(state.inv.filter(it=>data.jewels.some(j=>j.uid===it.uid)).length,6);
+    assert.ok(state.logs.some(line=>line.includes('Tự bán')));
+    const first=state.gold;
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    assert.equal((await page.evaluate(()=>window.__onlineTest.autosellState())).gold,first);
+    // An already-owned old-client pickup is cleaned by the actual online sweep timer.
+    let response=await a.context.request.post(base+'/api/multiplayer/progression',{data:{slot:0,id:'autosell-old-pickup',action:{kind:'lootPickup',dropId:data.drops[0].id}}});assert.equal(response.status(),200);
+    await page.waitForFunction(uid=>window.__onlineTest.autosellState().inv.some(it=>it.uid===uid),data.drops[0].it.uid);
+    await page.evaluate(()=>window.__onlineTest.autosellSweep());
+    state=await page.evaluate(()=>window.__onlineTest.autosellState());assert.equal(state.gold,first+data.prices[0]);assert.ok(!state.inv.some(it=>it.uid===data.drops[0].it.uid));
+    await page.evaluate(id=>window.__onlineTest.itemsPickupNow(id),data.drops[1].id);
+    await page.waitForFunction(()=>window.__onlineTest.itemsPending().length===0);
+    state=await page.evaluate(()=>window.__onlineTest.autosellState());assert.equal(state.gold,first+data.prices[0]+data.prices[1]);assert.ok(!state.inv.some(it=>it.uid===data.drops[1].it.uid));
+    await page.evaluate(()=>window.__onlineTest.assistant());await page.locator('#tJunk').uncheck();await page.evaluate(()=>window.__onlineTest.autosellFlush());
+    await page.evaluate(id=>window.__onlineTest.itemsPickupNow(id),data.drops[2].id);await page.waitForFunction(()=>window.__onlineTest.itemsPending().length===0);
+    state=await page.evaluate(()=>window.__onlineTest.autosellState());assert.ok(state.inv.some(it=>it.uid===data.drops[2].it.uid));assert.equal(state.gold,first+data.prices[0]+data.prices[1]);
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    state=await page.evaluate(()=>window.__onlineTest.autosellState());assert.equal(state.enabled,false);assert.ok(state.inv.some(it=>it.uid===data.drops[2].it.uid));
+    assert.equal(state.inv.filter(it=>data.jewels.some(j=>j.uid===it.uid)).length,6);assert.ok(state.inv.some(it=>it.uid===data.locked.uid));
+    assert.deepEqual(errors,[]);console.log('Auto-sell browser: real checkbox, online sweep, pickup on/off, native exact sale prices, protected equipment, six jewels and reload passed.');return;
+  }
   if(process.env.WALLET_TEST==='1'){
     const page=a.page;
     await page.evaluate(()=>window.__onlineTest.itemsWorldSetup());

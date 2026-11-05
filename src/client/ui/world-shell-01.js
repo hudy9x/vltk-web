@@ -506,6 +506,7 @@ var OM = function () {
         }),
         t("#tJunk", (e) => {
           o.autoJunk = e;
+          if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled())OnlineLoot.setAutoJunk(e);
         }),
         t("#tPts", (e) => {
           o.autoPts = e;

@@ -159,7 +159,13 @@ export function createCharacters(db: DatabaseSync) {
         // the server owns the catalog, probability, attributes and UIDs of every roll.
         if(!development)throw Object.assign(new Error('Vật phẩm luyện công phải do máy chủ thế giới cấp.'),{status:403});
         profile=items.roll(saved.profile,intent.monster,id);
-      }else if(intent.kind==='lootPickup')profile=items.pickup(saved.profile,intent.dropId);
+      }else if(intent.kind==='lootPickup'){
+        if(intent.autoJunk!==undefined&&typeof intent.autoJunk!=='boolean')throw Object.assign(new Error('Cài đặt tự bán không hợp lệ.'),{status:400});
+        profile=items.pickup(saved.profile,intent.dropId,id,intent.autoJunk===true);
+      }else if(intent.kind==='autoSell'||intent.kind==='inventoryAutomation'){
+        if(typeof intent.autoJunk!=='boolean')throw Object.assign(new Error('Cài đặt tự bán không hợp lệ.'),{status:400});
+        profile=items.autoSell(saved.profile,id,intent.autoJunk);
+      }
       else if(intent.kind==='stashDeposit'||intent.kind==='stashWithdraw'){
         profile=stashes.transfer(account,saved.profile,intent);
         db.prepare('UPDATE multiplayer_characters SET revision=revision+1 WHERE account=? AND slot<>?').run(account,slot);

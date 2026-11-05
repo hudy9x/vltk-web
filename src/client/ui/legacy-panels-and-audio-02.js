@@ -694,6 +694,7 @@ var Ao = function () {
     }),
     (m("#cJunk").onchange = (t) => {
       ((o.autoJunk = t.target.checked), $());
+      if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled())OnlineLoot.setAutoJunk(o.autoJunk);
     }),
     (m("#sOn").onchange = (t) => {
       (j8(), (g1().on = t.target.checked), ks(), $());

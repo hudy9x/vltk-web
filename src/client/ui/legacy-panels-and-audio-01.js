@@ -348,11 +348,12 @@ var Cf = function (A) {
     !t ||
     FA(A) ||
     K0(A) > K0(t) * 0.85 ||
-    (vn.includes(A.d) && o.inv.filter((e) => vn.includes(e.d) && !e.set && !e.vio).length < Tv)
+    (vn.includes(A.d) && o.inv.filter((e) => vn.includes(e.d) && !e.set && !e.vio).length < Tv + (o.inv.includes(A) ? 1 : 0))
   );
 };
 
 var Of = function () {
+  if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled()){OnlineLoot.autoSell();return 0;}
   if (o.autoJunk === !1) return 0;
   let A = 0;
   for (let n = 0; n < INV_MAX; n++) {

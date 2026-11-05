@@ -732,6 +732,7 @@ var NB = function () {
     }),
     e("#tJunk", (i) => {
       o.autoJunk = i;
+      if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled())OnlineLoot.setAutoJunk(i);
     }),
     e("#tPts", (i) => {
       ((o.autoPts = i), i && (yt(), Pt(), D0()));

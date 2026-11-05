@@ -1,11 +1,16 @@
 // Show server-issued items immediately; durable pickup intents reconcile in the background.
 var OnlineLoot=(()=>{
   const pending=new Set();
-  let lastMove=0;
+  let lastMove=0,sweepTime=0,selling=false,saleSlot=-1,saleId=null;
   const enabled=()=>typeof OnlineProgression!=='undefined'&&OnlineProgression.enabled();
   const scene=()=>l.dg?'dg:'+String(l.dg.id??l.dg.kind):l.tower?'tower:'+l.tower.floor:'map:'+String(Z0.key);
   function sync(){
     if(!enabled()||!o)return;
+    if(saleSlot!==m0){saleSlot=m0;saleId=o.lastAutoSale?.id||null;}
+    else if(o.lastAutoSale?.id&&o.lastAutoSale.id!==saleId){
+      const sale=o.lastAutoSale;saleId=sale.id;
+      C(`<span class="dim">Tự bán ${sale.count} món đồ thừa (+${q(sale.amount)} lượng): ${sale.items.slice(0,3).map(it=>D(it.name)).join(', ')}${sale.count>3?'…':''}</span>`);
+    }
     window.localGameItemQueue?.project(o,m0);
     replay();
     const prior=new Map((l.ground||[]).filter(d=>d.serverDrop).map(d=>[d.serverDrop,d]));
@@ -47,8 +52,8 @@ var OnlineLoot=(()=>{
     if(!drop.serverDrop||!enabled())return false;
     const receipt=(o.itemDrops||[]).find(d=>d.id===drop.serverDrop);
     if(!receipt)return true;
-    if(o.inv.length>=INV_MAX){k('Hành trang đầy.');return false;}
-    const entry={id:crypto.randomUUID(),slot:m0,action:{kind:'lootPickup',dropId:drop.serverDrop},receipt:structuredClone(receipt)};
+    if(o.inv.length>=INV_MAX&&!(o.autoJunk!==false&&(Cf(receipt.it)||o.inv.some(Cf)))){k('Hành trang đầy.');return false;}
+    const entry={id:crypto.randomUUID(),slot:m0,action:{kind:'lootPickup',dropId:drop.serverDrop,autoJunk:o.autoJunk!==false},receipt:structuredClone(receipt)};
     try{
       if(!window.localGameItemQueue)throw Error('Chưa sẵn sàng lưu vật phẩm.');
       window.localGameItemQueue.put(entry);
@@ -61,12 +66,23 @@ var OnlineLoot=(()=>{
   }
   function advance(dt){
     sync();for(const d of l.ground)d.age+=dt;
+    sweepTime+=dt;if(sweepTime>=30){sweepTime=0;autoSell();}
     if(l.life<=0)return;
     const manual=l.pickTarget;
     const drop=manual||WA().auto&&l.ground.find(d=>d.age>=.4&&(WA().pickAll||mA(d.it)||n3(d.it))&&Math.hypot(d.x-v.x,d.y-v.y)<=d.range);
     if(!drop)return;
     if(Math.hypot(drop.x-v.x,drop.y-v.y)<=drop.range)pickup(drop);
     else if(manual&&performance.now()-lastMove>500){lastMove=performance.now();onlineWorld.move(drop.x,drop.y);}
+  }
+  function autoSell(){
+    if(!enabled()||o.autoJunk===false||selling||window.localGameItemQueue?.pending(m0).length||!o.inv.some(Cf))return;
+    selling=true;
+    OnlineProgression.run({kind:'autoSell',autoJunk:true}).then(sync).catch(error=>k(error.message)).finally(()=>{selling=false;});
+  }
+  function setAutoJunk(value){
+    o.autoJunk=value;
+    if(!enabled())return Promise.resolve();
+    return OnlineProgression.run({kind:'inventoryAutomation',autoJunk:value}).then(sync).catch(error=>k(error.message));
   }
   function stash(){
     // Existing currency/material transfers keep their legacy storage; equipment
@@ -84,5 +100,5 @@ var OnlineLoot=(()=>{
     await OnlineProgression.run({kind:'stashWithdraw',stashId:item.stashId});
     return {ok:true,msg:'Lấy ra: '+item.n};
   }
-  return {enabled,scene,sync,drop,pickup,advance,stash,deposit,withdraw};
+  return {enabled,scene,sync,drop,pickup,advance,autoSell,setAutoJunk,stash,deposit,withdraw};
 })();

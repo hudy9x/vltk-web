@@ -54,9 +54,31 @@ exports.createStashes=function(db){
   }
   return {read,transfer};
 };
-exports.pickup=function(p,id){
-  const at=(p.itemDrops||[]).findIndex(d=>d.id===id&&d.expires>Date.now());
-  if(at<0)fail('Vật phẩm không còn dưới đất.');
-  const limit=native.withProgression(p,s=>s.INV_MAX);if(p.inv.length>=limit)fail('Hành trang đầy.');
-  const drop=p.itemDrops.splice(at,1)[0];p.inv.unshift(drop.it);return p;
+function sweep(s){
+  const before=s.o.inv.slice();s.Of();
+  return before.filter(it=>!s.o.inv.includes(it));
+}
+function receipt(s,sold,id,previousGold){
+  if(!Number.isSafeInteger(s.o.gold)||s.o.gold<0)fail('Số dư vượt giới hạn lưu trữ.');
+  if(sold.length)s.o.lastAutoSale={id,count:sold.length,amount:s.o.gold-previousGold,items:sold.map(it=>({uid:it.uid,name:it.n,price:s.x0(it)}))};
+  return s.o;
+}
+exports.autoSell=function(p,id,enabled){
+  return native.withProgression({...p,autoJunk:enabled},s=>{
+    const previous=s.o.gold;return receipt(s,sweep(s),id,previous);
+  });
+};
+exports.pickup=function(p,id,commandId,enabled=false){
+  return native.withProgression({...p,autoJunk:enabled},s=>{
+    const at=(s.o.itemDrops||[]).findIndex(d=>d.id===id&&d.expires>Date.now());
+    if(at<0)fail('Vật phẩm không còn dưới đất.');
+    const drop=s.o.itemDrops[at],previous=s.o.gold,sold=sweep(s);
+    if(enabled&&s.Cf(drop.it)){s.o.gold+=s.x0(drop.it);sold.push(drop.it);}
+    else{
+      if(s.o.inv.length>=s.INV_MAX)fail('Hành trang đầy.');
+      s.o.inv.unshift(drop.it);
+    }
+    s.o.itemDrops.splice(at,1);
+    return receipt(s,sold,commandId,previous);
+  });
 };
