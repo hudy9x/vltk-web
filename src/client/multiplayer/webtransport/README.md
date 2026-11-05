@@ -511,3 +511,43 @@ Dialog chi tiết kỹ năng cập nhật sau khi canonical intent được lưu
 và `unlearnAll` chạy nhiều bước native trong một giao dịch có idempotency; vẫn
 giữ điều kiện cấp, điểm và bí kíp. Không còn gửi từng lần cộng điểm bất đồng bộ
 trong vòng lặp rồi hiển thị lại cấp cũ. Browser: `CURSE_TEST=1 ... browser.test.cjs`.
+
+## Điều tra chậm vào game bằng log thời gian server
+
+Node và Rust bật log `[online:timing]` mặc định, độc lập với log combat
+`ONLINE_DEBUG`. Đặt `ONLINE_TIMING=0` cho **cả hai process** nếu muốn tắt.
+Sau cập nhật, restart cả Node và Rust để áp dụng.
+
+Chạy local và lưu chung stdout/stderr của hai server vào file:
+
+```sh
+mkdir -p output
+pnpm dev:online 2>&1 | tee "output/online-timing-$(date +%Y%m%d-%H%M%S).log"
+```
+
+Khi gặp treo, ghi lại giờ xảy ra và gửi file log của lần chạy đó, gồm khoảng
+30 giây trước/sau sự cố. Không cần bật `ONLINE_DEBUG=1` chỉ để thu log thời gian.
+Trên máy chủ dùng systemd, lấy journal của cả service Node và Rust trong cùng
+khoảng thời gian; `tee` chỉ dành cho cách chạy local ở trên.
+
+Các mốc cần đối chiếu:
+
+- Node `http-start`/`http-end`: đăng nhập, kiểm tra session, đồng bộ storage,
+  API cấp vé; có `request`, HTTP status và thời gian xử lý.
+- Node `character-read`, `catalog-build`, `catalog-install`, `character-build`,
+  `ticket-issue`, `rust-admit`, `response`: `stepMs` là thời gian riêng của bước,
+  `elapsedMs` là tổng từ lúc vào handler. `next` chỉ bước bắt đầu tiếp theo;
+  lỗi có `failed:true` cùng tên bước thất bại.
+- Rust `quic-incoming`, `quic-accepted`, `hello-authenticated`, `join-lock`,
+  `admission-found`, `character-joined`, `first-position`, `first-world-ready`,
+  `first-world-sent`, `session-ended`: `elapsedMs` tính từ lúc Rust nhận kết nối;
+  có thêm thời gian chờ lock, tuổi admission, thời gian join và gửi snapshot.
+- Node ghi `trace` từ mốc cấp vé; Rust dùng cùng `trace` từ
+  `hello-authenticated`. Dòng này có `transportTrace` để nối ngược tới các mốc
+  QUIC trước xác thực. Các bước Node trước cấp vé nối bằng `request`.
+
+`time` của Node là UTC ISO; `timeUnixMs` của Rust là Unix milliseconds.
+`trace` là hash rút gọn của nonce ngẫu nhiên cho từng vé, không phải vé đăng nhập.
+Log không chứa password, cookie, ticket, nonce gốc hoặc toàn bộ profile.
+`first-world-sent` xác nhận server gửi xong, chưa xác nhận client đã nhận/vẽ;
+server timing không đo được tải ảnh hay nghẽn main thread trên trình duyệt.

@@ -15,3 +15,10 @@ pub fn log(stage: &str, details: serde_json::Value) {
         );
     }
 }
+
+/// Low-volume connection timings are independent of verbose combat debugging.
+pub fn timing(stage: &str, trace: &str, started: std::time::Instant, details: serde_json::Value) {
+    if std::env::var("ONLINE_TIMING").is_ok_and(|v| v == "0") { return; }
+    let unix_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis();
+    eprintln!("[online:timing] {}", serde_json::json!({"timeUnixMs":unix_ms,"side":"rust","stage":stage,"trace":trace,"elapsedMs":started.elapsed().as_millis(),"details":details}));
+}

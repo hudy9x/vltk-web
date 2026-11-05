@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { createHmac, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import { createPublicBattlefieldSettings } from '../persistence/battlefield-settings.ts';
@@ -33,6 +33,23 @@ export function registerMultiplayerWebTransport(
   development = false,
   gameMasterMode: GameMasterMode = (process.env.GAME_MASTER_MODE ?? gameMasterConfig.mode) === 'development' ? 'development' : 'all',
 ): void {
+  // Fastify's ordinary logger is disabled; keep these low-volume diagnostics on stdout.
+  const timingEnabled = () => process.env.ONLINE_TIMING !== '0';
+  const timing = (details: Record<string, unknown>) => {
+    if (timingEnabled()) console.info('[online:timing] ' + JSON.stringify({time:new Date().toISOString(),side:'node',...details}));
+  };
+  const requests = new WeakMap<object, number>();
+  const timedPaths = new Set(['/api/auth/login','/api/auth/register','/api/auth/session','/api/storage','/api/multiplayer/webtransport/session']);
+  app.addHook('onRequest', async request => {
+    if (timingEnabled() && timedPaths.has(request.url.split('?')[0])) {
+      requests.set(request, performance.now());
+      timing({stage:'http-start',request:request.id,method:request.method,path:request.url.split('?')[0]});
+    }
+  });
+  app.addHook('onResponse', async (request, reply) => {
+    const start = requests.get(request);
+    if (start !== undefined) timing({stage:'http-end',request:request.id,method:request.method,path:request.url.split('?')[0],status:reply.statusCode,elapsedMs:Math.round(performance.now()-start)});
+  });
   const training = createRequire(import.meta.url)('../definitions/training.cjs');
   const characters = db ? createCharacters(db) : undefined;
   const battlefieldSettings=db?createPublicBattlefieldSettings(db):undefined;
@@ -207,39 +224,55 @@ export function registerMultiplayerWebTransport(
     return sendJson(reply,200,{...saved,full:true});
   });
   app.post('/api/multiplayer/webtransport/session', async (request, reply) => {
-    const user = requireUser(request);
-    const control = process.env.MULTIPLAYER_WT_CONTROL_URL;
-    const secret = process.env.MULTIPLAYER_SECRET || '';
-    if (!control || secret.length < 32) return sendJson(reply, 200, { enabled: false });
-    const response = await fetch(new URL('/config', control), {
-      signal: AbortSignal.timeout(3000),
-    });
-    if (!response.ok)
-      throw Object.assign(new Error('Máy chủ multiplayer chưa sẵn sàng.'), { status: 503 });
-    const config = (await response.json()) as Record<string, unknown>;
-    let ticket:Buffer;
-    // The shared Fastify parser deliberately returns a raw JSON string.
-    const payload = parseJsonBody(request.body) as { slot?: unknown;position?:unknown } | null;
-    const slot = payload && typeof payload === 'object' && !Array.isArray(payload)
-      ? (payload.slot === undefined ? 0 : payload.slot)
-      : null;
-    if (typeof slot !== 'number' || !Number.isInteger(slot) || slot < 0 || slot > 2)
-      return sendJson(reply, 400, { error: 'Ô nhân vật không hợp lệ.' });
-    if (characters) {
-      const saved = characters.read(String(user.id), slot);
-      await controlCall('/catalog', battlefieldSettings!.world(characters.world()));
-      ticket = issueMultiplayerTicket(String(user.id), secret);
-      await controlCall('/admit', {
-        nonce: ticket.subarray(21, 37).toString('hex'),
-        account: String(user.id),
-        slot,
-        revision:saved.revision,
-        position:parseResumePosition(payload?.position),
-        profile: characters.character(saved.profile),
-      });
+    const started = performance.now();
+    let previous = started, stage = 'authenticate', connectionTrace: string | undefined;
+    const mark = (next: string, details: Record<string, unknown> = {}) => {
+      const now = performance.now();
+      timing({stage,next,request:request.id,trace:connectionTrace,stepMs:Math.round(now-previous),elapsedMs:Math.round(now-started),...details});
+      previous=now;stage=next;
+    };
+    try {
+      const user = requireUser(request);
+      const control = process.env.MULTIPLAYER_WT_CONTROL_URL;
+      const secret = process.env.MULTIPLAYER_SECRET || '';
+      if (!control || secret.length < 32) {mark('done',{enabled:false});return sendJson(reply, 200, { enabled: false });}
+      mark('rust-config');
+      const response = await fetch(new URL('/config', control), {signal: AbortSignal.timeout(3000)});
+      if (!response.ok) throw Object.assign(new Error('Máy chủ multiplayer chưa sẵn sàng.'), { status: 503 });
+      const config = (await response.json()) as Record<string, unknown>;
+      mark('validate-slot');
+      const payload = parseJsonBody(request.body) as { slot?: unknown;position?:unknown } | null;
+      const slot = payload && typeof payload === 'object' && !Array.isArray(payload)
+        ? (payload.slot === undefined ? 0 : payload.slot) : null;
+      if (typeof slot !== 'number' || !Number.isInteger(slot) || slot < 0 || slot > 2) {
+        mark('done',{status:400});return sendJson(reply,400,{error:'Ô nhân vật không hợp lệ.'});
+      }
+      mark('character-read',{slot});
+      let ticket: Buffer | undefined;
+      if (characters) {
+        const saved = characters.read(String(user.id), slot);
+        mark('catalog-build');
+        const catalog = battlefieldSettings!.world(characters.world());
+        mark('catalog-install');
+        await controlCall('/catalog', catalog);
+        mark('character-build');
+        const profile = characters.character(saved.profile);
+        mark('ticket-issue');
+        ticket = issueMultiplayerTicket(String(user.id), secret);
+        connectionTrace = createHash('sha256').update(ticket.subarray(21,37)).digest('hex').slice(0,16);
+        mark('rust-admit');
+        await controlCall('/admit', {nonce:ticket.subarray(21,37).toString('hex'),account:String(user.id),slot,
+          revision:saved.revision,position:parseResumePosition(payload?.position),profile});
+        mark('response');
+      }
+      ticket ||= issueMultiplayerTicket(String(user.id), secret);
+      connectionTrace ||= createHash('sha256').update(ticket.subarray(21,37)).digest('hex').slice(0,16);
+      mark('done',{slot,status:200});
+      return sendJson(reply,200,{enabled:true,...config,ticket:ticket.toString('base64')});
+    } catch (error) {
+      mark('failed',{failed:true,error:error instanceof Error ? error.message : String(error)});
+      throw error;
     }
-    ticket ||= issueMultiplayerTicket(String(user.id), secret);
-    return sendJson(reply, 200, { enabled: true, ...config, ticket: ticket.toString('base64') });
   });
 }
 function parseResumePosition(input:unknown){

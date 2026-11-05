@@ -8,7 +8,7 @@ mod world;
 use anyhow::{Result, ensure};
 use axum::{Json, Router, routing::get};
 use hmac::{Hmac, Mac};
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -66,7 +66,11 @@ async fn play(
     world: &Mutex<World>,
     id: u32,
     mut ticks: watch::Receiver<u32>,
+    trace: &str,
+    started: Instant,
 ) -> Result<()> {
+    let mut first_world = true;
+    let mut first_position = true;
     let mut revision = None;
     let mut debug_last_event=0u32;
     let mut budget_start = Instant::now();
@@ -80,6 +84,7 @@ async fn play(
                 if budget_start.elapsed() >= Duration::from_secs(1) { budget = 0; budget_start = Instant::now(); }
                 budget += 1; ensure!(budget <= 60, "input rate exceeded");
                 world.lock().unwrap().update(id, protocol::position(&bytes)?)?;
+                if first_position {first_position=false;diagnostics::timing("first-position",trace,started,serde_json::json!({"player":id}));}
             }
             changed = ticks.changed() => {
                 changed?;
@@ -95,7 +100,11 @@ async fn play(
                             let map=w.game.actors.get(&id).map(|a|a.map);
                             let events=if diagnostics::enabled(){w.game.events.iter().filter(|e|Some(e.map)==map&&(e.id.wrapping_sub(debug_last_event) as i32)>0).map(|e|serde_json::json!({"event":e.id,"skill":e.skill,"kind":e.kind,"source":e.source,"target":e.target})).collect::<Vec<_>>()}else{vec![]};
                             (pve_protocol::snapshot(&w.game,id),events)};
-                        if let Some(bytes)=state{reliable(connection,&bytes).await?;
+                        if let Some(bytes)=state{
+                            let sent_at=Instant::now();
+                            if first_world {diagnostics::timing("first-world-ready",trace,started,serde_json::json!({"player":id,"tick":tick,"bytes":bytes.len()}));}
+                            reliable(connection,&bytes).await?;
+                            if first_world {first_world=false;diagnostics::timing("first-world-sent",trace,started,serde_json::json!({"player":id,"tick":tick,"bytes":bytes.len(),"sendMs":sent_at.elapsed().as_millis()}));}
                             if !events.is_empty(){debug_last_event=events.last().and_then(|e|e["event"].as_u64()).unwrap_or(debug_last_event as u64) as u32;diagnostics::log("world-sent",serde_json::json!({"player":id,"tick":tick,"bytes":bytes.len(),"events":events}));}
                         }
                     }
@@ -201,6 +210,9 @@ async fn main() -> Result<()> {
         );
         tokio::spawn(async move {
             let _permit = permit;
+            let started=Instant::now();
+            let mut trace=format!("quic-{}-{}",std::process::id(),SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos());
+            diagnostics::timing("quic-incoming",&trace,started,serde_json::json!({}));
             let result = async {
                 let request = timeout(Duration::from_secs(4), incoming).await??;
                 if request.path() != "/play" {
@@ -214,10 +226,14 @@ async fn main() -> Result<()> {
                     return Ok(());
                 }
                 let connection = timeout(Duration::from_secs(4), request.accept()).await??;
+                diagnostics::timing("quic-accepted",&trace,started,serde_json::json!({}));
                 let join = async {
                     let bytes = timeout(Duration::from_secs(4), read_uni(&connection)).await??;
                     let (appearance, ticket) = protocol::appearance(&bytes, true)?;
                     let (account, nonce, expiry) = authenticate(ticket, secret.as_bytes())?;
+                    let transport_trace=trace.clone();
+                    trace=Sha256::digest(nonce)[..8].iter().map(|b|format!("{b:02x}")).collect();
+                    diagnostics::timing("hello-authenticated",&trace,started,serde_json::json!({"transportTrace":transport_trace}));
                     {
                         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as u32;
                         let mut used = used.lock().unwrap();
@@ -228,7 +244,9 @@ async fn main() -> Result<()> {
                         );
                         used.insert(nonce, expiry);
                     }
+                    let lock_at=Instant::now();
                     let mut state = world.lock().unwrap();
+                    diagnostics::timing("join-lock",&trace,started,serde_json::json!({"waitMs":lock_at.elapsed().as_millis()}));
                     let key = nonce.iter().map(|b| format!("{b:02x}")).collect::<String>();
                     let (admission, at) = state
                         .admissions
@@ -243,6 +261,8 @@ async fn main() -> Result<()> {
                                     .collect::<String>(),
                         "admission mismatch"
                     );
+                    diagnostics::timing("admission-found",&trace,started,serde_json::json!({"admissionAgeMs":at.elapsed().as_millis(),"slot":admission.slot}));
+                    let join_at=Instant::now();
                     let id = state.join(account, appearance)?;
                     if let Err(error) =
                         state
@@ -255,6 +275,7 @@ async fn main() -> Result<()> {
                     state.game.actors.get_mut(&id).unwrap().profile_revision = admission.revision;
                     state.game.actors.get_mut(&id).unwrap().name = state.players[&id].appearance.name.clone();
                     state.game.resume_position(id,admission.position);
+                    diagnostics::timing("character-joined",&trace,started,serde_json::json!({"player":id,"joinMs":join_at.elapsed().as_millis()}));
                     Ok(id)
                 }
                 .await;
@@ -265,12 +286,13 @@ async fn main() -> Result<()> {
                         return Err(error);
                     }
                 };
-                let result = play(&connection, &world, id, ticks).await;
+                let result = play(&connection, &world, id, ticks, &trace, started).await;
                 world.lock().unwrap().leave(id);
                 connection.close(0u32.into(), b"session ended");
                 result
             }
             .await;
+            diagnostics::timing("session-ended",&trace,started,serde_json::json!({"error":result.as_ref().err().map(|e|e.to_string())}));
             if let Err(error) = result {
                 eprintln!("multiplayer session: {error}");
             }
