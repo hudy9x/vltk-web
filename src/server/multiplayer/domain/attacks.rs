@@ -233,7 +233,7 @@ impl Game {
             let mut skill = p.skill.clone();
             skill.id = 1084; skill.accuracy = None; skill.followups.clear(); skill.travel = 0.0;
             if let Some(projectile) = &mut skill.projectile {
-                projectile.range = p.skill.range * skill.geometry.as_ref().map_or(0.81, |g| g.scale);
+                projectile.range = p.skill.range * skill.geometry.as_ref().map_or(0.81, |g| g.scale) * 0.5;
                 projectile.pierce = true; projectile.area = 0.0; projectile.homing = false;
             }
             self.pending.push(Pending { cast_id: 0, source: p.source, map: p.map, target: p.target,

@@ -66,7 +66,7 @@ var Kf = function (A, n, t, e, a, i) {
   (r.d && g.push(["b in", r.d]),
     g.push([
       j1(r) !== null && !Ci(r) ? "rq" : "b",
-      `Loại: ${f}${j1(r) !== null ? ` · Vũ khí: ${B5[j1(r)]}` : ""}`,
+      `Loại: ${f}${j1(r) !== null ? ` · Vũ khí: ${+r.id === 1059 ? "Chùy" : B5[j1(r)]}` : ""}`,
     ]),
     g.push([
       o.lvl >= r.req || (r.tier === 90 && v0() > 0) ? "b" : "rq",

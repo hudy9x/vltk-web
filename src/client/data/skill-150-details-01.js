@@ -516,7 +516,7 @@
         "45",
         "131",
         "405",
-        "765"
+        "425"
       ],
       [
         "Sát thương ngũ hành tương khắc (%)",
@@ -530,7 +530,7 @@
         "5",
         "16",
         "30",
-        "39"
+        "32"
       ],
       [
         "Tốc độ bay của chiêu",
@@ -698,8 +698,8 @@
   "1059": {
     "name": "Tung Hoành Bát Hoang",
     "mechanics": [
-      "Tầng 1 (Đâm thương thần tốc): Tung thương liên hoàn chớp nhoáng với tốc độ cực cao.",
-      "Tầng 2 (Tung Hoành Bát Hoang): Kích hoạt combo thương ảnh (ID 1087) xé toạc phòng thủ, đẩy lùi mục tiêu và tăng mạnh tỷ lệ chí mạng."
+      "Tầng 1: Tung chùy liên hoàn chớp nhoáng với tốc độ cực cao.",
+      "Tầng 2 (Tung Hoành Bát Hoang): Kích hoạt combo chùy kình (ID 1087) xé toạc phòng thủ, đẩy lùi mục tiêu và tăng mạnh tỷ lệ chí mạng."
     ],
     "samples": [
       [
@@ -707,14 +707,14 @@
         "30",
         "145",
         "455",
-        "847"
+        "478"
       ],
       [
         "Tỉ lệ tấn công chí mạng (%)",
         "5",
         "26",
         "50",
-        "68"
+        "53"
       ],
       [
         "Tốc độ bay của chiêu",
@@ -725,10 +725,10 @@
       ],
       [
         "Tầm đánh hiệu quả (pixels)",
-        "108",
-        "108",
-        "108",
-        "108"
+        "180",
+        "180",
+        "180",
+        "180"
       ],
       [
         "Nội lực tiêu hao (Mana)",
@@ -756,7 +756,7 @@
         "12",
         "48",
         "90",
-        "99"
+        "95"
       ]
     ],
     "support": [
@@ -876,7 +876,7 @@
     "effects": [
       {
         "id": 1087,
-        "name": "Tung Hoành Bát Hoang · thương ảnh",
+        "name": "Tung Hoành Bát Hoang · chùy kình",
         "tier": 2,
         "minLevel": 1,
         "trigger": "secondary",
@@ -887,8 +887,8 @@
   "1060": {
     "name": "Bá Vương Tạm Kim",
     "mechanics": [
-      "Tầng 1 (Ngũ Chùy Liên Hoàn): Giáng liên tiếp 5 đợt chùy kình cuồng bạo (num: 5, ID 1088).",
-      "Hiệu ứng chồng dồn: Mỗi nhịp chùy trúng đích đều kích hoạt tỷ lệ làm choáng độc lập, khiến đối thủ gần như bị khóa chặt tại chỗ."
+      "Tầng 1: Công kích bằng thương từ 3 phía.",
+      "Hiệu ứng chồng dồn: Mỗi nhịp thương trúng đích đều kích hoạt tỷ lệ làm choáng độc lập, khiến đối thủ gần như bị khóa chặt tại chỗ."
     ],
     "samples": [
       [
@@ -896,21 +896,21 @@
         "60",
         "175",
         "460",
-        "812"
+        "483"
       ],
       [
         "Tăng Độ chính xác (%)",
-        "95",
-        "220",
-        "360",
-        "471"
+        "211",
+        "489",
+        "800",
+        "840"
       ],
       [
         "Tỉ lệ tấn công chí mạng (%)",
         "5",
         "16",
         "30",
-        "39"
+        "32"
       ],
       [
         "Tốc độ bay của chiêu",
@@ -921,10 +921,10 @@
       ],
       [
         "Tầm đánh hiệu quả (pixels)",
-        "108",
-        "108",
-        "108",
-        "108"
+        "180",
+        "180",
+        "180",
+        "180"
       ],
       [
         "Nội lực tiêu hao (Mana)",
@@ -1065,7 +1065,7 @@
     "effects": [
       {
         "id": 1088,
-        "name": "Bá Vương Tạm Kim · chùy kình",
+        "name": "Bá Vương Tạm Kim · thương ảnh",
         "tier": 2,
         "minLevel": 1,
         "trigger": "secondary",

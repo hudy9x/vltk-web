@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const native=require('../src/server/multiplayer/definitions/runtime.cjs');
 const catalog=require('../src/server/multiplayer/definitions/catalog.cjs');
 
-const pairs=[[1058,322,1],[1059,323,3],[1060,325,4]];
+const pairs=[[1058,322,1],[1059,323,4],[1060,325,3]];
 test('three Tianwang 150 skills inherit only attack cadence and missile speed from their matching 8x weapons',()=>{
   const results=native.withProgression({fac:'tianwang',lvl:200},s=>pairs.map(([id,reference])=>{
     const stats={...s.j0(),wmin:500,wmax:500,physPct:0,skillBonus:{},seriesSkill:0,skillEnh:0,dmgMul:1,add:{},enh:{}};
@@ -14,7 +14,7 @@ test('three Tianwang 150 skills inherit only attack cadence and missile speed fr
         referenceSpeed:s.b0(s.T[reference],'missle_speed_v',level)[0],parts:skill.parts,crit:skill.crit,cost:skill.cost,range:skill.rad,geo:skill.geo};
     })};
   }));
-  const unchanged={1058:{damage:4325,crit:39,cost:41},1059:{damage:4735,crit:68,cost:47},1060:{damage:4560,crit:39,cost:115}};
+  const unchanged={1058:{damage:2625,crit:32,cost:41},1059:{damage:2890,crit:53,cost:47},1060:{damage:2915,crit:32,cost:115}};
   for(const result of results){
     for(const level of result.levels){
       assert.equal(level.rate,level.referenceRate);assert.equal(level.cycle,level.referenceCycle);assert.equal(level.speed,level.referenceSpeed);
@@ -30,9 +30,33 @@ test('authoritative online profiles share the 8x speed and cap Hao Hung flight t
   for(const [id,reference,weapon] of pairs){
     const raw={fac:'tianwang',lvl:200,slots:[id,reference],sk:{[id]:25,[reference]:20},
       eq:{weapon:{d:0,k:weapon,lvl:1,nat:0,g:0,base:[],mag:[]}}};
-    const dto=catalog.character(raw,[],false),skill=dto.skills.find(skill=>skill.id===id),old=dto.skills.find(skill=>skill.id===reference);
+    const dto=catalog.character(raw,[],false),skill=dto.skills.find(skill=>skill.id===id),old=catalog.character({...raw,eq:{weapon:{...raw.eq.weapon,k:id===1059?3:id===1060?4:1}}},[],false).skills.find(skill=>skill.id===reference);
     assert.ok(skill&&old);assert.equal(skill.attackPercent,old.attackPercent);assert.equal(skill.cooldown,old.cooldown);
-    assert.equal(skill.projectile.speed,native.contactGeometry(native.buildCharacter(raw).skills.find(skill=>skill.id===reference)).speed);
+    assert.equal(skill.projectile.speed,native.contactGeometry(native.buildCharacter({...raw,eq:{weapon:{...raw.eq.weapon,k:id===1059?3:id===1060?4:1}}}).skills.find(skill=>skill.id===reference)).speed);
     if(id===1058){assert.equal(skill.accuracy,undefined);assert.equal(skill.projectile.area,0);assert.equal(skill.projectile.pierce,false);assert.equal(skill.range,480);assert.ok(Math.abs(skill.projectile.range-480*.81)<1e-6);}
+  }
+});
+
+
+test('Tianwang reference level 20 and equipment growth stay bounded in shared formulas',()=>{
+  const profiles=native.withProgression({fac:'tianwang',lvl:200},s=>[1058,1059,1060].map(id=>{
+    const skill=s.T[id];
+    const keys=['physicsenhance_p','deadlystrike_p',...(id===1059?['ignoredefense_p']:[]),...(id===1060?['attackrating_p']:[])];
+    return {id,weapon:s.j1(skill),levels:[20,25,29,35,36,45].map(level=>({level,
+      range:s.b0(skill,'skill_attackradius',level)[0],
+      values:keys.map(key=>s.b0(skill,key,level)[0])}))};
+  }));
+  const expected={
+    1058:[[405,30],[425,32],[441,33],[466,35]],
+    1059:[[455,50,90],[478,53,95],[496,55,98],[523,58,99]],
+    1060:[[460,30,800],[483,32,840],[501,33,872],[529,35,920]],
+  };
+  for(const profile of profiles){
+    assert.equal(profile.weapon,{1058:1,1059:4,1060:3}[profile.id]);
+    assert.deepEqual(profile.levels[0].values,expected[profile.id][0]);
+    for(const [index,row] of profile.levels.entries()){
+      assert.equal(row.range,profile.id===1058?480:180);
+      assert.deepEqual(row.values,expected[profile.id][Math.min(index,3)]);
+    }
   }
 });

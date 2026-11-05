@@ -11140,6 +11140,27 @@
   delete skills[1058].attr.attackrating_p;
   skills[1058].radius = 480;
   skills[1058].attr.skill_attackradius = skills[1058].attr.skill_attackradius.map(() => 480);
+  // Reference tooltips at level 20; preserve level progression above/below it.
+  for (const id of [1059, 1060]) {
+    skills[id].radius = 180;
+    skills[id].attr.skill_attackradius = skills[id].attr.skill_attackradius.map(() => 180);
+  }
+  const spearAccuracy = skills[1060].attr.attackrating_p;
+  skills[1060].attr.attackrating_p = spearAccuracy.map(value => Math.round(value * 800 / spearAccuracy[19]));
+  // Equipment levels remain useful without multiplying the level-20 balance.
+  // Materialize through 36 with a repeated endpoint to stop b0 extrapolation.
+  for (const id of [1058, 1059, 1060]) {
+    for (const key of ['physicsenhance_p', 'deadlystrike_p',
+      ...(id === 1059 ? ['ignoredefense_p'] : []),
+      ...(id === 1060 ? ['attackrating_p'] : [])]) {
+      const curve = skills[id].attr[key], baseline = curve[19];
+      skills[id].attr[key] = Array.from({length: 36}, (_, index) => index < 20 ? curve[index] :
+        Math.min(key === 'ignoredefense_p' ? 99 : Infinity,
+          Math.round(baseline * (100 + Math.min(index - 19, 15)) / 100)));
+    }
+  }
+  skills[1059].eqt = 4; // Chùy pháp
+  skills[1060].eqt = 3; // Thương pháp
   Object.assign(window.JX.skills, skills);
   for (const skill of Object.values(skills)) {
     skill.book = skill.tier === 150 ? "bk150" : "bk120";

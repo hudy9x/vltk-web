@@ -12,9 +12,9 @@ var skillRouteCatalog = {
   tianwang: {
     shared: [33, 40, 42, 36],
     routes: [
-      { id: "spear", name: "Thương pháp", skills: [23, 30, 35, 41], main: [323, 1059] },
+      { id: "spear", name: "Thương pháp", skills: [23, 30, 35, 41], main: [323, 1060] },
       { id: "blade", name: "Đao pháp", skills: [24, 34, 37, 32], main: [322, 1058] },
-      { id: "hammer", name: "Chùy pháp", skills: [26, 29, 31, 324], main: [325, 1060] },
+      { id: "hammer", name: "Chùy pháp", skills: [26, 29, 31, 324], main: [325, 1059] },
     ],
   },
   tangmen: {

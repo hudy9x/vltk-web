@@ -67,7 +67,7 @@ function spawnHaoHungRays(parent: CombatCast, position: WorldPoint): void {
   const skill = { ...parent.skill, id: 1084, n: 'Hào Hùng Trảm — tầng 2', ev2: true,
     ev: false, melee: false, useAR: false, geo: { k: 'line' as const, pierce: true, area: 0 } };
   const sprite = A0.m['advanced-320']?.fly || undefined;
-  const reach = (parent.skill.rad || 480) * QA, life = reach / (36 * K3);
+  const reach = (parent.skill.rad || 480) * QA * 0.5, life = reach / (36 * K3);
   const cast = queueSkillContact(parent.actor, position, skill, target => parent.onHit(target, skill), {
     windup: 0, maxHits: () => 3, maxTargets: Infinity, targets: parent.targets,
     onImpact: (_target, point) => spawnHaoHungImpact(point),
