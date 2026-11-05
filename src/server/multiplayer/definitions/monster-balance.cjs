@@ -10,7 +10,7 @@ exports.monsterDefinition = function(native, source, encounter, id, rank, level)
     speed:30+(monster.run||6)*4,res:Array(5).fill(Math.min(75,level*.35)),
     xp:Math.max(1,level*require('../../../shared/multiplayer/rules.json').rewards.xpPerMonsterLevel),
   };
-  return {id,name:monster.n,level,series:native.monsterSeries(id),hp:balance.hp,damage:balance.damage,
+  return {id,name:monster.n,rank,level,series:native.monsterSeries(id),hp:balance.hp,damage:balance.damage,
     defense:balance.defense,speed:balance.speed,res:balance.res,xp:balance.xp,
     ...(balance.attack?{attack:balance.attack}:{}),respawnSeconds:rank==='boss'?180:undefined};
 };

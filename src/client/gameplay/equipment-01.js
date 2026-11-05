@@ -861,6 +861,7 @@ var fp = function () {
 };
 
 var H6 = function (A, n) {
+  if(A.serverDrop&&typeof OnlineLoot!=="undefined")return OnlineLoot.pickup(A);
   const t = l.ground.indexOf(A);
   return t < 0
     ? !1

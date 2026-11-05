@@ -208,6 +208,14 @@ export function registerMultiplayerWebTransport(
     if(!body||typeof body.slot!=='number'||!Number.isInteger(body.slot)||body.slot<0||body.slot>2||typeof body.id!=='string')
       return sendJson(reply,400,{error:'Ô nhân vật hoặc thao tác không hợp lệ.'});
     const action=body.action as {kind?:string;matchId?:number;starts?:number;spent?:number[]}|undefined;
+    if(action?.kind==='lootPickup'){
+      const drop=characters.read(String(user.id),body.slot).profile.itemDrops?.find((d:any)=>d.id===(action as any).dropId);
+      if(drop?.source==='world'){
+        const position=await controlCall('/loot/position',{account:String(user.id),slot:body.slot});
+        if(!position.alive||position.map!==drop.map||Math.hypot(position.x-drop.x,position.y-drop.y)>position.range)
+          return sendJson(reply,400,{error:'Hãy đến gần vật phẩm để nhặt.'});
+      }
+    }
     if(action?.kind==='warItemBuy'||action?.kind==='warItemUse'){
       const room=await controlCall('/battlefield/shop',{account:String(user.id),slot:body.slot});
       (action as typeof action & {room:unknown}).room=room;

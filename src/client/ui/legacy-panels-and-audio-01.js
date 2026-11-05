@@ -633,9 +633,11 @@ var He = function s(A, n) {
         });
       const f = m("#bStashIt");
       f &&
-        (f.onclick = () => {
-          const u = Zs(A);
-          (k(u.msg), u.ok && (n0(), V()));
+        (f.onclick = async () => {
+          if(f.disabled)return;f.disabled=true;
+          try{const u=await Zs(A);k(u.msg);if(u.ok){n0();V();}}
+          catch(error){k(error.message);}
+          finally{f.disabled=false;}
         });
       const h = m("#bReqPts");
       h &&

@@ -1,0 +1,88 @@
+// Show server-issued items immediately; durable pickup intents reconcile in the background.
+var OnlineLoot=(()=>{
+  const pending=new Set();
+  let lastMove=0;
+  const enabled=()=>typeof OnlineProgression!=='undefined'&&OnlineProgression.enabled();
+  const scene=()=>l.dg?'dg:'+String(l.dg.id??l.dg.kind):l.tower?'tower:'+l.tower.floor:'map:'+String(Z0.key);
+  function sync(){
+    if(!enabled()||!o)return;
+    window.localGameItemQueue?.project(o,m0);
+    replay();
+    const prior=new Map((l.ground||[]).filter(d=>d.serverDrop).map(d=>[d.serverDrop,d]));
+    const drops=(o.itemDrops||[]).filter(d=>d.scene===scene()&&d.expires>Date.now());
+    l.ground=drops.map(d=>Object.assign(prior.get(d.id)||{age:1},{serverDrop:d.id,it:d.it,x:d.x,y:d.y,range:d.range||xp}));
+    if(l.pickTarget&&!l.ground.includes(l.pickTarget))l.pickTarget=null;
+  }
+  function drop(enemy){
+    if(!enabled())return false;
+    // Local dungeon/field combat is a development adapter; production world deaths
+    // issue the same receipts through the durable Rust outbox instead.
+    if(!window.localGameConfig?.development)return false;
+    OnlineProgression.run({kind:'lootDrop',monster:{tid:enemy.tid,level:enemy.L,cls:enemy.cls,map:typeof Z0.key==='number'?Z0.key:0,scene:scene(),x:enemy.x,y:enemy.y}})
+      .then(()=>{sync();}).catch(error=>k('Chưa lưu được vật phẩm rơi: '+error.message));
+    return true;
+  }
+  function submit(entry){
+    if(pending.has(entry.id))return;
+    pending.add(entry.id);
+    OnlineProgression.run(entry.action,{slot:entry.slot,id:entry.id,durable:true})
+      .then(()=>{if(entry.slot===m0){_n('picked');sync();}})
+      .catch(error=>{
+        window.localGameItemQueue?.remove(entry.id);
+        if(entry.slot===m0){
+          o.inv=o.inv.filter(it=>it.uid!==entry.receipt.it.uid);
+          if(entry.receipt.expires>Date.now()&&!(o.itemDrops||[]).some(d=>d.id===entry.receipt.id))(o.itemDrops||=[]).push(entry.receipt);
+          sync();R=true;$();V();k('Chưa nhặt được vật phẩm: '+error.message);
+        }
+      }).finally(()=>pending.delete(entry.id));
+  }
+  function replay(){
+    for(const entry of window.localGameItemQueue?.pending(m0)||[]){
+      // World pickups need the actor reconnected before server-side distance validation.
+      if(entry.receipt.source==='world'&&(!onlineWorld.active||!onlineWorld.state))continue;
+      submit(entry);
+    }
+  }
+  function pickup(drop){
+    if(!drop.serverDrop||!enabled())return false;
+    const receipt=(o.itemDrops||[]).find(d=>d.id===drop.serverDrop);
+    if(!receipt)return true;
+    if(o.inv.length>=INV_MAX){k('Hành trang đầy.');return false;}
+    const entry={id:crypto.randomUUID(),slot:m0,action:{kind:'lootPickup',dropId:drop.serverDrop},receipt:structuredClone(receipt)};
+    try{
+      if(!window.localGameItemQueue)throw Error('Chưa sẵn sàng lưu vật phẩm.');
+      window.localGameItemQueue.put(entry);
+    }catch(error){k(error.message);return false;}
+    // Synchronous projection + render: no network response is needed to open the bag.
+    window.localGameItemQueue.project(o,m0);sync();R=true;$();V();
+    C(`Nhặt được <span style="color:${_0[drop.it.r||0]}">${D(drop.it.n)}</span>`);
+    submit(entry);
+    return true;
+  }
+  function advance(dt){
+    sync();for(const d of l.ground)d.age+=dt;
+    if(l.life<=0)return;
+    const manual=l.pickTarget;
+    const drop=manual||WA().auto&&l.ground.find(d=>d.age>=.4&&(WA().pickAll||mA(d.it)||n3(d.it))&&Math.hypot(d.x-v.x,d.y-v.y)<=d.range);
+    if(!drop)return;
+    if(Math.hypot(drop.x-v.x,drop.y-v.y)<=drop.range)pickup(drop);
+    else if(manual&&performance.now()-lastMove>500){lastMove=performance.now();onlineWorld.move(drop.x,drop.y);}
+  }
+  function stash(){
+    // Existing currency/material transfers keep their legacy storage; equipment
+    // uses the transactional account stash and can never be overwritten by it.
+    let legacy={};
+    try{const raw=JSON.parse(localStorage.getItem(p1)||'{}');legacy=typeof raw.d==='string'?JSON.parse(raw.d):raw;}catch{}
+    return {...(o.itemStash||Ai()),gold:legacy.gold||0,mats:legacy.mats||{ht:{},ore:{},shard:{},misc:{}},items:o.itemStash?.items||[]};
+  }
+  async function deposit(items){
+    await OnlineProgression.run({kind:'stashDeposit',uids:items.map(it=>it.uid)});
+    return {ok:true,msg:`Gửi ${items.length} món vào kho`};
+  }
+  async function withdraw(index){
+    const item=o.itemStash?.items[index];if(!item)return {ok:false,msg:'Món không còn trong kho'};
+    await OnlineProgression.run({kind:'stashWithdraw',stashId:item.stashId});
+    return {ok:true,msg:'Lấy ra: '+item.n};
+  }
+  return {enabled,scene,sync,drop,pickup,advance,stash,deposit,withdraw};
+})();

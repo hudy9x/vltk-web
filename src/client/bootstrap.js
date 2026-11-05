@@ -155,6 +155,24 @@
     queue = []; persist(); state = await request('/api/storage');
     Object.keys(storage).filter(managed).forEach(key => native.remove.call(storage, key));
     Object.entries(state.entries).forEach(([key, value]) => native.set.call(storage, key, value));
+    // Persist pickup intents before optimistic UI changes, separately from replaceable saves.
+    const itemKey='__volam_item_outbox_v1:'+account.user.id;
+    let itemQueue=[];
+    try{const saved=JSON.parse(storage.getItem(itemKey)||'null');if(saved?.generation===generation&&Array.isArray(saved.queue))itemQueue=saved.queue;}catch{}
+    const saveItems=()=>native.set.call(storage,itemKey,JSON.stringify({generation,queue:itemQueue}));
+    window.localGameItemQueue={
+      pending:slot=>itemQueue.filter(entry=>entry.slot===slot),
+      put(entry){const next=[...itemQueue.filter(old=>old.id!==entry.id),entry];native.set.call(storage,itemKey,JSON.stringify({generation,queue:next}));itemQueue=next;},
+      remove(id){itemQueue=itemQueue.filter(entry=>entry.id!==id);try{saveItems();}catch{}},
+      project(profile,slot){
+        for(const entry of itemQueue.filter(entry=>entry.slot===slot)){
+          const owned=[...(profile.inv||[]),...Object.values(profile.eq||{})].some(it=>it.uid===entry.receipt.it.uid);
+          if(!owned)(profile.inv||=[]).unshift(JSON.parse(JSON.stringify(entry.receipt.it)));
+          profile.itemDrops=(profile.itemDrops||[]).filter(drop=>drop.id!==entry.action.dropId);
+        }
+        return profile;
+      },
+    };
     // Resolve existing canonical progression BEFORE game initialization selects a map.
     if(config.onlineProgression&&new URLSearchParams(location.search).get('multiplayer')!=='off'){
       await Promise.all([0,1,2].map(async slot=>{
@@ -162,6 +180,7 @@
         if(!raw)return;
         const saved=await request('/api/multiplayer/character?slot='+slot+'&existing=1');
         if(!saved.profile)return;
+        window.localGameItemQueue.project(saved.profile,slot);
         const wrapper=JSON.parse(raw),legacy=typeof wrapper.d==='string'?JSON.parse(wrapper.d):wrapper;
         for(const field of config.progressionFields||[])if(saved.profile[field]!==undefined)legacy[field]=saved.profile[field];
         native.set.call(storage,key,JSON.stringify(legacy));

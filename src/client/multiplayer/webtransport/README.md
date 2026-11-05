@@ -22,7 +22,7 @@ Demo tham khảo tại `src/{client,server}/multiplayer-demo/` giữ nguyên; co
 | Ngân lượng rơi khi nhân vật chết | Có | SQLite trừ 20%, tối đa 1.000.000 lượng/lần; tối đa 8 đống công khai, ai cũng nhặt được |
 | XP, lên cấp và ngân lượng | Có | Rust ghi grant → Node commit SQLite, retry cùng ID |
 | Tiền rơi, quyền nhặt và reconnect | Có | Quyền theo account + slot; mất sau 120 giây, tối đa 64 đống/map |
-| Trang bị rơi, affix, vật phẩm và giao dịch | Chưa | Cần port generator và inventory commands |
+| Trang bị rơi và affix | Có | Rust journal nguồn quái; Node dùng generator gốc, cấp UID và lưu đồ dưới đất; nhặt bằng intent sau kiểm tra vị trí |
 | Thuốc HP/MP và thuốc hồi cả hai | Có | Rust kiểm tra tồn kho/cấp/cooldown 0,3 giây; hồi tức thì, journal trước khi áp dụng |
 | Hút HP/MP của vũ khí và skill | Có | Tính trên sát thương đòn trực tiếp sau kháng; đạn xuyên tính từng va chạm, không hút thêm từ tick độc |
 | Buff có lợi tự động/thủ công, bật/tắt aura | Có, áp lên bản thân | Rust kiểm tra cost/cooldown/thời hạn; cập nhật chỉ số và gửi trạng thái cho mọi client |
@@ -31,7 +31,7 @@ Demo tham khảo tại `src/{client,server}/multiplayer-demo/` giữ nguyên; co
 | Cộng/rút tiềm năng, học/nâng/rút chiêu, gợi ý và tẩy tủy | Có | Intent → kiểm tra công thức gốc → transaction SQLite → revision Rust/client |
 | Gia nhập/đổi môn phái | Có | Server kiểm tra cấp/hệ/giới tính/vật phẩm đổi phái, tạo đồ nhập môn |
 | GM cấp/EXP/điểm/chiêu/rương | Có | Thực thi qua API progression phía server; không nhận profile tải lên |
-| Thay trang bị trong phiên online | Chưa | Chưa có inventory/equipment commands đầy đủ |
+| Trang bị, hành trang và kho chung | Có | Nhặt/mặc/tháo/gửi/rút theo UID server; SQLite transaction và command ID chống lặp; giữ nguyên sau reload |
 | Đồ Sát và tổ đội | Có | Luật màu tên/đội ở Rust, không chia thưởng/buff đội tự động |
 | Dungeon, tower, Tống Kim và chia thưởng | Chưa | Không nằm trong bản PvE thế giới chung này |
 
@@ -551,3 +551,22 @@ Các mốc cần đối chiếu:
 Log không chứa password, cookie, ticket, nonce gốc hoặc toàn bộ profile.
 `first-world-sent` xác nhận server gửi xong, chưa xác nhận client đã nhận/vẽ;
 server timing không đo được tải ảnh hay nghẽn main thread trên trình duyệt.
+
+### Lưu vật phẩm rơi
+
+```text
+Rust xác nhận quái chết → journal XP + nguồn loot cùng batch
+→ Node roll P6/jp từ catalog gốc → itemDrops trong SQLite
+→ nhặt: xác minh account/slot + HP/bản đồ/khoảng cách → chuyển đúng UID vào inv
+→ mặc / gửi kho chung / rút kho: intent + transaction SQLite → revision client
+```
+
+Hiển thị đồ trong túi ngay khi nhặt; lưu intent vào outbox trình duyệt trước khi
+cập nhật UI, rồi commit SQLite ngầm. Reload giữ đồ đang chờ và replay cùng ID;
+profile polling không ghi đè phần đang chờ. Lỗi mạng được retry; server từ chối
+thì hoàn tác vật phẩm về vị trí cũ. Retry cùng command ID không
+nhân đôi đồ. Túi/kho đầy giữ nguyên vị trí cũ; bản lưu trình duyệt không thay được
+hành trang hoặc kho chung đã có trên server. Đồ chưa nhặt hết hạn sau 120 giây;
+đồ trong túi/kho không có thời hạn này. Metadata nguồn loot cho combat local/phó
+bản được nhận qua `lootDrop` **chỉ trong development**; production chỉ nhận nguồn
+quái của Rust. Không nhận item roll hoặc inventory thay thế từ client.

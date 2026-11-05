@@ -173,9 +173,10 @@ var cD = function (A) {
       o.goldMsg !== !1 &&
       C(`<span class="gdl">Nhặt được <b>${q(a)}</b> lượng</span>`),
     MP(A.x, A.y, w0[A.series]));
-  for (const r of P6(A)) q4(r, A);
+  const serverLoot=typeof OnlineLoot!=="undefined"&&OnlineLoot.drop(A);
+  if(!serverLoot)for (const r of P6(A)) q4(r, A);
   for (const r of R9(A)) o.matMsg !== !1 && C(`Nhặt được <b style="color:#7fd0ff">${D(r)}</b>`);
-  const i = jp(A);
+  const i = serverLoot ? null : jp(A);
   (i && (q4(i, A), C(`<b style="color:${_0[i.r]}">${D(i.n)}</b> rơi ra!`)),
     A.cls === "boss" && C(`Hạ <b class="boss">${D(A.n)}</b>${a > 0 ? ` (+${q(a)} lượng)` : ""}`),
     ub(A),

@@ -136,6 +136,8 @@ pub struct Grid {
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct MonsterDefinition {
+    #[serde(default="normal_rank")]
+    pub rank:String,
     pub id: u32,
     #[serde(rename = "name")]
     pub _name: String,
@@ -319,3 +321,5 @@ pub struct SkillGeometry {
     pub impact_offset_y:Option<f32>,
     pub ignore_terrain:bool,
 }
+
+fn normal_rank()->String{"normal".into()}

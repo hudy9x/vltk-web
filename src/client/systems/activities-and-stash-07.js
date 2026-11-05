@@ -337,6 +337,9 @@ var P2 = async function (A, n) {
 };
 
 var Pg = async function (A) {
+  if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled()){
+    try{return await OnlineLoot.deposit(A);}catch(error){return {ok:false,msg:error.message};}
+  }
   if (
     ((A = A.filter(
       (n) =>
@@ -364,6 +367,7 @@ var Pg = async function (A) {
 };
 
 var rn = function () {
+  if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled())return {st:OnlineLoot.stash()};
   if (l0.on) return { st: l0.st || Ai() };
   let A = null;
   try {
@@ -489,6 +493,7 @@ var jk = async function (A) {
 };
 
 var Zs = function (A) {
+  if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled())return Pg([A]);
   return o.inv.includes(A)
     ? l0.on
       ? Pg([A])
@@ -516,6 +521,7 @@ var Zs = function (A) {
 };
 
 var zk = function (A) {
+  if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled())return OnlineLoot.withdraw(A).catch(error=>({ok:false,msg:error.message}));
   return o.inv.length >= INV_MAX
     ? { ok: !1, msg: "Hành trang đầy" }
     : l0.on

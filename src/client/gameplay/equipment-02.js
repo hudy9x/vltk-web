@@ -1,5 +1,6 @@
 // gameplay/equipment — shared IIFE scope; order is defined in modules.json.
 var hp = function (A) {
+  if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled())OnlineLoot.sync();
   for (const a of l.ground) a.age += A;
   let n = l.pickTarget && l.ground.includes(l.pickTarget) ? l.pickTarget : null;
   const t = l.enemies.some((a) => !a.dead && (!a.home || a.aggro));
@@ -54,7 +55,7 @@ var $6 = function (A, n) {
 };
 
 var T6 = function () {
-  o.ground = l.ground.map((A) => ({ it: A.it, wx: A.x, wy: A.y }));
+  o.ground = l.ground.filter(A=>!A.serverDrop).map((A) => ({ it: A.it, wx: A.x, wy: A.y }));
 };
 
 var up = function () {

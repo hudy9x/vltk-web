@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const catalog = require('../definitions/catalog.cjs');
 const progression = require('../definitions/progression.cjs');
+const items = require('./items.cjs');
 import { createHash } from 'node:crypto';
 type Character = Record<string, any>;
 export interface Reward {
@@ -17,6 +18,7 @@ export interface Reward {
   knb?: number;
   merit?: number;
   warItem?: string;
+  monsterLoot?: {tid:number;level:number;cls:string;map:number;scene:string;x:number;y:number;range?:number;source?:string};
 }
 /** The online profile is imported once. Legacy local-storage writes cannot replace it. */
 export function createCharacters(db: DatabaseSync) {
@@ -28,6 +30,7 @@ export function createCharacters(db: DatabaseSync) {
   // Preserve the currency of receipts already committed by the earlier KNB version.
   if(!db.prepare('PRAGMA table_info(multiplayer_death_drops)').all().some(row=>row.name==='currency'))
     db.exec("ALTER TABLE multiplayer_death_drops ADD COLUMN currency TEXT NOT NULL DEFAULT 'knb'");
+  const stashes=items.createStashes(db);
   function read(account: string, slot: number): { profile: Character; revision: number } {
     if (!Number.isInteger(slot) || slot < 0 || slot > 2)
       throw Object.assign(new Error('Ô nhân vật không hợp lệ.'), { status: 400 });
@@ -58,6 +61,7 @@ export function createCharacters(db: DatabaseSync) {
       if(item.ktc?.k==='sim_token')item.ic='img/ep/sim-token.png';
       if(item.ktc?.k==='test_token')item.ic='img/ep/test-token.png';
     }
+    profile.itemStash=stashes.read(account);
     return { profile, revision: Number(row.revision) };
   }
   function apply(grant: Reward) {
@@ -83,7 +87,9 @@ export function createCharacters(db: DatabaseSync) {
         db.exec('COMMIT');
         return death?{id:grant.id,amount:Number(death.amount),currency:String(death.currency)}:undefined;
       }
-      const { profile: p } = read(grant.account, grant.slot);
+      let { profile: p } = read(grant.account, grant.slot);
+      delete p.itemStash;
+      if(grant.monsterLoot)p=items.roll(p,{...grant.monsterLoot,source:"world"},grant.id);
       if(grant.warItem!==undefined&&!require('../definitions/war-items.cjs').collect(p,grant.warItem)){db.exec('ROLLBACK');return false;}
       if(grant.potion)applyPotionDebit(p,grant.potion);
       progression.addExperience(p,grant.xp);
@@ -145,7 +151,20 @@ export function createCharacters(db: DatabaseSync) {
         if(prior.hash!==hash)throw Object.assign(new Error('Mã thao tác đã được dùng.'),{status:409});
         db.exec('COMMIT');return saved;
       }
-      const profile=progression.apply(saved.profile,action,development,gameMasterMode);
+      const intent=action as Record<string,any>;
+      delete saved.profile.itemStash;
+      let profile;
+      if(intent.kind==='lootDrop'){
+        // Legacy combat runs locally in development. Only source metadata is accepted;
+        // the server owns the catalog, probability, attributes and UIDs of every roll.
+        if(!development)throw Object.assign(new Error('Vật phẩm luyện công phải do máy chủ thế giới cấp.'),{status:403});
+        profile=items.roll(saved.profile,intent.monster,id);
+      }else if(intent.kind==='lootPickup')profile=items.pickup(saved.profile,intent.dropId);
+      else if(intent.kind==='stashDeposit'||intent.kind==='stashWithdraw'){
+        profile=stashes.transfer(account,saved.profile,intent);
+        db.prepare('UPDATE multiplayer_characters SET revision=revision+1 WHERE account=? AND slot<>?').run(account,slot);
+      }
+      else profile=progression.apply(saved.profile,action,development,gameMasterMode);
       catalog.character(profile); // Rebuild authoritative combat stats before committing anything.
       db.prepare('UPDATE multiplayer_characters SET profile=?,revision=revision+1 WHERE account=? AND slot=?').run(JSON.stringify(profile),account,slot);
       db.prepare('INSERT INTO multiplayer_progression_commands VALUES(?,?,?,?)').run(account,slot,id,hash);

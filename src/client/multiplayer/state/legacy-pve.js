@@ -147,7 +147,7 @@ var onlineWorld = (() => {
     }
     for (const id of monsters.keys()) if (!ids.has(id)) monsters.delete(id);
     l.enemies = [...monsters.values()];
-    l.ground = [];
+    if(typeof OnlineLoot!=="undefined")OnlineLoot.sync();else l.ground=[];
     for (const event of next.events) {
       if (!GameWebTransport.newer(event.id, lastEvent)) continue;
       lastEvent = event.id;
@@ -194,7 +194,7 @@ var onlineWorld = (() => {
     mapNavigation.beginTick();
     // Never allow projectiles left over from offline mode to apply a hit online.
     l.combatProjectiles = [];
-    l.ground = [];
+    if(typeof OnlineLoot!=="undefined")OnlineLoot.advance(dt);else l.ground=[];
     const self = state?.map === mapId() ? state.actors.find((a) => a.id === state.self) : null;
     if (!self) {
       l.enemies = [];
@@ -243,9 +243,10 @@ var onlineWorld = (() => {
     // Revision-based progression; initial/full commands also include canonical inventory.
     const fields = imported&&!saved.full
       ? (window.localGameConfig?.progressionFields||['lvl','xp','gold','attrPts','skPts','attr','sk','fac','skL','bkOk','main','mainLock','secondarySkill','slots','skillRoute','potStock','potUsed','onlinePotionSpent','specialPurchases'])
-      : ['lvl', 'xp', 'gold', 'knb', 'attrPts', 'skPts', 'attr', 'sk', 'eq', 'inv', 'fac', 'sex', 'name', 'skL', 'bkOk', 'sk150Training', 'mats', 'main', 'mainLock', 'secondarySkill', 'slots', 'skillRoute', 'auraOff', 'autoBuff', 'autoCurse', 'supportAutoOff', 'potStock', 'potUsed', 'onlinePotionSpent', 'uid', 'onlineMounted', 'specialPurchases'];
+      : ['lvl', 'xp', 'gold', 'knb', 'attrPts', 'skPts', 'attr', 'sk', 'eq', 'inv', 'fac', 'sex', 'name', 'skL', 'bkOk', 'sk150Training', 'mats', 'main', 'mainLock', 'secondarySkill', 'slots', 'skillRoute', 'auraOff', 'autoBuff', 'autoCurse', 'supportAutoOff', 'potStock', 'potUsed', 'onlinePotionSpent', 'uid', 'onlineMounted', 'specialPurchases', 'itemDrops', 'itemStash'];
     for (const field of fields) if (p[field] !== undefined) o[field] = structuredClone(p[field]);
     if(p.onlineMounted!==undefined)l.mounted=!!p.onlineMounted;
+    if(typeof OnlineLoot!=="undefined")OnlineLoot.sync();
     imported = true;
     l.dirty = true;
     D0();
@@ -391,6 +392,8 @@ var onlineWorld = (() => {
       }
     },
     pickAt(x, y) {
+      const item=l.ground.find(d=>d.serverDrop&&Math.hypot(d.x-x,d.y-y)<30);
+      if(item){l.pickTarget=item;if(Math.hypot(item.x-v.x,item.y-v.y)<=item.range)OnlineLoot.pickup(item);else this.move(item.x,item.y);return true;}
       const player=typeof OnlinePvp!=='undefined'?OnlinePvp.pick(state,x,y):null;
       if(player){l.manTgt=player;this.attack(player);return true;}
       clearTimeout(moveTimer);

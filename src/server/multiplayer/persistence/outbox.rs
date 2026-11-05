@@ -8,6 +8,8 @@ use std::{
 };
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Grant {
+    #[serde(default, rename="monsterLoot", skip_serializing_if="Option::is_none")]
+    pub monster_loot: Option<MonsterLoot>,
     #[serde(default, skip_serializing_if="is_zero")]
     pub merit: u32,
     #[serde(default, skip_serializing_if="Option::is_none")]
@@ -22,6 +24,8 @@ pub struct Grant {
     pub xp: u32,
     pub gold: u32,
 }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MonsterLoot {pub tid:u32,pub level:u16,pub cls:String,pub map:u32,pub scene:String,pub x:f32,pub y:f32,#[serde(default)] pub range:f32}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PotionDebit { pub id: u16, pub spent: u32 }
 fn is_zero(value:&u32)->bool{*value==0}
@@ -101,6 +105,7 @@ impl Outbox {
         }
         ensure!(self.pending.len() < 4096, "reward delivery backlog full");
         let g = Grant {
+            monster_loot: None,
             merit: 0,
             death: None,
             knb: 0,
@@ -117,11 +122,18 @@ impl Outbox {
         Ok(())
     }
     /// One complete journal line commits the whole XP split, including crash recovery.
-    pub fn grant_experience(&mut self, key:String, recipients:Vec<(String,u8,u32)>) -> Result<()> {
-        let grants:Vec<_>=recipients.into_iter().enumerate().map(|(i,(account,slot,xp))|Grant {
+    pub fn grant_experience(&mut self,key:String,recipients:Vec<(String,u8,u32)>)->Result<()> {
+        self.grant_monster_rewards(key,recipients,None)
+    }
+    pub fn grant_monster_rewards(&mut self,key:String,recipients:Vec<(String,u8,u32)>,loot:Option<(String,u8,MonsterLoot)>)->Result<()> {
+        let mut grants:Vec<_>=recipients.into_iter().enumerate().map(|(i,(account,slot,xp))|Grant {
             id:format!("{}-{key}-0-{i}",self.epoch),account,slot,xp,gold:0,
-            merit:0,death:None,knb:0,potion:None,
+            monster_loot:None,merit:0,death:None,knb:0,potion:None,
         }).collect();
+        if let Some((account,slot,drop))=loot {
+            if let Some(grant)=grants.iter_mut().find(|g|g.account==account&&g.slot==slot){grant.monster_loot=Some(drop);}
+            else {grants.push(Grant{id:format!("{}-{key}-0-{}",self.epoch,grants.len()),account,slot,xp:0,gold:0,monster_loot:Some(drop),merit:0,death:None,knb:0,potion:None});}
+        }
         if grants.is_empty() || grants.iter().all(|g|self.pending.contains_key(&g.id)) {return Ok(());}
         ensure!(self.pending.len()+grants.len()<=4096,"reward delivery backlog full");
         self.append(format!("{}\n",serde_json::to_string(&serde_json::json!({"grants":grants}))?).as_bytes())?;
@@ -129,12 +141,12 @@ impl Outbox {
         Ok(())
     }
     pub fn credit_merit(&mut self,key:String,account:String,slot:u8,merit:u32)->Result<()> {
-        self.currency_grant(Grant{merit,id:format!("{}-{key}",self.epoch),account,slot,xp:0,gold:0,potion:None,death:None,knb:0})
+        self.currency_grant(Grant{monster_loot:None,merit,id:format!("{}-{key}",self.epoch),account,slot,xp:0,gold:0,potion:None,death:None,knb:0})
     }
     pub fn consume(&mut self, account:String, slot:u8, potion:PotionDebit) -> Result<()> {
         let id=format!("{}-{}-2",self.epoch,self.next_debit);
         ensure!(self.pending.len()<4096,"delivery backlog full");
-        let grant=Grant{merit:0,id,account,slot,xp:0,gold:0,potion:Some(potion),death:None,knb:0};
+        let grant=Grant{monster_loot:None,merit:0,id,account,slot,xp:0,gold:0,potion:Some(potion),death:None,knb:0};
         self.append(format!("{}\n",serde_json::to_string(&grant)?).as_bytes())?;
         self.next_debit+=1;
         self.pending.insert(grant.id.clone(),grant);
@@ -142,14 +154,14 @@ impl Outbox {
     }
     pub fn death(&mut self,actor:u32,life:u32,account:String,slot:u8,death:DeathRequest)->Result<String>{
         let id=format!("{}-{actor}-{life}-3",self.epoch);
-        self.currency_grant(Grant{merit:0,id:id.clone(),account,slot,xp:0,gold:0,potion:None,death:Some(death),knb:0})?;
+        self.currency_grant(Grant{monster_loot:None,merit:0,id:id.clone(),account,slot,xp:0,gold:0,potion:None,death:Some(death),knb:0})?;
         Ok(id)
     }
     pub fn credit_knb(&mut self,id:String,account:String,slot:u8,knb:u32)->Result<()> {
-        self.currency_grant(Grant{merit:0,id,account,slot,xp:0,gold:0,potion:None,death:None,knb})
+        self.currency_grant(Grant{monster_loot:None,merit:0,id,account,slot,xp:0,gold:0,potion:None,death:None,knb})
     }
     pub fn credit_gold(&mut self,id:String,account:String,slot:u8,gold:u32)->Result<()> {
-        self.currency_grant(Grant{merit:0,id,account,slot,xp:0,gold,potion:None,death:None,knb:0})
+        self.currency_grant(Grant{monster_loot:None,merit:0,id,account,slot,xp:0,gold,potion:None,death:None,knb:0})
     }
     fn currency_grant(&mut self,grant:Grant)->Result<()> {
         if self.pending.contains_key(&grant.id){return Ok(());}
@@ -189,6 +201,22 @@ impl Outbox {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn monster_loot_survives_recovery_in_the_same_experience_batch(){
+        let path=std::env::temp_dir().join(format!("vltk-item-batch-{}.jsonl",std::process::id()));
+        let _=std::fs::remove_file(&path);
+        let mut outbox=Outbox::open(path.clone()).unwrap();
+        let loot=MonsterLoot{tid:11,level:20,cls:"boss".into(),map:2,scene:"map:2".into(),x:100.0,y:200.0,range:90.0};
+        outbox.grant_monster_rewards("7-8".into(),vec![("one".into(),0,3),("two".into(),1,2)],Some(("one".into(),0,loot.clone()))).unwrap();
+        let before=serde_json::to_value(outbox.pending.values().collect::<Vec<_>>()).unwrap();
+        outbox.grant_monster_rewards("7-8".into(),vec![("one".into(),0,3),("two".into(),1,2)],Some(("one".into(),0,loot))).unwrap();
+        assert_eq!(outbox.pending.len(),2);drop(outbox);
+        let outbox=Outbox::open(path.clone()).unwrap();
+        assert_eq!(serde_json::to_value(outbox.pending.values().collect::<Vec<_>>()).unwrap(),before);
+        let grant=outbox.pending.values().find(|g|g.monster_loot.is_some()).unwrap();
+        assert_eq!(grant.account,"one");assert_eq!(grant.xp,3);assert_eq!(grant.monster_loot.as_ref().unwrap().tid,11);
+        drop(outbox);std::fs::remove_file(path).unwrap();
+    }
     #[test]
     fn durable_delivery_and_ack() {
         let p = std::env::temp_dir().join(format!("vltk-outbox-{}.jsonl", std::process::id()));

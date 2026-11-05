@@ -1,5 +1,10 @@
 use super::*;
 impl Game {
+    pub fn loot_position(&self,account:&str,slot:u64)->Option<serde_json::Value>{
+        let a=self.actors.values().find(|a|a.account==account&&a.slot as u64==slot&&a.test_owner.is_none())?;
+        Some(serde_json::json!({"map":a.map,"x":a.x,"y":a.y,"alive":a.hp>0.0,"range":self.rules.pickup_range}))
+    }
+
     fn experience_recipients(&self, killer:u32, map:u32, position:(f32,f32), xp:u32) -> Vec<(String,u8,u32)> {
         let Some(source)=self.actors.get(&killer).filter(|a|a.map==map) else{return vec![];};
         let leader=self.parties.leader(killer);
@@ -24,11 +29,13 @@ impl Game {
         for (map, id, owner) in deaths {
             let m = self.rooms[&map].mobs.iter().find(|m|m.id==id).unwrap();
             let recipients = self.experience_recipients(owner,map,(m.x,m.y),m.def.xp);
+            let item_loot=self.actors.get(&owner).filter(|a|a.map==map&&a.test_owner.is_none()).map(|a|(
+                a.account.clone(),a.slot,outbox::MonsterLoot{tid:m.def.id,level:m.def.level,cls:m.def.rank.clone(),map,scene:format!("map:{map}"),x:m.x,y:m.y,range:self.rules.pickup_range}));
             let room = self.rooms.get_mut(&map).unwrap();
             let m = room.mobs.iter_mut().find(|m| m.id == id).unwrap();
             if self.training.mobs.contains_key(&id){m.respawn=2.0;events.push((map,3,owner,id,0,0.0,0));continue;}
             // Finalize only after every recipient's share is in the same durable record.
-            if self.outbox.grant_experience(format!("{}-{}",m.id,m.life),recipients).is_err(){continue;}
+            if self.outbox.grant_monster_rewards(format!("{}-{}",m.id,m.life),recipients,item_loot).is_err(){continue;}
             if let Some(a) = self.actors.get(&owner).filter(|a| a.map == map && a.test_owner.is_none()) {
                 if room.loot.len() < self.rules.max_loot_per_map {
                     self.next = self.next.wrapping_add(1);

@@ -2801,6 +2801,9 @@
       "file": "multiplayer/state/progression.js"
     },
     {
+      "file": "multiplayer/state/items.js"
+    },
+    {
       "file": "core/game-loop-01.js",
       "symbols": [
         "l_",

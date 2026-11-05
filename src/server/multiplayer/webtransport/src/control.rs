@@ -34,6 +34,12 @@ fn authorize(h: &HeaderMap, s: &Control) -> Result<(), StatusCode> {
 }
 pub fn routes(world: Arc<Mutex<World>>, secret: String) -> Router {
     Router::new()
+        .route("/loot/position",post(|State(s):State<Control>,h:HeaderMap,Json(a):Json<serde_json::Value>|async move{
+            authorize(&h,&s)?;let w=s.world.lock().unwrap();
+            // Reconnecting actors are temporary unavailability, not a rejected pickup.
+            let position=w.game.loot_position(a["account"].as_str().unwrap_or(""),a["slot"].as_u64().unwrap_or(99)).ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
+            Ok::<_,StatusCode>(Json(position))
+        }))
         .route("/companions",post(|State(s):State<Control>,h:HeaderMap,Json(r):Json<crate::domain::training::Request>|async move{
             authorize(&h,&s)?;
             let mut world=s.world.lock().unwrap();

@@ -51,11 +51,12 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   });
   await ready(`http://127.0.0.1:${control}/health`,rust,()=>logs);
   await ready(base+'/api/health',node,()=>logs);
-  if(process.env.LIFECYCLE_TEST==='1'||process.env.AUTOMATION_TEST==='1'){
+  if(process.env.LIFECYCLE_TEST==='1'||process.env.AUTOMATION_TEST==='1'||process.env.WORLD_ITEMS_TEST==='1'){
     const definitions=structuredClone(require('../definitions/catalog.cjs').world());
     for(const map of definitions.maps){
       if(process.env.LIFECYCLE_TEST==='1')map.monsters=[];
       else for(const mob of map.monsters){mob.hp=100;mob.damage=20;mob.cooldown=1.5;}
+      if(process.env.WORLD_ITEMS_TEST==='1'){for(const mob of map.monsters){mob.hp=1;mob.damage=0;mob.rank='boss';mob.respawnSeconds=999;}const [x,y]=map.grid.kind!=='grid'?[map.entry.x,map.entry.y]:require('../definitions/runtime.cjs').withProgression({fac:'vo0',lvl:1},s=>s.MapsEngine.nearestWalkable(s.MapsEngine.decodeGrid(map.grid,{width:map.width,height:map.height}),map.entry.x,map.entry.y));map.spawns=map.monsters.length?[{id:'item-loot-boss',position:{x,y},initialDelaySeconds:0,monsters:[map.monsters[0]]}]:[];}
     }
     const response=await fetch(`http://127.0.0.1:${control}/catalog`,{method:'POST',headers:{'content-type':'application/json','x-multiplayer-secret':secret},body:JSON.stringify(definitions)});
     assert.ok(response.ok);
@@ -144,6 +145,27 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
           }}finally{l.town=town;l.fx=saved;}
           return result;
         },
+        itemsWorldSetup:async()=>{o.autoMap=false;await OnlineProgression.run({kind:'gm',action:'level150'});if(o.eq.weapon)await OnlineProgression.run({kind:'unequip',slot:'weapon'});if(!o.sk[10])await OnlineProgression.run({kind:'skill',skill:10});await OnlineProgression.run({kind:'mainSkill',skill:10});},
+        itemsAuto:enabled=>{o.autoJunk=false;o.autoEquip=false;WA().auto=enabled;WA().pickAll=true;$();},
+        itemsState:()=>({inv:structuredClone(o.inv),eq:structuredClone(o.eq),drops:structuredClone(l.ground),stash:structuredClone(rn().st.items),scene:OnlineLoot.scene()}),
+        itemsDungeon:async()=>{
+          await OnlineProgression.run({kind:'gm',action:'level150'});
+          await OnlineProgression.run({kind:'gm',action:'potential'});
+          for(const key of ['str','dex','vit','eng'])await OnlineProgression.run({kind:'potential',key,amount:500});
+          o.autoJunk=false;o.autoEquip=false;o.autoMap=false;o.ctrl='manual';WA().auto=false;$();
+          Cc('dvc');if(!l.dg)throw Error('Dungeon did not open');
+          l.dg.room=l.dg.d.rooms;dy();
+          const boss=l.enemies.find(e=>e.cls==='boss');
+          boss.hp=0;boss.dead=true;cD(boss);await OnlineProgression.flush();
+          // Keep this loot-focused fixture still while real UI actions run.
+          for(const enemy of l.enemies)if(enemy!==boss){enemy.hp=enemy.max=1e9;enemy.dmg=0;}l.spawnT=999;
+          return {boss:boss.tid,drops:structuredClone(l.ground)};
+        },
+        itemsPending:()=>window.localGameItemQueue.pending(m0),
+        itemsPickupNow:id=>{const d=l.ground.find(d=>d.serverDrop===id);if(!d)throw Error('Missing ground item');H6(d,false);return {inv:structuredClone(o.inv),ground:structuredClone(l.ground),pending:structuredClone(window.localGameItemQueue.pending(m0))};},
+        itemsPickup:async id=>{const d=l.ground.find(d=>d.serverDrop===id);if(!d)throw Error('Missing ground item');H6(d,false);await OnlineProgression.flush();},
+        itemsStash:()=>Rt('item'),
+        itemsLeave:()=>{Qt();},
         equipmentSetup:async()=>{await OnlineProgression.run({kind:'gm',action:'level150'});await OnlineProgression.run({kind:'join',faction:'shaolin'});await OnlineProgression.run({kind:'gm',action:'knb'});await OnlineProgression.run({kind:'potential',key:'str',amount:200});o.autoRide=false;},
         primarySetup:async()=>{await OnlineProgression.run({kind:'gm',action:'level150'});if(I[o.fac]?.novice)await OnlineProgression.run({kind:'join',faction:'shaolin'});if(o.eq.weapon)await OnlineProgression.run({kind:'unequip',slot:'weapon'});await OnlineProgression.run({kind:'gm',action:'learn150'});if(!o.sk[10])await OnlineProgression.run({kind:'skill',skill:10});await OnlineProgression.run({kind:'skillSlot',index:0,skill:10});await OnlineProgression.run({kind:'skillSlot',index:1,skill:1055});o.rot=false;o.potOff=true;$();},
         secondarySetup:async()=>{await OnlineProgression.run({kind:'skillSlot',index:2,skill:-1});await OnlineProgression.run({kind:'skillSlot',index:3,skill:-1});},
@@ -277,6 +299,100 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   await a.page.waitForTimeout(1700);
   for(const {page} of [a,b]) await page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   assert.ok((await a.page.evaluate(()=>window.__onlineTest.state())).draws>0);
+  if(process.env.OPTIMISTIC_ITEMS_TEST==='1'){
+    const page=a.page,issued=await page.evaluate(()=>window.__onlineTest.itemsDungeon()),drop=issued.drops[0];
+    let hold=true;const waiting=[];
+    await page.route('**/api/multiplayer/progression',async route=>{
+      const body=route.request().postDataJSON();
+      if(body.action.kind==='lootPickup'&&hold)await new Promise(resolve=>waiting.push(resolve));
+      await route.continue().catch(()=>{});
+    });
+    const immediate=await page.evaluate(id=>window.__onlineTest.itemsPickupNow(id),drop.serverDrop);
+    assert.ok(immediate.inv.some(it=>it.uid===drop.it.uid),'bag updates before any pickup response');
+    assert.ok(!immediate.ground.some(d=>d.serverDrop===drop.serverDrop),'ground hides picked item immediately');
+    assert.equal(immediate.pending.length,1);
+    let canonical=(await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json()).profile;
+    assert.ok(!canonical.inv?.some(it=>it.uid===drop.it.uid),'request is still blocked, not yet committed');
+    await page.reload();await page.waitForFunction(()=>window.__onlineTest?.itemsState().inv.some(it=>it.uid===window.__onlineTest.itemsPending()[0]?.receipt.it.uid));
+    assert.equal((await page.evaluate(()=>window.__onlineTest.itemsPending()))[0].id,immediate.pending[0].id,'reload retains the same idempotent command');
+    hold=false;for(const resume of waiting)resume();
+    await page.waitForFunction(()=>window.__onlineTest.itemsPending().length===0,null,{timeout:30000});
+    canonical=(await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json()).profile;
+    assert.equal(canonical.inv.filter(it=>it.uid===drop.it.uid).length,1);
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    assert.equal((await page.evaluate(()=>window.__onlineTest.itemsState())).inv.filter(it=>it.uid===drop.it.uid).length,1);
+    const more=await page.evaluate(()=>window.__onlineTest.itemsDungeon()),rejected=more.drops[0];
+    let reject=true,transient=0;
+    await page.route('**/api/multiplayer/progression',async route=>{
+      if(route.request().postDataJSON().action.kind!=='lootPickup')return route.continue();
+      if(reject)return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'Hành trang đầy.'})});
+      if(transient++===0)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Temporary connection failure'})});
+      return route.continue();
+    });
+    assert.ok((await page.evaluate(id=>window.__onlineTest.itemsPickupNow(id),rejected.serverDrop)).inv.some(it=>it.uid===rejected.it.uid));
+    await page.waitForFunction(uid=>window.__onlineTest.itemsPending().length===0&&!window.__onlineTest.itemsState().inv.some(it=>it.uid===uid),rejected.it.uid);
+    assert.ok((await page.evaluate(()=>window.__onlineTest.itemsState())).drops.some(d=>d.serverDrop===rejected.serverDrop),'server refusal restores the ground receipt');
+    reject=false;
+    await page.evaluate(id=>window.__onlineTest.itemsPickupNow(id),rejected.serverDrop);
+    await page.waitForFunction(()=>window.__onlineTest.itemsPending().length===0,null,{timeout:30000});
+    canonical=(await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json()).profile;
+    assert.equal(canonical.inv.filter(it=>it.uid===rejected.it.uid).length,1,'transient failure retries without duplication');
+    assert.deepEqual(errors,[]);console.log('Optimistic items: immediate bag, blocked-request reload, idempotent replay, rollback on refusal and retry after connection failure passed.');return;
+  }
+  if(process.env.WORLD_ITEMS_TEST==='1'){
+    const page=a.page;
+    await page.evaluate(()=>window.__onlineTest.itemsWorldSetup());
+    await page.evaluate(()=>{window.__onlineTest.itemsAuto(false);window.__onlineTest.field();});
+    await page.waitForFunction(()=>{const s=window.__onlineTest.state();return window.__onlineClient.online&&s.pve?.map!==37&&s.pve?.monsters.some(m=>m.hp>0);});
+    await page.evaluate(()=>window.__onlineTest.farm());
+    await page.waitForFunction(()=>window.__onlineTest.itemsState().drops.some(d=>d.serverDrop),null,{timeout:30000});
+    await page.evaluate(()=>window.__onlineTest.stop());
+    let state=await page.evaluate(()=>window.__onlineTest.itemsState());const drop=state.drops[0];
+    const screen=await page.evaluate(d=>window.__onlineTest.screen(d.x,d.y+6),drop);
+    await page.mouse.click(screen.x,screen.y);
+    await page.waitForFunction(uid=>window.__onlineTest.itemsState().inv.some(it=>it.uid===uid),drop.it.uid,{timeout:30000});
+    const item=(await page.evaluate(()=>window.__onlineTest.itemsState())).inv.find(it=>it.uid===drop.it.uid);
+    assert.deepEqual(item,drop.it);
+    await page.evaluate(()=>window.__onlineTest.itemsAuto(true));
+    await page.waitForFunction(()=>window.__onlineTest.itemsState().drops.length===0,null,{timeout:30000});
+    const expected=(await page.evaluate(()=>window.__onlineTest.itemsState())).inv.filter(it=>!it.ktc);
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    state=await page.evaluate(()=>window.__onlineTest.itemsState());assert.deepEqual(state.inv.filter(it=>!it.ktc),expected,'real world drop UIDs/attributes survive reload');
+    assert.deepEqual(errors,[]);console.log('World items browser: real Rust kill -> durable native loot -> real mouse pickup and automatic pickup -> reload passed.');return;
+  }
+  if(process.env.ITEMS_TEST==='1'){
+    const page=a.page;
+    const issued=await page.evaluate(()=>window.__onlineTest.itemsDungeon());
+    assert.ok(issued.drops.length>=3,'native dungeon boss really issues equipment');
+    const drop=issued.drops.find(d=>d.it.d!==0&&d.it.d!==1&&d.it.d!==2)||issued.drops[0];
+    await page.evaluate(id=>window.__onlineTest.itemsPickup(id),drop.serverDrop);
+    let state=await page.evaluate(()=>window.__onlineTest.itemsState());
+    const item=state.inv.find(it=>it.uid===drop.it.uid);assert.deepEqual(item,drop.it);
+    await page.evaluate(()=>window.__onlineTest.itemsLeave());
+    await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    state=await page.evaluate(()=>window.__onlineTest.itemsState());assert.deepEqual(state.inv.find(it=>it.uid===item.uid),item,'picked attributes survive reload');
+    await page.evaluate(uid=>window.__onlineTest.equipmentDetail(uid),item.uid);
+    await page.locator('#bEq').click();
+    await page.waitForFunction(uid=>Object.values(window.__onlineTest.itemsState().eq).some(it=>it.uid===uid),item.uid);
+    const canonical=await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json();
+    const slot=Object.entries(canonical.profile.eq).find(([,it])=>it.uid===item.uid)[0];
+    await a.context.request.post(base+'/api/multiplayer/progression',{data:{slot:0,id:'items-unequip-receipt',action:{kind:'unequip',slot}}});
+    await page.waitForFunction(uid=>window.__onlineTest.itemsState().inv.some(it=>it.uid===uid),item.uid);
+    await page.evaluate(uid=>window.__onlineTest.equipmentDetail(uid),item.uid);
+    await page.locator('#bStashIt').click();
+    await page.waitForFunction(uid=>window.__onlineTest.itemsState().stash.some(it=>it.uid===uid)&&!window.__onlineTest.itemsState().inv.some(it=>it.uid===uid),item.uid);
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    state=await page.evaluate(()=>window.__onlineTest.itemsState());assert.deepEqual(state.stash.find(it=>it.uid===item.uid).mag,item.mag);
+    await page.evaluate(()=>window.__onlineTest.itemsStash());
+    await page.locator('#stBox .it').first().click();await page.locator('#stTake').click();
+    await page.waitForFunction(()=>window.__onlineTest.itemsState().stash.length===0);
+    state=await page.evaluate(()=>window.__onlineTest.itemsState());const taken=state.inv.find(it=>it.n===item.n);assert.ok(taken);assert.deepEqual(taken.mag,item.mag);
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    state=await page.evaluate(()=>window.__onlineTest.itemsState());assert.deepEqual(state.inv.find(it=>it.uid===taken.uid),taken);
+    await page.screenshot({path:path.join(root,'output/multiplayer/items-reload.png')});
+    assert.deepEqual(errors,[]);console.log('Items browser: native dungeon drop -> pickup -> reload -> real equip -> shared stash -> reload -> real withdraw -> reload passed.');return;
+  }
   if(process.env.BACKGROUND_TEST==='1'){
     const original=await a.page.evaluate(()=>window.__onlineTest.state().pve.self);
     // Deterministic hidden-tab path: foreground simulation is disabled, but the
