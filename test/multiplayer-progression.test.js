@@ -216,3 +216,22 @@ test('GM gold, KNB and XP survive canonical profile recreation and stale browser
   const after=createCharacters(db).read('one',0).profile;for(const key of ['gold','knb','lvl','xp'])assert.equal(after[key],before[key]);
  }finally{db.close();}
 });
+
+test('GM exact balances persist increases, decreases and zero; validate values, permission and idempotent replays',()=>{
+ const {db,s}=store();try{
+  let seq=0;
+  for(const [action,key]of [['setGold','gold'],['setKnb','knb']]){
+   for(const value of [1000000,9,0]){
+    const id='set-balance-'+ ++seq,command={kind:'gm',action,value};
+    const first=s.mutate('one',0,id,command,true);
+    assert.equal(first.profile[key],value);
+    assert.equal(s.mutate('one',0,id,command,true).revision,first.revision);
+    assert.equal(createCharacters(db).read('one',0).profile[key],value);
+   }
+   const before=s.read('one',0);
+   for(const value of [-1,1.5,NaN,Infinity,Number.MAX_SAFE_INTEGER+1,'100',undefined])assert.throws(()=>s.mutate('one',0,'invalid-balance-'+ ++seq,{kind:'gm',action,value},true),/Số dư/);
+   assert.deepEqual(s.read('one',0),before);
+   assert.throws(()=>s.mutate('one',0,'restricted-balance-'+ ++seq,{kind:'gm',action,value:10},false,'development'),{status:403});
+  }
+ }finally{db.close();}
+});

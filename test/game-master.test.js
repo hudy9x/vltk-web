@@ -507,3 +507,24 @@ test('production hides training-token grants and rejects direct grants even with
  assert.doesNotMatch(panel.innerHTML,/data-gm="trainingTokens"/);
  assert.throws(()=>s.gameMaster.grant('trainingTokens'),/chỉ dùng trong development/);
 });
+
+test('GM balance inputs set either currency upward, downward or to zero and reject invalid values',()=>{
+ const s=game(),panel=s.nodes.find(node=>node.id==='gm-panel');
+ assert.match(panel.innerHTML,/id="gm-balance-gold"/);assert.match(panel.innerHTML,/id="gm-balance-knb"/);
+ for(const [action,key]of [['setGold','gold'],['setKnb','knb']]){
+  for(const value of [123456789,12,0]){s.gameMaster.grant(action,value);assert.equal(s.o[key],value);assert.equal(s.saved.at(-1)[key],value);}
+  for(const value of [-1,1.5,NaN,Infinity,Number.MAX_SAFE_INTEGER+1,'100',undefined])assert.throws(()=>s.gameMaster.grant(action,value),/Số dư/);
+  assert.equal(s.o[key],0);
+ }
+});
+
+test('the open inventory currency text refreshes without rebuilding the bag or changing input focus',()=>{
+ const gold={dataset:{inventoryCurrency:'gold'},textContent:'old'},knb={dataset:{inventoryCurrency:'knb'},textContent:'old'};
+ const focused={value:'123456'};
+ const s=vm.createContext({o:{fac:'shaolin',gold:10,knb:2},Tr:n=>n.toLocaleString('vi-VN')+' lượng',F:n=>n.toLocaleString('vi-VN'),document:{activeElement:focused,querySelectorAll:()=>[gold,knb],body:{classList:{contains:()=>false}}}});
+ vm.runInContext(declaration('src/client/ui/world-shell-01.js','kB'),s);
+ s.kB();assert.equal(gold.textContent,'10 lượng');
+ s.o.gold+=1234;s.o.knb=0;s.kB();
+ assert.equal(gold.textContent,'1.244 lượng');assert.equal(knb.textContent,'0');
+ assert.equal(s.document.activeElement,focused);assert.equal(focused.value,'123456');
+});

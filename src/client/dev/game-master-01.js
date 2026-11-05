@@ -97,12 +97,18 @@ var gameMaster = (function () {
   }
 
   const amounts = { gold: 1_000_000_000_000, knb: 100_000, xp: 100_000_000, chest: 100, level150: 150, learn90: 1, learn120: 1, learn150: 1, max90: 1, potential: 3000, warMerit: 10000 };
-  function grant(action) {
+  function grant(action,value) {
+    const balance=action==='setGold'?'gold':action==='setKnb'?'knb':null;
+    if(balance&&(!Number.isSafeInteger(value)||value<0))throw new Error('Số dư phải là số nguyên không âm, tối đa '+Number.MAX_SAFE_INTEGER+'.');
     if(action==='trainingTokens'&&!window.localGameConfig?.development)throw new Error('Lệnh bài SIM/Test chỉ dùng trong development.');
     if(action==='trainingTokens'&&!(typeof OnlineProgression!=='undefined'&&OnlineProgression.enabled()))throw new Error('Cần chạy dev:online.');
     if(typeof OnlineProgression!=='undefined'&&window.localGameStorage)
-      return OnlineProgression.run({kind:'gm',action}).then(async()=>{await window.localGameStorage.flush();return 'Đã áp dụng GM và lưu trên máy chủ.';});
+      return OnlineProgression.run({kind:'gm',action,...(balance?{value}:{})}).then(async()=>{await window.localGameStorage.flush();return 'Đã áp dụng GM và lưu trên máy chủ.';});
     if (!o || !o.fac) throw new Error("Hãy vào game với một nhân vật trước.");
+    if(balance){
+      o[balance]=value;saveAndRefresh();
+      return 'Đã đặt '+(balance==='gold'?'ngân lượng':'Kim Nguyên Bảo')+': '+value.toLocaleString('vi-VN')+'.';
+    }
     if (!(action in amounts)) throw new Error("Lệnh GM không hợp lệ.");
     let awardedXp = 0;
     if (action === "warMerit") {
@@ -221,6 +227,10 @@ var gameMaster = (function () {
     #gm-range-label,#gm-damage-label{display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer}
     #gm-panel [data-gm]{display:block;width:100%;min-height:48px;margin:0 0 8px;padding:9px 12px;font:inherit;text-align:left;line-height:1.45;cursor:pointer}
     #gm-panel [data-gm] img{width:24px;height:24px;object-fit:contain;image-rendering:pixelated;vertical-align:middle;margin-right:8px}
+    #gm-panel .gm-balance{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin:0 0 12px;align-items:end}
+    #gm-panel .gm-balance label{display:grid;gap:5px;min-width:0}
+    #gm-panel .gm-balance input{box-sizing:border-box;width:100%;min-width:0;min-height:38px;padding:7px;color:#f3edc8;background:#11160e;border:1px solid #8c876a;border-radius:3px;font:inherit}
+    #gm-panel .gm-balance [data-gm]{width:auto;min-height:38px;margin:0;padding:7px 9px}
     #gm-status{margin:12px 0 0;padding-top:10px;border-top:1px solid #4e4c3c;font-size:12px;line-height:1.5;color:#c6c1a2}
   `;
   document.head.appendChild(style);
@@ -245,6 +255,8 @@ var gameMaster = (function () {
     <button type="button" data-gm="learn150">Học tất cả chiêu cấp 150 của môn phái</button>
     <button type="button" data-gm="max90">Nâng tối đa các chiêu cấp 90 và 150 đã học</button>
     <button type="button" data-gm="potential">+3.000 điểm tiềm năng</button>
+    <div class="gm-balance"><label for="gm-balance-gold">Ngân lượng (số dư mới)<input id="gm-balance-gold" type="number" inputmode="numeric" min="0" max="9007199254740991" step="1" value="${o?.gold||0}"></label><button type="button" data-gm="setGold">Đặt ngân lượng</button></div>
+    <div class="gm-balance"><label for="gm-balance-knb">Kim Nguyên Bảo (số dư mới)<input id="gm-balance-knb" type="number" inputmode="numeric" min="0" max="9007199254740991" step="1" value="${o?.knb||0}"></label><button type="button" data-gm="setKnb">Đặt KNB</button></div>
     <button type="button" data-gm="gold">+100 triệu vạn lượng (1.000 tỷ lượng)</button>
     <button type="button" data-gm="knb"><img src="img/ep/knb.png" alt="">+10 vạn Kim Nguyên Bảo</button>
     <button type="button" data-gm="warMerit">+10.000 điểm Quân trạng / tích lũy</button>
@@ -253,6 +265,9 @@ var gameMaster = (function () {
     <p id="gm-status" role="status" aria-live="polite">Phần thưởng được lưu vào save hiện tại.</p></div>`;
   toggle.onclick = () => {
     panel.hidden = !panel.hidden;
+    if(!panel.hidden)for(const currency of ['gold','knb']){
+      const input=panel.querySelector?.('#gm-balance-'+currency);if(input)input.value=String(o?.[currency]||0);
+    }
     toggle.setAttribute("aria-expanded", String(!panel.hidden));
   };
   panel.onchange = (event) => {
@@ -273,7 +288,10 @@ var gameMaster = (function () {
     try {
       button.disabled=true;
       status.textContent = 'Đang lưu nhân vật…';
-      status.textContent = await grant(button.dataset.gm);
+      const action=button.dataset.gm,currency=action==='setGold'?'gold':action==='setKnb'?'knb':null;
+      const raw=currency?panel.querySelector('#gm-balance-'+currency).value.trim():null;
+      if(currency&&!raw)throw new Error('Hãy nhập số dư mới.');
+      status.textContent = await grant(action,currency?Number(raw):undefined);
     } catch (error) {
       status.textContent = error.message;
     } finally {button.disabled=false;}

@@ -614,6 +614,11 @@ var yB = function (A) {
 };
 
 var kB = function () {
+  // Refresh only the balance text; keep bag slots, scroll and focused controls intact.
+  if(o&&o.fac)for(const node of document.querySelectorAll('[data-inventory-currency]')){
+    const text=node.dataset.inventoryCurrency==='gold'?Tr(o.gold):F(o.knb||0);
+    if(node.textContent!==text)node.textContent=text;
+  }
   if (document.body.classList.contains("u2m") && o && o.fac) {
     (bm(), fm());
     const a = document.getElementById("tabRide");

@@ -146,6 +146,7 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
           return result;
         },
         itemsWorldSetup:async()=>{o.autoMap=false;await OnlineProgression.run({kind:'gm',action:'level150'});if(o.eq.weapon)await OnlineProgression.run({kind:'unequip',slot:'weapon'});if(!o.sk[10])await OnlineProgression.run({kind:'skill',skill:10});await OnlineProgression.run({kind:'mainSkill',skill:10});},
+        wallet:()=>({gold:o.gold,knb:o.knb,goldText:Tr(o.gold),knbText:F(o.knb||0)}),
         itemsAuto:enabled=>{o.autoJunk=false;o.autoEquip=false;WA().auto=enabled;WA().pickAll=true;$();},
         itemsState:()=>({inv:structuredClone(o.inv),eq:structuredClone(o.eq),drops:structuredClone(l.ground),stash:structuredClone(rn().st.items),scene:OnlineLoot.scene()}),
         itemsDungeon:async()=>{
@@ -299,6 +300,42 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
   await a.page.waitForTimeout(1700);
   for(const {page} of [a,b]) await page.waitForFunction(()=>window.__onlineTest.state().remote.length===1);
   assert.ok((await a.page.evaluate(()=>window.__onlineTest.state())).draws>0);
+  if(process.env.WALLET_TEST==='1'){
+    const page=a.page;
+    await page.evaluate(()=>window.__onlineTest.itemsWorldSetup());
+    await page.locator('#gm-toggle').click();
+    for(const [currency,action,values]of [['gold','setGold',[123456,10,0]],['knb','setKnb',[12345,7,0]]]){
+      for(const value of values){
+        await page.locator('#gm-balance-'+currency).fill(String(value));
+        await page.locator('[data-gm="'+action+'"]').click();
+        await page.waitForFunction(({currency,value})=>window.__onlineTest.wallet()[currency]===value,{currency,value});
+        const saved=(await (await a.context.request.get(base+'/api/multiplayer/character?slot=0')).json()).profile;
+        assert.equal(saved[currency],value);
+      }
+    }
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    assert.equal((await page.evaluate(()=>window.__onlineTest.wallet())).gold,0);
+    assert.equal((await page.evaluate(()=>window.__onlineTest.wallet())).knb,0);
+    await page.evaluate(()=>{window.__onlineTest.itemsAuto(false);window.__onlineTest.field();});
+    await page.waitForFunction(()=>{const s=window.__onlineTest.state();return window.__onlineClient.online&&s.pve?.map!==37&&s.pve?.monsters.some(m=>m.hp>0);});
+    await page.keyboard.press('w');
+    const balance=page.locator('[data-inventory-currency="gold"]:visible').first();
+    await balance.waitFor({state:'visible'});
+    await balance.evaluate(el=>window.__walletNode=el);
+    await page.locator('#gm-toggle').click();
+    await page.locator('#gm-balance-gold').fill('987654321');
+    await page.evaluate(()=>window.__onlineTest.farm());
+    await page.waitForFunction(()=>window.__onlineTest.wallet().gold>0,null,{timeout:30000});
+    await page.waitForFunction(()=>window.__walletNode?.isConnected&&window.__walletNode.textContent===window.__onlineTest.wallet().goldText);
+    assert.equal(await page.locator('#gm-balance-gold').inputValue(),'987654321','live updates keep the GM input draft');
+    assert.ok(await balance.evaluate(el=>el===window.__walletNode),'pickup updates text without replacing the bag');
+    await page.evaluate(()=>window.__onlineTest.stop());
+    await page.locator('#gm-balance-knb').fill('-1');await page.locator('[data-gm="setKnb"]').click();
+    await page.waitForFunction(()=>document.querySelector('#gm-status').textContent.includes('không âm'));
+    assert.equal((await page.evaluate(()=>window.__onlineTest.wallet())).knb,0);
+    await page.screenshot({path:path.join(root,'output/multiplayer/wallet-realtime.png')});
+    assert.deepEqual(errors,[]);console.log('Wallet browser: exact GM balances increase/decrease/zero and survive reload; real gold pickup updates the open bag without replacing it or overwriting input.');return;
+  }
   if(process.env.OPTIMISTIC_ITEMS_TEST==='1'){
     const page=a.page,issued=await page.evaluate(()=>window.__onlineTest.itemsDungeon()),drop=issued.drops[0];
     let hold=true;const waiting=[];

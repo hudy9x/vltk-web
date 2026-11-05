@@ -130,6 +130,9 @@ exports.apply=function(input,action,development=false,gameMasterMode){
           p.bkOk||={};p.skL||={};
           for(const row of rows){const level=max?row.max:Math.max(1,p.sk[row.id]||0,p.skL[row.id]?.lv||0);p.sk[row.id]=level;p.bkOk[row.id]=1;p.skL[row.id]={lv:level,xp:max?0:p.skL[row.id]?.xp||0};}
           p.sk150Training=1;
+        }else if(name==='setGold'||name==='setKnb'){
+          if(!integer(action.value,0,Number.MAX_SAFE_INTEGER))fail('Số dư phải là số nguyên không âm trong giới hạn lưu trữ.');
+          p[name==='setGold'?'gold':'knb']=action.value;
         }else if(name==='gold')p.gold=(p.gold||0)+1000000000000;
         else if(name==='knb')p.knb=(p.knb||0)+100000;
         else if(name==='warMerit'){p.mats||={};p.mats.misc||={};p.mats.misc.tk_merit=(p.mats.misc.tk_merit||0)+10000;}

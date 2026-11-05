@@ -288,7 +288,7 @@ var wm = function s() {
   }
   i.insertAdjacentHTML(
     "beforeend",
-    `<div class="u2money"><span>Ng.lượng</span><b>${Tr(o.gold)}</b><span>Kim Ng.Bảo</span><b>${F(o.knb || 0)}</b></div><div class="u2act" id="u2invB"></div><div class="u2act" id="u2invB2"></div>`,
+    `<div class="u2money"><span>Ng.lượng</span><b data-inventory-currency="gold">${Tr(o.gold)}</b><span>Kim Ng.Bảo</span><b data-inventory-currency="knb">${F(o.knb || 0)}</b></div><div class="u2act" id="u2invB"></div><div class="u2act" id="u2invB2"></div>`,
   );
   {
     const w = i.querySelector("#bInvX");
