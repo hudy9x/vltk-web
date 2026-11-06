@@ -30,9 +30,9 @@ test('the real native catalog builds configured monster HP, resistance, attack a
 
 test('configured local/SIM direct hits match authoritative armor, resistance and mana shielding',()=>{
   const {configuredMonsterHit}=require('../src/client/maps/monster-balance.ts');
-  assert.deepEqual(configuredMonsterHit(100,'cold',{def:100,res:{cold:50},mana:30},200,30),{amount:50,mana:30,reflected:0});
+  assert.deepEqual(configuredMonsterHit(100,'cold',{def:100,res:{cold:50},mana:30},200,30),{amount:50,mana:30,reflected:0,absorbed:0});
   assert.equal(configuredMonsterHit(100,'phys',{def:100,res:{phys:0}},200,0).amount,50);
-  assert.deepEqual(configuredMonsterHit(100,'fire',{res:{fire:0},mana:50,manaShield:50,retMelee:10,retMeleeP:20},200,50),{amount:50,mana:0,reflected:20});
+  assert.deepEqual(configuredMonsterHit(100,'fire',{res:{fire:0},mana:50,manaShield:50,retMelee:10,retMeleeP:20},200,50),{amount:50,mana:0,reflected:20,absorbed:50});
   assert.equal(configuredMonsterHit(100,'cold',{res:{cold:50}},10,0).amount,10);
 });
 test('configured monster XP bypasses legacy multipliers while legacy sources keep their formula',()=>{

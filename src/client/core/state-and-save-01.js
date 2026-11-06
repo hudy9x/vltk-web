@@ -308,6 +308,7 @@ var U9 = function (A) {
     l.life=Math.max(0,l.life-hit.amount);l.mana=hit.mana;
     if(hit.reflected>0)A.hp=Math.max(0,A.hp-hit.reflected);
     showDamageNumber(v,hit.amount,A.configuredAttack.element);
+    showDamageNumber(v,hit.absorbed,'mana',false,' MP');
     if(typeof combatLog!=="undefined"&&combatLog)combatLog.record("in",A.n||"Quái",hit.amount,"Đòn đánh cấu hình");
     return;
   }
@@ -372,6 +373,7 @@ var U9 = function (A) {
     const a = Math.min(l.mana, (e * l.P.manaShield) / 100);
     trace && trace("Khiên mana: trừ min(mana, damage × manaShield / 100)", { mana: l.mana, manaShield: l.P.manaShield, absorbed: a, damage: e - a });
     ((l.mana -= a), (e -= a));
+    showDamageNumber(v,a,'mana',false,' MP');
   }
   if (
     ((trace && trace("Trừ HP", { damage: e, hpBefore: l.life, hpAfter: l.life - e, dot: l.hpDot || 0, dotSeconds: l.hpDotT || 0, sorb: l.P.sorb || 0, from: (l.P.from && l.P.from[A.series]) || 0 })),

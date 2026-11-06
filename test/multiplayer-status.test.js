@@ -14,6 +14,25 @@ function view(){
  const packet=(m=monster,events=[])=>s.onlineWorld.snapshot({self:1,map:140,ack:1,actors:[{id:1,hp:100,mp:20,maxHp:100,maxMp:20,farming:false}],monsters:[{...m}],loot:[],events});
  return {s,labels,monster,packet};
 }
+test('online mana absorption has a separate blue label and replays only once',()=>{
+ const f=view();f.packet();
+ f.s.l.life=100;f.s.l.mana=20;
+ const event={id:1,source:2,target:1,skill:1058,kind:8,value:75};
+ f.packet(f.monster,[event]);
+ assert.equal(f.labels.length,1);assert.equal(f.labels[0][0],f.s.v);
+ assert.equal(f.labels[0][1],75);assert.equal(f.labels[0][2],'mana');assert.equal(f.labels[0][4],' MP');
+ assert.equal(f.s.l.life,100);assert.equal(f.s.l.mana,20);
+ f.packet(f.monster,[event]);assert.equal(f.labels.length,1);
+});
+test('WORLD decodes mana-shield event 8 without changing the binary event layout',()=>{
+ const esbuild=require('esbuild');const scope={module:{exports:{}},exports:{},TextEncoder,TextDecoder,Uint8Array,DataView,Map,Set};
+ vm.runInNewContext(esbuild.buildSync({entryPoints:['src/client/multiplayer/webtransport/protocol.ts'],bundle:true,format:'cjs',platform:'node',write:false}).outputFiles[0].text,scope);
+ const b=Buffer.alloc(79);b.set([8,17]);b.writeUInt16LE(1,24);
+ b.writeUInt32LE(1,43);b.writeUInt32LE(2,47);b.writeUInt32LE(3,51);b.writeUInt16LE(1058,55);b[57]=8;b.writeFloatLE(75.25,58);
+ const event=scope.module.exports.decodePacket(b).events[0];
+ assert.equal(event.kind,8);assert.equal(event.value,75.25);assert.equal(event.hit,undefined);
+ b[57]=9;assert.throws(()=>scope.module.exports.decodePacket(b),/Invalid world event/);
+});
 test('new monsters and respawns appear at authoritative position without corpse-to-spawn interpolation',()=>{
  const f=view();f.packet();let actor=f.s.l.enemies[0];assert.equal(actor.x,100);
  f.packet({...f.monster,x:500,hp:0});f.s.onlineWorld.simulate(.016);

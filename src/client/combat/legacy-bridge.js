@@ -53,6 +53,9 @@ var pvpDamageDisplay=(()=>{
 })();
 // Feed raw damage and the recipient into the display queue, after HP is resolved.
 var showDamageNumber = function (target, amount, kind = "phys", critical = false, suffix = "", presentation = {}) {
+  if(target?.damageDisplayDeferred && typeof amount==='number'){
+    Object.assign(target.damageDisplayDeferred,{kind,critical,suffix});return;
+  }
   const person=target?.playerDamage||target?.arenaSim||target?.onlinePlayer||target?.battlefieldPlayer||(target?.battlefieldKind!==undefined&&target.battlefieldKind<2)||(typeof v!=='undefined'&&target===v);
   if(person&&!pvpDamageDisplay.enabled)return;
   return CombatEngine.enqueueDamageLabel(l.txt || (l.txt = []), target, amount, kind,

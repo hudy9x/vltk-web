@@ -5,6 +5,7 @@ export const DAMAGE_LABEL_COLORS = {
   cold: '#f01a1aff',
   light: '#f01a1aff',
   poison: '#8fe34a',
+  mana: '#4da3ff',
   critical: '#fa7676ff',
   status: '#d5d9df',
 } as const;

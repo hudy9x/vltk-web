@@ -914,8 +914,8 @@ fn aura_toggle_and_native_mana_shield_reflection_are_authoritative(){
     g.command(1,cmd(3,8,2,0,16,0.0,0.0)).unwrap();assert!(g.actors[&1].profile.protection.reflect_percent>0.0);
     let a=g.actors.get_mut(&1).unwrap();a.hp=100.0;a.mp=30.0;
     a.profile.protection.mana_shield=90.0;a.profile.protection.reflect_percent=20.0;
-    let (lost,reflected)=support::receive_hit(a,100.0);
-    assert_eq!((lost,reflected,a.mp,a.hp),(70.0,14.0,0.0,30.0));
+    let (lost,reflected,absorbed)=support::receive_hit(a,100.0);
+    assert_eq!((lost,reflected,absorbed,a.mp,a.hp),(70.0,14.0,30.0,0.0,30.0));
     remove_fixture(g);
 }
 
@@ -946,6 +946,57 @@ fn pvp_fixture()->Game{
     let mut g=game();field(&mut g);g.rooms.get_mut(&2).unwrap().mobs.clear();
     for (&id,a) in &mut g.actors{a.profile.alignment=if id==1{0}else{1};a.profile.series=-1;a.profile.skills[0].cost=0.0;a.profile.skills[0].stun=0.0;a.profile.skills[0].cold=0.0;}
     g.actors.get_mut(&1).unwrap().pvp.enabled=true;g
+}
+#[test]
+fn mana_shield_events_are_separate_from_hp_and_include_refunded_mana() {
+    for (mp,refund,expected_hp,expected_mana) in [(50.0,0.0,0.0,20.0),(5.0,0.0,15.0,5.0),(0.0,0.0,20.0,0.0),(0.0,50.0,10.0,10.0)] {
+        let mut g=pvp_fixture();
+        let mut skill=g.actors[&1].profile.skills[0].clone();skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.crit=0.0;
+        let defender=g.actors.get_mut(&2).unwrap();defender.mp=mp;defender.profile.mp=100.0;
+        defender.profile.protection.mana_shield=100.0;defender.profile.protection.damage_to_mana=refund;
+        let hp=defender.hp;
+        let mut events=vec![];pvp::hit(&mut g,1,2,&skill,&mut events);
+        assert_eq!(hp-g.actors[&2].hp,expected_hp);
+        let mana:Vec<_>=events.iter().filter(|e|e.1==support::MANA_SHIELD_EVENT).collect();
+        assert_eq!(mana.len(),usize::from(expected_mana>0.0));
+        if expected_mana>0.0{assert_eq!((mana[0].2,mana[0].3,mana[0].4,mana[0].5),(1,2,skill.id,expected_mana));}
+        assert_eq!(events.iter().filter(|e|e.1==2).map(|e|e.5).sum::<f32>(),expected_hp);
+        remove_fixture(g);
+    }
+}
+#[test]
+fn monster_mana_absorption_is_reported_even_without_hp_damage() {
+    let mut g=game();field(&mut g);g.actors.retain(|&id,_|id==1);
+    let a=g.actors.get_mut(&1).unwrap();a.profile.defense=0.0;a.profile.res=[0.0;5];
+    a.profile.protection=Default::default();a.profile.protection.mana_shield=100.0;
+    a.profile.mp=500.0;a.mp=500.0;let hp=a.hp;let position=(a.x,a.y);
+    let room=g.rooms.get_mut(&2).unwrap();room.mobs.truncate(1);
+    let m=&mut room.mobs[0];m.x=position.0;m.y=position.1;m.target=1;m.cd=0.0;m.def.damage=20.0;m.def.attack.range=200.0;
+    let mob=m.id;
+    let mut events=vec![];g.advance_monsters(&mut events);
+    assert_eq!(g.actors[&1].hp,hp);assert_eq!(g.actors[&1].mp,480.0);
+    let mana:Vec<_>=events.iter().filter(|e|e.1==support::MANA_SHIELD_EVENT).collect();
+    assert_eq!(mana.len(),1);assert_eq!((mana[0].2,mana[0].3,mana[0].5),(mob,1,20.0));
+    assert!(!events.iter().any(|e|e.1==2&&e.3==1&&e.5>0.0));remove_fixture(g);
+}
+
+#[test]
+fn hao_hung_shield_reports_primary_and_all_three_ray_absorptions_once() {
+    let mut g=pvp_fixture();g.rooms.get_mut(&2).unwrap().mobs.clear();
+    {let a=g.actors.get_mut(&2).unwrap();a.x=250.0;a.y=100.0;a.profile.mp=1000.0;a.mp=1000.0;a.profile.protection.mana_shield=100.0;}
+    let hp=g.actors[&2].hp;
+    let mut skill=g.actors[&1].profile.skills[0].clone();skill.id=1058;skill.range=480.0;skill.accuracy=None;
+    skill.parts=[100.0,0.0,0.0,0.0,0.0];skill.crit=0.0;skill.stun=0.0;skill.cold=0.0;skill.travel=0.4;
+    skill.projectile=Some(LinearProjectile{range:480.0*0.81,width:16.0,speed:648.0,ignore_terrain:false,pierce:false,area:0.0,homing:false});
+    g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.52,origin:(100.0,100.0),aim:None,
+        flight:Some(projectiles::Flight::new((100.0,100.0),(250.0,100.0)))});
+    let mut events=vec![];for _ in 0..80{g.advance_attacks(&mut events);}
+    let mana:Vec<_>=events.iter().filter(|e|e.1==support::MANA_SHIELD_EVENT&&e.3==2).collect();
+    assert_eq!(mana.len(),4);
+    assert_eq!(mana.iter().filter(|e|e.4==1058&&e.5==20.0).count(),1);
+    assert_eq!(mana.iter().filter(|e|e.4==1084&&e.5==4.0).count(),3);
+    assert_eq!(g.actors[&2].mp,968.0);assert_eq!(g.actors[&2].hp,hp);
+    assert!(!events.iter().any(|e|e.1==2&&e.3==2));remove_fixture(g);
 }
 #[test]
 fn slaughter_permissions_use_canonical_color_and_safe_maps(){

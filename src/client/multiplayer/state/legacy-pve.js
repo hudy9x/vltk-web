@@ -177,6 +177,7 @@ var onlineWorld = (() => {
         }
       }
       if (event.kind === 3 && to) MP(to.x, to.y, '#c5a25b');
+      if (event.kind === 8 && to) showDamageNumber(damageRecipient(event.target,to),event.value,'mana',false,' MP');
       if(event.kind===6 && from && typeof $A==='function')$A(from.x,from.y-60,(event.value>0?'✚ ':'')+(T[event.skill]?.n||''),'#8f8',12);
       if(event.kind===6 && from){
         G8(event.skill,from);

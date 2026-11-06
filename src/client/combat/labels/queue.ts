@@ -51,7 +51,7 @@ export function enqueueDamageLabel(labels: FloatingCombatLabel[], target: LabelT
   if (options.quiet || !visible(target, options) || (typeof amount === 'number' && (!Number.isFinite(amount) || amount <= 0))) return;
   const index = indexQueue(labels), crowded = dense(index);
   const status = typeof amount === 'string' ? amount : undefined;
-  const critical = !!options.critical, suffix = options.suffix || '';
+  const critical = kind !== 'mana' && !!options.critical, suffix = kind === 'mana' ? '' : options.suffix || '';
   let stack = index.stacks.get(target) || [];
   // Stale rows can remain in a legacy queue until its next render pass.
   for (const old of stack.slice()) if (old.life <= 0) remove(labels, index, old);
@@ -84,7 +84,7 @@ export function enqueueDamageLabel(labels: FloatingCombatLabel[], target: LabelT
   if (options.merge === false) label.merge = false;
   label.index = ++nextIndex; label.rise = 0;
   label.life = options.lowFx ? DAMAGE_LABEL_LAYOUT.lowFxLifetime : crowded ? BUDGET.denseLifetime : DAMAGE_LABEL_LAYOUT.lifetime;
-  label.t = (label.status ?? String(Math.round(label.amount || 0))) + suffix + (critical ? '!' : '');
+  label.t = (label.status ?? String(Math.round(label.amount || 0))) + suffix;
   if (options.context) measureDamageLabel(label, options.context);
   labels.push(label);
   stack = index.stacks.get(target) || [];

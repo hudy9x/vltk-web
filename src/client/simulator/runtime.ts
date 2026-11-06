@@ -130,7 +130,7 @@ declare function Mw(actor: LegacyEntity, x: number, y: number, distance: number)
 declare function skillCastDistance(actor: CombatTarget, target: CombatTarget): number;
 declare function skillIgnoresTerrain(skill: SimulatorSkill): boolean;
 declare function queueSkillContact(actor: LegacyEntity, target: LegacyEntity, skill: SimulatorSkill, hit: (target: LegacyEntity) => void, options: { targets(): LegacyEntity[]; visual(): unknown }): CombatCast;
-declare function showDamageNumber(target: LegacyEntity, damage: number, kind?: string): unknown;
+declare function showDamageNumber(target: LegacyEntity, damage: number, kind?: string, critical?: boolean, suffix?: string): unknown;
 declare function H8(actor: LegacyEntity, dt: number, action: string): unknown;
 declare function ps(actor: LegacyEntity, action: string): unknown;
 declare function kf(...args: unknown[]): number;
@@ -235,6 +235,8 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     return battlefield?.active && fighter(source) && fighter(target) ? BATTLEFIELD_PVP_DAMAGE : 1;
   }
   const originalHit = hs;
+  type HitDisplay = {kind?: string;critical?: boolean;suffix?: string;mana?: number};
+  const resolvedDisplays = new WeakMap<LegacyEntity, HitDisplay>();
   hs = function (skill, target) {
     if (battlefield?.active && !battlefield.canHit(v, target)) return 0;
     return capture(o.name, target, skill, () => {
@@ -251,8 +253,10 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
         l.P.anti = {}; l.P.antiMax = 0; target.resBrkT = 0;
       }
       const scale = pvpDamageScale(v, target), flat = l.P.series5, proxy = target.hurtProxy;
+      const previousDisplay = target.damageDisplayDeferred, display: HitDisplay = {};
       const defendedSim = target.arenaSim && !target.battlefieldBoss;
       if (defendedSim) target.hurtProxy = true;
+      if (defendedSim || boss) target.damageDisplayDeferred = display;
       let result;
       try {
         if (scale !== 1) step("Hệ số sát thương PvP Tống Kim trước kháng", { scale, parts: skill.parts, seriesFlat: flat || 0 });
@@ -260,11 +264,18 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
         const ability = scale === 1 ? skill : { ...skill, parts: Object.fromEntries(Object.entries(skill.parts).map(([kind, damage]) => [kind, damage * scale])) };
         result = originalHit(boss ? { ...ability, series5: 0 } : ability, target);
       }
-      finally { target.hurtProxy = proxy; l.P.series5 = flat; if (boss) { target.res = resistance; l.P.anti = anti; l.P.antiMax = antiMax; target.resBrkT = breakTime; } }
+      finally { target.hurtProxy = proxy; target.damageDisplayDeferred = previousDisplay; l.P.series5 = flat; if (boss) { target.res = resistance; l.P.anti = anti; l.P.antiMax = antiMax; target.resBrkT = breakTime; } }
       if (defendedSim || boss) {
         const defender = target as SimulatorActor, defense = defender.stats;
-        const resolved = defendedSim ? skillDefense(Math.max(0, before - defender.hp), defense, defender.mana, v.series, Jr) : {damage:Math.max(0,before-defender.hp),mana:defender.mana};
+        const resolved = defendedSim ? skillDefense(Math.max(0, before - defender.hp), defense, defender.mana, v.series, Jr) : {damage:Math.max(0,before-defender.hp),mana:defender.mana,absorbed:0};
         defender.mana = resolved.mana; defender.hp = Math.max(0, before - resolved.damage);
+        display.mana = resolved.absorbed;
+        resolvedDisplays.set(target, display);
+        if (!l.quiet) {
+          showDamageNumber(target,Math.min(before,resolved.damage),display.kind,display.critical,display.suffix);
+          showDamageNumber(target,resolved.absorbed,'mana',false,' MP');
+          resolvedDisplays.delete(target);
+        }
         // Reduce only the newly applied poison, preserving an existing poison pool.
         const addedPoison = Math.max(0, (defender.poison || 0) * (defender.poisonDmg || 0) - poisonBefore);
         const seconds = statusDuration(skill.poisonT || (typeof ve !== 'undefined' ? ve : 4), defense.poisonRed);
@@ -436,7 +447,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
   }
   function playerTarget(actor: SimulatorActor): LegacyEntity {
     const world = battlefield?.active ? battlefieldWorld : l, hero = battlefield?.active ? battlefieldHero : v;
-    return { x: hero.x, y: hero.y, n: previousField?.name || o.name, hp: world.life, max: world.P.life, hurtProxy: true, battlefieldPlayer: true, r: 17, cls: "normal", tid: actor.tid,
+    return { x: hero.x, y: hero.y, n: previousField?.name || o.name, hp: world.life, max: world.P.life, hurtProxy: true, damageDisplayDeferred: {}, battlefieldPlayer: true, r: 17, cls: "normal", tid: actor.tid,
       def: world.P.def, series: world.P.series, res: world.P.res, act: "at", poison: 0, poisonDmg: 0, slowT: 0, stun: 0 };
   }
   function receiveMonsterHit(actor: SimulatorActor, attacker: LegacyEntity): void {
@@ -472,12 +483,16 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     const defense = world.P;
     asSim(actor, () => hs(skill, receiver), true, actor.battlefieldLoadout);
     let damage = Math.max(0, before - receiver.hp);
+    const display: HitDisplay = resolvedDisplays.get(receiver) || receiver.damageDisplayDeferred || {};
+    resolvedDisplays.delete(receiver);
+    let manaAbsorbed = display.mana || 0;
     if (isPlayer) {
       // hs supplies the shared skill/accuracy/resistance calculation. Apply the
       // player's absorption and mana shield using the same order as U9.
       capture(actor.n, { n: receiver.n }, { n: "PK · phòng thủ sau sát thương kỹ năng" }, () => {
         const resolved = skillDefense(damage, defense, world.mana, actor.series, Jr);
         world.mana = resolved.mana; damage = resolved.damage;
+        manaAbsorbed = resolved.absorbed;
         step("PK sau kháng: khiên → hấp thụ → hồi MP → nội lực hộ thân", resolved);
         world.life = Math.max(0, world.life - damage);
         // The disposable receiver has no hurt state; preserve cold-only movement semantics here too.
@@ -498,7 +513,8 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       });
     }
     if (typeof combatLog !== "undefined" && combatLog) combatLog.record(isPlayer ? "in" : "out", isPlayer ? actor : target, Math.min(before, damage), actor.n + " · " + (skill.n || "Đánh thường"));
-    showDamageNumber(isPlayer ? hero : target, Math.min(before, damage));
+    showDamageNumber(isPlayer ? hero : target, Math.min(before, damage),display.kind,display.critical,display.suffix);
+    showDamageNumber(isPlayer ? hero : target,manaAbsorbed,'mana',false,' MP');
     if (isPlayer && world.life <= 0 && battlefield?.running) battlefield.playerDied();
     return damage;
   }

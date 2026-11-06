@@ -185,15 +185,16 @@ impl Game {
 }
 // Incoming monsters currently attack in melee. Reflection uses HP damage after
 // mana shielding, as native U9 does; it never recursively generates another hit.
-pub(super) fn receive_hit(a: &mut Actor, damage: f32) -> (f32, f32) {
+pub(super) const MANA_SHIELD_EVENT: u8 = 8;
+pub(super) fn receive_hit(a: &mut Actor, damage: f32) -> (f32, f32, f32) {
     receive_hit_from(a, damage, -1)
 }
-pub(super) fn receive_hit_from(a: &mut Actor, damage: f32, series: i8) -> (f32, f32) {
+pub(super) fn receive_hit_from(a: &mut Actor, damage: f32, series: i8) -> (f32, f32, f32) {
     let hp = a.hp;
-    let (damage, reflected) = receive_skill_hit(a, damage, series);
-    (damage.min(hp), reflected)
+    let (damage, reflected, absorbed) = receive_skill_hit(a, damage, series);
+    (damage.min(hp), reflected, absorbed)
 }
-pub(super) fn receive_skill_hit(a: &mut Actor, damage: f32, series: i8) -> (f32, f32) {
+pub(super) fn receive_skill_hit(a: &mut Actor, damage: f32, series: i8) -> (f32, f32, f32) {
     let p = &a.profile.protection;
     let mut amount = (damage - damage.min(damage * 0.35).min(p.damage_shield.max(0.0))).max(0.0);
     amount *= 1.0 - p.absorption.clamp(0.0, 60.0) / 100.0;
@@ -206,7 +207,7 @@ pub(super) fn receive_skill_hit(a: &mut Actor, damage: f32, series: i8) -> (f32,
     amount -= shield;
     let reflected = p.reflect.max(0.0) + amount * p.reflect_percent.max(0.0) / 100.0;
     a.hp = (a.hp - amount).max(0.0);
-    (amount, reflected)
+    (amount, reflected, shield)
 }
 
 pub fn replace_base(actor: &mut Actor, profile: Profile) {

@@ -33,7 +33,7 @@ export function configuredMonsterHit(damage: number, element: MonsterBalance['at
   def?: number; res?: Partial<Record<MonsterBalance['attack']['element'], number>>;
   dmgShield?: number; sorb?: number; dmg2mana?: number; manaShield?: number; mana?: number;
   retMelee?: number; retMeleeP?: number;
-}, hp: number, mana: number): { amount: number; mana: number; reflected: number } {
+}, hp: number, mana: number): { amount: number; mana: number; reflected: number; absorbed: number } {
   const clamp=(v:number,min:number,max:number)=>Math.max(min,Math.min(max,v));
   let amount=Math.max(1,Math.max(0,damage)*(element==='phys'?100/(100+Math.max(0,stats.def||0)):1)*(1-clamp(stats.res?.[element]||0,-50,90)/100));
   amount=Math.max(0,amount-Math.min(amount,amount*.35,Math.max(0,stats.dmgShield||0)));
@@ -41,5 +41,5 @@ export function configuredMonsterHit(damage: number, element: MonsterBalance['at
   mana=Math.min(stats.mana||0,mana+amount*Math.max(0,stats.dmg2mana||0)/100);
   const shield=Math.min(mana,amount*clamp(stats.manaShield||0,0,100)/100);
   mana-=shield;amount-=shield;
-  return {amount:Math.min(hp,amount),mana,reflected:Math.max(0,stats.retMelee||0)+amount*Math.max(0,stats.retMeleeP||0)/100};
+  return {amount:Math.min(hp,amount),mana,absorbed:shield,reflected:Math.max(0,stats.retMelee||0)+amount*Math.max(0,stats.retMeleeP||0)/100};
 }

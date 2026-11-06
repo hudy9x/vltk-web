@@ -170,6 +170,7 @@ bằng tốc độ server, tránh kéo nhân vật về snapshot cũ khi gần t
 HIT thêm một byte: bits 0–2 = phys/poison/cold/fire/light (0–4), bit 3 = bạo kích,
 bit 4 = phản ứng hurt, bit 5 = tick độc (không phát hurt/nháy trúng đòn).
 Events CAST=1, HIT=2, DEATH=3, PICKUP=4; client bỏ event ID đã xử lý.
+MANA_SHIELD=8 dùng record Event cơ bản (23 byte, không có byte HIT): `value` là lượng sát thương được nội lực hộ thân hấp thụ bằng MP, kể cả MP vừa được hoàn từ damage. Chỉ dùng để hiện số xanh dương `MP`, không trừ HP/MP lần nữa hoặc ghi thành damage HP. Client và server cần cùng hỗ trợ event này; bố cục packet v8 giữ nguyên.
 Vòng đệm sự kiện ngắn có giới hạn, không dùng làm lịch sử chiến đấu bền vững.
 
 Snapshot đủ state được gửi tin cậy để đơn giản hóa phục hồi. Đây chưa phải delta

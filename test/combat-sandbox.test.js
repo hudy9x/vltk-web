@@ -1224,6 +1224,29 @@ test('Tống Kim skill defense refunds MP before mana shield, for both SIM and p
  assert.ok(Math.abs(s.l.life-2522.2)<1e-8);assert.equal(s.l.mana,0);
 });
 
+test('resolved SIM shield labels split actual HP loss from absorbed MP, including refunded mana',()=>{
+ const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
+ const [defender]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});
+ s.pvpDamageDisplay.set(true);s.l.txt=[];
+ Object.assign(defender.stats,{mana:5491,manaShield:84,dmg2mana:22});defender.hp=defender.max=3227;defender.mana=200;
+ s.hs({...s.l.P.main,parts:{phys:5800},series:0,series5:0},defender);
+ assert.ok(Math.abs(defender.hp-2522.2)<1e-8);assert.equal(defender.mana,0);
+ const labels=s.l.txt.filter(label=>label.target===defender);
+ assert.equal(labels.length,2,'only final HP and MP losses, never provisional damage');
+ assert.ok(Math.abs(labels.find(label=>label.kind==='mana').amount-455.2)<1e-8);
+ assert.equal(labels.find(label=>label.kind==='mana').color,'#4da3ff');
+ assert.ok(Math.abs(labels.find(label=>label.kind==='phys').amount-704.8)<1e-8);
+ s.l.txt=[];
+ Object.assign(s.l.P,{mana:5491,manaShield:84,dmg2mana:22});s.l.life=3227;s.l.mana=200;
+ defender.x=s.v.x;defender.y=s.v.y;defender.cooldown=0;defender.hurtT=0;
+ Object.assign(defender.stats.main,{parts:{phys:5800},series:0,series5:0});
+ s.arenaSimulator.tick(.001);advanceSimulator(s,.6);
+ const incoming=s.l.txt.filter(label=>label.target===s.v);
+ assert.equal(incoming.length,2,'SIM-to-player labels survive the temporary quiet SIM context');
+ assert.ok(Math.abs(incoming.find(label=>label.kind==='mana').amount-455.2)<1e-8);
+ assert.ok(Math.abs(incoming.find(label=>label.kind==='phys').amount-704.8)<1e-8);
+});
+
 test('Tống Kim finite MP pays each cast once and passively recovers without refilling on context swaps',()=>{
  const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
  const [actor]=match.add({team:'jin',faction:'wudang',level:150,strength:'normal',count:1});

@@ -89,7 +89,7 @@ impl Game {
                                 a.profile.defense,
                                 &a.profile.res,
                             );
-                            let (amount,reflected)=support::receive_hit(a,amount);
+                            let (amount,reflected,mana_absorbed)=support::receive_hit(a,amount);
                             if amount>0.0 {a.last_attacker=m.id;a.last_attacker_name=m.def._name.clone();a.last_attacker_player=false;}
                             if reflected>0.0{
                                 let lost=reflected.min(m.hp);m.hp=(m.hp-reflected).max(0.0);m.killer=m.target;
@@ -98,6 +98,9 @@ impl Game {
                             }
                             m.cd = m.def.attack.cooldown;
                             events.push((map, 2, m.id, m.target, 0, amount, m.def.attack.hit_kind()));
+                            if mana_absorbed > 0.0 {
+                                events.push((map,support::MANA_SHIELD_EVENT,m.id,m.target,0,mana_absorbed,0));
+                            }
                             if a.hp <= 0.0 {
                                 a.move_goal = None;
                                 a.dead = self.rules.player_respawn_seconds;

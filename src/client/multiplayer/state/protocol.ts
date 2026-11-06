@@ -186,7 +186,7 @@ export function decodeWorld(bytes: Uint8Array): WorldState {
     }
     if(event.kind===1){event.cast={level:u16(),missiles:bytes[at++],flags:bytes[at++],range:f32(),x:f32(),y:f32(),targetX:f32(),targetY:f32()};
       if(event.cast.level<1||event.cast.missiles<1||event.cast.missiles>16||event.cast.flags>3||event.cast.range<0)throw new Error('Invalid cast visual');}
-    if(event.kind<1||event.kind>7)throw new Error('Invalid world event');return event;
+    if(event.kind<1||event.kind>8)throw new Error('Invalid world event');return event;
   });
   if(at+2>bytes.length)throw new Error('Invalid world size');
   const supportCount=u16();

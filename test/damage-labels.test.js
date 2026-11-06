@@ -16,6 +16,42 @@ function separated(labels){
   assert.ok(Math.abs(a.x-b.x)>=(a.width+b.width)/2 || a.y<=b.y-b.height || b.y<=a.y-a.height,`${a.t} overlaps ${b.t}`);
  }
 }
+test('mana shield numbers are blue, merge separately from HP and never become critical red',()=>{
+ const s=damageScene(),target={x:200,y:200,arenaSim:true,hp:100,mp:500};s.pvpDamageDisplay.set(true);
+ s.showDamageNumber(target,99.5,'mana',true,' MP');s.showDamageNumber(target,.5,'mana',false,' MP');
+ s.showDamageNumber(target,40,'phys');
+ assert.equal(s.l.txt.length,2);
+ const mana=s.l.txt.find(label=>label.kind==='mana');
+ assert.equal(mana.amount,100);assert.equal(mana.t,'100');assert.equal(mana.color,'#4da3ff');assert.equal(mana.critical,false);
+ assert.equal(target.hp,100);assert.equal(target.mp,500);
+ assert.equal(s.l.txt.find(label=>label.kind==='phys').amount,40);
+});
+test('deferred defense proxies cannot display provisional HP damage',()=>{
+ const s=damageScene(),target={x:0,y:0,damageDisplayDeferred:{}};
+ s.showDamageNumber(target,100);assert.equal(s.l.txt.length,0);
+ s.showDamageNumber(target,'Trượt');assert.equal(s.l.txt[0].t,'Trượt');
+ delete target.damageDisplayDeferred;s.showDamageNumber(target,20);s.showDamageNumber(target,80,'mana',false,' MP');
+ assert.equal(s.l.txt.filter(label=>label.kind==='phys'&&!label.status).length,1);
+});
+test('incoming native hits show shield mana rather than net MP change, with full, partial and empty shields',()=>{
+ for(const [mana,refund,hpLoss,mpLoss] of [[100,0,0,100],[0,50,50,50],[0,0,100,0]]){
+  const s=damageScene();s.pvpDamageDisplay.set(true);
+  Object.assign(s,{Math:Object.assign(Object.create(Math),{random:()=>.5}),m0:0,T:{},r0:{1:{anim:{}}},
+   Rn:()=>null,E8(){},Z:(lo,hi)=>(lo+hi)/2,y1:()=>false,ja:damage=>damage,ea:()=>1,
+   W3(){},Dw:{},Yr:75,Pe:()=>100,$d(){}});
+  Object.assign(s.l,{P:{life:1000,mana:1000,manaShield:100,dmg2mana:refund,res:{}},life:1000,mana});
+  s.v={x:0,y:0,act:'at'};
+  const source=fs.readFileSync('src/client/core/state-and-save-01.js','utf8');
+  const node=acorn.parse(source,{ecmaVersion:'latest'}).body.find(n=>n.type==='VariableDeclaration'&&n.declarations.some(d=>d.id.name==='U9'));
+  vm.runInContext(source.slice(node.start,node.end),s);
+  s.U9({x:100,y:0,n:'Quái',hp:1000,max:1000,tid:1,act:'at',res:{},series:0,ar:100,dmg:100});
+  assert.equal(s.l.life,1000-hpLoss);
+  const mp=s.l.txt.filter(label=>label.kind==='mana'),hp=s.l.txt.filter(label=>label.kind!=='mana');
+  assert.equal(mp.length,mpLoss>0?1:0);assert.equal(hp.length,hpLoss>0?1:0);
+  if(mpLoss>0){assert.equal(mp[0].amount,mpLoss);assert.equal(mp[0].color,'#4da3ff');}
+  if(hpLoss>0)assert.equal(hp[0].amount,hpLoss);
+ }
+});
 test('simultaneous hits and status labels at clustered targets occupy separate visible bounds',()=>{
  const s=scene();for(let i=0;i<30;i++)s.$A(200+i%3,200,['518 🛡','1250 ⚡','☠123','Trượt'][i%4],'#fff',i%2?12:16);
  assert.equal(s.l.txt.length,30);separated(s.l.txt);
@@ -37,6 +73,7 @@ test('a burst is summed from raw amounts only for the same recipient, element an
  assert.equal(s.l.txt.length,4);assert.equal(s.l.txt[1].target,b);
  assert.equal(s.l.txt[1].amount,10);assert.equal(s.l.txt[2].amount,10);assert.equal(s.l.txt[3].amount,10);
  assert.equal(s.l.txt[3].color,s.CombatEngine.DAMAGE_LABEL_COLORS.critical);
+ assert.equal(s.l.txt[3].t,'10');
 });
 
 test('newest damage is centered with the largest paint index and older rows stack upward, following a moving target',()=>{

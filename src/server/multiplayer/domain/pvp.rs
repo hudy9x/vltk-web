@@ -168,7 +168,7 @@ pub(super) fn hit(
             element = i;
         }
     }
-    let (amount, _) = support::receive_skill_hit(
+    let (amount, _, mana_absorbed) = support::receive_skill_hit(
         defender,
         resolved.direct.max(0.0),
         skill.pve.as_ref().map_or(-1, |p| p.series),
@@ -229,6 +229,9 @@ pub(super) fn hit(
             amount,
             element as u8 | if critical || fatal { 8 } else { 0 } | if hurt { 16 } else { 0 },
         ));
+    }
+    if mana_absorbed > 0.0 {
+        events.push((map, support::MANA_SHIELD_EVENT, source, target, skill.id, mana_absorbed, 0));
     }
     if amount>0.0 {if let Some(u)=game.battlefield.units.get_mut(&target){u.last_source=source;u.last_hit=game.battlefield.clock;}}
     death(defender, game.rules.player_respawn_seconds);
