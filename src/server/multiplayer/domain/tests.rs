@@ -1908,7 +1908,7 @@ fn ice_peacock_adds_five_ten_percent_shards_per_blade_without_primary_splash() {
 }
 
 #[test]
-fn hao_hung_primary_adds_three_full_damage_fan_rays_once() {
+fn hao_hung_primary_adds_three_twenty_percent_fan_rays_once() {
     for dt in [0.05, 0.4, 2.0] {
         let mut g = piercing_fixture(&[(250.0,100.0),(250.0,100.0),(400.0,100.0),(250.0,145.0)],648.0);
         g.rules.tick_seconds = dt;
@@ -1926,9 +1926,9 @@ fn hao_hung_primary_adds_three_full_damage_fan_rays_once() {
         assert_eq!(events.iter().filter(|e|e.1==2&&e.3==ids[2]&&e.4==1084).count(),1);
         assert!(!events.iter().any(|e|e.1==2&&e.3==ids[2]&&e.4==1058));
         assert!(!events.iter().any(|e|e.1==2&&e.3==ids[3]));
-        assert_eq!(g.rooms[&2].mobs[0].hp,60.0);
-        assert_eq!(g.rooms[&2].mobs[1].hp,60.0);
-        assert_eq!(g.rooms[&2].mobs[2].hp,90.0);
+        assert_eq!(g.rooms[&2].mobs[0].hp,84.0);
+        assert_eq!(g.rooms[&2].mobs[1].hp,84.0);
+        assert_eq!(g.rooms[&2].mobs[2].hp,98.0);
         assert_eq!(g.rooms[&2].mobs[3].hp,100.0);
         assert!(g.pending.is_empty());remove_fixture(g);
     }
@@ -1950,7 +1950,7 @@ fn hao_hung_miss_never_splits_and_children_keep_damage_critical_and_no_accuracy(
                 assert!(!found,"only one split package");found=true;
                 assert_eq!(rays.len(),3);
                 for (index,ray) in rays.iter().enumerate() {
-                    assert_eq!(ray.skill.parts,[25.0,0.0,13.0,0.0,0.0]);assert_eq!(ray.skill.crit,37.0);
+                    assert_eq!(ray.skill.parts,[25.0*0.2,0.0,13.0*0.2,0.0,0.0]);assert_eq!(ray.skill.crit,37.0);
                     assert!(ray.skill.accuracy.is_none());
                     assert!((ray.flight.as_ref().unwrap().angle()-[-std::f32::consts::FRAC_PI_8,0.0,std::f32::consts::FRAC_PI_8][index]).abs()<1e-6);
                 }
@@ -1974,7 +1974,7 @@ fn hao_hung_primary_and_each_split_ray_apply_independent_pvp_damage() {
     let mut events=vec![];for _ in 0..80 {g.advance_attacks(&mut events);}
     assert_eq!(events.iter().filter(|e|e.1==2&&e.3==2&&e.4==1058).count(),1);
     assert_eq!(events.iter().filter(|e|e.1==2&&e.3==2&&e.4==1084).count(),3);
-    assert_eq!(g.actors[&2].hp,120.0);remove_fixture(g);
+    assert_eq!(g.actors[&2].hp,168.0);remove_fixture(g);
 }
 
 #[test]

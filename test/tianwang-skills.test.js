@@ -4,6 +4,32 @@ const native=require('../src/server/multiplayer/definitions/runtime.cjs');
 const catalog=require('../src/server/multiplayer/definitions/catalog.cjs');
 
 const pairs=[[1058,322,1],[1059,323,4],[1060,325,3]];
+test('Hao Hung caps combined critical chance without changing the other Tianwang attacks',()=>{
+  const rows=native.withProgression({fac:'tianwang',lvl:200},s=>{
+    const stats={...s.j0(),wmin:500,wmax:500,physPct:0,skillBonus:{},seriesSkill:0,skillEnh:0,dmgMul:1,add:{},enh:{}};
+    return [0,20,43,44,75].map(crit=>pairs.map(([id])=>s.F2({...stats,crit},s.T[id],25)));
+  });
+  for(const [index,crit] of [0,20,43,44,75].entries()){
+    const [sword,hammer,spear]=rows[index];
+    assert.equal(sword.crit,Math.min(75,crit+32));
+    assert.equal(sword.rad,480);assert.equal(sword.parts.phys,2625);
+    assert.equal(hammer.crit,crit+53);assert.equal(spear.crit,crit+32);
+    // DPS shown by the optimizer must use the same capped chance as combat.
+    assert.ok(Math.abs(sword.dps-rows[0][0].dps*(1+sword.crit/100)/1.32)<1e-6);
+  }
+});
+
+test('online Hao Hung profile caps the real passive plus skill critical chance at 75 percent',()=>{
+  const profile={fac:'tianwang',lvl:200,main:1058,slots:[1058],sk:{24:20,36:30,1058:25},
+    eq:{weapon:{d:0,k:1,lvl:10,base:[],mag:[]}}};
+  const built=native.buildCharacter(profile),skill=built.skills.find(skill=>skill.id===1058);
+  assert.ok(built.stats.crit+32>75,'passive plus skill exceeded the new cap');
+  assert.equal(skill.crit,75);
+  const online=catalog.character(profile,[],false).skills.find(skill=>skill.id===1058);
+  assert.equal(online.crit,75);assert.equal(online.range,480);
+  assert.equal(online.parts[0],skill.parts.phys);
+});
+
 test('three Tianwang 150 skills inherit only attack cadence and missile speed from their matching 8x weapons',()=>{
   const results=native.withProgression({fac:'tianwang',lvl:200},s=>pairs.map(([id,reference])=>{
     const stats={...s.j0(),wmin:500,wmax:500,physPct:0,skillBonus:{},seriesSkill:0,skillEnh:0,dmgMul:1,add:{},enh:{}};

@@ -10,7 +10,9 @@ import type { FactionBuild, LegacyScope } from './types.ts';
 const repositoryRoot = process.cwd();
 const equipmentKind = process.argv[3] || 'blue';
 const skillTier = Number(process.argv[4] || 90);
+const tianwangMain = process.argv[5] ? Number(process.argv[5]) : undefined;
 if (!['blue','gold','thientu'].includes(equipmentKind) || ![90,150].includes(skillTier)) throw new Error('Choose blue/gold/thientu and skill tier 90/150.');
+if (tianwangMain !== undefined && (skillTier !== 150 || ![1058,1059,1060].includes(tianwangMain))) throw new Error('Tianwang main must be 1058/1059/1060 with tier 150.');
 const outputDirectory = path.resolve(process.argv[2] || '/tmp/vltk-sim-balance');
 fs.mkdirSync(outputDirectory, { recursive: true });
 const declarations = collectLegacyDeclarations(path.join(repositoryRoot, 'src/client'));
@@ -86,7 +88,8 @@ nativeGlobals.sandbox = {
 };
 const builds: FactionBuild[] = [];
 for (const factionKey of Object.keys(nativeGlobals.I).filter(factionKey => !nativeGlobals.I[factionKey].novice)) {
-  const profile = nativeScope.battleProfile({ team: 'song', faction: factionKey, level: 150, strength: 'normal', count: 1, equipped: true, equipmentKind, skillTier });
+  const profile = nativeScope.battleProfile({ team: 'song', faction: factionKey, level: 150, strength: 'normal', count: 1, equipped: true, equipmentKind, skillTier },
+    factionKey, false, factionKey === 'tianwang' ? tianwangMain : undefined);
   nativeGlobals.o = profile;
   // Offline generation deliberately runs the native optimizers synchronously.
   // Browser recruitment executes these same functions in its Worker.

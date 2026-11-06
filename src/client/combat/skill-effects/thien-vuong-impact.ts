@@ -62,10 +62,18 @@ function spawnHaoHungImpact(position: WorldPoint): void {
     t: 0, life: yn(sprite), dir: 0, cosmetic: true });
 }
 
-/** Three forward fan blades inherit the primary hit's components and critical chance. */
+export const HAO_HUNG_RAY_DAMAGE = 0.2;
+
+/** Three forward fan blades inherit the primary hit's components and critical chance, scaled to 20% damage. */
 function spawnHaoHungRays(parent: CombatCast, position: WorldPoint): void {
+  const parts = Object.fromEntries(
+    Object.entries(parent.skill.parts || {}).map(([key, value]) => [key, Number(value) * HAO_HUNG_RAY_DAMAGE])
+  );
+  const tot = Object.values(parts).reduce((sum, v) => sum + Number(v), 0);
   const skill = { ...parent.skill, id: 1084, n: 'Hào Hùng Trảm — tầng 2', ev2: true,
-    ev: false, melee: false, useAR: false, geo: { k: 'line' as const, pierce: true, area: 0 } };
+    ev: false, melee: false, useAR: false, hitScale: HAO_HUNG_RAY_DAMAGE,
+    parts, tot,
+    geo: { k: 'line' as const, pierce: true, area: 0 } };
   const sprite = A0.m['advanced-320']?.fly || undefined;
   const reach = (parent.skill.rad || 480) * QA * 0.5, life = reach / (36 * K3);
   const cast = queueSkillContact(parent.actor, position, skill, target => parent.onHit(target, skill), {

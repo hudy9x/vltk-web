@@ -507,8 +507,8 @@
   "1058": {
     "name": "Hào Hùng Trảm",
     "mechanics": [
-      "Tầng 1 (Trảm kích vũ bão): Một tia đao bay thẳng ở mặt đất tới mục tiêu, tầm đánh 480; nhịp đánh và tốc độ đạn theo Phá Thiên Trảm (322).",
-      "Tầng 2 (Hào Hùng Bạo Kích): Khi tia đầu va chạm, tạo 3 tia xòe về phía trước từ cùng điểm va chạm (giữa và ±22,5°) (ID 1084), mỗi tia gây sát thương riêng, cộng dồn với tia đầu. Không yêu cầu độ chính xác."
+      "Tầng 1 (Trảm kích vũ bão): Một tia đao bay thẳng ở mặt đất tới mục tiêu, tầm đánh 480; nhịp đánh và tốc độ đạn theo Phá Thiên Trảm (322). Tổng xác suất bạo kích sau trang bị, hỗ trợ và chiêu thức tối đa 75%, áp dụng cho cả hai tầng.",
+      "Tầng 2 (Hào Hùng Bạo Kích): Khi tia đầu va chạm, tạo 3 tia xòe về phía trước từ cùng điểm va chạm (giữa và ±22,5°) (ID 1084), mỗi tia gây 20% sát thương của tia đầu, cộng dồn khi va chạm. Không yêu cầu độ chính xác."
     ],
     "samples": [
       [

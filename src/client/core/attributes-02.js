@@ -49,7 +49,9 @@ var F2 = function (A, n, t) {
     w = r4(n, t),
     x = n7(n, t),
     p = (b0(n, "skill_cost_v", t) || [0])[0],
-    P = A.crit + (b0(n, "deadlystrike_p", t) || [0])[0],
+    // Hao Hung already has long reach and three independent follow-up contacts.
+    // Cap the combined chance, after equipment/passives and the skill bonus.
+    P = Math.min(+n.id === 1058 ? 75 : Infinity, A.crit + (b0(n, "deadlystrike_p", t) || [0])[0]),
     _ = (b0(n, "attackrating_p", t) || [0])[0] || 0,
     y = (b0(n, "fatallystrike_p", t) || [0])[0] || 0,
     M = (b0(n, "seriesdamage_p", t) || [0])[0],

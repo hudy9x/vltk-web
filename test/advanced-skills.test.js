@@ -1420,7 +1420,7 @@ test('Hao Hung physical reach stays bounded with native, quiet and missing FX at
   }
 });
 
-test('Hao Hung adds exactly three full-strength forward fan rays at first impact in world and SIM',()=>{
+test('Hao Hung adds exactly three 20-percent forward fan rays at first impact in world and SIM',()=>{
   for(const sim of [false,true])for(const mode of ['native','quiet','missing','budget'])for(const dt of [1/60,.4,2]) {
     const {s,skill}=advancedCombat(),ability=skill(1058,25),target={x:220,y:0,hp:100000,r:17};
     const next={x:400,y:0,hp:100000,r:17},side={x:220,y:45,hp:100000,r:17},targets=[target,next,side],hits=[];
@@ -1443,10 +1443,47 @@ test('Hao Hung adds exactly three full-strength forward fan rays at first impact
     assert.equal(secondary.filter(h=>h.t===next).length,1,'only the center ray follows the straight corridor');
     assert.equal(secondary.filter(h=>h.t===side).length,0,'no old radius-96 splash');
     assert.equal(new Set(secondary.map(h=>h.a)).size,1,'one package, no recursive splitting');
-    assert.ok(secondary.every(h=>h.a.id===1084&&h.a.crit===37&&h.a.useAR===false&&h.a.parts===ability.parts));
-    assert.ok(Math.abs(target.hp-(100000-ability.tot*4))<1e-6);
-    assert.ok(Math.abs(next.hp-(100000-ability.tot))<1e-6);
+    assert.ok(secondary.every(h=>h.a.id===1084&&h.a.crit===37&&h.a.useAR===false&&Math.abs(h.a.parts.phys-ability.parts.phys*0.2)<1e-6));
+    assert.ok(Math.abs(target.hp-(100000-ability.tot*1.6))<1e-6);
+    assert.ok(Math.abs(next.hp-(100000-ability.tot*0.2))<1e-6);
     assert.equal(s.l.combatProjectiles.length,0,'every blade expires');
+  }
+});
+
+test('Hao Hung real native damage preserves resistance, critical rolls and flat-series scaling in every layer',()=>{
+  const native=require('../src/server/multiplayer/definitions/runtime.cjs');
+  const built=native.buildCharacter({fac:'tianwang',lvl:200,main:1058,sk:{24:20,36:30,1058:25},
+    eq:{weapon:{d:0,k:1,lvl:10,base:[[28,500,500],[29,500,500]],mag:[]}}});
+  for(const criticalRoll of [.5,.9])for(const series of [0,1])for(const sim of [false,true]){
+    const {s}=advancedCombat(),ability=built.skills.find(skill=>skill.id===1058);
+    s.Math=Object.create(Math);s.Math.random=()=>criticalRoll;
+    for(const name of ['Wt','y1','cw'])declaration(s,'src/client/core/helpers-and-config-01.js',name);
+    for(const name of ['ja','hs'])declaration(s,'src/client/core/state-and-save-01.js',name);
+    Object.assign(s,{Ct:native.damageRules().advantageBonus,ea:()=>1,E8(){},showDamageNumber(){},
+      applyActorHurt:()=>false,applyColdSlow(){},Tt(){}});
+    s.l.P={...built.stats,series5:100};
+    const actor=sim?{x:0,y:0,hp:100}:s.v;
+    const target={x:220,y:0,hp:100000,r:17,series,res:{phys:40,poison:40,cold:40,fire:40,light:40}};
+    const hits=[],hit=(skill,t)=>{const damage=s.hs(skill,t);hits.push({skill,damage});return damage;};
+    if(sim){
+      const {compileTypeScriptEntry}=require('../tools/build-app');
+      vm.runInContext(compileTypeScriptEntry('simulator/skill-cast.ts','HaoHungCast').code,s);
+      s._1=()=>[target];s.F5=()=>[];s.nD=()=>[];s.l8=()=>0;
+      s.HaoHungCast.castSimulatorSkill(actor,target,ability,()=>true,()=>[target],hit,fn=>fn());
+    }else s.queueSkillContact(actor,target,ability,(t,override)=>hit(override||ability,t),{targets:()=>[target],windup:0});
+    finishAttackPose(s,actor);
+    for(let time=0;time<4;time+=1/60)s.advanceSkillContacts(1/60);
+    assert.equal(hits.length,4);assert.equal(hits[0].skill.id,1058);
+    assert.equal(hits[0].skill.crit,75);
+    const advantage=s.y1(ability.series,series);
+    const physical=s.ja(ability.parts.phys,'phys',ability.series,series,target.res,75,ability.series5);
+    const expected=(physical*(criticalRoll<.75?2:1)+(advantage?100:0))*(advantage?1+s.Ct:1);
+    assert.ok(Math.abs(hits[0].damage-expected)<1e-6);
+    for(const hit of hits.slice(1)){
+      assert.equal(hit.skill.id,1084);assert.equal(hit.skill.crit,75);
+      assert.ok(Math.abs(hit.damage-expected*.2)<1e-6,'scale damage and flat-series bonus exactly once');
+    }
+    assert.ok(Math.abs(target.hp-(100000-expected*1.6))<1e-6);
   }
 });
 

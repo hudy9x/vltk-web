@@ -1,8 +1,9 @@
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { collectLegacyDeclarations, createHeadlessGame, installNativeDeclarations } from './legacy-runtime.ts';
-import type { BattleActor, FactionBuild, ProfileDataset, Team } from './types.ts';
+import type { BattleActor, FactionBuild, LegacyScope, ProfileDataset, Team } from './types.ts';
 const require = createRequire(import.meta.url);
 
 /** All scenarios share the same native damage, contact and navigation setup.
@@ -13,11 +14,22 @@ export function createSimulation(outputDirectory: string) {
   const repositoryRoot = process.cwd();
   const dataset = JSON.parse(fs.readFileSync(path.join(outputDirectory, 'profiles.json'), 'utf8')) as ProfileDataset;
   const game = createHeadlessGame(repositoryRoot);
+  // Mechanism fixtures deliberately replace attack phases and movement scale.
+  // Restore the shipped table in place so the engine's existing closures use it.
+  const speedContext: LegacyScope = {};
+  const { compileTypeScriptEntry } = require('../build-app.js') as typeof import('../build-app.js');
+  vm.runInNewContext(compileTypeScriptEntry('speed/config.ts', 'ProductionSpeed').code, speedContext);
+  Object.assign(game.CombatEngine.SPEED_CONFIG, structuredClone(speedContext.ProductionSpeed.SPEED_CONFIG));
+  game.CombatEngine.validateSpeedConfiguration(game.CombatEngine.SPEED_CONFIG);
   Object.assign(game, { T: dataset.T, S: dataset.S, JFX: dataset.JFX, A0: dataset.JFX, JW: { mon: game.r0, anim: {} } });
   Object.assign(game.window, { JFX: dataset.JFX, JW: game.JW });
-  const nativeSymbols = ['b0', 'F5', 'S5', 'l8', 'nD', 'eD', 'y1', 'Z', 'za', 'Rn', 'Jr', 'Ct', 'f8', 'Od', 'Ed', 'cw', 'Qa', 'QA', 'kn', 'G3', 'Be', 'Y3'];
+  // Runtime support refreshes rebuild stats during a duel, so j0 and its weapon
+  // checks must also be native; the fixture's j0 silently returns "Test skill".
+  const nativeSymbols = ['j0', 'j1', 'UA', 'b0', 'F5', 'S5', 'l8', 'nD', 'eD', 'y1', 'Z', 'za', 'Rn', 'Jr', 'Ct', 'f8', 'Od', 'Ed', 'cw', 'Qa', 'QA', 'kn', 'G3', 'Be', 'Y3'];
   for (const symbolName of nativeSymbols) delete game[symbolName];
   installNativeDeclarations(game, collectLegacyDeclarations(path.join(repositoryRoot, 'src/client')));
+  // These scenarios have no connected players supplying shared online auras.
+  game.nm = () => [];
   game.performance = { now: () => game.l.clock * 1000 };
   game.combatLog.simulatorLog.enabled = false;
   game.l.corpses = [];
@@ -44,6 +56,8 @@ export function createSimulation(outputDirectory: string) {
       version: 1, id: 'duel', name: build.name, updatedAt: '', profile,
       autoSkills: false, autoPotential: false, pk: true, farm: false,
     }) as BattleActor;
+    if (actor.stats.main.id !== stats.main.id || actor.stats.main.n !== stats.main.n)
+      throw new Error(`Native skill mismatch for ${build.faction}: ${actor.stats.main.n} vs ${stats.main.n}`);
     Object.assign(actor, { profile, stats, battlefieldTeam: team, battlefieldBoss: false, x: positionX, y: 1792,
       hp: stats.life, max: stats.life, mana: stats.mana, res: stats.res, series: stats.series,
       def: stats.def, ar: stats.ar, look: null, spd: 100 * (stats.speed || 1), r: 17,
