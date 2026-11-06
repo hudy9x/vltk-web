@@ -151,6 +151,8 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
         autosellFlush:()=>OnlineProgression.flush(),
         autosellSweep:async()=>{OnlineLoot.advance(31);await OnlineProgression.flush();},
         autosellFilter:()=>{WA().pickAll=false;},
+        autosellLocal:value=>{o.autoJunk=value;$();},
+        salePreview:()=>{const items=o.inv.filter(it=>!mA(it)&&!Ja(it));return {uids:items.map(it=>it.uid),gold:items.reduce((total,it)=>total+x0(it),0)};},
         itemsAuto:enabled=>{o.autoJunk=false;o.autoEquip=false;WA().auto=enabled;WA().pickAll=true;$();},
         itemsState:()=>({inv:structuredClone(o.inv),eq:structuredClone(o.eq),drops:structuredClone(l.ground),stash:structuredClone(rn().st.items),scene:OnlineLoot.scene()}),
         itemsDungeon:async()=>{
@@ -344,7 +346,38 @@ test('game WebTransport binary: two human accounts, movement, rooms, appearance 
     await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
     state=await page.evaluate(()=>window.__onlineTest.autosellState());assert.equal(state.enabled,false);assert.ok(state.inv.some(it=>it.uid===data.drops[2].it.uid));
     assert.equal(state.inv.filter(it=>data.jewels.some(j=>j.uid===it.uid)).length,6);assert.ok(state.inv.some(it=>it.uid===data.locked.uid));
-    assert.deepEqual(errors,[]);console.log('Auto-sell browser: real checkbox, online sweep, pickup on/off, native exact sale prices, protected equipment, six jewels and reload passed.');return;
+    // Server settings win over a stale browser save on reload.
+    await page.evaluate(()=>window.__onlineTest.autosellLocal(true));
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    assert.equal((await page.evaluate(()=>window.__onlineTest.autosellState())).enabled,false);
+    // Use the actual bag button and confirmation, then reload the sold inventory.
+    await page.keyboard.press('w');
+    const preview=await page.evaluate(()=>window.__onlineTest.salePreview());assert.ok(preview.uids.includes(data.drops[2].it.uid));
+    const beforeManual=await page.evaluate(()=>window.__onlineTest.autosellState());
+    await page.route('**/api/multiplayer/progression',route=>route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'Giao dịch bán bị từ chối để kiểm thử.'})}));
+    await page.locator('#bSellAll').click();await page.locator('#askBox [data-a="1"]').click();
+    await page.evaluate(()=>window.__onlineTest.autosellFlush());
+    state=await page.evaluate(()=>window.__onlineTest.autosellState());
+    assert.equal(state.gold,beforeManual.gold);assert.deepEqual(state.inv,beforeManual.inv,'refused sale leaves the bag unchanged');
+    await page.unroute('**/api/multiplayer/progression');
+    let releaseSale,saleRequested;
+    const heldSale=new Promise(resolve=>{releaseSale=resolve;}),requestedSale=new Promise(resolve=>{saleRequested=resolve;});
+    await page.route('**/api/multiplayer/progression',async route=>{saleRequested();await heldSale;await route.continue();});
+    await page.locator('#bSellAll').click();await page.locator('#askBox [data-a="1"]').click();
+    await requestedSale;
+    try{
+      state=await page.evaluate(()=>window.__onlineTest.autosellState());
+      assert.equal(state.gold,beforeManual.gold);assert.deepEqual(state.inv,beforeManual.inv,'sale waits for the server before removing items');
+    }finally{releaseSale();}
+    await page.waitForFunction(uids=>uids.every(uid=>!window.__onlineTest.autosellState().inv.some(it=>it.uid===uid)),preview.uids);
+    await page.unroute('**/api/multiplayer/progression');
+    state=await page.evaluate(()=>window.__onlineTest.autosellState());
+    assert.equal(state.gold,beforeManual.gold+preview.gold);assert.ok(state.inv.some(it=>it.uid===data.locked.uid));
+    const afterManual=state;
+    await page.reload();await page.waitForFunction(()=>window.__onlineClient?.online,null,{timeout:30000});
+    state=await page.evaluate(()=>window.__onlineTest.autosellState());
+    assert.equal(state.gold,afterManual.gold);assert.deepEqual(state.inv,afterManual.inv);assert.equal(state.enabled,false);
+    assert.deepEqual(errors,[]);console.log('Auto-sell browser: checkbox on/off, online sweep, pickup, native prices, protected items, six jewels, stale settings, bag bulk sale and reload passed.');return;
   }
   if(process.env.WALLET_TEST==='1'){
     const page=a.page;

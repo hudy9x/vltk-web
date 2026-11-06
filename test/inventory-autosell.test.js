@@ -74,3 +74,63 @@ test('a sale that would overflow the safe balance rolls back both item removal a
   assert.deepEqual(f.store.read('one',0),before);
  }finally{f.db.close();}
 });
+
+test('manual bulk sale persists native prices and removals, independently of the auto-sell checkbox',()=>{
+ const f=fixture();try{
+  const before=f.act({kind:'inventoryAutomation',autoJunk:false});
+  const action={kind:'itemSell',uids:[f.weak.uid],bulk:true};
+  const sold=f.act(action,'manual-bulk-once');
+  assert.equal(sold.autoJunk,false);assert.equal(sold.gold,before.gold+f.prices.weak);
+  assert.ok(!sold.inv.some(it=>it.uid===f.weak.uid));
+  assert.deepEqual(sold.inv.map(it=>it.uid),f.protectedUids);
+  assert.deepEqual(f.act(action,'manual-bulk-once'),sold,'retries never credit gold twice');
+  // A stale client save must not resurrect the sold item on reload.
+  f.db.prepare('UPDATE account_storage SET value=? WHERE account_id=?').run(JSON.stringify(f.profile),'one');
+  assert.deepEqual(createCharacters(f.db).read('one',0).profile,sold);
+ }finally{f.db.close();}
+});
+
+test('manual single sale persists and rejects missing, duplicate, locked and protected UIDs atomically',()=>{
+ const f=fixture();try{
+  const before=f.store.read('one',0);
+  const invalid=[
+   {uids:[999999],bulk:false},{uids:[f.weak.uid,f.weak.uid],bulk:true},
+   {uids:[],bulk:true},{uids:['1'],bulk:true},{uids:[f.weak.uid],bulk:'true'},
+   ...f.protectedUids.map(uid=>({uids:[f.weak.uid,uid],bulk:true})),
+   {uids:[f.protectedUids[0]],bulk:false},{uids:[f.protectedUids[5]],bulk:false},
+   {uids:[f.weak.uid,f.protectedUids[1]],bulk:false},
+  ];
+  for(const action of invalid){
+   assert.throws(()=>f.act({kind:'itemSell',...action}));
+   assert.deepEqual(f.store.read('one',0),before);
+  }
+  const sold=f.act({kind:'itemSell',uids:[f.weak.uid],bulk:false},'manual-single-once');
+  assert.equal(sold.gold,100+f.prices.weak);assert.ok(!sold.inv.some(it=>it.uid===f.weak.uid));
+  assert.deepEqual(createCharacters(f.db).read('one',0).profile,sold);
+ }finally{f.db.close();}
+});
+
+test('manual sale overflow rolls back item removal and checkbox settings survive server reload',()=>{
+ const f=fixture();try{
+  for(const enabled of [false,true,false]){
+   const p=f.act({kind:'inventoryAutomation',autoJunk:enabled});
+   assert.equal(createCharacters(f.db).read('one',0).profile.autoJunk,enabled);
+   assert.equal(p.autoJunk,enabled);
+  }
+  const p=f.store.read('one',0).profile;p.gold=Number.MAX_SAFE_INTEGER;p.inv.push(f.incoming);
+  f.db.prepare('UPDATE multiplayer_characters SET profile=? WHERE account=? AND slot=0').run(JSON.stringify(p),'one');
+  const before=f.store.read('one',0);
+  assert.throws(()=>f.act({kind:'itemSell',uids:[f.incoming.uid],bulk:true}),/Số dư/);
+  assert.deepEqual(f.store.read('one',0),before);
+ }finally{f.db.close();}
+});
+
+test('old-client pickup without automation settings retains the saved checkbox preference',()=>{
+ const f=fixture();try{
+  const p=f.act({kind:'lootPickup',dropId:'fixture-drop'});
+  assert.equal(p.autoJunk,true);assert.ok(p.inv.some(it=>it.uid===f.incoming.uid));
+  const sold=f.act({kind:'autoSell',autoJunk:true});
+  assert.ok(!sold.inv.some(it=>it.uid===f.incoming.uid));
+  assert.equal(sold.gold,100+f.prices.weak+f.prices.incoming);
+ }finally{f.db.close();}
+});

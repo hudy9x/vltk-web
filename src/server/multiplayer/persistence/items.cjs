@@ -68,6 +68,22 @@ exports.autoSell=function(p,id,enabled){
     const previous=s.o.gold;return receipt(s,sweep(s),id,previous);
   });
 };
+// A manual sale names owned UIDs only. The server supplies prices and commits
+// the debit and credit together; clients cannot upload replacement inventories.
+exports.sell=function(p,action){
+  return native.withProgression(p,s=>{
+    const {uids,bulk}=action;
+    if(typeof bulk!=='boolean'||!Array.isArray(uids)||!uids.length||uids.length>s.INV_MAX||new Set(uids).size!==uids.length||uids.some(uid=>!Number.isSafeInteger(uid)))fail('Danh sách bán không hợp lệ.');
+    if(!bulk&&uids.length!==1)fail('Chỉ bán một món mỗi lần.');
+    const sold=uids.map(uid=>s.o.inv.find(it=>it.uid===uid));
+    if(sold.some(it=>!it))fail('Không sở hữu vật phẩm bán.');
+    if(sold.some(it=>it.lock||['newbie_token','sim_token','test_token'].includes(it.ktc?.k)||bulk&&s.Ja(it)))fail('Vật phẩm được bảo vệ không thể bán.');
+    const amount=sold.reduce((total,it)=>total+s.x0(it),0),gold=s.o.gold+amount;
+    if(!Number.isSafeInteger(amount)||amount<0||!Number.isSafeInteger(gold)||gold<0)fail('Số dư vượt giới hạn lưu trữ.');
+    s.o.gold=gold;s.o.inv=s.o.inv.filter(it=>!uids.includes(it.uid));
+    return s.o;
+  });
+};
 exports.pickup=function(p,id,commandId,enabled=false){
   return native.withProgression({...p,autoJunk:enabled},s=>{
     const at=(s.o.itemDrops||[]).findIndex(d=>d.id===id&&d.expires>Date.now());

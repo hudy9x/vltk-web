@@ -162,6 +162,11 @@ export function createCharacters(db: DatabaseSync) {
       }else if(intent.kind==='lootPickup'){
         if(intent.autoJunk!==undefined&&typeof intent.autoJunk!=='boolean')throw Object.assign(new Error('Cài đặt tự bán không hợp lệ.'),{status:400});
         profile=items.pickup(saved.profile,intent.dropId,id,intent.autoJunk===true);
+        // Older pickup commands omit this preference; they must not turn off
+        // the checkbox that a newer client already saved on the server.
+        if(intent.autoJunk===undefined)profile.autoJunk=saved.profile.autoJunk!==false;
+      }else if(intent.kind==='itemSell'){
+        profile=items.sell(saved.profile,intent);
       }else if(intent.kind==='autoSell'||intent.kind==='inventoryAutomation'){
         if(typeof intent.autoJunk!=='boolean')throw Object.assign(new Error('Cài đặt tự bán không hợp lệ.'),{status:400});
         profile=items.autoSell(saved.profile,id,intent.autoJunk);

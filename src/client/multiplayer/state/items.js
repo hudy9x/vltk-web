@@ -1,7 +1,7 @@
 // Show server-issued items immediately; durable pickup intents reconcile in the background.
 var OnlineLoot=(()=>{
   const pending=new Set();
-  let lastMove=0,sweepTime=0,selling=false,saleSlot=-1,saleId=null;
+  let lastMove=0,sweepTime=0,selling=false,manualSelling=false,saleSlot=-1,saleId=null;
   const enabled=()=>typeof OnlineProgression!=='undefined'&&OnlineProgression.enabled();
   const scene=()=>l.dg?'dg:'+String(l.dg.id??l.dg.kind):l.tower?'tower:'+l.tower.floor:'map:'+String(Z0.key);
   function sync(){
@@ -84,6 +84,15 @@ var OnlineLoot=(()=>{
     if(!enabled())return Promise.resolve();
     return OnlineProgression.run({kind:'inventoryAutomation',autoJunk:value}).then(sync).catch(error=>k(error.message));
   }
+  async function sell(uids,bulk){
+    if(manualSelling)throw Error('Đang lưu giao dịch bán đồ.');
+    manualSelling=true;
+    try{
+      const selected=o.inv.filter(it=>uids.includes(it.uid));
+      await OnlineProgression.run({kind:'itemSell',uids,bulk});
+      return {n:selected.length,gold:selected.reduce((total,it)=>total+x0(it),0),kept:o.inv.filter(it=>!mA(it)).length};
+    }finally{manualSelling=false;}
+  }
   function stash(){
     // Existing currency/material transfers keep their legacy storage; equipment
     // uses the transactional account stash and can never be overwritten by it.
@@ -100,5 +109,5 @@ var OnlineLoot=(()=>{
     await OnlineProgression.run({kind:'stashWithdraw',stashId:item.stashId});
     return {ok:true,msg:'Lấy ra: '+item.n};
   }
-  return {enabled,scene,sync,drop,pickup,advance,autoSell,setAutoJunk,stash,deposit,withdraw};
+  return {enabled,scene,sync,drop,pickup,advance,autoSell,setAutoJunk,sell,stash,deposit,withdraw};
 })();

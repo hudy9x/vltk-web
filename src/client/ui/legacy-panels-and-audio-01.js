@@ -464,8 +464,9 @@ var Dv = function (A) {
   }
 };
 
-var Pv = function () {
-  const A = o.inv.filter((t) => !mA(t) && !Ja(t));
+var Pv = function (selected) {
+  const A = selected || o.inv.filter((t) => !mA(t) && !Ja(t));
+  if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled())return OnlineLoot.sell(A.map(it=>it.uid),true);
   let n = 0;
   for (const t of A) n += x0(t);
   return (
@@ -486,6 +487,8 @@ var Ef = function (A) {
     k("Món đã khóa: mở khóa trước khi bán");
     return;
   }
+  if(typeof OnlineLoot!=="undefined"&&OnlineLoot.enabled())return OnlineLoot.sell([A.uid],false)
+    .then(()=>{n0();V();return true;}).catch(error=>{k(error.message);return false;});
   ((o.inv = o.inv.filter((n) => n !== A)), (o.gold += x0(A)), (R = !0), n0(), V());
 };
 
@@ -493,7 +496,7 @@ var Sf = async function (A, n) {
   if (!A || !o.inv.includes(A)) return Ef(A);
   if (A.lock) return k("Món đã khóa: mở khóa trước khi bán");
   (await X1(`Bán «${A.n}${A.enh ? " +" + A.enh : ""}» lấy ${q(x0(A))} lượng?`, "Bán", "Hủy")) &&
-    (Ef(A), n && n());
+    ((await Ef(A))!==false && n && n());
 };
 
 var K8 = async function (A) {
@@ -511,8 +514,8 @@ var K8 = async function (A) {
     ))
   )
     return;
-  const e = Pv();
-  A && A(e);
+  try{const e = await Pv(n);A && A(e);}
+  catch(error){k(error.message);}
 };
 
 var xs = function (A) {
