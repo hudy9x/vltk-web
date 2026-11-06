@@ -205,10 +205,21 @@ test('a lone number rises immediately, and measured digits leave exactly 2px bet
  assert.ok(newest.index>old.index);
 });
 
-test('player and SIM damage is hidden by default locally; monster damage stays visible',()=>{
- const s=damageScene(),player={x:0,y:0,playerDamage:true},monster={x:50,y:50};
- assert.equal(s.pvpDamageDisplay.enabled,false);s.showDamageNumber(player,10);assert.equal(s.l.txt.length,0);
- s.showDamageNumber(monster,10);assert.equal(s.l.txt.length,1);
- s.pvpDamageDisplay.set(true);s.showDamageNumber(player,20);assert.equal(s.l.txt.length,1);assert.equal(s.l.txt[0].target,player);
- const other=damageScene();assert.equal(other.pvpDamageDisplay.enabled,false);
+test('system damage switch controls monsters, SIMs and players immediately and stays local',()=>{
+ const storage=new Map(),scope={o:{},l:{txt:[],quiet:false},window:{localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)}}};
+ vm.createContext(scope);loadCombatEngine(scope);
+ const targets=[{x:0,y:0},{x:100,y:0,arenaSim:true},{x:200,y:0,onlinePlayer:true}];
+ assert.equal(scope.pvpDamageDisplay.enabled,true);
+ for(const target of targets)scope.showDamageNumber(target,10);
+ assert.equal(scope.l.txt.length,3);
+ scope.pvpDamageDisplay.set(false);assert.equal(scope.l.txt.length,0,'remove existing numbers immediately');
+ for(const target of targets)scope.showDamageNumber(target,20);
+ assert.equal(scope.l.txt.length,0);
+ scope.pvpDamageDisplay.set(true);
+ for(const target of targets)scope.showDamageNumber(target,30);
+ assert.equal(scope.l.txt.length,3);
+ scope.pvpDamageDisplay.set(false);
+ const reload={o:{},l:{txt:[]},window:scope.window};vm.createContext(reload);loadCombatEngine(reload);assert.equal(reload.pvpDamageDisplay.enabled,false);
+ assert.equal(damageScene().pvpDamageDisplay.enabled,true,'another browser retains its own preference');
+ assert.equal(storage.get('__volam_damage_numbers'),'0');
 });

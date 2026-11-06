@@ -1,7 +1,7 @@
 // Public-room presentation. Commands express intent; only server snapshots change the match.
 var OnlineBattlefield=(()=>{
   let state=null,world=null,sender=()=>0,panel=null,hud=null,table=null,summary={},lastAt=0,requestAt=0,leaving=false,preferPlayers=true,preferenceSent=null,controlsActive=false,recruitment=null,shop=null,shopSlot=0,shopStamp='',shopBusy=false,shopMessage='',respawnNotice=null,rejoinNotice=null;
-  let shownResult=null,configuredDrops,configuredMarshals,configuredSimPerTeam;
+  let shownResult=null,configuredDrops,configuredMarshals,configuredSimPerTeam,configuredSimRecovery,configuredSimRoster;
   let lastKillNotice=0,marshalAnnounced=false,announcementAt=0;
   const bodies=new Map();
   const rank=p=>['Binh sĩ','Hiệu úy','Thống lĩnh','Phó tướng','Đại tướng'][[3000,9000,18000,30000].filter(n=>p>=n).length];
@@ -30,10 +30,26 @@ var OnlineBattlefield=(()=>{
 #public-war-settings .war-settings-body{overflow:auto;min-height:0;flex:1;padding:18px;overscroll-behavior:contain}
 #public-war-settings [role=tabpanel]>h3{margin:0 0 8px;color:#ead48e;font-weight:500}
 #public-war-settings [role=tabpanel]>p{margin:0 0 16px}
+#public-war-settings .sim-subtabs{display:flex;gap:8px;margin:18px 0}.sim-subtabs button{flex:1}
+#public-war-settings .sim-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+#public-war-settings .sim-chip{display:inline-flex;align-items:center;gap:8px;padding:4px 6px 4px 10px;border:1px solid #746d4f;border-radius:5px;background:#393b2b}
+#public-war-settings .sim-chip button{border:0;background:transparent;padding:4px 6px}
+#public-war-settings .sim-slider{display:flex;align-items:center;gap:12px}
+#public-war-settings input[type=range]{flex:1;min-width:0;width:100%;padding:0;accent-color:#cbbb72}
+#public-war-settings output{min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+#public-war-settings .sim-check{display:flex;flex-direction:row;align-items:center;gap:8px;margin-bottom:14px}
 #public-war-settings .war-settings-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;padding:12px 18px;border-top:1px solid #57523b;background:#23251d}
 #public-war-settings .war-settings-footer p{margin:0;font-size:12px}
 #public-war-settings .war-settings-footer button{min-height:40px;border-color:#b6a363;color:#ffe3a0;white-space:nowrap}
-@media(max-width:600px){#public-war-settings{height:90dvh;max-height:90dvh}#public-war-settings .war-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:8px 12px}#public-war-settings .war-tabs button{min-width:0;white-space:normal;padding:7px 4px}#public-war-settings .war-settings-body{padding:12px}#public-war-settings .war-settings-footer{align-items:stretch;flex-direction:column-reverse;padding:10px 12px}}
+@media(max-width:600px){#public-war-settings{height:90dvh;max-height:90dvh}#public-war-settings .war-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:8px 12px}#public-war-settings .war-tabs button{min-width:0;white-space:normal;padding:7px 4px}#public-war-settings .war-settings-body{padding:12px}#public-war-settings .sim-subtabs{display:flex;gap:8px;margin:18px 0}.sim-subtabs button{flex:1}
+#public-war-settings .sim-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+#public-war-settings .sim-chip{display:inline-flex;align-items:center;gap:8px;padding:4px 6px 4px 10px;border:1px solid #746d4f;border-radius:5px;background:#393b2b}
+#public-war-settings .sim-chip button{border:0;background:transparent;padding:4px 6px}
+#public-war-settings .sim-slider{display:flex;align-items:center;gap:12px}
+#public-war-settings input[type=range]{flex:1;min-width:0;width:100%;padding:0;accent-color:#cbbb72}
+#public-war-settings output{min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+#public-war-settings .sim-check{display:flex;flex-direction:row;align-items:center;gap:8px;margin-bottom:14px}
+#public-war-settings .war-settings-footer{align-items:stretch;flex-direction:column-reverse;padding:10px 12px}}
 #public-war-ranking{z-index:100020}
 body.tongkim-controls #modeSw,body.tongkim-controls #rotBtn,body.tongkim-controls #rideBtn{display:none!important}
 #public-war-prefer{display:none;align-items:center;gap:6px;cursor:pointer}
@@ -173,6 +189,54 @@ body.tongkim-controls #public-war-prefer{display:flex}
       });
       panels.get('match').innerHTML=`<h3>Thời lượng trận đấu</h3><p>Thiết lập riêng cho chiến trường PvP và trận riêng.</p><div class="war-grid">${input('Thời lượng PvP (phút)','durationSeconds',(value.durationSeconds??1200)/60,1/6,120)}${input('Thời lượng trận riêng (phút)','privateDurationSeconds',(value.privateDurationSeconds??1200)/60,1/6,120)}</div>`;
       panels.get('sims').innerHTML=`<h3>Quân SIM mỗi phe</h3><p>Số lượng chia đều cho Tống và Kim. Nhập 10 sẽ có 10 Tống + 10 Kim = 20 SIM.</p><div class="war-grid">${input('SIM mỗi bên','simPerTeam',value.simPerTeam??10,0,100)}</div><p>Mỗi đợt 2–4 SIM, cách nhau ngẫu nhiên vài giây; hoàn tất trong tối đa 2 phút. Đặt 0 để không tạo SIM.</p>`;
+      const simPage=panels.get('sims');
+      value.simRoster ||= [];
+      const subnav=document.createElement('div');subnav.className='sim-subtabs';
+      const recoveryPage=document.createElement('section'),rosterPage=document.createElement('section');rosterPage.hidden=true;
+      for(const [index,label]of ['Bơm máu & mana','Đội hình chung hai phe'].entries()){
+        const button=document.createElement('button');button.type='button';button.textContent=label;button.setAttribute('aria-selected',String(index===0));
+        button.onclick=()=>{recoveryPage.hidden=index!==0;rosterPage.hidden=index!==1;for(const [i,tab]of [...subnav.children].entries())tab.setAttribute('aria-selected',String(i===index));};subnav.appendChild(button);
+      }
+      const slider=(label,path,current,min,max,step=1,unit='%')=>`<label>${label}<span class="sim-slider"><input type="range" data-setting="${path}" min="${min}" max="${max}" step="${step}" value="${current}" aria-label="${label}"><output data-sim-value="${path}">${current}${unit}</output></span></label>`;
+      recoveryPage.innerHTML=`<h3>Thuốc cho SIM · dùng chung hai phe</h3><p>Chỉ dùng Ngũ Hoa Ngọc Lộ Hoàn. Một bình hồi cả máu và mana theo chỉ số gốc, chỉ tiêu hao một lần. Mỗi SIM có túi riêng 60 bình.</p><div class="war-grid">${[['life','máu'],['mana','mana']].map(([key,label])=>{
+        const row=value.simRecovery[key],path='simRecovery.'+key;
+        return `<div class="war-card"><label class="sim-check"><input type="checkbox" data-setting="${path}.enabled" ${row.enabled?'checked':''}>Tự bơm theo ${label}</label>${slider('Bắt đầu khi '+label+' ≤',path+'.start',row.start,1,99)}${slider('Bơm đến mức '+label+' ≥',path+'.stop',row.stop,2,100)}${slider('Bơm liên tục khi '+label+' ≤',path+'.urgent',row.urgent,1,99)}</div>`;
+      }).join('')}</div>${slider('Khoảng cách bơm thông thường','simRecovery.interval',value.simRecovery.interval,.3,60,.1,' giây')}<p>Dưới ngưỡng liên tục: uống ngay mỗi khi hết hồi chiêu 0,3 giây. Không uống hai bình cùng lúc.</p>`;
+      recoveryPage.oninput=event=>{
+        const field=event.target;if(field.type!=='range')return;
+        const path=field.dataset.setting,parts=path.split('.');
+        if(parts.length===3){
+          const at=name=>recoveryPage.querySelector(`[data-setting="simRecovery.${parts[1]}.${name}"]`),kind=parts[2];
+          if(kind==='urgent'&&+field.value>+at('start').value)at('start').value=field.value;
+          if(kind==='stop'&&+field.value<=+at('start').value)at('start').value=+field.value-1;
+          if(kind!=='stop'&&+at('start').value>=+at('stop').value)at('stop').value=+at('start').value+1;
+          if(+at('urgent').value>+at('start').value)at('urgent').value=at('start').value;
+        }
+        for(const range of recoveryPage.querySelectorAll('input[type="range"]'))recoveryPage.querySelector(`[data-sim-value="${range.dataset.setting}"]`).textContent=range.value+(range.dataset.setting==='simRecovery.interval'?' giây':'%');
+      };
+      rosterPage.innerHTML='<h3>Đội hình chung · áp dụng cho cả Tống và Kim</h3>';
+      const rosterLabel=document.createElement('label'),chips=document.createElement('div'),routeSelect=document.createElement('select'),rosterSummary=document.createElement('p');chips.className='sim-chips';chips.setAttribute('aria-live','polite');
+      routeSelect.setAttribute('aria-label','Thêm hệ phái và tuyến chiêu');
+      routeSelect.innerHTML='<option value="">+ Chọn hệ phái & tuyến chiêu</option>'+(data.simRoutes||[]).map(route=>`<option value="${escape(route.id)}">${escape(route.name)}</option>`).join('');
+      function renderRoster(){
+        const countField=simPage.querySelector('[data-setting="simPerTeam"]');
+        let count=Number(countField.value||0);const tooSmall=count<value.simRoster.length;
+        countField.min=String(value.simRoster.length);
+        if(tooSmall){count=value.simRoster.length;countField.value=String(count);}
+        rosterLabel.textContent=`Hệ phái & tuyến chiêu · ${value.simRoster.length} / ${count} vị trí mỗi phe`;
+        chips.innerHTML='';
+        for(const [index,id]of value.simRoster.entries()){
+          const route=(data.simRoutes||[]).find(route=>route.id===id);if(!route)continue;
+          const chip=document.createElement('span');chip.className='sim-chip';const text=document.createElement('span');text.textContent=route.name;
+          const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label','Xóa '+route.name);remove.onclick=()=>{value.simRoster.splice(index,1);renderRoster();};chip.append(text,remove);chips.appendChild(chip);
+        }
+        routeSelect.disabled=value.simRoster.length>=count;
+        rosterSummary.textContent=tooSmall?'Xóa bớt badge trước khi giảm số SIM mỗi bên.':`Mỗi phe: ${value.simRoster.length} SIM theo cấu hình + ${count-value.simRoster.length} SIM ngẫu nhiên.`;
+      }
+      routeSelect.onchange=()=>{const count=Number(simPage.querySelector('[data-setting="simPerTeam"]').value||0);if(routeSelect.value&&value.simRoster.length<count)value.simRoster.push(routeSelect.value);routeSelect.value='';renderRoster();};
+      simPage.querySelector('[data-setting="simPerTeam"]').oninput=renderRoster;
+      rosterPage.append(rosterLabel,chips,routeSelect,rosterSummary);const rosterHelp=document.createElement('p');rosterHelp.textContent='Mỗi badge tạo 1 SIM theo tuyến đã chọn ở mỗi phe. Có thể chọn trùng tuyến; nhấn × để xóa và chọn lại.';rosterPage.appendChild(rosterHelp);
+      simPage.append(subnav,recoveryPage,rosterPage);renderRoster();
       panels.get('soldiers').innerHTML='<h3>Binh sĩ chiến trường</h3><p>Số lượng là tổng hai phe. Tối đa 200 binh sĩ; đặt 0 để tắt một cấp quân. Chiêu dùng cấp 50–70.</p>';
       panels.get('marshals').innerHTML='<h3>Nguyên soái · cài đặt chung hai phe</h3><p>Các chỉ số bên dưới áp dụng giống nhau cho cả Tống và Kim. Mỗi phe một Nguyên soái, xuất hiện ở nửa thời lượng trận. Ngũ hành ngẫu nhiên; bộ chiêu gồm 1 chiêu cấp 80, 1 chiêu cấp 150 và 1 phụ trợ cùng hệ.</p>';
       panels.get('drops').innerHTML='<h3>Vật phẩm Quân Nhu</h3>';
@@ -190,7 +254,7 @@ body.tongkim-controls #public-war-prefer{display:flex}
         save.disabled=true;message.textContent='Đang lưu…';
         try{
           for(const field of content.querySelectorAll('[data-setting]')){
-            const parts=field.dataset.setting.split('.');let target=value;for(const part of parts.slice(0,-1))target=target[part];target[parts.at(-1)]=['durationSeconds','privateDurationSeconds'].includes(field.dataset.setting)?Math.round(Number(field.value)*60):Number(field.value);
+            const parts=field.dataset.setting.split('.');let target=value;for(const part of parts.slice(0,-1))target=target[part];target[parts.at(-1)]=['durationSeconds','privateDurationSeconds'].includes(field.dataset.setting)?Math.round(Number(field.value)*60):field.type==='checkbox'?field.checked:Number(field.value);
           }
           value.marshals.jin={...value.marshals.song,res:[...value.marshals.song.res]};
           for(const row of Object.values(value.soldiers))row.skills=row.skills.filter(Boolean);
@@ -205,10 +269,12 @@ body.tongkim-controls #public-war-prefer{display:flex}
     get marshalSettings(){return configuredMarshals;},
     get dropRates(){return configuredDrops;},
     get simPerTeam(){return configuredSimPerTeam;},
+    get simRecovery(){return configuredSimRecovery;},
+    get simRoster(){return configuredSimRoster;},
     async matchDuration(mode='public'){
       const response=await fetch('/api/multiplayer/battlefield-settings'),data=await response.json();
       if(!response.ok)throw new Error(data.error||'Không tải được thời lượng trận từ server.');
-      configuredDrops=data.settings.dropRates;configuredMarshals=data.settings.marshals;configuredSimPerTeam=data.settings.simPerTeam??10;
+      configuredDrops=data.settings.dropRates;configuredMarshals=data.settings.marshals;configuredSimPerTeam=data.settings.simPerTeam??10;configuredSimRecovery=data.settings.simRecovery;configuredSimRoster=data.settings.simRoster;
       return data.settings[mode==='private'?'privateDurationSeconds':'durationSeconds']??1200;
     },
     get active(){return !!state||!!read();},

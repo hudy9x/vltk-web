@@ -48,16 +48,15 @@ var actorAttackTiming = function (actor, skill) {
   return resolveSpeed('attack', Math.max(0, raw + castPenalty) * coldSpeedFactor(player ? l : actor) / recovery * 100);
 };
 var pvpDamageDisplay=(()=>{
-  let enabled=false;try{enabled=window.localStorage?.getItem('__volam_pvp_damage')==='1';}catch{}
-  return {get enabled(){return enabled;},set(value){enabled=!!value;try{window.localStorage?.setItem('__volam_pvp_damage',enabled?'1':'0');}catch{}if(typeof l!=='undefined')l.txt=[];}};
+  let enabled=true;try{enabled=window.localStorage?.getItem('__volam_damage_numbers')!=='0';}catch{}
+  return {get enabled(){return enabled;},set(value){enabled=!!value;try{window.localStorage?.setItem('__volam_damage_numbers',enabled?'1':'0');}catch{}if(typeof l!=='undefined')l.txt=[];}};
 })();
 // Feed raw damage and the recipient into the display queue, after HP is resolved.
 var showDamageNumber = function (target, amount, kind = "phys", critical = false, suffix = "", presentation = {}) {
   if(target?.damageDisplayDeferred && typeof amount==='number'){
     Object.assign(target.damageDisplayDeferred,{kind,critical,suffix});return;
   }
-  const person=target?.playerDamage||target?.arenaSim||target?.onlinePlayer||target?.battlefieldPlayer||(target?.battlefieldKind!==undefined&&target.battlefieldKind<2)||(typeof v!=='undefined'&&target===v);
-  if(person&&!pvpDamageDisplay.enabled)return;
+  if(!pvpDamageDisplay.enabled)return;
   return CombatEngine.enqueueDamageLabel(l.txt || (l.txt = []), target, amount, kind,
     { ...presentation, critical, suffix, quiet: l.quiet, lowFx: o.lowFx, context: typeof W !== "undefined" ? W : undefined,
       priority: typeof v !== "undefined" && target === v ? 3 : target === l.tgt || target === l.manTgt ? 2 : target.cls === "boss" ? 1 : 0,

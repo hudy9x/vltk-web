@@ -35,8 +35,13 @@ pub struct Template {#[serde(default)] pub appearance:Option<SimAppearance>,pub 
 #[serde(rename_all="camelCase")]
 pub struct Soldier {#[serde(default)]pub attack_skills:Vec<Skill>,pub damage:f32,pub defense:f32,pub speed:f32,pub team:String,pub rank:String,pub name:String,pub skin:u32,pub x:f32,pub y:f32,pub hp:f32,pub respawn_seconds:f64,pub patrol_radius:f32,pub leash_radius:f32}
 #[derive(Clone,Debug,Deserialize)]
+pub struct SimRecoveryThreshold {pub enabled:bool,pub start:f32,pub stop:f32,pub urgent:f32}
+#[derive(Clone,Debug,Deserialize)]
+pub struct SimRecovery {pub life:SimRecoveryThreshold,pub mana:SimRecoveryThreshold,pub interval:f64}
+impl Default for SimRecovery {fn default()->Self{serde_json::from_str(include_str!("../../../shared/sim-recovery.json")).expect("SIM recovery")}}
+#[derive(Clone,Debug,Deserialize)]
 #[serde(rename_all="camelCase")]
-pub struct Definition {#[serde(default)]pub marshal_movement_radius:BTreeMap<String,f32>,#[serde(default="default_sim_per_team")]pub sim_per_team:usize,#[serde(default)]pub marshal_variants:BTreeMap<String,Vec<Profile>>,#[serde(default)]pub marshal_skins:Vec<u32>,#[serde(default="default_drop_rates")]pub drop_rates:BTreeMap<String,f64>,#[serde(default)]pub item_kinds:Vec<String>,#[serde(default="default_duration")]pub duration_seconds:f64,#[serde(default)]pub marshal_profiles:BTreeMap<String,Profile>,#[serde(default)] pub potions:Vec<WarPotion>,#[serde(default)] pub sim_support:Vec<SupportSkill>,pub templates:Vec<Template>,pub soldiers:Vec<Soldier>,pub camps:BTreeMap<String,Point>,pub army_spawns:BTreeMap<String,Vec<Point>>,pub marshals:BTreeMap<String,Point>}
+pub struct Definition {#[serde(default)]pub sim_recovery:SimRecovery,#[serde(default)]pub sim_roster:Vec<Template>,#[serde(default)]pub marshal_movement_radius:BTreeMap<String,f32>,#[serde(default="default_sim_per_team")]pub sim_per_team:usize,#[serde(default)]pub marshal_variants:BTreeMap<String,Vec<Profile>>,#[serde(default)]pub marshal_skins:Vec<u32>,#[serde(default="default_drop_rates")]pub drop_rates:BTreeMap<String,f64>,#[serde(default)]pub item_kinds:Vec<String>,#[serde(default="default_duration")]pub duration_seconds:f64,#[serde(default)]pub marshal_profiles:BTreeMap<String,Profile>,#[serde(default)] pub potions:Vec<WarPotion>,#[serde(default)] pub sim_support:Vec<SupportSkill>,pub templates:Vec<Template>,pub soldiers:Vec<Soldier>,pub camps:BTreeMap<String,Point>,pub army_spawns:BTreeMap<String,Vec<Point>>,pub marshals:BTreeMap<String,Point>}
 #[derive(Clone,Debug,Deserialize)]
 pub struct WarPotion {pub level:u16,pub hp:f32,pub mp:f32}
 #[derive(Clone)]
@@ -48,7 +53,7 @@ pub struct Unit {
     pub home:(f32,f32),pub x:f32,pub y:f32,pub hp:f32,pub mp:f32,
     pub ready_at:f64,pub respawn_at:f64,pub respawn_seconds:f64,pub counted:bool,
     pub return_to:Option<ReturnState>,pub skills:Vec<u16>,pub patrol:f32,pub leash:f32,pub patrol_at:f64,pub patrolling:bool,
-    pub bought:[BTreeMap<u16,u32>;2],pub spent:[BTreeMap<u16,u32>;2],pub selected:[u16;2],pub potions:[u32;2],pub potion_at:[f64;2],pub last_hit:f64,pub last_source:u32,
+    pub bought:[BTreeMap<u16,u32>;2],pub spent:[BTreeMap<u16,u32>;2],pub selected:[u16;2],pub potions:[u32;2],pub potion_at:[f64;2],pub recovering:[bool;2],pub last_hit:f64,pub last_source:u32,
 }
 #[derive(Default)]
 pub struct Battlefield {pub sims_spawned:usize,pub next_sim_at:f64,pub kill_notices:Vec<KillNotice>,pub kill_sequence:u32,pub item_drops:Vec<ItemDrop>,pub active_definition:Option<Definition>,pub items:war_items::State,pub definition:Option<Definition>,pub id:u32,pub starts:f64,pub ends:f64,pub clock:f64,pub finished:bool,pub spawned:bool,pub marshals:bool,pub score:[u32;2],pub units:BTreeMap<u32,Unit>}
@@ -94,7 +99,7 @@ impl Game {
             Unit {appearance:None,key,id,name:a.name.clone(),faction:String::new(),sex:0,skin:0,team,kind:0,tier:0,points:0,kills:0,player_kills:0,deaths:0,
                 home,x:home.0,y:home.1,hp:a.profile.hp,mp:a.profile.mp,ready_at:clock+5.0,respawn_at:0.0,respawn_seconds:5.0,counted:false,
                 return_to:Some(ReturnState{map:a.map,x:a.x,y:a.y,hp:a.hp,mp:a.mp,potions:a.profile.potions.clone()}),skills:vec![],patrol:0.0,leash:f32::INFINITY,patrol_at:0.0,patrolling:false,
-                bought:Default::default(),spent:Default::default(),selected:[205,205],potions:[40,40],potion_at:[0.0;2],last_hit:0.0,last_source:0}
+                bought:Default::default(),spent:Default::default(),selected:[205,205],potions:[40,40],potion_at:[0.0;2],recovering:[false;2],last_hit:0.0,last_source:0}
         };
         let mut unit=unit;
         if unit.bought.iter().all(|bag|bag.is_empty()){unit.bought=[BTreeMap::from([(205,40)]),BTreeMap::from([(205,40)])];}
@@ -155,9 +160,9 @@ impl Game {
             if let Some(indices)=sims {
                 for index in indices {
                     let team=(index%2) as u8;let i=index/2;
-                    let t=&definition.templates[i%definition.templates.len()];
+                    let t=if let Some(t)=definition.sim_roster.get(i){t}else{let random=patrol_random(&mut self.rng);&definition.templates[(random*definition.templates.len() as f64) as usize]};
                     let points=&definition.army_spawns[if team==0{"song"}else{"jin"}];let p=&points[i%points.len()];
-                    plans.push((team,1,0,t.name.clone(),t.faction.clone(),t.sex,0,(p.x,p.y),t.profile.clone(),t.skills.clone(),5.0,0.0,f32::INFINITY));
+                    plans.push((team,1,0,t.name.clone(),t.faction.clone(),t.sex,0,(p.x,p.y),t.profile.clone(),t.skills.clone(),5.0,0.0,f32::INFINITY,t.appearance.clone()));
                 }
             } else { for s in definition.soldiers {
                 let tier=match s.rank.as_str(){"captain"=>1,"commander"=>2,"general"=>3,"grandGeneral"=>4,_=>0};
@@ -166,7 +171,7 @@ impl Game {
                 profile.skills.truncate(1);let skill=&mut profile.skills[0];skill.id=0;skill.parts=[s.damage,0.0,0.0,0.0,0.0];skill.pve=None;skill.cost=0.0;skill.range=55.0;skill.geometry=None;skill.radius=0.0;skill.targets=1;skill.projectile=None;skill.attack_percent=None;skill.cooldown=(1.5*(0.85-tier as f32*0.1)).max(0.25);skill.crit=0.0;skill.leech=0.0;skill.mana_leech=0.0;skill.stun=0.0;skill.cold=0.0;skill.poison=0.0;skill.travel=0.0;
                 if !s.attack_skills.is_empty(){profile.skills=s.attack_skills.clone();profile.ally_scaling=None;}
                 let skills=profile.skills.iter().map(|s|s.id).collect();
-                plans.push((u8::from(s.team=="jin"),2,tier,s.name,String::new(),0,s.skin,(s.x,s.y),profile,skills,s.respawn_seconds,s.patrol_radius,s.leash_radius));
+                plans.push((u8::from(s.team=="jin"),2,tier,s.name,String::new(),0,s.skin,(s.x,s.y),profile,skills,s.respawn_seconds,s.patrol_radius,s.leash_radius,None));
             }}
         } else {
             for team in 0..2 {
@@ -175,16 +180,18 @@ impl Game {
                 let skills=profile.skills.iter().filter(|s|s.id!=0).map(|s|s.id).collect();
                 let skin=definition.marshal_skins.get(profile.series.max(0) as usize).copied().unwrap_or(if team==0{144}else{566});
                 let radius=*definition.marshal_movement_radius.get(if team==0{"song"}else{"jin"}).unwrap_or(&500.0);
-                plans.push((team,3,5,"Nguyên soái".into(),String::new(),0,skin,(p.x,p.y),profile,skills,0.0,radius,radius));
+                plans.push((team,3,5,"Nguyên soái".into(),String::new(),0,skin,(p.x,p.y),profile,skills,0.0,radius,radius,None));
             }
         }
-        for (team,kind,tier,name,faction,sex,skin,home,profile,skills,respawn_seconds,patrol,leash) in plans {
+        for (team,kind,tier,name,faction,sex,skin,home,profile,skills,respawn_seconds,patrol,leash,appearance) in plans {
             let id=self.id();let home=self.rooms[&MAP].nav.nearest(home.0,home.1);
             let position=if kind==1{self.battlefield_spawn(team)}else{home};
             let mut a=Actor::new(format!("sim:{id}"),0,profile,MAP,position);
             let patrol_at=self.battlefield.clock+0.4+patrol_random(&mut self.rng)*4.0;
             a.name=name.clone();a.war=Some(Membership{prefer_players:true,team,match_id:self.battlefield.id,ready:true,kind,points:0});support::initialize(&mut a);
-            self.battlefield.units.insert(id,Unit{appearance:if kind==1{definition.templates.iter().find(|t|t.faction==faction).and_then(|t|t.appearance.clone())}else{None},key:format!("sim:{id}"),id,name,faction,sex,skin,team,kind,tier,points:0,kills:0,player_kills:0,deaths:0,home,x:a.x,y:a.y,hp:a.hp,mp:a.mp,ready_at:self.battlefield.starts,respawn_at:0.0,respawn_seconds,counted:false,return_to:None,skills,patrol,leash,patrol_at,patrolling:false,bought:Default::default(),spent:Default::default(),selected:[0,0],potions:[0,0],potion_at:[0.0;2],last_hit:0.0,last_source:0});
+            // Match the offline SIM's private 60-bottle bag; guards and marshals get none.
+            let potions=if kind==1{[30,30]}else{[0,0]};
+            self.battlefield.units.insert(id,Unit{appearance,key:format!("sim:{id}"),id,name,faction,sex,skin,team,kind,tier,points:0,kills:0,player_kills:0,deaths:0,home,x:a.x,y:a.y,hp:a.hp,mp:a.mp,ready_at:self.battlefield.starts,respawn_at:0.0,respawn_seconds,counted:false,return_to:None,skills,patrol,leash,patrol_at,patrolling:false,bought:Default::default(),spent:Default::default(),selected:[0,0],potions,potion_at:[0.0;2],recovering:[false;2],last_hit:0.0,last_source:0});
             self.actors.insert(id,a);
         }
     }
@@ -238,7 +245,7 @@ impl Game {
                 a.path.clear();a.move_goal=None;a.secondary=None;
                 a.pvp=Default::default();a.support=Default::default();support::initialize(a);a.hp=a.profile.hp;a.mp=a.profile.mp;
                 a.life=a.life.wrapping_add(1);a.cold=0.0;a.stun=0.0;a.cooldowns.clear();a.target=0;
-                let u=self.battlefield.units.get_mut(&id).unwrap();u.x=a.x;u.y=a.y;u.counted=false;u.respawn_at=0.0;u.last_source=0;u.last_hit=0.0;u.patrolling=false;u.patrol_at=clock+0.4+patrol_random(&mut self.rng)*4.0;
+                let u=self.battlefield.units.get_mut(&id).unwrap();u.x=a.x;u.y=a.y;u.counted=false;u.respawn_at=0.0;u.recovering=[false;2];u.last_source=0;u.last_hit=0.0;u.patrolling=false;u.patrol_at=clock+0.4+patrol_random(&mut self.rng)*4.0;
             }
         }
         self.refresh_shared_support();
@@ -278,15 +285,36 @@ impl Game {
             let a=self.actors.get_mut(&id).unwrap();
             let selected=u.skills.iter().filter_map(|id|a.profile.skills.iter().find(|s|s.id==*id&&s.cost<=a.mp&&a.cooldowns.get(id).is_none_or(|v|*v<=0.0))).collect::<Vec<_>>();
             if !selected.is_empty(){a.skill=selected[(self.tick as usize/10)%selected.len()].id;}else if let Some(s)=a.profile.skills.first(){a.skill=s.id;}
-            if let Some(p)=enemy {a.target=p.id;a.farming=false;}
+            if u.kind==1&&a.profile.skills.is_empty(){
+                // A dedicated healer follows its own side and supplies native shared auras.
+                a.target=0;a.farming=false;
+                if let Some(ally)=peers.iter().filter(|p|p.id!=id&&p.hp>0.0&&p.war.is_some_and(|w|w.team==u.team&&w.kind<2&&w.ready)).min_by(|p,q|distance(a.x,a.y,p.x,p.y).total_cmp(&distance(a.x,a.y,q.x,q.y))){
+                    if distance(a.x,a.y,ally.x,ally.y)>180.0{a.path=self.rooms[&MAP].nav.path(a.x,a.y,ally.x,ally.y);}else{a.path.clear();}
+                }
+            }else if let Some(p)=enemy {a.target=p.id;a.farming=false;}
             else {a.target=0;if self.tick.is_multiple_of(20)&&u.kind==1 {
                 a.path=self.rooms[&MAP].nav.path(a.x,a.y,fallback.0,fallback.1);
             }}
-            let recovery=self.battlefield.definition.as_ref().map(|d|&d.potions);
-            for kind in 0..2 {let amount=recovery.into_iter().flatten().filter(|p|p.level<=a.profile.level).map(|p|if kind==0{p.hp}else{p.mp}).fold(0.0_f32,f32::max);if amount>0.0&&u.kind==1&&clock>=u.potion_at[kind]&&u.potions[kind]>0&&(if kind==0{a.hp<a.profile.hp*0.5}else{a.mp<a.profile.mp*0.5}) {
-                if kind==0{a.hp=(a.hp+amount).min(a.profile.hp);}else{a.mp=(a.mp+amount).min(a.profile.mp);}
-                let u=self.battlefield.units.get_mut(&id).unwrap();u.potions[kind]-=1;u.potion_at[kind]=clock+0.3;
-            }}
+            if u.kind!=1{continue;}
+            let Some(definition)=self.battlefield.active_definition.as_ref().or(self.battlefield.definition.as_ref())else{continue;};
+            let u=self.battlefield.units.get_mut(&id).unwrap();
+            let thresholds=[&definition.sim_recovery.life,&definition.sim_recovery.mana];
+            let values=[a.hp,a.mp];let maxima=[a.profile.hp,a.profile.mp];
+            let mut urgent=false;
+            for kind in 0..2 {
+                let t=thresholds[kind];
+                if !t.enabled||maxima[kind]<=0.0||values[kind]>=maxima[kind]*t.stop/100.0 {u.recovering[kind]=false;}
+                else if values[kind]<=maxima[kind]*t.start/100.0 {u.recovering[kind]=true;}
+                urgent|=t.enabled&&maxima[kind]>0.0&&values[kind]<=maxima[kind]*t.urgent/100.0;
+            }
+            let interval=if urgent{0.3}else{definition.sim_recovery.interval.max(0.3)};
+            if !u.recovering.iter().any(|active|*active)||clock<u.potion_at[0]+interval{continue;}
+            // Every bottle is Ngũ Hoa Ngọc Lộ Hoàn: both benefits, one debit and one cooldown.
+            let Some(p)=definition.potions.iter().find(|p|p.hp>0.0&&p.mp>0.0&&p.level<=a.profile.level)else{continue;};
+            let Some(slot)=u.potions.iter().position(|&count|count>0)else{continue;};
+            a.hp=(a.hp+p.hp).min(a.profile.hp);a.mp=(a.mp+p.mp).min(a.profile.mp);
+            u.potions[slot]-=1;u.potion_at=[clock;2];
+
         }
     }
     pub(super) fn battlefield_deaths(&mut self) {
@@ -390,6 +418,70 @@ mod tests {
         let clock=now();g.battlefield.starts=clock-1.0;g.battlefield.ends=clock+DURATION;
         for u in g.battlefield.units.values_mut(){u.ready_at=clock-1.0;}
         g.advance_battlefield(clock);
+    }
+    #[test]
+    fn sims_use_combined_potions_with_configured_thresholds_and_no_player_debit() {
+        let mut g=fixture();
+        g.battlefield.definition.as_mut().unwrap().potions=vec![WarPotion{level:1,hp:200.0,mp:150.0}];
+        start(&mut g);
+        let id=g.battlefield.units.values().find(|u|u.kind==1).unwrap().id;
+        assert_eq!(g.battlefield.units[&id].potions,[30,30]);
+        let player_stock=g.battlefield.units[&1].potions;
+        let player_inventory=serde_json::to_value(&g.actors[&1].profile.potions).unwrap();
+        let clock=g.battlefield.clock;
+        let a=g.actors.get_mut(&id).unwrap();a.hp=100.0;a.mp=100.0;
+        g.advance_battlefield(clock);
+        assert_eq!((g.actors[&id].hp,g.actors[&id].mp),(300.0,250.0));
+        assert_eq!(g.battlefield.units[&id].potions,[29,30],"one combined bottle per use");
+        g.advance_battlefield(clock+0.299);
+        assert_eq!((g.actors[&id].hp,g.actors[&id].mp),(300.0,250.0));
+        g.advance_battlefield(clock+0.3);
+        assert_eq!((g.actors[&id].hp,g.actors[&id].mp),(500.0,400.0));
+        // Out of urgency, return to the configured one-second interval.
+        g.advance_battlefield(clock+0.6);
+        assert_eq!((g.actors[&id].hp,g.actors[&id].mp),(500.0,400.0));
+        g.advance_battlefield(clock+1.3);
+        assert_eq!((g.actors[&id].hp,g.actors[&id].mp),(700.0,550.0),"continue past start threshold until stop");
+        g.advance_battlefield(clock+2.3);g.advance_battlefield(clock+3.3);
+        assert_eq!((g.actors[&id].hp,g.actors[&id].mp),(1000.0,850.0));
+        let stock=g.battlefield.units[&id].potions;
+        g.advance_battlefield(clock+4.3);assert_eq!(g.battlefield.units[&id].potions,stock,"stop above target");
+        for n in 5..=65 {let a=g.actors.get_mut(&id).unwrap();a.hp=100.0;a.mp=100.0;g.advance_battlefield(clock+f64::from(n));}
+        assert_eq!(g.battlefield.units[&id].potions,[0,0]);
+        assert_eq!((g.actors[&id].hp,g.actors[&id].mp),(100.0,100.0));
+        g.actors.get_mut(&id).unwrap().hp=0.0;g.battlefield_deaths();
+        let respawn=g.battlefield.units[&id].respawn_at;g.advance_battlefield(respawn+0.01);
+        assert_eq!(g.actors[&id].hp,g.actors[&id].profile.hp);assert_eq!(g.battlefield.units[&id].potions,[0,0]);
+        assert_eq!(g.battlefield.units[&1].potions,player_stock);
+        assert_eq!(serde_json::to_value(&g.actors[&1].profile.potions).unwrap(),player_inventory);
+        assert!(g.outbox.pending.values().all(|r|r.potion.is_none()));
+        g.spawn_battlefield(true,None);
+        assert!(g.battlefield.units.values().filter(|u|u.kind>=2).all(|u|u.potions==[0,0]));
+    }
+    #[test]
+    fn sim_roster_is_shared_by_both_teams_and_uses_match_snapshot() {
+        let mut g=fixture();
+        let definition=g.battlefield.definition.as_mut().unwrap();definition.sim_per_team=3;
+        definition.sim_roster=definition.templates[..2].to_vec();
+        definition.sim_roster[0].name="Configured sword".into();definition.sim_roster[0].skills=vec![80];
+        definition.sim_roster[1].name="Configured healer".into();definition.sim_roster[1].skills.clear();definition.sim_roster[1].profile.skills.clear();
+        definition.potions=vec![WarPotion{level:1,hp:200.0,mp:150.0}];
+        definition.sim_recovery.life.enabled=false;definition.sim_recovery.mana.enabled=false;
+        start(&mut g);
+        g.battlefield.definition.as_mut().unwrap().sim_roster.clear();
+        g.battlefield.definition.as_mut().unwrap().sim_recovery=Default::default();
+        g.advance_battlefield(g.battlefield.starts+121.0);
+        for team in 0..2 {
+            let mut units:Vec<_>=g.battlefield.units.values().filter(|u|u.kind==1&&u.team==team).collect();units.sort_by_key(|u|u.id);
+            assert_eq!(units.len(),3);assert_eq!(units[0].name,"Configured sword");assert_eq!(units[0].skills,vec![80]);
+            assert_eq!(units[1].name,"Configured healer");assert!(g.actors[&units[1].id].profile.skills.is_empty());
+            assert!(units[2].name.starts_with("SIM "),"random remainder uses a native template");
+        }
+        let id=g.battlefield.units.values().find(|u|u.kind==1).unwrap().id;
+        let a=g.actors.get_mut(&id).unwrap();a.hp=100.0;a.mp=100.0;
+        g.advance_battlefield(g.battlefield.clock+1.0);
+        assert_eq!((g.actors[&id].hp,g.actors[&id].mp),(100.0,100.0),"disabled settings survive catalog refresh");
+        assert_eq!(g.battlefield.units[&id].potions,[30,30]);
     }
     #[test]
     fn marshal_element_rolls_each_match_and_is_preserved_until_spawn(){

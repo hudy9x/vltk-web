@@ -169,7 +169,7 @@ export function mountBattlefieldPanel(
         close();return;
       }
       if(online?.active)throw new Error('Rời chiến trường chung trước khi mở trận riêng.');
-      const startPrivate = (duration: number) => {
+      const startPrivate = async (duration: number) => {
         match.configureDeployment(readDeployment());
         host?.configureSoldiers(readSoldiers());
         match.start(input("player").value as Team, undefined, Number(input("map").value || 9003), duration, online?.dropRates);
@@ -178,11 +178,13 @@ export function mountBattlefieldPanel(
         if (count > 0) {
           input("count").value = String(count * 2);
           render();
-          button("add").click();
+          adding=true;render();
+          try{await match.addBothAsync({faction:'shaolin',level:200,strength:'normal',count:count*2,equipped:true,skillTier:150,equipmentKind:'gold',mount:input('mount').value||'random',simRoster:online?.simRoster??[],simRecovery:online?.simRecovery},(done,total)=>{input("error").textContent=`Đang tạo quân ${done}/${total}…`;render();});}
+          finally{adding=false;render();}
         }
       };
       if(online?.matchDuration)return online.matchDuration('private').then(startPrivate);
-      startPrivate(1200);
+      return startPrivate(1200);
     });
   button("reset").onclick = () => act(() => {const online=typeof OnlineBattlefield !== 'undefined' ? OnlineBattlefield : undefined;if(online?.active)online.leave();else match.reset();});
   button('update-monsters').onclick = () => act(() => {
@@ -237,6 +239,7 @@ export function mountBattlefieldPanel(
       await match.addBothAsync(
         {
           compositions: { song: { ...ratios.song }, jin: { ...ratios.jin } },
+          simRecovery: typeof OnlineBattlefield!=='undefined' ? OnlineBattlefield?.simRecovery : undefined,
           faction: "shaolin",
           equipped: input("equipped").checked,
           mount: input("mount").value || "random",

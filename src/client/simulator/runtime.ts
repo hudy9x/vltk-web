@@ -14,6 +14,8 @@ import { createBattlefieldPause } from './battlefield-pause';
 import { chooseWarMount, warMountOptions } from './war-mounts';
 import { mapNpcs } from '../npcs';
 import type { MapDefinition } from '../maps/types';
+import simRoutes from '../../shared/sim-routes.json';
+import { simulatorHealingAura } from './healing-aura';
 import { recoverSimulator } from './recovery';
 import { randomSimulatorClothes } from './appearance';
 import { reflectedSkillDamage } from './reflection';
@@ -104,6 +106,7 @@ declare const OnlineBattlefield:{marshalSettings?:Partial<Record<'song'|'jin',im
 declare function k(message: string): void;
 declare function ma(id: number | string): unknown;
 declare function j2(id: number): number;
+declare function b0(skill: LegacyRecord, attribute: string, level: number): number[] | undefined;
 declare function Kr(faction: Faction): [number, number];
 declare var cw: number, Jr: number, Qa: number, Jn: number, ve: number;
 declare var ja: (base: number, kind: string, from: number, to: number, res: Record<string, number>, cap: number, series: number) => number;
@@ -594,14 +597,20 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     }
     const bodies = battlefield?.active ? [...actors, ...roadMonsters.actors, { ...battlefieldHero, hp: battlefieldWorld.life, dead: !battlefieldWorld.life || battlefieldWorld.deadT > 0 }] : actors;
     crowd.begin(bodies, dt);
+    const healers=actors.filter(actor=>actor.healingAura>0&&!actor.dead&&actor.hp>0);
     for (const actor of [...actors]) {
       if (battlefield?.active && actor.battlefieldTeam) {
         if (!l.enemies.includes(actor)) l.enemies.push(actor);
         if (!battlefield.running || actor.dead || actor.hp <= 0) continue;
-        tickActor(actor, dt); continue;
+        tickActor(actor, dt, healers); continue;
       }
       if (!l.enemies.includes(actor) || actor.dead || actor.hp <= 0) { remove(actor); continue; }
-      if (!l.town && !(l.deadT > 0)) tickActor(actor, dt);
+      if (!l.town && !(l.deadT > 0)) tickActor(actor, dt, healers);
+    }
+    if(battlefield?.running&&battlefieldWorld.life>0&&!(battlefieldWorld.deadT>0)){
+      const recipient={...battlefieldHero,profile:o,hp:battlefieldWorld.life,battlefieldTeam:battlefield.state.team};
+      const healing=simulatorHealingAura(recipient,healers)*dt;
+      if(healing>0)battlefieldWorld.life=Math.min(battlefieldWorld.P.life,battlefieldWorld.life+healing);
     }
     crowd.flush(typeof mapNavigation !== 'undefined' ? mapNavigation.state?.g || null : null);
     if (typeof combatLog !== "undefined" && combatLog?.war) for (const event of warEvents.splice(0)) combatLog.war(event.message,event.sim);
@@ -619,13 +628,13 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     asSim(actor,()=>{const stats=j0();stats.main=resolvedSkill(stats,actor.profile.main);actor.stats=stats;});
     actor.spd=100*(mounted?actor.stats.speed:actor.stats.speedFoot||actor.stats.speed||1);
   }
-  function tickActor(actor: SimulatorActor, dt: number) {
+  function tickActor(actor: SimulatorActor, dt: number, healers: SimulatorActor[]) {
     if (battlefield?.active && actor.target === battlefieldHero && !battlefield.canHit(actor,battlefieldHero)) { actor.target=null; actor.moving=false; }
     actor.resBrkT = Math.max(0, (actor.resBrkT || 0) - dt);
     if (actor.battlefieldTeam && !actor.battlefieldBoss) {
-      actor.hp = Math.min(actor.max, actor.hp + (actor.stats.regen || 0) * dt);
+      actor.hp = Math.min(actor.max, actor.hp + ((actor.stats.regen || 0)+simulatorHealingAura(actor,healers)) * dt);
       actor.mana = Math.min(actor.stats.mana, actor.mana + (actor.stats.manaRegen || 0) * dt);
-      recoverSimulator(actor, dt, S.potions || [], typeof be === 'undefined' ? {} : be, typeof ao === 'undefined' ? 1 : ao);
+      recoverSimulator(actor, dt, S.potions || [], typeof be === 'undefined' ? {} : be, typeof ao === 'undefined' ? .3 : ao, actor.profile.simRecovery);
     } else {
       actor.hp = Math.min(actor.max, actor.hp + (actor.stats.regen || 0) * dt);
       actor.mana = Math.min(actor.stats.mana, actor.mana + (actor.stats.manaRegen || 0) * dt);
@@ -643,6 +652,14 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     if (stunned) { actor.moving = false; return; }
     actor.cooldown = Math.max(0, actor.cooldown - dt);
     if (actorActionLocked(actor)) { actor.moving = false; return; }
+    if(actor.profile.simHealer){
+      const allies:LegacyEntity[]=actors.filter(ally=>ally!==actor&&!ally.battlefieldBoss&&!ally.dead&&ally.hp>0&&ally.battlefieldTeam===actor.battlefieldTeam);
+      if(battlefield?.state.team===actor.battlefieldTeam&&battlefieldWorld.life>0)allies.push(battlefieldHero);
+      const ally=allies.sort((a,b)=>skillCastDistance(actor,a)-skillCastDistance(actor,b))[0];
+      actor.target=ally||null;actor.moving=!!ally&&skillCastDistance(actor,ally)>180;
+      if(ally&&actor.moving){const waypoint=crowd.route(actor,ally,(x,y,tx,ty)=>typeof mapNavigation!=='undefined'?mapNavigation.clear(x,y,tx,ty):mt(x,y,tx,ty));Mw(actor,waypoint.x,waypoint.y,100*actorMovementSpeed(actor)*dt);}
+      return;
+    }
     const targets = availableTargets(actor);
     const hostilePlayer = battlefield?.running && targets.includes(battlefieldHero) && battlefield.canHit(actor,battlefieldHero) ? battlefieldHero : null;
     if (battlefield?.running && actor.battlefieldTeam && !actor.battlefieldBoss) actor.target = targets[0] || null;
@@ -986,16 +1003,19 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     const active = eligible.filter(id => UA(T[id]));
     const preferred = active.filter(id => T[id].tier === (build.skillTier || 90));
     if (!boss && build.skillTier === 150 && !preferred.length) throw new Error('Cấp hiện tại chưa dùng được chiêu 150 của môn phái này.');
-    const selected = main || preferred[Math.floor(Math.random() * preferred.length)] || active[0];
+    const route = simRoutes.find(route => route.id === build.simRoute);
+    const selected = main || route?.attacks[route.attacks.length-1] || preferred[Math.floor(Math.random() * preferred.length)] || active[0];
     // Unarmed builds use the game's basic attack, which has no weapon requirement.
     profile.main = build.equipped === false ? 'basic' : selected || 'basic';
-    profile.mainLock = true; profile.slots = profile.main === 'basic' ? [] : [+profile.main];
+    profile.mainLock = true; profile.slots = profile.main === 'basic' ? [] : route ? [...route.attacks] : [+profile.main];
+    if(route?.healer){profile.main='basic';profile.slots=[];profile.simHealer=true;for(const id of [93,332]){profile.sk[id]=T[id].max;profile.skL[id]={lv:profile.sk[id],xp:0};}profile.skPts=Math.max(0,profile.skPts-40);}
+    if(build.simRecovery)profile.simRecovery=clone(build.simRecovery);
     if (profile.main !== 'basic' && !profile.sk[profile.main]) { profile.sk[profile.main] = 1; profile.skPts = Math.max(0, profile.skPts - 1); }
     const player = o, world = l;
     try {
       o = profile; l = Object.assign({}, world, { quiet: true, sim: true, buffAssume: true, look: null, jx: null, ignoreEqt: null });
       if (build.equipped !== false) {
-        const code = selected ? j1(T[selected]) : null;
+        const code = route ? route.weapon : selected ? j1(T[selected]) : null;
         const weapon: [number, number] = code === null ? Kr(I[faction]) : [code >= 100 ? 1 : 0, code >= 100 ? code - 100 : code === -1 ? 6 : code];
         profile.eq = createArmyEquipment(equipmentTrader, { sex: profile.sex || 0, level: build.level, factionId: Number((I[faction] as unknown as LegacyRecord).id), series: I[faction].series || 0, weapon, points: profile.attrPts, enh: power.enh, strength: build.strength }, G5, V2);
         if (!boss && build.equipmentKind && build.equipmentKind !== 'blue') {
@@ -1098,6 +1118,10 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
         const pending = optimizeProfile(profiles[index],bossElement === undefined);
         if (pending) return pending.then(() => next(index + 1));
       }
+      if(bossElement===undefined){
+        const route=simRoutes.find(route=>route.id===build.simRoute);
+        if(route&&!route.healer)for(const id of route.attacks){const entry=clone(profile);entry.main=id;deck.push(entry);}
+      }
       return {profile,deck};
     }
     return next(0);
@@ -1112,7 +1136,10 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     const actor = create(profile.fac, profile.main, false, false, { version: 1, id: 'battle', name: I[profile.fac].n, updatedAt: '', profile, autoSkills: false, autoPotential: true, pk: true, farm: false });
     if(bossElement===undefined){actor.n=simNames.next(actor.profile.sex);actor.profile.name=actor.n;}
     actor.battlefieldTeam = build.team;
-    if (bossElement === undefined) syncMount(actor);
+    if (bossElement === undefined) {
+      syncMount(actor);
+      if(profile.simHealer){const level=(profile.sk[332]||0)+(actor.stats.plusSkill||0)+(actor.stats.skAdd?.[332]||0);actor.healingAura=level>0?(b0(T[332],'lifereplenish_v',level)?.[0]||0):0;}
+    }
     if (bossElement !== undefined) {
       const ids = SOLDIER_RANK_SKINS.marshal.filter(id => r0[id]);
       const bossId = ids.find(id => j2(id) === bossElement) ?? ids[0];
@@ -1120,6 +1147,8 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       actor.tid = bossId; actor.n = r0[bossId].n; actor.goldBoss = true; actor.cls = 'boss';
       actor.series = bossElement; actor.stats.series = bossElement;
       actor.res = actor.stats.res = Object.fromEntries(['phys', 'cold', 'fire', 'poison', 'light'].map(key => [key, 25]));
+    }
+    if(deck.length) {
       actor.battlefieldDeck = deck.map(profile => {
         let stats!: SimulatorStats;
         asSim(actor, () => { stats = j0(); stats.main = resolvedSkill(stats,profile.main); }, true, {profile,stats:actor.stats});

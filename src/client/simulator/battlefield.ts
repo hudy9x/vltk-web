@@ -1,3 +1,5 @@
+import type { SimRecoverySettings } from './sim-recovery';
+import simRoutes from '../../shared/sim-routes.json';
 import { normalizeMarshalSettings } from './marshal-settings';
 import type { MarshalSettings } from './marshal-settings';
 import { DEFAULT_WAR_DROP_RATES, validateWarDropRates } from './war-drop-settings';
@@ -12,8 +14,8 @@ import type { LegacyEntity, SimulatorActor } from './types';
 
 export type Team = 'song' | 'jin';
 export type Strength = 'weak' | 'normal' | 'strong';
-export interface ArmyBuild { team: Team; faction: string; level: number; strength: Strength; count: number; composition?: Record<string, number>; equipped?: boolean; skillTier?: 90 | 150; equipmentKind?: ArmyEquipmentKind; mount?: string }
-export interface BothArmyBuild extends Omit<ArmyBuild, 'team' | 'composition'> { compositions?: Record<Team, Record<string, number>> }
+export interface ArmyBuild { team: Team; faction: string; level: number; strength: Strength; count: number; composition?: Record<string, number>; equipped?: boolean; skillTier?: 90 | 150; equipmentKind?: ArmyEquipmentKind; mount?: string; simRoute?: string; simRecovery?: SimRecoverySettings }
+export interface BothArmyBuild extends Omit<ArmyBuild, 'team' | 'composition'> { compositions?: Record<Team, Record<string, number>>; simRoster?: string[] }
 export function splitArmyTotal(count: number) {
   if (!Number.isSafeInteger(count) || count < 2 || count > 200 || count % 2) throw new Error('Tổng SIM phải là số chẵn từ 2 đến 200 để chia đều hai phe.');
   return { song: count / 2, jin: count / 2 };
@@ -194,6 +196,15 @@ export function createBattlefield(host: BattlefieldHost) {
   }
   function addBothAsync(build: BothArmyBuild, progress: (added: number, total: number) => void = () => {}, schedule = yieldFrame) {
     const counts = splitArmyTotal(build.count);
+    if(build.simRoster){
+      if(build.simRoster.length>counts.song||build.simRoster.some(id=>!simRoutes.some(route=>route.id===id)))throw new Error('Đội hình vượt số SIM mỗi bên hoặc tuyến chiêu không hợp lệ.');
+      const plan: ArmyBuild[]=[];
+      for(let i=0;i<counts.song;i++)for(const team of ['song','jin'] as const){
+        const route=simRoutes.find(route=>route.id===build.simRoster![i])||simRoutes[Math.floor(Math.random()*simRoutes.length)];
+        plan.push({...build,team,faction:route.faction,count:1,composition:undefined,simRoute:route.id});
+      }
+      return createPlan(plan,progress,schedule);
+    }
     const plans = (['song', 'jin'] as const).map(team => buildPlan({ ...build, team, count: counts[team], composition: build.compositions?.[team] }));
     // Alternate sides so a long creation batch never gives one army an early advantage.
     return createPlan(plans[0].flatMap((item,index) => [item, plans[1][index]]), progress, schedule);

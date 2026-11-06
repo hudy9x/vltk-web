@@ -235,7 +235,7 @@
     assert.equal(rewards.state.points, 300);
   });
 
-  test("recruitment offers battlefield selection and joins the selected map/team only after pressing Join", () => {
+  test("recruitment offers battlefield selection and joins the selected map/team only after pressing Join", async () => {
     const { createHeadlessGame } = require("../tools/sim-balance/legacy-runtime.ts");
     for (const mapId of [9003]) for (const team of ["song", "jin"]) {
       const game = createHeadlessGame(process.cwd()), simulator = game.arenaSimulator;
@@ -259,8 +259,13 @@
       assert.equal(field("map").value, String(mapId));
       assert.equal(field("player").value, team);
       assert.equal(simulator.battlefield.active, false, "choosing a map does not start a match");
+      const recruitment:any[]=[];
+      simulator.battlefield.addBothAsync=(build:any)=>{recruitment.push(build);return Promise.resolve([]);};
       field("start").onclick();
+      await new Promise(resolve=>setImmediate(resolve));
       assert.equal(field("error").textContent, "");
+      assert.equal(recruitment.length,1);assert.equal(recruitment[0].count,20);
+      assert.deepEqual(Array.from(recruitment[0].simRoster),[]);assert.equal(recruitment[0].level,200);
       assert.equal(simulator.battlefield.running, true);
       assert.equal(simulator.battlefield.state.mapId, mapId);
       assert.equal(simulator.battlefield.state.team, team);

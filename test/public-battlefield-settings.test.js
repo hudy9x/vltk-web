@@ -128,3 +128,43 @@ test('marshal defaults migrate old saves and validate percentage and movement se
   }
  }
 });
+
+test('SIM settings migrate old saves, validate recovery and limit a shared roster without removing duplicates',()=>{
+ const defaults=config.defaults();assert.deepEqual(defaults.simRoster,[]);
+ const old=structuredClone(defaults);delete old.simRoster;delete old.simRecovery;
+ assert.deepEqual(config.validate(old).simRecovery,defaults.simRecovery);
+ const roster=['emei-sword','emei-healer','tianwang-spear','tianwang-blade','tianren-blade','emei-sword'];
+ assert.deepEqual(config.validate({...defaults,simPerTeam:6,simRoster:roster}).simRoster,roster);
+ for(const bad of ['bad',{},['invalid-route'],Array(11).fill('emei-sword')])assert.throws(()=>config.validate({...defaults,simRoster:bad}),/Đội hình/);
+ for(const rule of [{enabled:1,start:50,stop:80,urgent:30},{enabled:true,start:50,stop:50,urgent:30},{enabled:true,start:50,stop:80,urgent:51},{enabled:true,start:50.5,stop:80,urgent:30}])assert.throws(()=>config.validate({...defaults,simRecovery:{...defaults.simRecovery,life:rule}}),/Ngưỡng/);
+ for(const interval of [0,.299,61,NaN,'1'])assert.throws(()=>config.validate({...defaults,simRecovery:{...defaults.simRecovery,interval}}),/Khoảng cách/);
+ assert.equal(config.validate({...defaults,simPerTeam:0}).simRoster.length,0);
+});
+
+test('all SIM routes build native equipment and skill decks; fixed combined potion and saved roster reach world definition',()=>{
+ const factory=require('../src/server/multiplayer/definitions/battlefield.cjs'),routes=config.options().simRoutes;
+ for(const route of routes){
+   const built=factory.template(route);
+   assert.equal(built.faction,route.faction);assert.deepEqual(built.skills,route.attacks,route.name);
+   assert.equal(built.profile.level,200);assert.ok(built.appearance);assert.ok(built.equipment.weapon);
+   if(route.weapon!==null)assert.equal(built.equipment.weapon.k,route.weapon>=100?route.weapon-100:route.weapon===-1?6:route.weapon,route.name);
+   for(const id of route.attacks){assert.ok(built.profile.skills.some(s=>s.id===id),route.name+' '+id);}
+   if(route.healer){assert.equal(built.profile.skills.length,0);assert.ok(built.profile.support.skills.some(s=>s.id===332&&s.aura&&s.enabled));assert.ok(built.profile.support.skills.some(s=>s.id===93&&s.heal>0));}
+   if(route.id==='emei-sword')assert.ok(built.profile.skills.find(s=>s.id===1061).followups.length,'retains native damage layers');
+ }
+ const db=new DatabaseSync(':memory:');try{
+   const store=createPublicBattlefieldSettings(db),value=store.read();value.simRoster=['emei-healer','tianwang-spear','emei-healer'];value.simRecovery.life.start=45;value.simRecovery.interval=1.7;
+   const base={battlefield:factory.definition()};store.save(value,base);
+   const world=createPublicBattlefieldSettings(db).world(base).battlefield;
+   assert.deepEqual(world.simRecovery,value.simRecovery);assert.equal(world.simRoster.length,3);assert.equal(world.simRoster[0].name,'Nga Mi buff máu');assert.deepEqual(world.simRoster[1].skills,[323,1060]);
+   assert.deepEqual(world.potions,[{level:1,hp:5000,mp:5000}]);
+ }finally{db.close();}
+});
+
+test('private battlefield reads the shared roster and recovery together with its match duration',async()=>{
+ const vm=require('node:vm'),fs=require('node:fs');const settings=config.defaults();settings.simPerTeam=7;settings.simRoster=['emei-healer','tianren-blade'];settings.simRecovery.mana.enabled=false;
+ const scope={window:{},fetch:async()=>({ok:true,json:async()=>({settings})})};
+ vm.runInNewContext(fs.readFileSync('src/client/multiplayer/state/battlefield.js','utf8'),scope);
+ assert.equal(await scope.OnlineBattlefield.matchDuration('private'),1200);
+ assert.equal(scope.OnlineBattlefield.simPerTeam,7);assert.deepEqual(scope.OnlineBattlefield.simRoster,settings.simRoster);assert.deepEqual(scope.OnlineBattlefield.simRecovery,settings.simRecovery);
+});

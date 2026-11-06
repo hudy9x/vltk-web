@@ -1,5 +1,7 @@
 // Global public-room configuration. Only validated native skill IDs cross the API.
 const native=require('./runtime.cjs');
+const simRecovery=require('../../../shared/sim-recovery.json');
+const simRoutes=require('../../../shared/sim-routes.json');
 const defaultDrops=require('../../../shared/war-drop-rates.json');
 const marshalDefaults=require('../../../shared/marshal-settings.json');
 const catalog=require('./catalog.cjs');
@@ -10,13 +12,24 @@ let options;
 function skillOptions(){
   return options ||= native.withProgression({fac:'shaolin',lvl:200},s=>Object.values(s.I).flatMap(f=>f.skills.map(id=>s.T[id]).filter(row=>row&&s.UA(row)&&((row.req>=50&&row.req<=70)||[90,150].includes(row.tier))).map(row=>({id:row.id,name:f.n+' · '+row.n,element:f.series,level:row.req,tier:row.tier,faction:f.key,icon:row.ic||''}))));
 }
-function defaults(){return {simPerTeam:10,durationSeconds:1200,privateDurationSeconds:1200,dropRates:{...defaultDrops},soldiers:Object.fromEntries(ranks.map((rank,i)=>[rank,{count:[50,10,6,4,0][i],hp:[50000,60000,80000,100000,120000][i],skills:[],respawnSeconds:20,patrolRadius:180,leashRadius:800}])),marshals:{song:{...marshalDefaults,hp:200000,res:[35,35,35,35,35]},jin:{...marshalDefaults,hp:200000,res:[35,35,35,35,35]}}};}
+function defaults(){return {simPerTeam:10,simRoster:[],simRecovery:structuredClone(simRecovery),durationSeconds:1200,privateDurationSeconds:1200,dropRates:{...defaultDrops},soldiers:Object.fromEntries(ranks.map((rank,i)=>[rank,{count:[50,10,6,4,0][i],hp:[50000,60000,80000,100000,120000][i],skills:[],respawnSeconds:20,patrolRadius:180,leashRadius:800}])),marshals:{song:{...marshalDefaults,hp:200000,res:[35,35,35,35,35]},jin:{...marshalDefaults,hp:200000,res:[35,35,35,35,35]}}};}
 function validate(value){
   const result=defaults(),valid=(x,min,max)=>Number.isFinite(x)&&x>=min&&x<=max;
   if(!value||!value.soldiers||!value.marshals)throw new Error('Thiếu cấu hình chiến trường.');
   const simPerTeam=value.simPerTeam??10;
   if(!Number.isSafeInteger(simPerTeam)||simPerTeam<0||simPerTeam>100)throw new Error('SIM mỗi bên: số nguyên từ 0 đến 100.');
   result.simPerTeam=simPerTeam;
+  const roster=value.simRoster??[];
+  if(!Array.isArray(roster)||roster.length>simPerTeam||roster.some(id=>!simRoutes.some(route=>route.id===id)))throw new Error('Đội hình SIM không hợp lệ hoặc vượt số SIM mỗi bên.');
+  result.simRoster=[...roster];
+  const recovery=value.simRecovery??simRecovery;
+  if(!recovery||!valid(recovery.interval,0.3,60))throw new Error('Khoảng cách bơm SIM: từ 0,3 đến 60 giây.');
+  result.simRecovery={interval:recovery.interval};
+  for(const key of ['life','mana']){
+    const row=recovery[key];
+    if(!row||typeof row.enabled!=='boolean'||!Number.isInteger(row.start)||!Number.isInteger(row.stop)||!Number.isInteger(row.urgent)||!valid(row.urgent,1,row.start)||!valid(row.start,1,99)||!valid(row.stop,row.start+1,100))throw new Error('Ngưỡng bơm SIM: liên tục ≤ bắt đầu < mức dừng ≤ 100%.');
+    result.simRecovery[key]={enabled:row.enabled,start:row.start,stop:row.stop,urgent:row.urgent};
+  }
   for(const key of ['durationSeconds','privateDurationSeconds']){
     const seconds=value[key]??1200;
     if(!Number.isSafeInteger(seconds)||seconds<10||seconds>7200)throw new Error('Thời lượng trận: từ 10 đến 7.200 giây.');
@@ -70,6 +83,8 @@ function configure(base,value){
   const settings=validate(value),definition=structuredClone(base);
   definition.durationSeconds=settings.durationSeconds;
   definition.simPerTeam=settings.simPerTeam;
+  definition.simRecovery=settings.simRecovery;
+  definition.simRoster=settings.simRoster.map(id=>require('./battlefield.cjs').template(simRoutes.find(route=>route.id===id)));
   definition.dropRates=settings.dropRates;
   const itemScope={};require('node:vm').runInNewContext(require('../../../../tools/build-app.js').compileTypeScriptEntry('simulator/war-rewards.ts','Items').code,itemScope);
   definition.itemKinds=Object.keys(itemScope.Items.WAR_ITEMS);
@@ -120,4 +135,4 @@ function configure(base,value){
   definition.marshalSkins=Array.from({length:5},(_,element)=>skins.marshal.find(id=>monsters[id]&&native.monsterSeries(id)===element)||skins.marshal[0]);
   return definition;
 }
-exports.defaults=defaults;exports.validate=validate;exports.configure=configure;exports.options=()=>({ranks,titles,resistances,skills:skillOptions()});
+exports.defaults=defaults;exports.validate=validate;exports.configure=configure;exports.options=()=>({ranks,titles,resistances,skills:skillOptions(),simRoutes});

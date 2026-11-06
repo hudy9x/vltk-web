@@ -246,7 +246,6 @@ var gameMaster = (function () {
   panel.innerHTML = `<header id="gm-header"><span>GameMaster</span><button type="button" data-gm-close aria-label="Đóng GameMaster" title="Đóng">×</button></header>
     <div id="gm-content">
     <label id="gm-range-label"><input type="checkbox" id="gm-show-range">Hiển thị tầm tung chiêu (xanh)</label>
-    <label><input type="checkbox" id="gm-pvp-damage" ${typeof pvpDamageDisplay!=="undefined"&&pvpDamageDisplay.enabled?"checked":""}>Hiển thị sát thương người chơi / SIM (chỉ máy này)</label>
     <label id="gm-damage-label" title="Vùng màu cam: vùng va chạm của chiêu đang hoạt động, gồm cả SIM. Chưa cộng kích thước thân mục tiêu."><input type="checkbox" id="gm-show-damage">Hiển thị vùng sát thương (cam)</label>
     ${window.localGameConfig?.development?'<button type="button" data-gm="trainingTokens">Nhận Lệnh bài SIM + Test (online)</button>':''}
     <button type="button" data-gm="level150">Tăng nhân vật lên cấp 150</button>
@@ -271,7 +270,6 @@ var gameMaster = (function () {
     toggle.setAttribute("aria-expanded", String(!panel.hidden));
   };
   panel.onchange = (event) => {
-    if(event.target.id==="gm-pvp-damage")pvpDamageDisplay.set(event.target.checked);
     if (event.target.id === "gm-show-range") showSkillRange = event.target.checked;
     if (event.target.id === "gm-show-damage") showDamageAreas = event.target.checked;
   };

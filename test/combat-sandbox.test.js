@@ -1321,16 +1321,16 @@ test('Vô Hình Độc uses the PvP coefficient and poison duration reduction wi
 test('Tống Kim SIMs drink their own potions, respect cooldown and never consume player bottles',()=>{
   const s=battlefieldGame(),match=s.arenaSimulator.battlefield;match.start('song');s.arenaSimulator.tick(5);
   const [actor]=match.add({team:'song',faction:'wudang',level:150,strength:'normal',count:1});
-  s.S.potions=[{kind:'life',tier:1,total:200},{kind:'mana',tier:1,total:60}];s.be={1:1};s.ao=.3;
+  s.S.potions=[{kind:'both',tier:5,total:200,mtotal:60}];s.be={5:1};s.ao=.3;
   actor.hp=100;actor.mana=0;actor.stats.main.cost=20;actor.cooldown=9999;
   const playerHP=s.l.life,playerMP=s.l.mana;
   s.arenaSimulator.tick(.01);
-  assert.equal(actor.hp,300);assert.equal(actor.potionBag.life,29);assert.equal(actor.potionBag.mana,29);
+  assert.equal(actor.hp,300);assert.equal(actor.potionBag.life,29);assert.equal(actor.potionBag.mana,30);
   const mana=actor.mana;
   s.arenaSimulator.tick(.1);assert.equal(actor.hp,300);assert.equal(actor.potionBag.life,29);assert.ok(actor.mana>=mana);
   s.arenaSimulator.tick(.21);assert.equal(actor.hp,500);assert.equal(actor.potionBag.life,28);
   assert.equal(s.l.life,playerHP);assert.equal(s.l.mana,playerMP);
-  actor.potionBag.life=0;actor.hp=10;s.arenaSimulator.tick(.5);assert.equal(actor.hp,10);
+  actor.potionBag.life=0;actor.potionBag.mana=0;actor.hp=10;s.arenaSimulator.tick(.5);assert.equal(actor.hp,10);
 });
 
 test('Tống Kim direct hits trigger SIM reflection once after defenses and never recurse',()=>{
@@ -1657,4 +1657,27 @@ test('arena restores the equipped Thien Tu weapon across profile switches and re
   assert.deepEqual(JSON.parse(JSON.stringify(saved.state.eq.weapon)), weapon);
   reloaded.combatSandbox.selectSkill(skill);
   assert.equal(reloaded.o.eq.weapon.n, 'Training weapon', 'explicit skill selection still provisions its training weapon');
+});
+
+test('selected Nga Mi healing route restores allied SIM and player HP with the native aura and does not attack',()=>{
+ const s=battlefieldGame(),sim=s.arenaSimulator,war=sim.battlefield;war.start('song');sim.tick(5);
+ for(const name of ['mw','ww','b0'])loadDeclaration(s,'src/client/core/helpers-and-config-01.js',name);
+ const recovery={life:{enabled:false,start:50,stop:80,urgent:30},mana:{enabled:false,start:40,stop:80,urgent:20},interval:1};
+ const [healer]=war.add({team:'song',faction:'emei',level:200,strength:'normal',count:1,simRoute:'emei-healer',simRecovery:recovery});
+ const [ally]=war.add({team:'song',faction:'wudang',level:200,strength:'normal',count:1,simRecovery:recovery});
+ assert.ok(healer.profile.sk[332]>0);assert.ok(healer.healingAura>0);
+ for(const actor of [healer,ally])Object.assign(actor,{x:500,y:500,cooldown:9999});
+ Object.assign(s.v,{x:500,y:500});s.l.life=100;s.l.P.life=100000;
+ ally.hp=100;ally.max=100000;ally.stats.regen=0;
+ const rate=healer.healingAura;sim.tick(.1);
+ assert.ok(Math.abs(ally.hp-(100+rate*.1))<1e-6);assert.ok(Math.abs(s.l.life-(100+rate*.1))<1e-6);
+ assert.equal(healer.casts||0,0);assert.equal(healer.profile.simHealer,true);
+ ally.hp=100;ally.stats.regen=0;healer.x=1500;healer.stun=1;sim.tick(.1);assert.equal(ally.hp,100,'a distant healer cannot restore HP');
+});
+
+test('selected Nga Mi sword route retains both native attack tiers with one equipment and potential allocation',()=>{
+ const s=battlefieldGame(),war=s.arenaSimulator.battlefield;war.start('song');s.arenaSimulator.tick(5);
+ const [actor]=war.add({team:'song',faction:'emei',level:200,strength:'normal',count:1,simRoute:'emei-sword'});
+ assert.deepEqual(Array.from(actor.battlefieldDeck,entry=>+entry.profile.main),[328,1061]);
+ for(const entry of actor.battlefieldDeck){assert.equal(entry.profile.eq.weapon.k,0);assert.deepEqual(entry.profile.attr,actor.profile.attr);assert.equal(entry.stats.main.id,entry.profile.main);}
 });

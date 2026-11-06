@@ -673,7 +673,9 @@ var Ao = function () {
       <div class="row">Cỡ chữ <select id="uFs">${l5.map((t, e) => `<option value="${e}" ${Pi().fs === e ? "selected" : ""}>${B_[e]}</option>`).join("")}</select> <small class="dim">áp dụng cho bảng thông tin, thẻ và hộp thoại</small></div>
       <label><input type="checkbox" id="uSaver" ${Pi().saver ? "checked" : ""}> Tiết kiệm pin (vẽ 30 khung/giây, ngừng vẽ khi ẩn tab)</label>
       <small class="dim">Tay cầm: cần analog / D-pad để đi, A B X Y dùng chiêu 1–4, LB / RB uống thuốc HP / MP. Phím Esc đóng hộp thoại.</small></div>
-    <h3>Điều khiển & Hiển thị</h3><div class="card">
+    <h3>Điều khiển & Hiển thị</h3><div class="card lootf">
+      <label><input type="checkbox" id="cDamageNumbers" aria-describedby="cDamageNumbersHint" ${typeof pvpDamageDisplay!=="undefined"&&pvpDamageDisplay.enabled?"checked":""}> Hiển thị điểm sát thương · quái, SIM và người chơi</label>
+      <small id="cDamageNumbersHint" class="dim">Chỉ máy này · áp dụng ngay, kể cả các số đang nổi.</small>
       <label><input type="checkbox" id="cLowFx" ${o.lowFx ? "checked" : ""}> Giảm hiệu ứng (mượt hơn trên máy yếu / đông quái)</label></div>
     <h3>Nguồn dữ liệu</h3><div class="card small dim">Kỹ năng, quái, trang bị, thuộc tính và tỉ lệ rơi đồ trích từ dữ liệu Võ Lâm Truyền Kỳ 1 (bản fan chơi offline, phi thương mại).</div>`;
   const n = (t, e) => {
@@ -728,6 +730,7 @@ var Ao = function () {
     (m("#cPts").onchange = (t) => {
       ((o.autoPts = t.target.checked), o.autoPts && (yt(), Pt(), D0()), $());
     }),
+    (m("#cDamageNumbers").onchange = (t) => pvpDamageDisplay.set(t.target.checked)),
     (m("#cLowFx").onchange = (t) => {
       ((o.lowFx = t.target.checked), $());
     }),
