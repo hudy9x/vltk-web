@@ -1,6 +1,7 @@
 pub mod battlefield;
 pub mod training;
 mod attacks;
+mod emei_healing;
 mod combat_range;
 pub mod lifecycle;
 pub mod definitions;

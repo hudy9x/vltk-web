@@ -149,7 +149,7 @@ test('all SIM routes build native equipment and skill decks; fixed combined poti
    assert.equal(built.profile.level,200);assert.ok(built.appearance);assert.ok(built.equipment.weapon);
    if(route.weapon!==null)assert.equal(built.equipment.weapon.k,route.weapon>=100?route.weapon-100:route.weapon===-1?6:route.weapon,route.name);
    for(const id of route.attacks){assert.ok(built.profile.skills.some(s=>s.id===id),route.name+' '+id);}
-   if(route.healer){assert.equal(built.profile.skills.length,0);assert.ok(built.profile.support.skills.some(s=>s.id===332&&s.aura&&s.enabled));assert.ok(built.profile.support.skills.some(s=>s.id===93&&s.heal>0));}
+   if(route.healer){assert.ok(built.profile.skills.some(s=>s.id===1114&&s.healing>0));assert.ok(built.profile.support.skills.some(s=>s.id===332&&s.aura&&s.enabled));assert.ok(built.profile.support.skills.some(s=>s.id===93&&s.heal>0));}
    if(route.id==='emei-sword')assert.ok(built.profile.skills.find(s=>s.id===1061).followups.length,'retains native damage layers');
  }
  const db=new DatabaseSync(':memory:');try{

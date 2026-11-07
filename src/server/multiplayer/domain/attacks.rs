@@ -99,6 +99,13 @@ impl Game {
             {
                 continue;
             }
+            if p.skill.id==1115 {
+                if p.remaining>0.000001 {self.pending.push(p);} else {self.resolve_emei_healing(&p,events);}
+                continue;
+            }
+            if p.skill.id==1114 && let Some(amount)=p.skill.healing.take() {
+                self.queue_emei_healing(&p,amount,dt);
+            }
             if let (Some(flight), Some(geometry)) = (&mut p.flight, &p.skill.projectile) {
                 let step = (p.skill.travel - p.remaining).clamp(0.0, dt);
                 if step <= 0.0 {

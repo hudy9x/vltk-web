@@ -182,6 +182,8 @@ export type ContactEffect = ContactVisual & {
   contactHits: Set<CombatTarget>;
 };
 export interface CombatWorld {
+  emeiHeals?: { cast: CombatCast; center: WorldPoint; remaining: number;
+    firstStep?: number; amount: number; generation?: number }[];
   /** The local battlefield continues simulating while the player is respawning. */
   battlefield?: boolean;
   slowT?: number;

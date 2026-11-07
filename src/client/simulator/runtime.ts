@@ -16,6 +16,7 @@ import { mapNpcs } from '../npcs';
 import type { MapDefinition } from '../maps/types';
 import simRoutes from '../../shared/sim-routes.json';
 import { simulatorHealingAura } from './healing-aura';
+import type { HealingRecipient } from '../combat/emei-healing';
 import { recoverSimulator } from './recovery';
 import { randomSimulatorClothes } from './appearance';
 import { reflectedSkillDamage } from './reflection';
@@ -64,6 +65,7 @@ import type { SimulatorTemplate } from './types';
 declare var developerTools: { closeOpen(): boolean } | undefined;
 declare var combatSandbox: SandboxAPI | null;
 declare function I3(): SimulatorProfile;
+declare function Kh(faction: string): string;
 declare function Z1(item: LegacyRecord): string;
 declare var Dn: LegacyRecord | null;
 declare var Y: LegacyRecord;
@@ -324,6 +326,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
   // a projectile callback, a save or a UI handler can run.
   function asSim<T>(actor: SimulatorActor, action: () => T, quiet = true, loadout?: { profile: SimulatorProfile; stats: SimulatorStats }): T {
     const player = o, world = l, hero = v;
+    world.emeiHeals ||= [];
     o = loadout?.profile || actor.profile; v = actor;
     l = Object.assign({}, world, { P: actor.battlefieldBoss && loadout ? { ...loadout.stats, life: actor.max } : loadout?.stats || actor.stats || world.P, life: actor.hp, mana: actor.mana, sim: true, quiet, mounted: !!actor.mounted && !actor.battlefieldBoss && !actor.battlefieldMonster,
       buffs: {}, skCd: {}, look: null, jx: null, ignoreEqt: null, buffAssume: true });
@@ -652,7 +655,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     if (stunned) { actor.moving = false; return; }
     actor.cooldown = Math.max(0, actor.cooldown - dt);
     if (actorActionLocked(actor)) { actor.moving = false; return; }
-    if(actor.profile.simHealer){
+    if(actor.profile.simHealer && actor.profile.main === 'basic'){
       const allies:LegacyEntity[]=actors.filter(ally=>ally!==actor&&!ally.battlefieldBoss&&!ally.dead&&ally.hp>0&&ally.battlefieldTeam===actor.battlefieldTeam);
       if(battlefield?.state.team===actor.battlefieldTeam&&battlefieldWorld.life>0)allies.push(battlefieldHero);
       const ally=allies.sort((a,b)=>skillCastDistance(actor,a)-skillCastDistance(actor,b))[0];
@@ -1008,7 +1011,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
     // Unarmed builds use the game's basic attack, which has no weapon requirement.
     profile.main = build.equipped === false ? 'basic' : selected || 'basic';
     profile.mainLock = true; profile.slots = profile.main === 'basic' ? [] : route ? [...route.attacks] : [+profile.main];
-    if(route?.healer){profile.main='basic';profile.slots=[];profile.simHealer=true;for(const id of [93,332]){profile.sk[id]=T[id].max;profile.skL[id]={lv:profile.sk[id],xp:0};}profile.skPts=Math.max(0,profile.skPts-40);}
+    if(route?.healer){profile.simHealer=true;for(const id of [93,332]){profile.sk[id]=T[id].max;profile.skL[id]={lv:profile.sk[id],xp:0};}profile.skPts=Math.max(0,profile.skPts-40);}
     if(build.simRecovery)profile.simRecovery=clone(build.simRecovery);
     if (profile.main !== 'basic' && !profile.sk[profile.main]) { profile.sk[profile.main] = 1; profile.skPts = Math.max(0, profile.skPts - 1); }
     const player = o, world = l;
@@ -1324,7 +1327,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       crowd.reset(); previousLogging = diagnostics.enabled; diagnostics.enabled = false;
       previousField = { key: Z0.key, bgImg: l.bgImg, zoneShown: l.zoneShown, town: l.town, name: o.name, x: v.x, y: v.y, life: l.life, mana: l.mana, ctrl: o.ctrl, autoMap: o.autoMap };
       for (const actor of [...actors]) remove(actor);
-      sandbox.clearCombat?.(false);
+      sandbox.clearCombat?.(false); l.emeiHeals = [];
       ma(BATTLE_MAP); l.bgImg = bA(MapsEngine.getMapBackground(BATTLE_MAP)); l.zoneShown = BATTLE_MAP;
       l.town = false; l.battlefield = true; o.ctrl = 'manual'; o.autoMap = false;
       document.getElementById('bBack')?.classList.add('hidden');
@@ -1342,7 +1345,7 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
       roadMonsters.clear(); warRewards.reset(); supplies.reset();
       respawnCountdown.reset();
       if (!previousField) return;
-      sandbox.clearCombat?.(false);
+      sandbox.clearCombat?.(false); l.emeiHeals = [];
       ma(previousField.key); Object.assign(v, { x: previousField.x, y: previousField.y });
       Object.assign(l, { bgImg: previousField.bgImg, zoneShown: previousField.zoneShown, town: previousField.town, life: previousField.life, mana: previousField.mana, battlefield: false, deadT: 0 });
       document.getElementById('bBack')?.classList.toggle('hidden', !l.town);
@@ -1428,6 +1431,20 @@ export function createSimulator(options: { optimize?: (profile: SimulatorProfile
   updateWarNpcs();
   updateSkills(); updateInfo(); refreshRoster(); renderBuild(); refreshTemplates();
   if (arenaEnabled && typeof combatLog !== "undefined" && combatLog) combatLog.registerSimulatorLog?.(createSimulatorLogView(diagnostics, text, clearLog, D));
-  return { nearestMonsterTarget: arenaTargets.nearestTarget, battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, marshalNotice, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, warBuffs: () => typeof OnlineBattlefield!=='undefined'&&OnlineBattlefield.state?.itemBuffs ? warBuffHud(OnlineBattlefield.state.itemBuffs) : battlefield?.running ? warBuffHud(warRewards.state.buffs) : '', pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, drawWarItemDrop, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, advanceAnimation, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
+  function healingRecipients(): HealingRecipient[] {
+    const war = !!battlefield?.running;
+    const world = war ? battlefieldWorld : l, hero = war ? battlefieldHero : v;
+    const recipients: HealingRecipient[] = [...actors, ...(war ? roadMonsters.actors : [])]
+      .filter(actor => !actor.battlefieldBoss)
+      .map(actor => ({ entity: actor, alignment: Kh(actor.profile?.fac || ''),
+        team: actor.battlefieldTeam,
+        alive: () => !actor.dead && actor.hp > 0,
+        heal: amount => { actor.hp = Math.min(actor.max, actor.hp + amount); } }));
+    recipients.push({ entity: hero, alignment: Kh(o.fac), team: war ? battlefield!.state.team : undefined,
+      alive: () => world.life > 0 && !(world.deadT > 0),
+      heal: amount => { world.life = Math.min(world.P.life, world.life + amount); } });
+    return recipients;
+  }
+  return { healingRecipients, nearestMonsterTarget: arenaTargets.nearestTarget, battlefieldHealthColor, battlefieldTitleColor, battlefield, resultDialog, marshalNotice, openSettings:()=>battlePanel.open(), openPharmacy:(resource:'life'|'mana'='life',selectOnly=false)=>pharmacy.open(resource,selectOnly), leaderboard, roadMonsters, supplies, warInventory, warBuffs: () => typeof OnlineBattlefield!=='undefined'&&OnlineBattlefield.state?.itemBuffs ? warBuffHud(OnlineBattlefield.state.itemBuffs) : battlefield?.running ? warBuffHud(warRewards.state.buffs) : '', pvpDamageScale, warRewards, applyBattlefieldBonuses, recordBattlefieldHit, drawBattlefieldLoot, drawWarItemDrop, receiveSoldierHit, create, selectSkill, selectActor, remove, setPK, setFarm, tick, draw, advanceAnimation, step, capture, forcedDamage, receiveMonsterHit, text, clearLog, setAttribute, setSkill, saveTemplate, deleteTemplate, createFromTemplate, templates: templateStore.list,
     get actor() { return sim; }, get actors() { return [...actors]; }, get events() { return clone(diagnostics.entries); } };
 }

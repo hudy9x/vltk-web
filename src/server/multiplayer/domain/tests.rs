@@ -2508,3 +2508,67 @@ fn monster_loot_reserves_twenty_seconds_then_allows_public_manual_pickup_and_exp
     g.rules.tick_seconds=119.999;g.advance_monsters(&mut vec![]);assert_eq!(g.rooms[&2].loot.len(),1);
     g.rules.tick_seconds=0.00101;g.advance_monsters(&mut vec![]);assert!(g.rooms[&2].loot.is_empty());
 }
+
+#[test]
+fn emei_healing_native_casts_preserve_primary_damage_and_apply_once_at_the_visual_anchor(){
+ let rows:Vec<serde_json::Value>=serde_json::from_str(include_str!("../../../../test/fixtures/emei-healing.json")).unwrap();
+ for row in rows {
+  let skill:Skill=serde_json::from_value(row["skill"].clone()).unwrap();let level=skill.level;
+  let run=|enabled:bool|{
+   let mut g=game();field(&mut g);g.rng=12345;
+   for a in g.actors.values_mut(){a.profile.hp=10000.0;a.hp=100.0;a.profile.alignment=0;}
+   {let a=g.actors.get_mut(&1).unwrap();a.x=150.0;a.y=100.0;}
+   {let a=g.actors.get_mut(&2).unwrap();a.x=349.0;a.y=100.0;}
+   let mob=&mut g.rooms.get_mut(&2).unwrap().mobs[0];mob.hp=100000.0;mob.def.hp=100000.0;let target=mob.id;
+   let mut input=skill.clone();if !enabled{input.healing=None;}
+   g.pending.push(Pending{cast_id:0,source:1,map:2,target,skill:input,remaining:0.0,origin:(150.0,100.0),aim:Some((150.0,100.0)),flight:None});
+   let mut events=vec![];for _ in 0..20{g.advance_attacks(&mut events);}
+   assert_eq!(g.actors[&2].hp,100.0,"no healing before frame 20, level={level}");
+   for _ in 0..60{g.advance_attacks(&mut events);}
+   let healed=events.iter().filter(|e|e.1==6&&e.4==1115&&e.3==2).collect::<Vec<_>>();
+   let amount=if enabled{skill.healing.unwrap_or(0.0)}else{0.0};
+   assert_eq!(g.actors[&2].hp,100.0+amount);assert_eq!(healed.len(),usize::from(amount>0.0));
+   let damage=100000.0-g.rooms[&2].mobs[0].hp;remove_fixture(g);damage
+  };
+  let baseline=run(false);assert!(baseline>0.0);assert_eq!(run(true),baseline,"primary damage must be unchanged at level {level}");
+ }
+}
+
+#[test]
+fn emei_healing_checks_live_alignment_camp_range_and_soldier_membership(){
+ for alignment in 0..3 {
+  for (war,target_alignment,team,kind,x,y,alive,expected) in [
+   (false,alignment,0,0,350.0,100.0,true,true),(false,(alignment+1)%3,0,0,150.0,100.0,true,false),
+   (true,(alignment+1)%3,0,0,150.0,100.0,true,true),(true,(alignment+1)%3,0,1,150.0,100.0,true,true),
+   (true,(alignment+1)%3,0,2,150.0,200.0,true,true),(true,alignment,1,2,150.0,100.0,true,false),
+   (true,alignment,0,3,150.0,100.0,true,false),(true,alignment,0,2,350.01,100.0,true,false),
+   (true,alignment,0,2,150.0,200.01,true,false),(true,alignment,0,2,150.0,100.0,false,false)] {
+   let mut g=game();field(&mut g);
+   for (&id,a) in &mut g.actors {a.profile.hp=10000.0;a.hp=100.0;a.profile.alignment=if id==1{alignment}else{target_alignment};a.war=war.then_some(battlefield::Membership{prefer_players:true,team:if id==1{0}else{team},kind:if id==1{1}else{kind},match_id:1,ready:true,points:0});}
+   {let a=g.actors.get_mut(&2).unwrap();a.x=x;a.y=y;if !alive{a.hp=0.0;}}
+   let mut skill=g.actors[&1].profile.skills[0].clone();skill.id=1115;skill.healing=Some(1575.0);
+   let p=Pending{cast_id:0,source:1,map:2,target:2,skill,remaining:0.0,origin:(150.0,100.0),aim:Some((150.0,100.0)),flight:None};
+   g.resolve_emei_healing(&p,&mut vec![]);assert_eq!(g.actors[&2].hp,if !alive{0.0}else if expected{1675.0}else{100.0});remove_fixture(g);
+  }
+ }
+}
+
+#[test]
+fn emei_healing_keeps_real_pvp_damage_and_never_heals_the_enemy(){
+ let rows:Vec<serde_json::Value>=serde_json::from_str(include_str!("../../../../test/fixtures/emei-healing.json")).unwrap();
+ for row in rows {
+  let skill:Skill=serde_json::from_value(row["skill"].clone()).unwrap();
+  let run=|enabled:bool|{
+   let mut g=pvp_fixture();g.rng=54321;
+   {let a=g.actors.get_mut(&1).unwrap();a.x=100.0;a.y=100.0;a.profile.hp=10000.0;a.hp=100.0;}
+   {let a=g.actors.get_mut(&2).unwrap();a.x=150.0;a.y=100.0;a.profile.hp=10000.0;a.hp=10000.0;}
+   let mut input=skill.clone();if !enabled{input.healing=None;}
+   g.pending.push(Pending{cast_id:0,source:1,map:2,target:2,skill:input,remaining:0.0,origin:(100.0,100.0),aim:Some((150.0,100.0)),flight:None});
+   let mut events=vec![];for _ in 0..80{g.advance_attacks(&mut events);}
+   assert!(!events.iter().any(|e|e.1==6&&e.3==2));
+   assert_eq!(g.actors[&1].hp,100.0+if enabled{skill.healing.unwrap_or(0.0)}else{0.0});
+   let damage=10000.0-g.actors[&2].hp;remove_fixture(g);damage
+  };
+  let baseline=run(false);assert!(baseline>0.0);assert_eq!(run(true),baseline);
+ }
+}

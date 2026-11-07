@@ -13,7 +13,7 @@
   {"id":"wudu-blade","name":"Ngũ Độc Đao","faction":"wudu","weapon":1,"attacks":[355,1067]},
   {"id":"emei-sword","name":"Nga Mi Kiếm","faction":"emei","weapon":0,"attacks":[328,1061]},
   {"id":"emei-palm","name":"Nga Mi Chưởng","faction":"emei","weapon":null,"attacks":[380,1062,1114]},
-  {"id":"emei-healer","name":"Nga Mi buff máu","faction":"emei","weapon":0,"attacks":[],"healer":true},
+  {"id":"emei-healer","name":"Nga Mi buff máu","faction":"emei","weapon":0,"attacks":[1114],"healer":true},
   {"id":"cuiyan-blade","name":"Thúy Yên Đao","faction":"cuiyan","weapon":1,"attacks":[336,1063]},
   {"id":"cuiyan-twin","name":"Thúy Yên Song Đao","faction":"cuiyan","weapon":null,"attacks":[337,1065]},
   {"id":"gaibang-palm","name":"Cái Bang Chưởng","faction":"gaibang","weapon":null,"attacks":[357,1073]},

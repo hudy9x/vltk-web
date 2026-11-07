@@ -1,0 +1,10 @@
+{
+  "skill": 1114,
+  "effect": 1115,
+  "unlockLevel": 10,
+  "delayFrames": 20,
+  "framesPerSecond": 18,
+  "radius": 200,
+  "yScale": 2,
+  "amounts": [[1, 275], [20, 1575], [30, 4725]]
+}

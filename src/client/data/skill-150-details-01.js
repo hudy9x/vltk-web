@@ -4093,7 +4093,7 @@
     "name": "Ngọc Tuyền Tâm Kinh",
     "mechanics": [
       "Tầng 1 (Linh Tuyền Thủy Triều): Triệu hồi cột suối tiên tinh khiết từ lòng đất dâng trào (form: 6, 10 frames).",
-      "Tầng 2 (Trị Liệu & Băng Sát Song Hành): Vừa đóng băng làm chậm quân địch, vừa hồi phục sinh lực và hóa giải trạng thái dị thường cho toàn đội."
+      "Tầng 2 (từ cấp chiêu 10): Sau 20 frames, hồi sinh lực một lần trong vùng hiển thị bán kính 200. Ngoài chiến trường hồi cho người/SIM cùng màu chữ; Tống Kim hồi cho người, SIM và binh sĩ cùng phe. Cấp 20 hồi 1.575, cấp 30 hồi 4.725. Sát thương tầng 1 được giữ nguyên."
     ],
     "samples": [
       [

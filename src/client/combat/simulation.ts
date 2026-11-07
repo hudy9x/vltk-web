@@ -8,6 +8,7 @@ import { spawnDragonFlame } from '../render/dragon-fire';
 import { advanceSwordFlowerVisual } from './skill-effects/kiem-hoa-van-tinh';
 import { collideHaoHungFlight } from './skill-effects/thien-vuong-impact';
 import { advanceSnowTrailVisual } from './snow-trail';
+import { advanceEmeiHealing } from './emei-healing';
 
 // dt luôn tính bằng giây. Riêng đạn sprite đổi sang frame bằng K3 như code cũ.
 export function advanceCombatMissile(effect: SpriteMissile & ContactEffect, dt: number): boolean {
@@ -88,6 +89,7 @@ export function advanceSkillContacts(dt: number): void {
   beginContactFrame();
   try {
     advanceActorActions(dt);
+    advanceEmeiHealing(dt);
     const pending = l.combatProjectiles || [];
     const steps = new Map([...new Set(pending.map(effect => effect.combat))]
       .map(cast => [cast, cast.firstStep ?? dt] as const));

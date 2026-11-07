@@ -1659,13 +1659,13 @@ test('arena restores the equipped Thien Tu weapon across profile switches and re
   assert.equal(reloaded.o.eq.weapon.n, 'Training weapon', 'explicit skill selection still provisions its training weapon');
 });
 
-test('selected Nga Mi healing route restores allied SIM and player HP with the native aura and does not attack',()=>{
+test('selected Nga Mi healing route keeps the native aura and prepares the 1114 healing attack',()=>{
  const s=battlefieldGame(),sim=s.arenaSimulator,war=sim.battlefield;war.start('song');sim.tick(5);
  for(const name of ['mw','ww','b0'])loadDeclaration(s,'src/client/core/helpers-and-config-01.js',name);
  const recovery={life:{enabled:false,start:50,stop:80,urgent:30},mana:{enabled:false,start:40,stop:80,urgent:20},interval:1};
  const [healer]=war.add({team:'song',faction:'emei',level:200,strength:'normal',count:1,simRoute:'emei-healer',simRecovery:recovery});
  const [ally]=war.add({team:'song',faction:'wudang',level:200,strength:'normal',count:1,simRecovery:recovery});
- assert.ok(healer.profile.sk[332]>0);assert.ok(healer.healingAura>0);
+ assert.ok(healer.profile.sk[332]>0);assert.ok(healer.healingAura>0);assert.equal(+healer.profile.main,1114);assert.equal(+healer.stats.main.id,1114);
  for(const actor of [healer,ally])Object.assign(actor,{x:500,y:500,cooldown:9999});
  Object.assign(s.v,{x:500,y:500});s.l.life=100;s.l.P.life=100000;
  ally.hp=100;ally.max=100000;ally.stats.regen=0;
@@ -1680,4 +1680,27 @@ test('selected Nga Mi sword route retains both native attack tiers with one equi
  const [actor]=war.add({team:'song',faction:'emei',level:200,strength:'normal',count:1,simRoute:'emei-sword'});
  assert.deepEqual(Array.from(actor.battlefieldDeck,entry=>+entry.profile.main),[328,1061]);
  for(const entry of actor.battlefieldDeck){assert.equal(entry.profile.eq.weapon.k,0);assert.deepEqual(entry.profile.attr,actor.profile.attr);assert.equal(entry.stats.main.id,entry.profile.main);}
+});
+
+test('1115 uses live local battlefield recipients including soldiers and the actual player HP store',()=>{
+ const s=battlefieldGame(),sim=s.arenaSimulator,war=sim.battlefield;
+ for(const name of ['mw','ww','b0'])loadDeclaration(s,'src/client/core/helpers-and-config-01.js',name);
+ for(const name of ['$b','Kh'])loadDeclaration(s,'src/client/systems/activities-and-stash-01.js',name);
+ war.configureDeployment({...war.state.deployment,soldierAppearanceSeconds:0});war.start('song');sim.tick(5);
+ const [healer]=war.add({team:'song',faction:'emei',level:200,strength:'normal',count:1,simRoute:'emei-healer'});
+ const [ally]=war.add({team:'song',faction:'wudang',level:200,strength:'normal',count:1});
+ const [enemy]=war.add({team:'jin',faction:'emei',level:200,strength:'normal',count:1});
+ const soldier=sim.roadMonsters.actors.find(a=>a.battlefieldTeam==='song');assert.ok(soldier);
+ for(const actor of [healer,ally,enemy,soldier])Object.assign(actor,{hp:100,max:10000,x:300,y:300});
+ Object.assign(s.v,{x:300,y:300});s.l.life=100;s.l.P.life=10000;
+ const native=require('../src/server/multiplayer/definitions/runtime.cjs');
+ const input=native.buildCharacter(require('./fixtures/emei-healing.json').find(row=>row.level===20).profile).skills.find(skill=>skill.id===1114);
+ s.CombatEngine.queueSkillContact(healer,enemy,input,()=>{}, {windup:0,targets:()=>[],visual(){}});
+ s.advanceSkillContacts(1);assert.equal(s.l.life,100);assert.equal(soldier.hp,100);
+ s.advanceSkillContacts(.2);for(const actor of [healer,ally,soldier])assert.equal(actor.hp,1675);
+ assert.equal(s.l.life,1675);assert.equal(enemy.hp,100);
+ s.advanceSkillContacts(2);assert.equal(soldier.hp,1675);
+ // A player release reaches the same soldier store, with no special SIM-only path.
+ s.CombatEngine.queueSkillContact(s.v,enemy,input,()=>{}, {windup:0,targets:()=>[],visual(){}});
+ soldier.x=500.01;s.advanceSkillContacts(1.2);assert.equal(soldier.hp,1675);assert.equal(ally.hp,3250);
 });

@@ -1,0 +1,831 @@
+[
+  {
+    "level": 9,
+    "profile": {
+      "v": 1,
+      "name": "Tân thủ",
+      "fac": "emei",
+      "sex": 0,
+      "lvl": 200,
+      "xp": 0,
+      "gold": 0,
+      "attrPts": 0,
+      "attr": {
+        "str": 0,
+        "dex": 0,
+        "vit": 0,
+        "eng": 0
+      },
+      "knbV": 2,
+      "skPts": 1,
+      "sk": {
+        "1114": 9
+      },
+      "main": 1114,
+      "secondarySkill": 0,
+      "eq": {},
+      "inv": [
+        {
+          "uid": 1,
+          "n": "Lệnh bài tân thủ",
+          "d": 99,
+          "k": 0,
+          "lvl": 1,
+          "s": -1,
+          "r": 2,
+          "ic": "img/ep/newbie-token.png",
+          "price": 0,
+          "base": [],
+          "req": [],
+          "mag": [],
+          "ext": [],
+          "lock": true,
+          "ktc": {
+            "k": "newbie_token",
+            "c": 1
+          }
+        }
+      ],
+      "stage": 1,
+      "maxStage": 1,
+      "wave": 1,
+      "uid": 2,
+      "autoSell": 0,
+      "kps": 0.2,
+      "totalKills": 0,
+      "autoEquip": true,
+      "autoPts": false,
+      "diff": 1,
+      "autoForge": true,
+      "autoBuy": true,
+      "tut": 0,
+      "hints": {},
+      "bakAt": 0,
+      "potOff": false,
+      "potUsed": 0,
+      "potStock": {
+        "life": {},
+        "mana": {}
+      },
+      "ctrl": "auto",
+      "joy": "fixed",
+      "slots": [
+        1114
+      ],
+      "snd": {
+        "on": true,
+        "vol": 0.7,
+        "music": true,
+        "mvol": 0.4
+      },
+      "lootF": {
+        "minRar": 1,
+        "minLvl": 1,
+        "groups": [],
+        "series": [],
+        "auto": true
+      },
+      "ground": [],
+      "mats": {
+        "ht": {},
+        "ore": {},
+        "shard": {},
+        "misc": {}
+      },
+      "last": 1793983058934,
+      "stable": [],
+      "skL": {
+        "1114": {
+          "lv": 9,
+          "xp": 0
+        }
+      }
+    },
+    "skill": {
+      "id": 1114,
+      "level": 9,
+      "missiles": 1,
+      "melee": false,
+      "phys": true,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 20,
+        "anti": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 0,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "spread": 0.15
+      },
+      "leech": 0,
+      "manaLeech": 0,
+      "cost": 44,
+      "cooldown": 0.8,
+      "castCooldown": 0,
+      "attackPercent": 100,
+      "geometry": {
+        "scale": 0.81,
+        "castYRatio": 0.6,
+        "impactYScale": 2,
+        "ignoreTerrain": false
+      },
+      "range": 470,
+      "radius": 380.70000000000005,
+      "shape": "spot",
+      "targets": 3,
+      "projectile": null,
+      "parts": [
+        0,
+        0,
+        124.5,
+        0,
+        0
+      ],
+      "crit": 0,
+      "stun": 0,
+      "cold": 1.5,
+      "stunSeconds": 0.8,
+      "poison": 0,
+      "travel": 0.94
+    }
+  },
+  {
+    "level": 10,
+    "profile": {
+      "v": 1,
+      "name": "Tân thủ",
+      "fac": "emei",
+      "sex": 0,
+      "lvl": 200,
+      "xp": 0,
+      "gold": 0,
+      "attrPts": 0,
+      "attr": {
+        "str": 0,
+        "dex": 0,
+        "vit": 0,
+        "eng": 0
+      },
+      "knbV": 2,
+      "skPts": 1,
+      "sk": {
+        "1114": 10
+      },
+      "main": 1114,
+      "secondarySkill": 0,
+      "eq": {},
+      "inv": [
+        {
+          "uid": 1,
+          "n": "Lệnh bài tân thủ",
+          "d": 99,
+          "k": 0,
+          "lvl": 1,
+          "s": -1,
+          "r": 2,
+          "ic": "img/ep/newbie-token.png",
+          "price": 0,
+          "base": [],
+          "req": [],
+          "mag": [],
+          "ext": [],
+          "lock": true,
+          "ktc": {
+            "k": "newbie_token",
+            "c": 1
+          }
+        }
+      ],
+      "stage": 1,
+      "maxStage": 1,
+      "wave": 1,
+      "uid": 2,
+      "autoSell": 0,
+      "kps": 0.2,
+      "totalKills": 0,
+      "autoEquip": true,
+      "autoPts": false,
+      "diff": 1,
+      "autoForge": true,
+      "autoBuy": true,
+      "tut": 0,
+      "hints": {},
+      "bakAt": 0,
+      "potOff": false,
+      "potUsed": 0,
+      "potStock": {
+        "life": {},
+        "mana": {}
+      },
+      "ctrl": "auto",
+      "joy": "fixed",
+      "slots": [
+        1114
+      ],
+      "snd": {
+        "on": true,
+        "vol": 0.7,
+        "music": true,
+        "mvol": 0.4
+      },
+      "lootF": {
+        "minRar": 1,
+        "minLvl": 1,
+        "groups": [],
+        "series": [],
+        "auto": true
+      },
+      "ground": [],
+      "mats": {
+        "ht": {},
+        "ore": {},
+        "shard": {},
+        "misc": {}
+      },
+      "last": 1793983058947,
+      "stable": [],
+      "skL": {
+        "1114": {
+          "lv": 10,
+          "xp": 0
+        }
+      }
+    },
+    "skill": {
+      "id": 1114,
+      "healing": 891,
+      "level": 10,
+      "missiles": 1,
+      "melee": false,
+      "phys": true,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 20,
+        "anti": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 0,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "spread": 0.15
+      },
+      "leech": 0,
+      "manaLeech": 0,
+      "cost": 46,
+      "cooldown": 0.8,
+      "castCooldown": 0,
+      "attackPercent": 100,
+      "geometry": {
+        "scale": 0.81,
+        "castYRatio": 0.6,
+        "impactYScale": 2,
+        "ignoreTerrain": false
+      },
+      "range": 470,
+      "radius": 380.70000000000005,
+      "shape": "spot",
+      "targets": 3,
+      "projectile": null,
+      "parts": [
+        0,
+        0,
+        137,
+        0,
+        0
+      ],
+      "crit": 0,
+      "stun": 0,
+      "cold": 1.5,
+      "stunSeconds": 0.8,
+      "poison": 0,
+      "travel": 0.94
+    }
+  },
+  {
+    "level": 11,
+    "profile": {
+      "v": 1,
+      "name": "Tân thủ",
+      "fac": "emei",
+      "sex": 0,
+      "lvl": 200,
+      "xp": 0,
+      "gold": 0,
+      "attrPts": 0,
+      "attr": {
+        "str": 0,
+        "dex": 0,
+        "vit": 0,
+        "eng": 0
+      },
+      "knbV": 2,
+      "skPts": 1,
+      "sk": {
+        "1114": 11
+      },
+      "main": 1114,
+      "secondarySkill": 0,
+      "eq": {},
+      "inv": [
+        {
+          "uid": 1,
+          "n": "Lệnh bài tân thủ",
+          "d": 99,
+          "k": 0,
+          "lvl": 1,
+          "s": -1,
+          "r": 2,
+          "ic": "img/ep/newbie-token.png",
+          "price": 0,
+          "base": [],
+          "req": [],
+          "mag": [],
+          "ext": [],
+          "lock": true,
+          "ktc": {
+            "k": "newbie_token",
+            "c": 1
+          }
+        }
+      ],
+      "stage": 1,
+      "maxStage": 1,
+      "wave": 1,
+      "uid": 2,
+      "autoSell": 0,
+      "kps": 0.2,
+      "totalKills": 0,
+      "autoEquip": true,
+      "autoPts": false,
+      "diff": 1,
+      "autoForge": true,
+      "autoBuy": true,
+      "tut": 0,
+      "hints": {},
+      "bakAt": 0,
+      "potOff": false,
+      "potUsed": 0,
+      "potStock": {
+        "life": {},
+        "mana": {}
+      },
+      "ctrl": "auto",
+      "joy": "fixed",
+      "slots": [
+        1114
+      ],
+      "snd": {
+        "on": true,
+        "vol": 0.7,
+        "music": true,
+        "mvol": 0.4
+      },
+      "lootF": {
+        "minRar": 1,
+        "minLvl": 1,
+        "groups": [],
+        "series": [],
+        "auto": true
+      },
+      "ground": [],
+      "mats": {
+        "ht": {},
+        "ore": {},
+        "shard": {},
+        "misc": {}
+      },
+      "last": 1793983058949,
+      "stable": [],
+      "skL": {
+        "1114": {
+          "lv": 11,
+          "xp": 0
+        }
+      }
+    },
+    "skill": {
+      "id": 1114,
+      "healing": 959,
+      "level": 11,
+      "missiles": 1,
+      "melee": false,
+      "phys": true,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 20,
+        "anti": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 0,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "spread": 0.15
+      },
+      "leech": 0,
+      "manaLeech": 0,
+      "cost": 48,
+      "cooldown": 0.8,
+      "castCooldown": 0,
+      "attackPercent": 100,
+      "geometry": {
+        "scale": 0.81,
+        "castYRatio": 0.6,
+        "impactYScale": 2,
+        "ignoreTerrain": false
+      },
+      "range": 470,
+      "radius": 380.70000000000005,
+      "shape": "spot",
+      "targets": 3,
+      "projectile": null,
+      "parts": [
+        0,
+        0,
+        149.5,
+        0,
+        0
+      ],
+      "crit": 0,
+      "stun": 0,
+      "cold": 1.5,
+      "stunSeconds": 0.8,
+      "poison": 0,
+      "travel": 0.94
+    }
+  },
+  {
+    "level": 20,
+    "profile": {
+      "v": 1,
+      "name": "Tân thủ",
+      "fac": "emei",
+      "sex": 0,
+      "lvl": 200,
+      "xp": 0,
+      "gold": 0,
+      "attrPts": 0,
+      "attr": {
+        "str": 0,
+        "dex": 0,
+        "vit": 0,
+        "eng": 0
+      },
+      "knbV": 2,
+      "skPts": 1,
+      "sk": {
+        "1114": 20
+      },
+      "main": 1114,
+      "secondarySkill": 0,
+      "eq": {},
+      "inv": [
+        {
+          "uid": 1,
+          "n": "Lệnh bài tân thủ",
+          "d": 99,
+          "k": 0,
+          "lvl": 1,
+          "s": -1,
+          "r": 2,
+          "ic": "img/ep/newbie-token.png",
+          "price": 0,
+          "base": [],
+          "req": [],
+          "mag": [],
+          "ext": [],
+          "lock": true,
+          "ktc": {
+            "k": "newbie_token",
+            "c": 1
+          }
+        }
+      ],
+      "stage": 1,
+      "maxStage": 1,
+      "wave": 1,
+      "uid": 2,
+      "autoSell": 0,
+      "kps": 0.2,
+      "totalKills": 0,
+      "autoEquip": true,
+      "autoPts": false,
+      "diff": 1,
+      "autoForge": true,
+      "autoBuy": true,
+      "tut": 0,
+      "hints": {},
+      "bakAt": 0,
+      "potOff": false,
+      "potUsed": 0,
+      "potStock": {
+        "life": {},
+        "mana": {}
+      },
+      "ctrl": "auto",
+      "joy": "fixed",
+      "slots": [
+        1114
+      ],
+      "snd": {
+        "on": true,
+        "vol": 0.7,
+        "music": true,
+        "mvol": 0.4
+      },
+      "lootF": {
+        "minRar": 1,
+        "minLvl": 1,
+        "groups": [],
+        "series": [],
+        "auto": true
+      },
+      "ground": [],
+      "mats": {
+        "ht": {},
+        "ore": {},
+        "shard": {},
+        "misc": {}
+      },
+      "last": 1793983058951,
+      "stable": [],
+      "skL": {
+        "1114": {
+          "lv": 20,
+          "xp": 0
+        }
+      }
+    },
+    "skill": {
+      "id": 1114,
+      "healing": 1575,
+      "level": 20,
+      "missiles": 1,
+      "melee": false,
+      "phys": true,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 60,
+        "anti": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 0,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "spread": 0.15
+      },
+      "leech": 0,
+      "manaLeech": 0,
+      "cost": 65,
+      "cooldown": 0.8,
+      "castCooldown": 0,
+      "attackPercent": 100,
+      "geometry": {
+        "scale": 0.81,
+        "castYRatio": 0.6,
+        "impactYScale": 2,
+        "ignoreTerrain": false
+      },
+      "range": 470,
+      "radius": 380.70000000000005,
+      "shape": "spot",
+      "targets": 3,
+      "projectile": null,
+      "parts": [
+        0,
+        0,
+        450,
+        0,
+        0
+      ],
+      "crit": 0,
+      "stun": 0,
+      "cold": 1.5,
+      "stunSeconds": 0.8,
+      "poison": 0,
+      "travel": 0.94
+    }
+  },
+  {
+    "level": 26,
+    "profile": {
+      "v": 1,
+      "name": "Tân thủ",
+      "fac": "emei",
+      "sex": 0,
+      "lvl": 200,
+      "xp": 0,
+      "gold": 0,
+      "attrPts": 0,
+      "attr": {
+        "str": 0,
+        "dex": 0,
+        "vit": 0,
+        "eng": 0
+      },
+      "knbV": 2,
+      "skPts": 1,
+      "sk": {
+        "1114": 26
+      },
+      "main": 1114,
+      "secondarySkill": 0,
+      "eq": {},
+      "inv": [
+        {
+          "uid": 1,
+          "n": "Lệnh bài tân thủ",
+          "d": 99,
+          "k": 0,
+          "lvl": 1,
+          "s": -1,
+          "r": 2,
+          "ic": "img/ep/newbie-token.png",
+          "price": 0,
+          "base": [],
+          "req": [],
+          "mag": [],
+          "ext": [],
+          "lock": true,
+          "ktc": {
+            "k": "newbie_token",
+            "c": 1
+          }
+        }
+      ],
+      "stage": 1,
+      "maxStage": 1,
+      "wave": 1,
+      "uid": 2,
+      "autoSell": 0,
+      "kps": 0.2,
+      "totalKills": 0,
+      "autoEquip": true,
+      "autoPts": false,
+      "diff": 1,
+      "autoForge": true,
+      "autoBuy": true,
+      "tut": 0,
+      "hints": {},
+      "bakAt": 0,
+      "potOff": false,
+      "potUsed": 0,
+      "potStock": {
+        "life": {},
+        "mana": {}
+      },
+      "ctrl": "auto",
+      "joy": "fixed",
+      "slots": [
+        1114
+      ],
+      "snd": {
+        "on": true,
+        "vol": 0.7,
+        "music": true,
+        "mvol": 0.4
+      },
+      "lootF": {
+        "minRar": 1,
+        "minLvl": 1,
+        "groups": [],
+        "series": [],
+        "auto": true
+      },
+      "ground": [],
+      "mats": {
+        "ht": {},
+        "ore": {},
+        "shard": {},
+        "misc": {}
+      },
+      "last": 1793983058952,
+      "stable": [],
+      "skL": {
+        "1114": {
+          "lv": 26,
+          "xp": 0
+        }
+      }
+    },
+    "skill": {
+      "id": 1114,
+      "healing": 3465,
+      "level": 26,
+      "missiles": 1,
+      "melee": false,
+      "phys": true,
+      "pve": {
+        "criticalMultiplier": 2,
+        "advantageBonus": 0.1,
+        "maximumResistance": 95,
+        "series": 2,
+        "seriesResistance": 72,
+        "anti": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "resistanceCap": 75,
+        "flatSeries": 0,
+        "heavyChance": 0,
+        "versus": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "spread": 0.15
+      },
+      "leech": 0,
+      "manaLeech": 0,
+      "cost": 83,
+      "cooldown": 0.8,
+      "castCooldown": 0,
+      "attackPercent": 100,
+      "geometry": {
+        "scale": 0.81,
+        "castYRatio": 0.6,
+        "impactYScale": 2,
+        "ignoreTerrain": false
+      },
+      "range": 470,
+      "radius": 380.70000000000005,
+      "shape": "spot",
+      "targets": 3,
+      "projectile": null,
+      "parts": [
+        0,
+        0,
+        900,
+        0,
+        0
+      ],
+      "crit": 0,
+      "stun": 0,
+      "cold": 1.5,
+      "stunSeconds": 0.8,
+      "poison": 0,
+      "travel": 0.94
+    }
+  }
+]

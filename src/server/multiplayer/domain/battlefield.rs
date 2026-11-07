@@ -279,7 +279,17 @@ impl Game {
         for id in ids {
             let u=self.battlefield.units[&id].clone();let Some(a)=self.actors.get(&id) else{continue;};if a.hp<=0.0{continue;}
             let enemy=peers.iter().filter(|p|pvp::hostile(id,a,p,false)&&distance(u.home.0,u.home.1,p.x,p.y)<=u.leash)
-                .min_by(|p,q|distance(a.x,a.y,p.x,p.y).total_cmp(&distance(a.x,a.y,q.x,q.y))).copied();
+                .min_by(|p,q| {
+                    // SIMs prefer people who can be attacked now; distant people
+                    // must not prevent fighting a soldier already within reach.
+                    let ready=|p:&pvp::Peer|a.profile.skills.iter().any(|s|
+                        combat_range::can_cast(s,(a.x,a.y),(p.x,p.y))
+                        && s.projectile.as_ref().is_none_or(|g|(p.x-a.x).hypot((p.y-a.y)*2.0)<=g.range+17.0)
+                        && (combat_range::ignores_terrain(s)||self.rooms[&MAP].nav.clear(a.x,a.y,p.x,p.y)));
+                    let rank=|p:&pvp::Peer|if u.kind!=1 {0} else if !ready(p){2}
+                        else if p.war.is_some_and(|w|w.kind<2){0}else{1};
+                    rank(p).cmp(&rank(q)).then_with(||distance(a.x,a.y,p.x,p.y).total_cmp(&distance(a.x,a.y,q.x,q.y)))
+                }).copied();
             let fallback=self.battlefield_camp(1-u.team);
             if enemy.is_none()&&u.kind>=2{self.battlefield_patrol(id);}
             let a=self.actors.get_mut(&id).unwrap();
@@ -616,6 +626,25 @@ mod tests {
             }
         }
         assert_eq!(g.battlefield.units[&1].deaths,11);assert_eq!(g.battlefield.units[&sim].deaths,11);
+    }
+    #[test]
+    fn battlefield_sim_prioritizes_people_in_range_then_nearby_soldiers() {
+        let mut g=fixture();start(&mut g);
+        let sim=g.battlefield.units.values().find(|u|u.team==0&&u.kind==1).unwrap().id;
+        let soldier=g.battlefield.units.values().find(|u|u.team==1&&u.kind==1).unwrap().id;
+        for a in g.actors.values_mut(){a.x=950.0;a.y=950.0;}
+        {let a=g.actors.get_mut(&sim).unwrap();a.x=100.0;a.y=100.0;}
+        {let u=g.battlefield.units.get_mut(&sim).unwrap();u.home=(100.0,100.0);u.leash=1000.0;}
+        {let a=g.actors.get_mut(&soldier).unwrap();a.x=120.0;a.y=100.0;a.war.as_mut().unwrap().kind=2;}
+        {let a=g.actors.get_mut(&2).unwrap();a.x=200.0;a.y=100.0;}
+        g.battlefield_ai();assert_eq!(g.actors[&sim].target,2,"person in range beats closer soldier");
+        g.actors.get_mut(&2).unwrap().x=600.0;
+        g.battlefield_ai();assert_eq!(g.actors[&sim].target,soldier,"fight reachable soldier instead of chasing distant person");
+        g.actors.get_mut(&2).unwrap().x=200.0;
+        g.actors.get_mut(&2).unwrap().war.as_mut().unwrap().kind=1;
+        g.battlefield_ai();assert_eq!(g.actors[&sim].target,2,"enemy SIM has the same priority as a person");
+        g.actors.get_mut(&2).unwrap().hp=0.0;
+        g.battlefield_ai();assert_eq!(g.actors[&sim].target,soldier,"dead people are excluded");
     }
     #[test]
     fn auto_prioritizes_people_and_sims_until_the_preference_is_disabled() {

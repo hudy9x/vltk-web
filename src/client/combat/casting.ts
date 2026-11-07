@@ -11,6 +11,7 @@ import { spawnSnowTrailVisual } from './snow-trail';
 import { configureTianwangImpact, spawnHaoHungGround } from './skill-effects/thien-vuong-impact';
 import { configureBeggarImpact, spawnBeggarFallback } from './skill-effects/cai-bang-impact';
 import { configureIcePeacockImpact } from './skill-effects/bang-tuoc-hoat-ky';
+import { queueEmeiHealing } from './emei-healing';
 declare function actorAttackTiming(actor: CombatTarget, skill: CombatSkill): ResolvedSpeed;
 // Secondary fields created synchronously at release inherit the same tick remainder.
 let releaseStep: number | undefined;
@@ -156,6 +157,7 @@ export function queueSkillContact(actor: CombatTarget, target: CombatTarget, ski
         playSkillSound(actor, skill.id || 0, 'cast');
         playSkillSound(actor, skill.id || 0, 'release');
       }
+      queueEmeiHealing(cast, target, remainingDt);
       options.afterRelease?.();
     } finally {
       activeCombatCast = previous;

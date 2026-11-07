@@ -4,6 +4,8 @@ use std::collections::BTreeMap;
 #[serde(rename_all = "camelCase")]
 pub struct Skill {
     #[serde(default,skip_serializing_if="Option::is_none")]
+    pub healing:Option<f32>,
+    #[serde(default,skip_serializing_if="Option::is_none")]
     pub geometry:Option<SkillGeometry>,
     #[serde(default,skip_serializing_if="Vec::is_empty")]
     pub followups:Vec<Followup>,

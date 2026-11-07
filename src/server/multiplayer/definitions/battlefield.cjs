@@ -55,7 +55,7 @@ function buildTemplate(faction,route){
       p.eq=applyArmySetEquipment({goldCatalog:key=>scope.equipmentTrader.goldCatalog(key),canUpgrade:()=>false,make(template){const item=scope.Ta('gold',template,10);if(item)Object.assign(item,{lock:true,enh:0});return item;}},p.eq,{faction,sex:p.sex||0,level:200,weapon,kind:'gold'});
       scope.l.sim=true;scope.j5();
       if(Object.values(p.eq).some(item=>!scope.p0(item)))throw new Error(`SIM ${faction}: requirements for equipped set not met`);
-      if(route?.healer){p.main='basic';p.slots=[];for(const id of [93,332]){p.sk[id]=scope.T[id].max;p.skL[id]={lv:p.sk[id],xp:0};p.bkOk[id]=1;}p.skPts=Math.max(0,p.skPts-40);}
+      if(route?.healer){for(const id of [93,332]){p.sk[id]=scope.T[id].max;p.skL[id]={lv:p.sk[id],xp:0};p.bkOk[id]=1;}p.skPts=Math.max(0,p.skPts-40);}
       prioritizeLevel60Support(p,rows,s=>scope.wn(s));
       scope.l.sim=true;scope.Pt();
       // Evaluate the native score in bounded batches; golden set bonuses make
@@ -72,7 +72,6 @@ function buildTemplate(faction,route){
     },30000);
     const result={faction,name:build.name,sex:build.sex,skills:build.skills,equipment:build.profile.eq,appearance:build.appearance,profile:catalog.character(build.profile)};
 
-  if(route?.healer){result.profile.skills=[];for(const variant of result.profile.support.variants)variant.profile.skills=[];}
   return result;
 }
 
